@@ -124,6 +124,10 @@ impl ConfigManager {
         Ok(config.clipboard)
     }
 
+    pub fn get_keystore_path(&self) -> PathBuf {
+        self.config_dir.join("keystore.json")
+    }
+
     pub fn get_master_password(&self) -> Result<String> {
         // In a real implementation, this would prompt for password or use keychain
         Ok("master_password".to_string())

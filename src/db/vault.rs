@@ -209,6 +209,34 @@ impl Vault {
         Ok(())
     }
 
+    /// Set a metadata key-value pair
+    ///
+    /// If the key already exists, it will be updated with the new value.
+    pub fn set_metadata(&mut self, key: &str, value: &str) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO metadata (key, value) VALUES (?1, ?2)",
+            [key, value],
+        )?;
+        Ok(())
+    }
+
+    /// Get metadata value by key
+    ///
+    /// Returns `None` if the key does not exist.
+    pub fn get_metadata(&self, key: &str) -> Result<Option<String>> {
+        let result = self.conn.query_row(
+            "SELECT value FROM metadata WHERE key = ?1",
+            [key],
+            |row| row.get(0),
+        );
+
+        match result {
+            Ok(value) => Ok(Some(value)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e.into()),
+        }
+    }
+
     /// Update an existing record with version increment
     ///
     /// This method wraps the entire operation in a transaction for atomicity.
