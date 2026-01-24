@@ -23,6 +23,22 @@ fn test_add_record() {
     };
 
     assert!(vault.add_record(&record).is_ok());
+
+    // Verify record was inserted
+    let count: i64 = vault.conn.query_row(
+        "SELECT COUNT(*) FROM records WHERE id = ?1",
+        &[&record.id.to_string()],
+        |row: &rusqlite::Row| row.get(0),
+    ).unwrap();
+    assert_eq!(count, 1, "Record should be inserted into database");
+
+    // Verify tags were inserted
+    let tag_count: i64 = vault.conn.query_row(
+        "SELECT COUNT(*) FROM record_tags WHERE record_id = ?1",
+        &[&record.id.to_string()],
+        |row: &rusqlite::Row| row.get(0),
+    ).unwrap();
+    assert_eq!(tag_count, 2, "Both tags should be linked to record");
 }
 
 #[test]
@@ -60,6 +76,22 @@ fn test_add_record_with_tags() {
         updated_at: chrono::Utc::now(),
     };
     assert!(vault.add_record(&record2).is_ok());
+
+    // Verify both records exist
+    let count: i64 = vault.conn.query_row(
+        "SELECT COUNT(*) FROM records",
+        [],
+        |row: &rusqlite::Row| row.get(0),
+    ).unwrap();
+    assert_eq!(count, 2, "Both records should be inserted");
+
+    // Verify tags are shared (work tag should be used by both records)
+    let unique_tags: i64 = vault.conn.query_row(
+        "SELECT COUNT(*) FROM tags",
+        [],
+        |row: &rusqlite::Row| row.get(0),
+    ).unwrap();
+    assert_eq!(unique_tags, 3, "Should have 3 unique tags: work, important, personal");
 }
 
 #[test]
@@ -68,7 +100,7 @@ fn test_add_record_with_duplicate_tags() {
     let db_path = temp_dir.path().join("test.db");
     let mut vault = Vault::open(&db_path, "test-password").unwrap();
 
-    // Record with duplicate tag names (should be deduplicated by database)
+    // Record with duplicate tag names (should be deduplicated)
     let record = Record {
         id: Uuid::new_v4(),
         record_type: RecordType::Password,
@@ -84,4 +116,12 @@ fn test_add_record_with_duplicate_tags() {
 
     // Should not fail even with duplicate tag names
     assert!(vault.add_record(&record).is_ok());
+
+    // Verify deduplication: only 2 unique tags should be linked
+    let tag_count: i64 = vault.conn.query_row(
+        "SELECT COUNT(*) FROM record_tags WHERE record_id = ?1",
+        &[&record.id.to_string()],
+        |row: &rusqlite::Row| row.get(0),
+    ).unwrap();
+    assert_eq!(tag_count, 2, "Duplicate tags should be deduplicated to 2 unique tags");
 }
