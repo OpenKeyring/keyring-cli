@@ -209,10 +209,47 @@ impl Vault {
         Ok(())
     }
 
-    /// Update an existing record
-    pub fn update_record(&mut self, _record: &Record) -> Result<()> {
-        // TODO: Implement update
-        anyhow::bail!("Vault::update_record not yet implemented")
+    /// Update an existing record with version increment
+    pub fn update_record(&mut self, record: &Record) -> Result<()> {
+        // Update record data
+        self.conn.execute(
+            "UPDATE records
+         SET encrypted_data = ?1, updated_at = ?2, version = version + 1
+         WHERE id = ?3 AND deleted = 0",
+            (
+                &record.encrypted_data,
+                record.updated_at.timestamp(),
+                &record.id.to_string(),
+            ),
+        )?;
+
+        // Update tags: remove old associations and add new ones
+        self.conn.execute(
+            "DELETE FROM record_tags WHERE record_id = ?1",
+            [&record.id.to_string()],
+        )?;
+
+        for tag_name in &record.tags {
+            let tag_id: i64 = self.conn.query_row(
+                "INSERT OR IGNORE INTO tags (name) VALUES (?1)
+             RETURNING id",
+                &[tag_name],
+                |row| row.get(0),
+            ).or_else(|_| {
+                self.conn.query_row(
+                    "SELECT id FROM tags WHERE name = ?1",
+                    &[tag_name],
+                    |row| row.get(0),
+                )
+            })?;
+
+            self.conn.execute(
+                "INSERT OR IGNORE INTO record_tags (record_id, tag_id) VALUES (?1, ?2)",
+                (&record.id.to_string(), tag_id),
+            )?;
+        }
+
+        Ok(())
     }
 
     /// Delete a record (soft delete)
