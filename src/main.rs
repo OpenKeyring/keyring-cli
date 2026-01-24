@@ -353,17 +353,83 @@ async fn main() -> Result<()> {
 
     // Execute command
     match cli.command {
-        Commands::Generate { .. } => commands::generate::execute().await?,
-        Commands::List { .. } => commands::list::execute().await?,
-        Commands::Show { .. } => commands::show::execute().await?,
-        Commands::Update { .. } => commands::update::execute().await?,
-        Commands::Delete { .. } => commands::delete::execute().await?,
-        Commands::Search { .. } => commands::search::execute().await?,
-        Commands::Sync { .. } => commands::sync::execute().await?,
+        Commands::Generate {
+            name,
+            length,
+            numbers,
+            symbols,
+            memorable,
+            words,
+            pin,
+            username,
+            url,
+            notes,
+            tags,
+            copy,
+            sync,
+        } => commands::generate::execute(name, length, numbers, symbols, memorable, words, pin, username, url, notes, tags, copy, sync).await?,
+
+        Commands::List {
+            r#type,
+            tags,
+            tag,
+            sort,
+            reverse,
+            output,
+        } => commands::list::execute(r#type, tags, tag, sort, reverse, output).await?,
+
+        Commands::Show {
+            name,
+            password,
+            copy,
+            timeout,
+            field,
+            history,
+        } => commands::show::execute(name, password, copy, timeout, field, history).await?,
+
+        Commands::Update {
+            name,
+            password,
+            username,
+            url,
+            notes,
+            tags,
+            add_tags,
+            remove_tags,
+            sync,
+        } => commands::update::execute(name, password, username, url, notes, tags, add_tags, remove_tags, sync).await?,
+
+        Commands::Delete {
+            name,
+            sync,
+            force,
+        } => commands::delete::execute(name, sync, force).await?,
+
+        Commands::Search {
+            query,
+            r#type,
+            output,
+        } => commands::search::execute(query, r#type, output).await?,
+
+        Commands::Sync {
+            dry_run,
+            full,
+            verbose,
+        } => commands::sync::execute(dry_run, full, verbose).await?,
+
         Commands::SyncStatus => commands::sync::execute_status().await?,
+
         Commands::Devices { device_command } => commands::devices::execute(device_command).await?,
+
         Commands::Config { config_command } => commands::config::execute(config_command).await?,
-        Commands::Health { .. } => commands::health::execute().await?,
+
+        Commands::Health {
+            leaks,
+            weak,
+            duplicate,
+            all,
+        } => commands::health::execute(leaks, weak, duplicate, all).await?,
+
         Commands::Mnemonic { mnemonic_command } => commands::mnemonic::execute(mnemonic_command).await?,
     }
 
@@ -400,9 +466,26 @@ fn setup_logging(verbose: bool, quiet: bool) {
 // Command stub modules - to be implemented in later tasks
 
 mod commands {
+    use super::{DeviceCommands, ConfigCommands, MnemonicCommands};
+
     pub mod generate {
         use anyhow::Result;
-        pub async fn execute() -> Result<()> {
+
+        pub async fn execute(
+            _name: String,
+            _length: usize,
+            _numbers: bool,
+            _symbols: bool,
+            _memorable: bool,
+            _words: usize,
+            _pin: bool,
+            _username: Option<String>,
+            _url: Option<String>,
+            _notes: Option<String>,
+            _tags: Vec<String>,
+            _copy: bool,
+            _sync: bool,
+        ) -> Result<()> {
             log::info!("Generate command (stub)");
             println!("Generate command - to be implemented");
             Ok(())
@@ -411,7 +494,15 @@ mod commands {
 
     pub mod list {
         use anyhow::Result;
-        pub async fn execute() -> Result<()> {
+
+        pub async fn execute(
+            _type: Option<String>,
+            _tags: Vec<String>,
+            _tag: Vec<String>,
+            _sort: Option<String>,
+            _reverse: bool,
+            _output: Option<String>,
+        ) -> Result<()> {
             log::info!("List command (stub)");
             println!("List command - to be implemented");
             Ok(())
@@ -420,7 +511,15 @@ mod commands {
 
     pub mod show {
         use anyhow::Result;
-        pub async fn execute() -> Result<()> {
+
+        pub async fn execute(
+            _name: String,
+            _password: bool,
+            _copy: bool,
+            _timeout: Option<u64>,
+            _field: Option<String>,
+            _history: bool,
+        ) -> Result<()> {
             log::info!("Show command (stub)");
             println!("Show command - to be implemented");
             Ok(())
@@ -429,7 +528,18 @@ mod commands {
 
     pub mod update {
         use anyhow::Result;
-        pub async fn execute() -> Result<()> {
+
+        pub async fn execute(
+            _name: String,
+            _password: Option<String>,
+            _username: Option<String>,
+            _url: Option<String>,
+            _notes: Option<String>,
+            _tags: Option<Vec<String>>,
+            _add_tags: Option<Vec<String>>,
+            _remove_tags: Option<Vec<String>>,
+            _sync: bool,
+        ) -> Result<()> {
             log::info!("Update command (stub)");
             println!("Update command - to be implemented");
             Ok(())
@@ -438,7 +548,12 @@ mod commands {
 
     pub mod delete {
         use anyhow::Result;
-        pub async fn execute() -> Result<()> {
+
+        pub async fn execute(
+            _name: String,
+            _sync: bool,
+            _force: bool,
+        ) -> Result<()> {
             log::info!("Delete command (stub)");
             println!("Delete command - to be implemented");
             Ok(())
@@ -447,7 +562,12 @@ mod commands {
 
     pub mod search {
         use anyhow::Result;
-        pub async fn execute() -> Result<()> {
+
+        pub async fn execute(
+            _query: String,
+            _type: Option<String>,
+            _output: Option<String>,
+        ) -> Result<()> {
             log::info!("Search command (stub)");
             println!("Search command - to be implemented");
             Ok(())
@@ -457,7 +577,11 @@ mod commands {
     pub mod sync {
         use anyhow::Result;
 
-        pub async fn execute() -> Result<()> {
+        pub async fn execute(
+            _dry_run: bool,
+            _full: bool,
+            _verbose: bool,
+        ) -> Result<()> {
             log::info!("Sync command (stub)");
             println!("Sync command - to be implemented");
             Ok(())
@@ -494,7 +618,13 @@ mod commands {
 
     pub mod health {
         use anyhow::Result;
-        pub async fn execute() -> Result<()> {
+
+        pub async fn execute(
+            _leaks: bool,
+            _weak: bool,
+            _duplicate: bool,
+            _all: bool,
+        ) -> Result<()> {
             log::info!("Health command (stub)");
             println!("Health command - to be implemented");
             Ok(())
