@@ -47,6 +47,16 @@ pub struct ClipboardConfig {
     pub max_content_length: usize,
 }
 
+impl Default for ClipboardConfig {
+    fn default() -> Self {
+        Self {
+            timeout_seconds: 30,
+            clear_after_copy: true,
+            max_content_length: 1024,
+        }
+    }
+}
+
 impl Default for OpenKeyringConfig {
     fn default() -> Self {
         Self {
@@ -129,15 +139,34 @@ impl ConfigManager {
     }
 
     pub fn get_master_password(&self) -> Result<String> {
-        // In a real implementation, this would prompt for password or use keychain
-        Ok("master_password".to_string())
+        if let Ok(password) = std::env::var("OK_MASTER_PASSWORD") {
+            if !password.is_empty() {
+                return Ok(password);
+            }
+        }
+
+        use rpassword::read_password;
+        use std::io::Write;
+
+        print!("🔐 Enter master password: ");
+        let _ = std::io::stdout().flush();
+        let password = read_password()
+            .map_err(|e| KeyringError::IoError(format!("Failed to read password: {}", e)))?;
+
+        if password.is_empty() {
+            return Err(KeyringError::AuthenticationFailed {
+                reason: "Master password cannot be empty".to_string(),
+            });
+        }
+
+        Ok(password)
     }
 
     fn load_config(&self) -> Result<OpenKeyringConfig> {
         let content = fs::read_to_string(&self.config_file)
             .map_err(|e| KeyringError::IoError(e.to_string()))?;
         let config: OpenKeyringConfig = serde_yaml::from_str(&content)
-            .map_err(|e| KeyringError::ConfigurationError(e.to_string()))?;
+            .map_err(|e| KeyringError::ConfigurationError { context: e.to_string() })?;
         Ok(config)
     }
 }
@@ -162,7 +191,7 @@ fn get_default_database_path() -> String {
 
 fn save_config(path: &PathBuf, config: &OpenKeyringConfig) -> Result<()> {
     let yaml = serde_yaml::to_string(config)
-        .map_err(|e| KeyringError::ConfigurationError(e.to_string()))?;
+        .map_err(|e| KeyringError::ConfigurationError { context: e.to_string() })?;
     fs::write(path, yaml)
         .map_err(|e| KeyringError::IoError(e.to_string()))?;
     Ok(())

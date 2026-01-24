@@ -40,6 +40,12 @@ impl CryptoManager {
         Ok(())
     }
 
+    /// Initialize directly with a derived key (e.g. DEK)
+    pub fn initialize_with_key(&mut self, key: [u8; 32]) {
+        self.master_key = Some(key.to_vec());
+        self.salt = None;
+    }
+
     /// Get the salt for persistence
     pub fn get_salt(&self) -> Option<[u8; 16]> {
         self.salt
