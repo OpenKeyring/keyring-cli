@@ -1,6 +1,9 @@
-use keyring_cli::clipboard::{ClipboardConfig, ClipboardService, ClipboardManager};
+use keyring_cli::clipboard::ClipboardService;
+use keyring_cli::clipboard::manager::{ClipboardConfig, ClipboardManager};
 use keyring_cli::clipboard::macos::MacOSClipboard;
+#[cfg(target_os = "linux")]
 use keyring_cli::clipboard::linux::LinuxClipboard;
+#[cfg(target_os = "windows")]
 use keyring_cli::clipboard::windows::WindowsClipboard;
 use std::time::Duration;
 
@@ -17,6 +20,7 @@ fn test_macos_clipboard() {
     assert_eq!(clipboard.timeout(), Duration::from_secs(30));
 }
 
+#[cfg(target_os = "windows")]
 #[test]
 fn test_windows_clipboard() {
     let mut clipboard = WindowsClipboard;
@@ -29,6 +33,7 @@ fn test_windows_clipboard() {
     assert_eq!(clipboard.timeout(), Duration::from_secs(30));
 }
 
+#[cfg(target_os = "linux")]
 #[test]
 fn test_linux_clipboard() {
     // This test will pass if xclip is available

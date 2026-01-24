@@ -1,51 +1,50 @@
 //! Database layer with SQLite storage
 
-pub mod lock;
-pub mod models;
 pub mod schema;
+pub mod models;
 pub mod vault;
+pub mod lock;
 
+use crate::error::KeyringError;
+use rusqlite::Connection;
+use std::path::Path;
+
+/// High-level database manager
 pub struct DatabaseManager {
-    // Mock implementation for CLI
+    conn: Option<Connection>,
+    db_path: std::path::PathBuf,
 }
 
 impl DatabaseManager {
-    pub async fn new(_config: &crate::cli::config::DatabaseConfig) -> Result<Self, crate::error::KeyringError> {
-        Ok(Self {})
+    pub fn new<P: AsRef<Path>>(db_path: P) -> Result<Self, KeyringError> {
+        let db_path = db_path.as_ref().to_path_buf();
+        Ok(Self {
+            conn: None,
+            db_path,
+        })
     }
 
-    pub async fn create_record(&mut self, _record: &crate::db::models::Record) -> Result<(), crate::error::KeyringError> {
+    /// Open or create the database
+    pub fn open(&mut self) -> Result<(), KeyringError> {
+        self.conn = Some(schema::initialize_database(&self.db_path)?);
         Ok(())
     }
 
-    pub async fn list_all_records(&mut self, _limit: Option<usize>) -> Result<Vec<crate::db::models::Record>, crate::error::KeyringError> {
-        Ok(vec![])
-    }
-
-    pub async fn list_records_by_type(&mut self, _record_type: crate::db::models::RecordType, _limit: Option<usize>) -> Result<Vec<crate::db::models::Record>, crate::error::KeyringError> {
-        Ok(vec![])
-    }
-
-    pub async fn find_record_by_name(&mut self, _name: &str) -> Result<Option<crate::db::models::Record>, crate::error::KeyringError> {
-        Ok(None)
-    }
-
-    pub async fn update_record(&mut self, _record: &crate::db::models::Record) -> Result<(), crate::error::KeyringError> {
+    /// Close the database connection
+    pub fn close(&mut self) -> Result<(), KeyringError> {
+        self.conn = None;
         Ok(())
     }
 
-    pub async fn delete_record(&mut self, _id: &uuid::Uuid) -> Result<(), crate::error::KeyringError> {
-        Ok(())
+    /// Get the connection for use with vault operations
+    pub fn connection(&self) -> Result<&Connection, KeyringError> {
+        self.conn.as_ref()
+            .ok_or_else(|| KeyringError::Database { context: "Database not open".to_string() })
     }
 
-    pub async fn search_records(&mut self, _query: &str, _record_type: Option<String>, _tags: Vec<String>, _limit: Option<usize>) -> Result<Vec<crate::db::models::Record>, crate::error::KeyringError> {
-        Ok(vec![])
-    }
-
-    pub async fn get_recent_records(&mut self, _count: usize) -> Result<Vec<crate::db::models::Record>, crate::error::KeyringError> {
-        Ok(vec![])
+    /// Get mutable connection for use with vault operations
+    pub fn connection_mut(&mut self) -> Result<&mut Connection, KeyringError> {
+        self.conn.as_mut()
+            .ok_or_else(|| KeyringError::Database { context: "Database not open".to_string() })
     }
 }
-
-pub struct RecordManager;
-pub struct TagManager;

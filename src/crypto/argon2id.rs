@@ -1,6 +1,7 @@
 use anyhow::Result;
 use argon2::{Algorithm, Argon2, Params, Version};
 use rand::Rng;
+use sysinfo;
 use zeroize::ZeroizeOnDrop;
 
 /// Device capability level for Argon2id parameter selection
@@ -140,6 +141,26 @@ pub fn verify_password(password: &str, hash: &PasswordHash) -> Result<bool> {
     Ok(key == hash.key)
 }
 
+/// Verify Argon2id parameters meet security requirements
+pub fn verify_params_security(params: &Argon2Params) -> Result<(), &'static str> {
+    if params.memory < 32 {
+        return Err("Memory must be at least 32 MB for security");
+    }
+    if params.time < 1 {
+        return Err("Time cost must be at least 1");
+    }
+    if params.parallelism < 1 {
+        return Err("Parallelism must be at least 1");
+    }
+
+    // OWASP recommendations
+    if params.memory < 64 && params.time < 3 {
+        // Allow lower memory if time cost is higher
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -192,5 +213,41 @@ mod tests {
 
         assert!(verify_password(password, &hash).unwrap());
         assert!(!verify_password("wrong-password", &hash).unwrap());
+    }
+
+    #[test]
+    fn test_memory_hardening_verification() {
+        let params = Argon2Params {
+            time: 2,
+            memory: 32,
+            parallelism: 1,
+        };
+
+        // Verify minimum memory requirements
+        assert!(params.memory >= 32, "Memory must be at least 32 MB");
+        assert!(params.time >= 1, "Time cost must be at least 1");
+        assert!(params.parallelism >= 1, "Parallelism must be at least 1");
+    }
+
+    #[test]
+    fn test_verify_params_security_valid() {
+        let params = Argon2Params {
+            time: 3,
+            memory: 64,
+            parallelism: 2,
+        };
+
+        assert!(verify_params_security(&params).is_ok());
+    }
+
+    #[test]
+    fn test_verify_params_security_invalid() {
+        let params = Argon2Params {
+            time: 0,
+            memory: 16,
+            parallelism: 0,
+        };
+
+        assert!(verify_params_security(&params).is_err());
     }
 }

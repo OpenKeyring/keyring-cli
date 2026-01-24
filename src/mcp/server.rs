@@ -82,7 +82,7 @@ impl McpServer {
         ServerInfo {
             name: "OpenKeyring MCP Server".to_string(),
             version: "0.1.0".to_string(),
-            protocol_version: crate::mcp::MCP_PROTOCOL_VERSION,
+            protocol_version: crate::mcp::MCP_PROTOCOL_VERSION.to_string(),
             capabilities: vec!["tools".to_string(), "resources".to_string()],
         }
     }
