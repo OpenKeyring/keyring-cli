@@ -221,3 +221,15 @@ fn test_list_records_with_tags() {
     assert!(records[0].tags.contains(&"work".to_string()));
     assert!(records[0].tags.contains(&"important".to_string()));
 }
+
+#[test]
+fn test_list_records_empty() {
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let vault = Vault::open(&db_path, "test-password").unwrap();
+
+    // List records when database is empty
+    let records = vault.list_records().unwrap();
+    assert_eq!(records.len(), 0);
+    assert!(records.is_empty());
+}
