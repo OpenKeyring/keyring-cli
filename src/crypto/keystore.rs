@@ -171,3 +171,12 @@ fn hash_recovery_key(mnemonic: &str) -> String {
     let digest = hasher.finalize();
     STANDARD.encode(digest.as_slice())
 }
+
+/// Verify a recovery key against its hash
+///
+/// This function computes the hash of the provided mnemonic and compares it
+/// with the stored hash to verify the recovery key is correct.
+pub fn verify_recovery_key(mnemonic: &str, stored_hash: &str) -> bool {
+    let computed_hash = hash_recovery_key(mnemonic);
+    computed_hash == stored_hash
+}

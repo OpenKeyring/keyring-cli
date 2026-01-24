@@ -256,3 +256,4 @@ pub use argon2id::{
 };
 pub use aes256gcm::{encrypt, decrypt, encrypt_with_aad, decrypt_with_aad, EncryptedData};
 pub use keywrap::{wrap_key, unwrap_key};
+pub use keystore::verify_recovery_key;
