@@ -21,8 +21,7 @@ impl SyncImporter for JsonSyncImporter {
     }
 
     fn import_from_json(&self, json: &str) -> Result<SyncRecord, KeyringError> {
-        let sync_record: SyncRecord = serde_json::from_str(json)
-            .map_err(|e| KeyringError::SerializationError(e.to_string()))?;
+        let sync_record: SyncRecord = serde_json::from_str(json)?;
 
         Ok(sync_record)
     }

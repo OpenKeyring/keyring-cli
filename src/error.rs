@@ -75,6 +75,21 @@ pub enum Error {
 
     #[error("Record not found: {name}")]
     RecordNotFound { name: String },
+
+    #[error("Command failed: {0}")]
+    CommandFailed(String),
+
+    #[error("IO error: {0}")]
+    IoError(String),
+}
+
+// Convert from uuid::Error for compatibility
+impl From<uuid::Error> for Error {
+    fn from(err: uuid::Error) -> Self {
+        Error::Internal {
+            context: err.to_string(),
+        }
+    }
 }
 
 // Convert from anyhow::Error for compatibility

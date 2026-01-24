@@ -1,8 +1,5 @@
-use crate::error::KeyringError;
-use crate::db::models::Record;
 use crate::sync::export::SyncRecord;
 use std::cmp::Ordering;
-use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConflictResolution {
@@ -14,7 +11,7 @@ pub enum ConflictResolution {
     Interactive,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Conflict {
     pub id: String,
     pub local_record: Option<SyncRecord>,
@@ -59,7 +56,7 @@ impl ConflictResolver for DefaultConflictResolver {
                     conflicts.push(Conflict::new(
                         local.id.clone(),
                         Some(local.clone()),
-                        Some(remote.clone()),
+                        Some((*remote).clone()),
                     ));
                 }
             }
@@ -70,10 +67,10 @@ impl ConflictResolver for DefaultConflictResolver {
 
     fn resolve_conflicts(&self, conflicts: &[Conflict], resolution: ConflictResolution) -> Vec<Conflict> {
         conflicts.iter()
-            .map(|c| {
-                let mut resolved = c.clone();
-                resolved.resolution = Some(resolution.clone());
-                resolved
+            .cloned()
+            .map(|mut c| {
+                c.resolution = Some(resolution.clone());
+                c
             })
             .collect()
     }
@@ -89,7 +86,7 @@ impl DefaultConflictResolver {
         local.updated_at != remote.updated_at
     }
 
-    fn get_newer_record(&self, local: &SyncRecord, remote: &SyncRecord) -> &SyncRecord {
+    fn get_newer_record<'a>(&self, local: &'a SyncRecord, remote: &'a SyncRecord) -> &'a SyncRecord {
         match local.updated_at.cmp(&remote.updated_at) {
             Ordering::Greater | Ordering::Equal => local,
             Ordering::Less => remote,

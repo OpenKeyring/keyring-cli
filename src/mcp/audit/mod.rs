@@ -17,6 +17,7 @@ pub struct AuditEvent {
     pub execution_time_ms: Option<u64>,
 }
 
+#[derive(Debug)]
 pub struct AuditLogger {
     log_file_path: String,
     enabled: bool,

@@ -21,15 +21,16 @@ fn test_schema_init() {
 #[test]
 fn test_record_model() {
     let record = models::Record {
-        id: "test-id".to_string(),
+        id: uuid::Uuid::new_v4(),
         record_type: models::RecordType::Password,
-        encrypted_data: vec![1, 2, 3],
-        nonce: vec![4, 5, 6],
-        created_at: 12345,
-        updated_at: 12345,
-        updated_by: "test-device".to_string(),
-        version: 1,
-        deleted: false,
+        encrypted_data: "encrypted-data".to_string(),
+        name: "test-record".to_string(),
+        username: None,
+        url: None,
+        notes: None,
+        tags: vec![],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
     };
-    assert_eq!(record.id, "test-id");
+    assert_eq!(record.name, "test-record");
 }

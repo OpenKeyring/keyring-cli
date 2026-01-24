@@ -2,9 +2,8 @@ use crate::error::KeyringError;
 use crate::mcp::AuditLogger;
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
-use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolDefinition {
     pub name: String,
     pub description: String,
@@ -13,21 +12,21 @@ pub struct ToolDefinition {
     pub permissions: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolInputSchema {
     pub type_: String,
     pub properties: HashMap<String, SchemaProperty>,
     pub required: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SchemaProperty {
     pub type_: String,
     pub description: Option<String>,
     pub enum_: Option<Vec<String>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolOutputSchema {
     pub type_: String,
 }
@@ -62,7 +61,7 @@ impl McpToolRegistry {
     pub fn register_tool(&mut self, tool: ToolDefinition) -> Result<(), KeyringError> {
         // Validate tool definition
         if self.tools.contains_key(&tool.name) {
-            return Err(KeyringError::ToolExists(tool.name));
+            return Err(KeyringError::ToolExists { tool_name: tool.name });
         }
 
         self.tools.insert(tool.name.clone(), tool.clone());
@@ -145,10 +144,10 @@ impl ToolExecutor {
     ) -> Result<serde_json::Value, KeyringError> {
         // Get tool definition
         let tool = self.registry.get_tool(tool_name)
-            .ok_or_else(|| KeyringError::ToolNotFound(tool_name.to_string()))?;
+            .ok_or_else(|| KeyringError::ToolNotFound { tool_name: tool_name.to_string() })?;
 
         // Log tool execution
-        self.registry.audit_logger.log_tool_execution(tool_name, client_id, &arguments)?;
+        self.registry.audit_logger.log_tool_execution(tool_name, client_id, &arguments, None, true)?;
 
         // Execute the tool (mock implementation for now)
         match tool_name {
@@ -159,7 +158,7 @@ impl ToolExecutor {
                 self.execute_list_records()
             }
             _ => {
-                Err(KeyringError::ToolNotFound(tool_name.to_string()))
+                Err(KeyringError::ToolNotFound { tool_name: tool_name.to_string() })
             }
         }
     }

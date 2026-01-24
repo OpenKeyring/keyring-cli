@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthToken {
     pub token: String,
     pub client_id: String,
@@ -48,7 +48,7 @@ impl AuthManager {
             client_id: client_id.clone(),
             issued_at,
             expires_at,
-            permissions,
+            permissions: permissions.clone(),
         };
 
         self.tokens.insert(token.clone(), auth_token.clone());
@@ -58,14 +58,14 @@ impl AuthManager {
     }
 
     pub fn validate_token(&mut self, token: &str) -> Result<AuthToken, KeyringError> {
-        if let Some(auth_token) = self.tokens.get(token) {
+        if let Some(auth_token) = self.tokens.get(token).cloned() {
             if auth_token.expires_at > Utc::now() {
                 self.update_client_activity(&auth_token.client_id)?;
-                return Ok(auth_token.clone());
+                return Ok(auth_token);
             }
         }
 
-        Err(KeyringError::Unauthorized("Invalid or expired token".to_string()))
+        Err(KeyringError::Unauthorized { reason: "Invalid or expired token".to_string() })
     }
 
     pub fn revoke_token(&mut self, token: &str) -> Result<(), KeyringError> {
@@ -106,7 +106,7 @@ impl AuthManager {
             session.last_activity = Utc::now();
             Ok(())
         } else {
-            Err(KeyringError::Unauthorized("Client not found".to_string()))
+            Err(KeyringError::Unauthorized { reason: "Client not found".to_string() })
         }
     }
 }

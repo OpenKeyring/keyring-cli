@@ -1,6 +1,13 @@
 use crate::error::KeyringError;
 use std::time::Duration;
 
+#[cfg(target_os = "macos")]
+use crate::clipboard::macos::MacOSClipboard;
+#[cfg(target_os = "linux")]
+use crate::clipboard::linux::LinuxClipboard;
+#[cfg(target_os = "windows")]
+use crate::clipboard::windows::WindowsClipboard;
+
 pub struct ClipboardConfig {
     pub timeout_seconds: u64,
     pub clear_after_copy: bool,
@@ -36,12 +43,59 @@ impl<T: ClipboardManager> ClipboardService<T> {
     }
 }
 
-pub fn create_platform_clipboard() -> Result<Box<dyn ClipboardManager>, KeyringError> {
-    match std::env::consts::OS {
-        "macos" => Ok(Box::new(macos::MacOSClipboard)),
-        "linux" => Ok(Box::new(linux::LinuxClipboard)),
-        "windows" => Ok(Box::new(windows::WindowsClipboard)),
-        _ => Err(KeyringError::UnsupportedPlatform),
+
+// Wrapper for Box<dyn ClipboardManager>
+pub struct BoxClipboardManager {
+    inner: Box<dyn ClipboardManager>,
+}
+
+impl ClipboardManager for BoxClipboardManager {
+    fn set_content(&mut self, content: &str) -> Result<(), KeyringError> {
+        self.inner.set_content(content)
+    }
+
+    fn get_content(&mut self) -> Result<String, KeyringError> {
+        self.inner.get_content()
+    }
+
+    fn clear(&mut self) -> Result<(), KeyringError> {
+        self.inner.clear()
+    }
+
+    fn is_supported(&self) -> bool {
+        self.inner.is_supported()
+    }
+
+    fn timeout(&self) -> Duration {
+        self.inner.timeout()
+    }
+}
+
+impl From<Box<dyn ClipboardManager>> for BoxClipboardManager {
+    fn from(inner: Box<dyn ClipboardManager>) -> Self {
+        Self { inner }
+    }
+}
+
+pub fn create_platform_clipboard() -> Result<BoxClipboardManager, KeyringError> {
+    #[cfg(target_os = "macos")]
+    {
+        let clipboard: Box<dyn ClipboardManager> = Box::new(MacOSClipboard);
+        Ok(BoxClipboardManager::from(clipboard))
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let clipboard: Box<dyn ClipboardManager> = Box::new(LinuxClipboard);
+        Ok(BoxClipboardManager::from(clipboard))
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let clipboard: Box<dyn ClipboardManager> = Box::new(WindowsClipboard);
+        Ok(BoxClipboardManager::from(clipboard))
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+    {
+        Err(KeyringError::UnsupportedPlatform)
     }
 }
 
@@ -52,14 +106,17 @@ impl<T: ClipboardManager> ClipboardService<T> {
         }
 
         if password.len() > self.config.max_content_length {
-            return Err(KeyringError::ContentTooLong(self.config.max_content_length));
+            return Err(KeyringError::InvalidInput {
+                context: format!("Content exceeds maximum length of {}", self.config.max_content_length),
+            });
         }
 
         self.manager.set_content(password)?;
 
         if self.config.clear_after_copy {
+            let timeout = self.manager.timeout();
             std::thread::spawn(move || {
-                std::thread::sleep(self.manager.timeout());
+                std::thread::sleep(timeout);
                 // In a real implementation, this would clear the clipboard
                 println!("Clipboard cleared after timeout");
             });

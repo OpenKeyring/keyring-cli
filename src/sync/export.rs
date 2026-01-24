@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 use std::fs;
 use std::path::Path;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SyncRecord {
     pub id: String,
     pub record_type: RecordType,
@@ -14,7 +14,7 @@ pub struct SyncRecord {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecordMetadata {
     pub name: String,
     pub tags: Vec<String>,
@@ -57,8 +57,7 @@ impl SyncExporter for JsonSyncExporter {
     }
 
     fn write_to_file(&self, record: &SyncRecord, path: &Path) -> Result<(), KeyringError> {
-        let json = serde_json::to_string_pretty(record)
-            .map_err(|e| KeyringError::SerializationError(e.to_string()))?;
+        let json = serde_json::to_string_pretty(record)?;
 
         fs::write(path, json)
             .map_err(|e| KeyringError::IoError(e.to_string()))?;
