@@ -1,5 +1,2 @@
-//! Cryptography module for OpenKeyring.
-
-pub mod key;
-pub mod encryption;
-pub mod derivation;
+//! Cryptographic operations
+//! This module will be implemented in Task 2

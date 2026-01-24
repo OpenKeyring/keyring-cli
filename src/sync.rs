@@ -1,4 +1,2 @@
-//! Synchronization module for cross-device sync.
-
-pub mod cloud;
-pub mod conflict;
+//! Synchronization operations
+//! This module will be implemented in Task 6
