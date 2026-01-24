@@ -7,11 +7,12 @@
 
 use clap::Parser;
 use crate::cli::ConfigManager;
-use crate::crypto::CryptoManager;
+use crate::crypto::{CryptoManager, keystore::KeyStore, record::{RecordPayload, encrypt_payload}};
 use crate::error::{KeyringError, Result};
 use crate::db::vault::Vault;
-use crate::db::models::{Record, RecordType};
-use crate::clipboard::{ClipboardService, create_clipboard, ClipboardConfig};
+use crate::db::models::{RecordType, StoredRecord};
+use crate::clipboard::{ClipboardService, ClipboardConfig, create_platform_clipboard};
+use crate::onboarding::is_initialized;
 use std::path::PathBuf;
 use rand::Rng;
 use rand::seq::SliceRandom;
@@ -276,10 +277,20 @@ pub async fn execute(args: GenerateArgs) -> Result<()> {
     // Initialize configuration
     let config = ConfigManager::new()?;
 
-    // Initialize crypto manager with master password
-    let master_password = prompt_for_master_password()?;
+    // Initialize keystore and crypto manager with DEK
+    let master_password = config.get_master_password()?;
+    let keystore_path = config.get_keystore_path();
+    let keystore = if is_initialized(&keystore_path) {
+        KeyStore::unlock(&keystore_path, &master_password)?
+    } else {
+        let keystore = KeyStore::initialize(&keystore_path, &master_password)?;
+        if let Some(recovery_key) = &keystore.recovery_key {
+            println!("🔑 Recovery Key (save securely): {}", recovery_key);
+        }
+        keystore
+    };
     let mut crypto = CryptoManager::new();
-    crypto.initialize(&master_password)?;
+    crypto.initialize_with_key(keystore.dek);
 
     // Generate password based on type
     let password_type = args.get_password_type()?;
@@ -289,19 +300,25 @@ pub async fn execute(args: GenerateArgs) -> Result<()> {
         PasswordType::Pin => generate_pin(args.length)?,
     };
 
-    // Encrypt the password
-    let encrypted_data = crypto.encrypt(password.as_bytes())?;
-    let encrypted_string = base64::encode(&encrypted_data.0);
-
-    // Create record
-    let record = Record {
-        id: uuid::Uuid::new_v4(),
-        record_type: RecordType::Password,
-        encrypted_data: encrypted_string,
+    let payload = RecordPayload {
         name: args.name.clone(),
         username: args.username.clone(),
+        password: password.clone(),
         url: args.url.clone(),
-        notes: args.notes.clone().or(Some(get_password_description(password_type))),
+        notes: args
+            .notes
+            .clone()
+            .or(Some(get_password_description(password_type))),
+        tags: args.tags.clone(),
+    };
+    let (encrypted_data, nonce) = encrypt_payload(&crypto, &payload)?;
+
+    // Create record
+    let record = StoredRecord {
+        id: uuid::Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data,
+        nonce,
         tags: args.tags.clone(),
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -365,9 +382,8 @@ fn get_password_description(password_type: PasswordType) -> String {
 
 /// Copy password to clipboard securely
 fn copy_to_clipboard(password: &str) -> Result<()> {
-    let clipboard_manager = create_clipboard()?;
-    let clipboard_config = ClipboardConfig::default();
-    let mut clipboard = ClipboardService::new(clipboard_manager, clipboard_config);
+    let clipboard_manager = create_platform_clipboard()?;
+    let mut clipboard = ClipboardService::new(clipboard_manager, ClipboardConfig::default());
 
     clipboard.copy_password(password)?;
     Ok(())
