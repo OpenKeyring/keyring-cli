@@ -1,6 +1,7 @@
 use anyhow::Result;
 use argon2::{Algorithm, Argon2, Params, Version};
 use rand::Rng;
+use zeroize::ZeroizeOnDrop;
 
 /// Device capability level for Argon2id parameter selection
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -116,6 +117,29 @@ pub fn generate_salt() -> [u8; 16] {
     rand::thread_rng().gen()
 }
 
+/// Stored password hash with salt and parameters
+#[derive(Debug, Clone)]
+pub struct PasswordHash {
+    pub salt: [u8; 16],
+    pub key: Vec<u8>,
+    pub params: Argon2Params,
+}
+
+/// Hash a password and return the complete hash structure
+pub fn hash_password(password: &str) -> Result<PasswordHash> {
+    let salt = generate_salt();
+    let params = Argon2Params::default();
+    let key = derive_key_with_params(password, &salt, params)?;
+
+    Ok(PasswordHash { salt, key, params })
+}
+
+/// Verify a password against a stored hash
+pub fn verify_password(password: &str, hash: &PasswordHash) -> Result<bool> {
+    let key = derive_key_with_params(password, &hash.salt, hash.params)?;
+    Ok(key == hash.key)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,5 +173,24 @@ mod tests {
 
         let key = derive_key_with_params(password, &salt, params).unwrap();
         assert_eq!(key.len(), 32);
+    }
+
+    #[test]
+    fn test_password_hash_structure() {
+        let password = "secure-password-123";
+        let hash = hash_password(password).unwrap();
+
+        assert_eq!(hash.salt.len(), 16);
+        assert_eq!(hash.key.len(), 32);
+        assert!(hash.params.memory >= 32);
+    }
+
+    #[test]
+    fn test_verify_password() {
+        let password = "my-secure-password";
+        let hash = hash_password(password).unwrap();
+
+        assert!(verify_password(password, &hash).unwrap());
+        assert!(!verify_password("wrong-password", &hash).unwrap());
     }
 }
