@@ -114,6 +114,9 @@ venv/
 tmp/
 temp/
 
+# Worktrees
+.worktree/
+
 # OpenKeyring specific
 passwords.db
 keys/
