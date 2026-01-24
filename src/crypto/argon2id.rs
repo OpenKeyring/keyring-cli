@@ -90,6 +90,27 @@ pub fn derive_key(password: &str, salt: &[u8; 16]) -> Result<Vec<u8>> {
     Ok(key.to_vec())
 }
 
+/// Derive a 256-bit key using custom Argon2id parameters
+pub fn derive_key_with_params(
+    password: &str,
+    salt: &[u8; 16],
+    params: Argon2Params,
+) -> Result<Vec<u8>> {
+    let argon2 = Argon2::new(
+        Algorithm::Argon2id,
+        Version::V0x13,
+        Params::new(params.memory * 1024, params.time, params.parallelism, None)
+            .map_err(|e| anyhow::anyhow!("Invalid Argon2 params: {}", e))?,
+    );
+
+    let mut key = [0u8; 32];
+    argon2
+        .hash_password_into(password.as_bytes(), salt, &mut key)
+        .map_err(|e| anyhow::anyhow!("Argon2 hashing failed: {}", e))?;
+
+    Ok(key.to_vec())
+}
+
 /// Generate a random 16-byte salt
 pub fn generate_salt() -> [u8; 16] {
     rand::thread_rng().gen()
@@ -114,5 +135,19 @@ mod tests {
         let key1 = derive_key("password1", &salt).unwrap();
         let key2 = derive_key("password2", &salt).unwrap();
         assert_ne!(key1, key2);
+    }
+
+    #[test]
+    fn test_derive_key_with_custom_params() {
+        let password = "test-password";
+        let salt = generate_salt();
+        let params = Argon2Params {
+            time: 1,
+            memory: 16,
+            parallelism: 1,
+        };
+
+        let key = derive_key_with_params(password, &salt, params).unwrap();
+        assert_eq!(key.len(), 32);
     }
 }
