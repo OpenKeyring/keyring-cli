@@ -4,6 +4,7 @@
 
 pub mod commands;
 pub mod config;
+pub mod onboarding;
 pub mod utils;
 
 pub use commands::{generate, list, show, update, delete, search, sync, health};

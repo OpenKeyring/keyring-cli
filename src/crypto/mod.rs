@@ -4,6 +4,7 @@ pub mod argon2id;
 pub mod aes256gcm;
 pub mod keywrap;
 pub mod bip39;
+pub mod keystore;
 
 use crate::error::KeyringError;
 use anyhow::Result;
