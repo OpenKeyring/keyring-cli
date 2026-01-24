@@ -12,6 +12,17 @@ pub enum RecordType {
 }
 
 impl RecordType {
+    /// Convert RecordType to database string representation (snake_case)
+    pub fn to_db_string(self) -> &'static str {
+        match self {
+            RecordType::Password => "password",
+            RecordType::SshKey => "ssh_key",
+            RecordType::ApiCredential => "api_credential",
+            RecordType::Mnemonic => "mnemonic",
+            RecordType::PrivateKey => "private_key",
+        }
+    }
+
     pub fn from(s: String) -> Self {
         match s.as_str() {
             "password" => RecordType::Password,

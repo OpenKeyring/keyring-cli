@@ -8,7 +8,8 @@ use super::models::Record;
 
 /// Vault for managing encrypted password records
 pub struct Vault {
-    conn: Connection,
+    /// Database connection (public for testing purposes)
+    pub conn: Connection,
 }
 
 impl Vault {
@@ -31,33 +32,61 @@ impl Vault {
     }
 
     /// Add a new record with tag support
+    ///
+    /// This method wraps the entire operation in a transaction for atomicity.
+    /// If any part fails, all changes are rolled back.
+    ///
+    /// # Note on Nonce Field
+    /// The nonce field is currently set to an empty string as a placeholder.
+    /// This will be addressed when the crypto module is integrated, as the actual
+    /// nonce should come from the AES-256-GCM encryption process that happens
+    /// before calling this method.
+    ///
+    /// # Note on Device ID
+    /// The `updated_by` field is currently set to "local" as a placeholder.
+    /// In a future update, this should be replaced with the actual device ID
+    /// from the device identification system.
     pub fn add_record(&mut self, record: &Record) -> Result<()> {
-        self.conn.execute(
+        // Start transaction for atomicity
+        let tx = self.conn.unchecked_transaction()?;
+
+        // Insert record
+        let record_type_str = record.record_type.to_db_string();
+        let rows_affected = tx.execute(
             "INSERT INTO records (id, record_type, encrypted_data, nonce, created_at, updated_at, updated_by, version, deleted)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             (
                 record.id.to_string(),
-                format!("{:?}", record.record_type).to_lowercase(),
+                record_type_str,
                 &record.encrypted_data,
-                "",  // nonce placeholder - will be used with crypto module
+                "",  // nonce placeholder - see function docs
                 record.created_at.timestamp(),
                 record.updated_at.timestamp(),
-                "local",  // updated_by device
+                "local",  // updated_by device placeholder - see function docs
                 1,  // version
-                0,  // deleted
+                0,  // deleted (active record)
             ),
         )?;
 
+        // Verify record was inserted
+        if rows_affected != 1 {
+            return Err(anyhow::anyhow!("Failed to insert record: expected 1 row affected, got {}", rows_affected));
+        }
+
+        // Deduplicate tags before processing
+        let unique_tags: std::collections::HashSet<_> = record.tags.iter().collect();
+        let record_id_str = record.id.to_string(); // Move outside loop to avoid repeated allocation
+
         // Insert tags
-        for tag_name in &record.tags {
+        for tag_name in unique_tags {
             // Insert or get tag ID
-            let tag_id: i64 = self.conn.query_row(
+            let tag_id: i64 = tx.query_row(
                 "INSERT OR IGNORE INTO tags (name) VALUES (?1)
              RETURNING id",
                 &[tag_name],
                 |row| row.get(0),
             ).or_else(|_| {
-                self.conn.query_row(
+                tx.query_row(
                     "SELECT id FROM tags WHERE name = ?1",
                     &[tag_name],
                     |row| row.get(0),
@@ -65,11 +94,14 @@ impl Vault {
             })?;
 
             // Link record to tag
-            self.conn.execute(
+            tx.execute(
                 "INSERT OR IGNORE INTO record_tags (record_id, tag_id) VALUES (?1, ?2)",
-                (&record.id.to_string(), tag_id),
+                (&record_id_str, tag_id),
             )?;
         }
+
+        // Commit transaction
+        tx.commit()?;
 
         Ok(())
     }
