@@ -5,6 +5,7 @@ pub mod aes256gcm;
 pub mod keywrap;
 pub mod bip39;
 pub mod keystore;
+pub mod record;
 
 use crate::error::KeyringError;
 use anyhow::Result;

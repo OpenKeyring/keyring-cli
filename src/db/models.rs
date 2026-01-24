@@ -35,20 +35,33 @@ impl RecordType {
     }
 }
 
-/// Database record model
+/// Stored record model (encrypted payload)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Record {
+pub struct StoredRecord {
     pub id: uuid::Uuid,
     pub record_type: RecordType,
-    pub encrypted_data: String,
+    pub encrypted_data: Vec<u8>,
+    pub nonce: [u8; 12],
+    pub tags: Vec<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Decrypted record model
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DecryptedRecord {
+    pub id: uuid::Uuid,
+    pub record_type: RecordType,
     pub name: String,
     pub username: Option<String>,
+    pub password: String,
     pub url: Option<String>,
     pub notes: Option<String>,
     pub tags: Vec<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
+
 
 /// Tag model
 #[derive(Debug, Clone)]

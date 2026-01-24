@@ -1,13 +1,14 @@
 use crate::error::KeyringError;
-use crate::db::models::Record;
+use crate::db::models::StoredRecord;
 use crate::sync::export::SyncRecord;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::fs;
 use std::path::Path;
 
 pub trait SyncImporter {
     fn import_from_file(&self, path: &Path) -> Result<SyncRecord, KeyringError>;
     fn import_from_json(&self, json: &str) -> Result<SyncRecord, KeyringError>;
-    fn sync_record_to_db(&self, sync_record: SyncRecord) -> Result<Record, KeyringError>;
+    fn sync_record_to_db(&self, sync_record: SyncRecord) -> Result<StoredRecord, KeyringError>;
 }
 
 pub struct JsonSyncImporter;
@@ -26,16 +27,23 @@ impl SyncImporter for JsonSyncImporter {
         Ok(sync_record)
     }
 
-    fn sync_record_to_db(&self, sync_record: SyncRecord) -> Result<Record, KeyringError> {
+    fn sync_record_to_db(&self, sync_record: SyncRecord) -> Result<StoredRecord, KeyringError> {
         // In a real implementation, this would convert sync record to database record
-        Ok(Record {
+        let encrypted_data = STANDARD.decode(sync_record.encrypted_data)
+            .map_err(|e| KeyringError::Crypto {
+                context: format!("Invalid encrypted_data encoding: {}", e),
+            })?;
+        let nonce_bytes = STANDARD.decode(sync_record.nonce)
+            .map_err(|e| KeyringError::Crypto {
+                context: format!("Invalid nonce encoding: {}", e),
+            })?;
+        let nonce = decode_nonce(&nonce_bytes)?;
+
+        Ok(StoredRecord {
             id: uuid::Uuid::parse_str(&sync_record.id)?,
             record_type: sync_record.record_type,
-            encrypted_data: sync_record.encrypted_data,
-            name: sync_record.metadata.name,
-            username: None,
-            url: None,
-            notes: None,
+            encrypted_data,
+            nonce,
             tags: sync_record.metadata.tags,
             created_at: sync_record.created_at,
             updated_at: sync_record.updated_at,
@@ -54,7 +62,7 @@ impl SyncImporterService {
         }
     }
 
-    pub fn import_records_from_dir(&self, dir: &Path) -> Result<Vec<Record>, KeyringError> {
+    pub fn import_records_from_dir(&self, dir: &Path) -> Result<Vec<StoredRecord>, KeyringError> {
         let mut records = Vec::new();
 
         if dir.exists() {
@@ -72,4 +80,15 @@ impl SyncImporterService {
 
         Ok(records)
     }
+}
+
+fn decode_nonce(bytes: &[u8]) -> Result<[u8; 12], KeyringError> {
+    if bytes.len() != 12 {
+        return Err(KeyringError::Crypto {
+            context: format!("Invalid nonce length: {}", bytes.len()),
+        });
+    }
+    let mut nonce = [0u8; 12];
+    nonce.copy_from_slice(bytes);
+    Ok(nonce)
 }

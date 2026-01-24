@@ -1,5 +1,6 @@
 use crate::error::KeyringError;
-use crate::db::models::{Record, RecordType};
+use crate::db::models::{RecordType, StoredRecord};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use serde::{Serialize, Deserialize};
 use std::fs;
 use std::path::Path;
@@ -9,6 +10,7 @@ pub struct SyncRecord {
     pub id: String,
     pub record_type: RecordType,
     pub encrypted_data: String,
+    pub nonce: String,
     pub metadata: RecordMetadata,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -23,21 +25,22 @@ pub struct RecordMetadata {
 }
 
 pub trait SyncExporter {
-    fn export_record(&self, record: &Record) -> Result<SyncRecord, KeyringError>;
-    fn export_multiple(&self, records: &[Record]) -> Result<Vec<SyncRecord>, KeyringError>;
+    fn export_record(&self, record: &StoredRecord) -> Result<SyncRecord, KeyringError>;
+    fn export_multiple(&self, records: &[StoredRecord]) -> Result<Vec<SyncRecord>, KeyringError>;
     fn write_to_file(&self, record: &SyncRecord, path: &Path) -> Result<(), KeyringError>;
 }
 
 pub struct JsonSyncExporter;
 
 impl SyncExporter for JsonSyncExporter {
-    fn export_record(&self, record: &Record) -> Result<SyncRecord, KeyringError> {
+    fn export_record(&self, record: &StoredRecord) -> Result<SyncRecord, KeyringError> {
         let sync_record = SyncRecord {
             id: record.id.to_string(),
             record_type: record.record_type.clone(),
-            encrypted_data: record.encrypted_data.clone(),
+            encrypted_data: STANDARD.encode(&record.encrypted_data),
+            nonce: STANDARD.encode(record.nonce),
             metadata: RecordMetadata {
-                name: record.name.clone(),
+                name: String::new(),
                 tags: record.tags.clone(),
                 platform: std::env::consts::OS.to_string(),
                 device_id: self.get_device_id()?,
@@ -49,7 +52,7 @@ impl SyncExporter for JsonSyncExporter {
         Ok(sync_record)
     }
 
-    fn export_multiple(&self, records: &[Record]) -> Result<Vec<SyncRecord>, KeyringError> {
+    fn export_multiple(&self, records: &[StoredRecord]) -> Result<Vec<SyncRecord>, KeyringError> {
         records
             .iter()
             .map(|record| self.export_record(record))
