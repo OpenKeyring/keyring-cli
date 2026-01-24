@@ -1,4 +1,5 @@
 use tempfile::TempDir;
+use std::path::Path;
 use keyring_cli::db::vault::Vault;
 use keyring_cli::db::models::{StoredRecord, RecordType};
 use keyring_cli::sync::export::{SyncExporter, JsonSyncExporter};
