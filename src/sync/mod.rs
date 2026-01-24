@@ -1,10 +1,12 @@
 pub mod export;
 pub mod import;
 pub mod conflict;
+pub mod service;
 
 pub use export::SyncExporter;
 pub use import::SyncImporter;
 pub use conflict::{ConflictResolution, ConflictResolver};
+pub use service::{SyncService, SyncStats, SyncStatusInfo};
 
 pub enum SyncStatus {
     Idle,

@@ -5,7 +5,7 @@ use rusqlite::Connection;
 use std::path::Path;
 use uuid::Uuid;
 
-use super::models::{RecordType, StoredRecord};
+use super::models::{RecordType, StoredRecord, SyncStatus, SyncState};
 
 /// Vault for managing encrypted password records
 pub struct Vault {
@@ -212,6 +212,9 @@ impl Vault {
         // Commit transaction
         tx.commit()?;
 
+        // Mark record as pending sync
+        self.mark_record_pending(&record.id.to_string())?;
+
         Ok(())
     }
 
@@ -302,6 +305,9 @@ impl Vault {
         // Commit transaction
         tx.commit()?;
 
+        // Mark record as pending sync
+        self.mark_record_pending(&record.id.to_string())?;
+
         Ok(())
     }
 
@@ -309,6 +315,55 @@ impl Vault {
     pub fn delete_record(&mut self, _id: &str) -> Result<()> {
         // TODO: Implement soft delete
         anyhow::bail!("Vault::delete_record not yet implemented")
+    }
+
+    /// Get sync state for a record
+    pub fn get_sync_state(&self, record_id: &str) -> Result<Option<SyncState>> {
+        let result = self.conn.query_row(
+            "SELECT cloud_updated_at, sync_status FROM sync_state WHERE record_id = ?1",
+            [record_id],
+            |row| {
+                let cloud_updated_at: Option<i64> = row.get(0)?;
+                let sync_status_int: i32 = row.get(1)?;
+                let sync_status = match sync_status_int {
+                    0 => SyncStatus::Pending,
+                    1 => SyncStatus::Synced,
+                    2 => SyncStatus::Conflict,
+                    _ => SyncStatus::Pending,
+                };
+                Ok(SyncState {
+                    record_id: record_id.to_string(),
+                    cloud_updated_at,
+                    sync_status,
+                })
+            },
+        );
+
+        match result {
+            Ok(state) => Ok(Some(state)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    /// Set sync state for a record
+    pub fn set_sync_state(
+        &mut self,
+        record_id: &str,
+        cloud_updated_at: Option<i64>,
+        sync_status: SyncStatus,
+    ) -> Result<()> {
+        let sync_status_int = sync_status as i32;
+        self.conn.execute(
+            "INSERT OR REPLACE INTO sync_state (record_id, cloud_updated_at, sync_status) VALUES (?1, ?2, ?3)",
+            (record_id, cloud_updated_at, sync_status_int),
+        )?;
+        Ok(())
+    }
+
+    /// Mark record as pending sync (when record is updated)
+    pub fn mark_record_pending(&mut self, record_id: &str) -> Result<()> {
+        self.set_sync_state(record_id, None, SyncStatus::Pending)
     }
 
     /// Search records by pattern matching
