@@ -1,1 +1,2 @@
-//! Clipboard operations for different platforms.
+//! Clipboard operations
+//! This module will be implemented in Task 5

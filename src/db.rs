@@ -1,5 +1,2 @@
-//! Database module for OpenKeyring.
-
-pub mod models;
-pub mod schema;
-pub mod connection;
+//! Database operations
+//! This module will be implemented in Task 3

@@ -1,1 +1,0 @@
-//! Key management for OpenKeyring.
