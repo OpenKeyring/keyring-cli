@@ -21,11 +21,19 @@ impl Vault {
     }
 
     /// List all non-deleted records with tags
+    ///
+    /// Uses a single query with LEFT JOIN and GROUP_CONCAT to avoid N+1 query pattern.
+    /// TODO: Decode encrypted data fields when crypto module is integrated
     pub fn list_records(&self) -> Result<Vec<Record>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, record_type, encrypted_data, created_at, updated_at
-         FROM records WHERE deleted = 0
-         ORDER BY updated_at DESC"
+            "SELECT r.id, r.record_type, r.encrypted_data, r.created_at, r.updated_at,
+                GROUP_CONCAT(t.name, ',') as tag_names
+         FROM records r
+         LEFT JOIN record_tags rt ON r.id = rt.record_id
+         LEFT JOIN tags t ON rt.tag_id = t.id
+         WHERE r.deleted = 0
+         GROUP BY r.id
+         ORDER BY r.updated_at DESC"
         )?;
 
         let record_iter = stmt.query_map([], |row| {
@@ -34,9 +42,14 @@ impl Vault {
             let encrypted_data: String = row.get(2)?;
             let created_ts: i64 = row.get(3)?;
             let updated_ts: i64 = row.get(4)?;
+            let tags_csv: Option<String> = row.get(5)?;
 
             let uuid = Uuid::parse_str(&id_str)
                 .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+
+            let tags = tags_csv
+                .map(|csv| csv.split(',').filter(|s| !s.is_empty()).map(String::from).collect())
+                .unwrap_or_default();
 
             Ok((
                 uuid,
@@ -44,32 +57,22 @@ impl Vault {
                 encrypted_data,
                 created_ts,
                 updated_ts,
+                tags,
             ))
         })?;
 
         let mut records = Vec::new();
         for record in record_iter {
-            let (uuid, record_type_str, encrypted_data, created_ts, updated_ts) = record?;
-
-            // Load tags for this record
-            let tags: Vec<String> = self
-                .conn
-                .prepare(
-                    "SELECT t.name FROM tags t
-             JOIN record_tags rt ON t.id = rt.tag_id
-             WHERE rt.record_id = ?1",
-                )?
-                .query_map([&uuid.to_string()], |row| row.get(0))?
-                .collect::<Result<Vec<_>, _>>()?;
+            let (uuid, record_type_str, encrypted_data, created_ts, updated_ts, tags) = record?;
 
             records.push(Record {
                 id: uuid,
                 record_type: RecordType::from(record_type_str),
                 encrypted_data,
-                name: String::new(),
-                username: None,
-                url: None,
-                notes: None,
+                name: String::new(), // TODO: Decode from encrypted_data
+                username: None,      // TODO: Decode from encrypted_data
+                url: None,           // TODO: Decode from encrypted_data
+                notes: None,         // TODO: Decode from encrypted_data
                 tags,
                 created_at: chrono::DateTime::from_timestamp(created_ts, 0)
                     .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
