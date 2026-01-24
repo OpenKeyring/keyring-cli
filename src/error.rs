@@ -7,6 +7,9 @@ use thiserror::Error;
 /// Result type alias for convenience
 pub type Result<T> = std::result::Result<T, Error>;
 
+/// Keyring error alias for backward compatibility
+pub type KeyringError = Error;
+
 /// OpenKeyring error types
 #[derive(Error, Debug)]
 pub enum Error {
@@ -45,6 +48,33 @@ pub enum Error {
 
     #[error("MCP error: {context}")]
     Mcp { context: String },
+
+    #[error("Unsupported platform")]
+    UnsupportedPlatform,
+
+    #[error("Clipboard not supported")]
+    ClipboardNotSupported,
+
+    #[error("Content too long: {max_length}")]
+    ContentTooLong { max_length: usize },
+
+    #[error("Tool not found: {tool_name}")]
+    ToolNotFound { tool_name: String },
+
+    #[error("Tool already exists: {tool_name}")]
+    ToolExists { tool_name: String },
+
+    #[error("Configuration error: {context}")]
+    ConfigurationError { context: String },
+
+    #[error("Tool timeout: {context}")]
+    ToolTimeout { context: String },
+
+    #[error("Unauthorized: {reason}")]
+    Unauthorized { reason: String },
+
+    #[error("Record not found: {name}")]
+    RecordNotFound { name: String },
 }
 
 // Convert from anyhow::Error for compatibility
