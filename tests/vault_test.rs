@@ -125,3 +125,32 @@ fn test_add_record_with_duplicate_tags() {
     ).unwrap();
     assert_eq!(tag_count, 2, "Duplicate tags should be deduplicated to 2 unique tags");
 }
+
+#[test]
+fn test_get_record() {
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let mut vault = Vault::open(&db_path, "test-password").unwrap();
+
+    let record = Record {
+        id: Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data: "encrypted-data".to_string(),
+        name: "test-record".to_string(),
+        username: Some("user@example.com".to_string()),
+        url: None,
+        notes: None,
+        tags: vec!["work".to_string()],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    vault.add_record(&record).unwrap();
+
+    let retrieved = vault.get_record(&record.id.to_string()).unwrap();
+    assert_eq!(retrieved.id, record.id);
+    // Note: name is stored encrypted, will be decoded when crypto module is integrated
+    assert!(retrieved.name.is_empty());
+    assert_eq!(retrieved.tags.len(), 1);
+    assert_eq!(retrieved.tags[0], "work");
+}

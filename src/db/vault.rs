@@ -3,6 +3,7 @@
 use anyhow::Result;
 use rusqlite::Connection;
 use std::path::Path;
+use uuid::Uuid;
 
 use super::models::Record;
 
@@ -25,10 +26,54 @@ impl Vault {
         Ok(vec![])
     }
 
-    /// Get a specific record by ID
-    pub fn get_record(&self, _id: &str) -> Result<Record> {
-        // TODO: Implement retrieval
-        anyhow::bail!("Vault::get_record not yet implemented")
+    /// Get a specific record by ID with tags
+    pub fn get_record(&self, id: &str) -> Result<Record> {
+        // Validate UUID format first
+        let uuid = Uuid::parse_str(id)
+            .map_err(|e| anyhow::anyhow!("Invalid UUID format: {}", e))?;
+
+        let (_id_str, record_type_str, encrypted_data, created_ts, updated_ts) = self.conn.query_row(
+            "SELECT id, record_type, encrypted_data, created_at, updated_at
+         FROM records WHERE id = ?1 AND deleted = 0",
+            &[id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, i64>(3)?,
+                    row.get::<_, i64>(4)?,
+                ))
+            },
+        )?;
+
+        let record = Record {
+            id: uuid,
+            record_type: super::models::RecordType::from(record_type_str),
+            encrypted_data,
+            name: String::new(), // Will be decoded from encrypted_data
+            username: None,
+            url: None,
+            notes: None,
+            tags: vec![], // Will load below
+            created_at: chrono::DateTime::from_timestamp(created_ts, 0)
+                .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
+            updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
+                .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
+        };
+
+        // Load tags
+        let tags: Vec<String> = self
+            .conn
+            .prepare(
+                "SELECT t.name FROM tags t
+         JOIN record_tags rt ON t.id = rt.tag_id
+         WHERE rt.record_id = ?1",
+            )?
+            .query_map(&[id], |row| row.get(0))?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(Record { tags, ..record })
     }
 
     /// Add a new record with tag support
