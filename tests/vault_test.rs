@@ -255,6 +255,14 @@ fn test_update_record() {
 
     vault.add_record(&record).unwrap();
 
+    // Get initial version (should be 1 after add_record)
+    let initial_version: i64 = vault.conn.query_row(
+        "SELECT version FROM records WHERE id = ?1",
+        &[&record.id.to_string()],
+        |row| row.get(0),
+    ).unwrap();
+    assert_eq!(initial_version, 1, "Initial version should be 1");
+
     record.encrypted_data = "updated-data".to_string();
     record.tags = vec!["tag2".to_string()];
 
@@ -264,4 +272,12 @@ fn test_update_record() {
     assert_eq!(retrieved.encrypted_data, "updated-data");
     assert_eq!(retrieved.tags.len(), 1);
     assert_eq!(retrieved.tags[0], "tag2");
+
+    // Verify version was incremented
+    let updated_version: i64 = vault.conn.query_row(
+        "SELECT version FROM records WHERE id = ?1",
+        &[&record.id.to_string()],
+        |row| row.get(0),
+    ).unwrap();
+    assert_eq!(updated_version, 2, "Version should be incremented after update");
 }

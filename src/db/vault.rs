@@ -210,9 +210,15 @@ impl Vault {
     }
 
     /// Update an existing record with version increment
+    ///
+    /// This method wraps the entire operation in a transaction for atomicity.
+    /// If any part fails, all changes are rolled back.
     pub fn update_record(&mut self, record: &Record) -> Result<()> {
+        // Start transaction for atomicity
+        let tx = self.conn.unchecked_transaction()?;
+
         // Update record data
-        self.conn.execute(
+        let rows_affected = tx.execute(
             "UPDATE records
          SET encrypted_data = ?1, updated_at = ?2, version = version + 1
          WHERE id = ?3 AND deleted = 0",
@@ -223,31 +229,43 @@ impl Vault {
             ),
         )?;
 
+        // Verify record was updated
+        if rows_affected == 0 {
+            return Err(anyhow::anyhow!("Record not found or deleted: {}", record.id));
+        }
+
         // Update tags: remove old associations and add new ones
-        self.conn.execute(
+        tx.execute(
             "DELETE FROM record_tags WHERE record_id = ?1",
             [&record.id.to_string()],
         )?;
 
-        for tag_name in &record.tags {
-            let tag_id: i64 = self.conn.query_row(
+        // Deduplicate tags before processing
+        let unique_tags: std::collections::HashSet<_> = record.tags.iter().collect();
+        let record_id_str = record.id.to_string(); // Move outside loop to avoid repeated allocation
+
+        for tag_name in unique_tags {
+            let tag_id: i64 = tx.query_row(
                 "INSERT OR IGNORE INTO tags (name) VALUES (?1)
              RETURNING id",
                 &[tag_name],
                 |row| row.get(0),
             ).or_else(|_| {
-                self.conn.query_row(
+                tx.query_row(
                     "SELECT id FROM tags WHERE name = ?1",
                     &[tag_name],
                     |row| row.get(0),
                 )
             })?;
 
-            self.conn.execute(
+            tx.execute(
                 "INSERT OR IGNORE INTO record_tags (record_id, tag_id) VALUES (?1, ?2)",
-                (&record.id.to_string(), tag_id),
+                (&record_id_str, tag_id),
             )?;
         }
+
+        // Commit transaction
+        tx.commit()?;
 
         Ok(())
     }
