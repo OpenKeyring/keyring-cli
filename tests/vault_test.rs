@@ -233,3 +233,35 @@ fn test_list_records_empty() {
     assert_eq!(records.len(), 0);
     assert!(records.is_empty());
 }
+
+#[test]
+fn test_update_record() {
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let mut vault = Vault::open(&db_path, "test-password").unwrap();
+
+    let mut record = Record {
+        id: Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data: "original-data".to_string(),
+        name: "original-name".to_string(),
+        username: None,
+        url: None,
+        notes: None,
+        tags: vec!["tag1".to_string()],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    vault.add_record(&record).unwrap();
+
+    record.encrypted_data = "updated-data".to_string();
+    record.tags = vec!["tag2".to_string()];
+
+    assert!(vault.update_record(&record).is_ok());
+
+    let retrieved = vault.get_record(&record.id.to_string()).unwrap();
+    assert_eq!(retrieved.encrypted_data, "updated-data");
+    assert_eq!(retrieved.tags.len(), 1);
+    assert_eq!(retrieved.tags[0], "tag2");
+}
