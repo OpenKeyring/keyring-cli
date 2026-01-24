@@ -1,5 +1,5 @@
 use keyring_cli::db::vault::Vault;
-use keyring_cli::db::models::{Record, RecordType};
+use keyring_cli::db::models::{RecordType, StoredRecord};
 use tempfile::TempDir;
 use uuid::Uuid;
 
@@ -9,14 +9,11 @@ fn test_add_record() {
     let db_path = temp_dir.path().join("test.db");
     let mut vault = Vault::open(&db_path, "test-password").unwrap();
 
-    let record = Record {
+    let record = StoredRecord {
         id: Uuid::new_v4(),
         record_type: RecordType::Password,
-        encrypted_data: "encrypted-data".to_string(),
-        name: "test-record".to_string(),
-        username: Some("user@example.com".to_string()),
-        url: Some("https://example.com".to_string()),
-        notes: Some("Test notes".to_string()),
+        encrypted_data: b"encrypted-data".to_vec(),
+        nonce: [0u8; 12],
         tags: vec!["work".to_string(), "important".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -48,14 +45,11 @@ fn test_add_record_with_tags() {
     let mut vault = Vault::open(&db_path, "test-password").unwrap();
 
     // Add first record with tags
-    let record1 = Record {
+    let record1 = StoredRecord {
         id: Uuid::new_v4(),
         record_type: RecordType::Password,
-        encrypted_data: "encrypted-data-1".to_string(),
-        name: "record-1".to_string(),
-        username: None,
-        url: None,
-        notes: None,
+        encrypted_data: b"encrypted-data-1".to_vec(),
+        nonce: [0u8; 12],
         tags: vec!["work".to_string(), "important".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -63,14 +57,11 @@ fn test_add_record_with_tags() {
     assert!(vault.add_record(&record1).is_ok());
 
     // Add second record with overlapping tags
-    let record2 = Record {
+    let record2 = StoredRecord {
         id: Uuid::new_v4(),
         record_type: RecordType::SshKey,
-        encrypted_data: "encrypted-data-2".to_string(),
-        name: "record-2".to_string(),
-        username: None,
-        url: None,
-        notes: None,
+        encrypted_data: b"encrypted-data-2".to_vec(),
+        nonce: [0u8; 12],
         tags: vec!["work".to_string(), "personal".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -101,14 +92,11 @@ fn test_add_record_with_duplicate_tags() {
     let mut vault = Vault::open(&db_path, "test-password").unwrap();
 
     // Record with duplicate tag names (should be deduplicated)
-    let record = Record {
+    let record = StoredRecord {
         id: Uuid::new_v4(),
         record_type: RecordType::Password,
-        encrypted_data: "encrypted-data".to_string(),
-        name: "test-record".to_string(),
-        username: None,
-        url: None,
-        notes: None,
+        encrypted_data: b"encrypted-data".to_vec(),
+        nonce: [0u8; 12],
         tags: vec!["work".to_string(), "work".to_string(), "important".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -132,14 +120,11 @@ fn test_get_record() {
     let db_path = temp_dir.path().join("test.db");
     let mut vault = Vault::open(&db_path, "test-password").unwrap();
 
-    let record = Record {
+    let record = StoredRecord {
         id: Uuid::new_v4(),
         record_type: RecordType::Password,
-        encrypted_data: "encrypted-data".to_string(),
-        name: "test-record".to_string(),
-        username: Some("user@example.com".to_string()),
-        url: None,
-        notes: None,
+        encrypted_data: b"encrypted-data".to_vec(),
+        nonce: [0u8; 12],
         tags: vec!["work".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -149,8 +134,6 @@ fn test_get_record() {
 
     let retrieved = vault.get_record(&record.id.to_string()).unwrap();
     assert_eq!(retrieved.id, record.id);
-    // Note: name is stored encrypted, will be decoded when crypto module is integrated
-    assert!(retrieved.name.is_empty());
     assert_eq!(retrieved.tags.len(), 1);
     assert_eq!(retrieved.tags[0], "work");
 }
@@ -161,27 +144,21 @@ fn test_list_records() {
     let db_path = temp_dir.path().join("test.db");
     let mut vault = Vault::open(&db_path, "test-password").unwrap();
 
-    let record1 = Record {
+    let record1 = StoredRecord {
         id: Uuid::new_v4(),
         record_type: RecordType::Password,
-        encrypted_data: "data1".to_string(),
-        name: "record1".to_string(),
-        username: None,
-        url: None,
-        notes: None,
+        encrypted_data: b"data1".to_vec(),
+        nonce: [0u8; 12],
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     };
 
-    let record2 = Record {
+    let record2 = StoredRecord {
         id: Uuid::new_v4(),
         record_type: RecordType::SshKey,
-        encrypted_data: "data2".to_string(),
-        name: "record2".to_string(),
-        username: None,
-        url: None,
-        notes: None,
+        encrypted_data: b"data2".to_vec(),
+        nonce: [0u8; 12],
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -200,14 +177,11 @@ fn test_list_records_with_tags() {
     let db_path = temp_dir.path().join("test.db");
     let mut vault = Vault::open(&db_path, "test-password").unwrap();
 
-    let record1 = Record {
+    let record1 = StoredRecord {
         id: Uuid::new_v4(),
         record_type: RecordType::Password,
-        encrypted_data: "data1".to_string(),
-        name: "record1".to_string(),
-        username: None,
-        url: None,
-        notes: None,
+        encrypted_data: b"data1".to_vec(),
+        nonce: [0u8; 12],
         tags: vec!["work".to_string(), "important".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -240,14 +214,11 @@ fn test_update_record() {
     let db_path = temp_dir.path().join("test.db");
     let mut vault = Vault::open(&db_path, "test-password").unwrap();
 
-    let mut record = Record {
+    let mut record = StoredRecord {
         id: Uuid::new_v4(),
         record_type: RecordType::Password,
-        encrypted_data: "original-data".to_string(),
-        name: "original-name".to_string(),
-        username: None,
-        url: None,
-        notes: None,
+        encrypted_data: b"original-data".to_vec(),
+        nonce: [0u8; 12],
         tags: vec!["tag1".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -263,13 +234,13 @@ fn test_update_record() {
     ).unwrap();
     assert_eq!(initial_version, 1, "Initial version should be 1");
 
-    record.encrypted_data = "updated-data".to_string();
+    record.encrypted_data = b"updated-data".to_vec();
     record.tags = vec!["tag2".to_string()];
 
     assert!(vault.update_record(&record).is_ok());
 
     let retrieved = vault.get_record(&record.id.to_string()).unwrap();
-    assert_eq!(retrieved.encrypted_data, "updated-data");
+    assert_eq!(retrieved.encrypted_data, b"updated-data".to_vec());
     assert_eq!(retrieved.tags.len(), 1);
     assert_eq!(retrieved.tags[0], "tag2");
 

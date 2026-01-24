@@ -5,7 +5,7 @@ use rusqlite::Connection;
 use std::path::Path;
 use uuid::Uuid;
 
-use super::models::{Record, RecordType};
+use super::models::{RecordType, StoredRecord};
 
 /// Vault for managing encrypted password records
 pub struct Vault {
@@ -24,9 +24,9 @@ impl Vault {
     ///
     /// Uses a single query with LEFT JOIN and GROUP_CONCAT to avoid N+1 query pattern.
     /// TODO: Decode encrypted data fields when crypto module is integrated
-    pub fn list_records(&self) -> Result<Vec<Record>> {
+    pub fn list_records(&self) -> Result<Vec<StoredRecord>> {
         let mut stmt = self.conn.prepare(
-            "SELECT r.id, r.record_type, r.encrypted_data, r.created_at, r.updated_at,
+            "SELECT r.id, r.record_type, r.encrypted_data, r.nonce, r.created_at, r.updated_at,
                 GROUP_CONCAT(t.name, ',') as tag_names
          FROM records r
          LEFT JOIN record_tags rt ON r.id = rt.record_id
@@ -39,10 +39,11 @@ impl Vault {
         let record_iter = stmt.query_map([], |row| {
             let id_str: String = row.get(0)?;
             let record_type_str: String = row.get(1)?;
-            let encrypted_data: String = row.get(2)?;
-            let created_ts: i64 = row.get(3)?;
-            let updated_ts: i64 = row.get(4)?;
-            let tags_csv: Option<String> = row.get(5)?;
+            let encrypted_data: Vec<u8> = row.get(2)?;
+            let nonce_bytes: Vec<u8> = row.get(3)?;
+            let created_ts: i64 = row.get(4)?;
+            let updated_ts: i64 = row.get(5)?;
+            let tags_csv: Option<String> = row.get(6)?;
 
             let uuid = Uuid::parse_str(&id_str)
                 .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
@@ -51,10 +52,18 @@ impl Vault {
                 .map(|csv| csv.split(',').filter(|s| !s.is_empty()).map(String::from).collect())
                 .unwrap_or_default();
 
+            let nonce = decode_nonce(&nonce_bytes).map_err(|_| {
+                rusqlite::Error::ToSqlConversionFailure(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Invalid nonce length",
+                )))
+            })?;
+
             Ok((
                 uuid,
                 record_type_str,
                 encrypted_data,
+                nonce,
                 created_ts,
                 updated_ts,
                 tags,
@@ -63,16 +72,14 @@ impl Vault {
 
         let mut records = Vec::new();
         for record in record_iter {
-            let (uuid, record_type_str, encrypted_data, created_ts, updated_ts, tags) = record?;
+            let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, tags) =
+                record?;
 
-            records.push(Record {
+            records.push(StoredRecord {
                 id: uuid,
                 record_type: RecordType::from(record_type_str),
                 encrypted_data,
-                name: String::new(), // TODO: Decode from encrypted_data
-                username: None,      // TODO: Decode from encrypted_data
-                url: None,           // TODO: Decode from encrypted_data
-                notes: None,         // TODO: Decode from encrypted_data
+                nonce,
                 tags,
                 created_at: chrono::DateTime::from_timestamp(created_ts, 0)
                     .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
@@ -85,34 +92,35 @@ impl Vault {
     }
 
     /// Get a specific record by ID with tags
-    pub fn get_record(&self, id: &str) -> Result<Record> {
+    pub fn get_record(&self, id: &str) -> Result<StoredRecord> {
         // Validate UUID format first
         let uuid = Uuid::parse_str(id)
             .map_err(|e| anyhow::anyhow!("Invalid UUID format: {}", e))?;
 
-        let (_id_str, record_type_str, encrypted_data, created_ts, updated_ts) = self.conn.query_row(
-            "SELECT id, record_type, encrypted_data, created_at, updated_at
+        let (_id_str, record_type_str, encrypted_data, nonce_bytes, created_ts, updated_ts) =
+            self.conn.query_row(
+            "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at
          FROM records WHERE id = ?1 AND deleted = 0",
             &[id],
             |row| {
                 Ok((
                     row.get::<_, String>(0)?,
                     row.get::<_, String>(1)?,
-                    row.get::<_, String>(2)?,
-                    row.get::<_, i64>(3)?,
+                    row.get::<_, Vec<u8>>(2)?,
+                    row.get::<_, Vec<u8>>(3)?,
                     row.get::<_, i64>(4)?,
+                    row.get::<_, i64>(5)?,
                 ))
             },
         )?;
 
-        let record = Record {
+        let nonce = decode_nonce(&nonce_bytes)?;
+
+        let record = StoredRecord {
             id: uuid,
             record_type: super::models::RecordType::from(record_type_str),
             encrypted_data,
-            name: String::new(), // Will be decoded from encrypted_data
-            username: None,
-            url: None,
-            notes: None,
+            nonce,
             tags: vec![], // Will load below
             created_at: chrono::DateTime::from_timestamp(created_ts, 0)
                 .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
@@ -131,7 +139,7 @@ impl Vault {
             .query_map(&[id], |row| row.get(0))?
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(Record { tags, ..record })
+        Ok(StoredRecord { tags, ..record })
     }
 
     /// Add a new record with tag support
@@ -140,16 +148,14 @@ impl Vault {
     /// If any part fails, all changes are rolled back.
     ///
     /// # Note on Nonce Field
-    /// The nonce field is currently set to an empty string as a placeholder.
-    /// This will be addressed when the crypto module is integrated, as the actual
-    /// nonce should come from the AES-256-GCM encryption process that happens
-    /// before calling this method.
+    /// The nonce field is provided by the AES-256-GCM encryption process and
+    /// stored alongside the encrypted payload.
     ///
     /// # Note on Device ID
     /// The `updated_by` field is currently set to "local" as a placeholder.
     /// In a future update, this should be replaced with the actual device ID
     /// from the device identification system.
-    pub fn add_record(&mut self, record: &Record) -> Result<()> {
+    pub fn add_record(&mut self, record: &StoredRecord) -> Result<()> {
         // Start transaction for atomicity
         let tx = self.conn.unchecked_transaction()?;
 
@@ -162,7 +168,7 @@ impl Vault {
                 record.id.to_string(),
                 record_type_str,
                 &record.encrypted_data,
-                "",  // nonce placeholder - see function docs
+                record.nonce.as_slice(),
                 record.created_at.timestamp(),
                 record.updated_at.timestamp(),
                 "local",  // updated_by device placeholder - see function docs
@@ -241,17 +247,18 @@ impl Vault {
     ///
     /// This method wraps the entire operation in a transaction for atomicity.
     /// If any part fails, all changes are rolled back.
-    pub fn update_record(&mut self, record: &Record) -> Result<()> {
+    pub fn update_record(&mut self, record: &StoredRecord) -> Result<()> {
         // Start transaction for atomicity
         let tx = self.conn.unchecked_transaction()?;
 
         // Update record data
         let rows_affected = tx.execute(
             "UPDATE records
-         SET encrypted_data = ?1, updated_at = ?2, version = version + 1
-         WHERE id = ?3 AND deleted = 0",
+         SET encrypted_data = ?1, nonce = ?2, updated_at = ?3, version = version + 1
+         WHERE id = ?4 AND deleted = 0",
             (
                 &record.encrypted_data,
+                record.nonce.as_slice(),
                 record.updated_at.timestamp(),
                 &record.id.to_string(),
             ),
@@ -303,4 +310,13 @@ impl Vault {
         // TODO: Implement soft delete
         anyhow::bail!("Vault::delete_record not yet implemented")
     }
+}
+
+fn decode_nonce(bytes: &[u8]) -> Result<[u8; 12]> {
+    if bytes.len() != 12 {
+        return Err(anyhow::anyhow!("Invalid nonce length: {}", bytes.len()));
+    }
+    let mut nonce = [0u8; 12];
+    nonce.copy_from_slice(bytes);
+    Ok(nonce)
 }

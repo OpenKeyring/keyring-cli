@@ -20,17 +20,14 @@ fn test_schema_init() {
 
 #[test]
 fn test_record_model() {
-    let record = models::Record {
+    let record = models::StoredRecord {
         id: uuid::Uuid::new_v4(),
         record_type: models::RecordType::Password,
-        encrypted_data: "encrypted-data".to_string(),
-        name: "test-record".to_string(),
-        username: None,
-        url: None,
-        notes: None,
+        encrypted_data: b"encrypted-data".to_vec(),
+        nonce: [0u8; 12],
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     };
-    assert_eq!(record.name, "test-record");
+    assert_eq!(record.encrypted_data, b"encrypted-data".to_vec());
 }
