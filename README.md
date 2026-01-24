@@ -30,9 +30,40 @@ cargo install --path .
 
 ### Initial Setup
 
+**First-Time Initialization**
+
+When you run your first command, OpenKeyring automatically initializes:
+
+1. Creates the database at `~/.local/share/open-keyring/passwords.db`
+2. Creates the keystore at `~/.config/open-keyring/keystore.json`
+3. Prompts for a master password
+4. Generates and displays a 24-word BIP39 recovery key
+
+**⚠️ Important**: Save your recovery key securely! It's the only way to recover your data if you forget your master password.
+
 ```bash
-# Initialize your password vault
-ok generate --name "github" --length 16 --sync
+# First command triggers initialization
+ok generate --name "github" --length 16
+
+# You'll see:
+# 🔐 Enter master password: [your password]
+# 🔑 Recovery Key (save securely): word1 word2 word3 ... word24
+# ✅ Password generated successfully
+```
+
+**Recovery Key**
+
+The recovery key is a 24-word BIP39 mnemonic phrase that serves as a backup to your master password.
+
+- **When to use**: If you forget your master password or need to restore access on a new device
+- **How to save**: Write it down on paper and store securely. Never store it digitally in plain text.
+- **Security**: The recovery key is only shown once during initialization. If lost, data cannot be recovered.
+
+**Basic Usage**
+
+```bash
+# Generate a password
+ok generate --name "github" --length 16
 
 # List all passwords
 ok list
@@ -43,8 +74,11 @@ ok show "github" --copy
 # Update a password
 ok update "github" --password "new_password"
 
-# Sync across devices
-ok sync --full
+# Search passwords
+ok search "github"
+
+# Delete a password
+ok delete "github" --confirm
 ```
 
 ## CLI Commands
@@ -97,15 +131,56 @@ ok devices remove "device-id"
 
 ### Sync & Configuration
 
-```bash
-# Sync operations
-ok sync --dry-run
-ok sync --full
-ok sync --status
-ok sync --provider "dropbox"
+**Manual Sync**
 
-# Configuration
+Sync your passwords across devices using cloud storage:
+
+```bash
+# Preview changes (dry run)
+ok sync --dry-run
+
+# Full sync
+ok sync --full
+
+# Check sync status
+ok sync --status
+
+# Sync with specific provider
+ok sync --provider "dropbox"
+```
+
+**Supported Sync Providers**
+
+- iCloud Drive (default on macOS/iOS)
+- Dropbox
+- Google Drive
+- OneDrive
+- WebDAV (self-hosted)
+- SFTP (self-hosted)
+
+**Sync Configuration**
+
+```bash
+# Enable sync
+ok config set sync.enabled true
+
+# Set provider
+ok config set sync.provider dropbox
+
+# Set remote path
+ok config set sync.remote_path "/OpenKeyring"
+
+# Enable auto-sync
+ok config set sync.auto_sync true
+```
+
+**Configuration**
+
+```bash
+# List all settings
 ok config list
+
+# Set configuration values
 ok config set "database.path" "/custom/path"
 ok config set "sync.enabled" "true"
 ```
@@ -257,12 +332,46 @@ keyring-cli/
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Troubleshooting
+
+### Common Issues
+
+**"Master password verification failed"**
+- Double-check your password (case-sensitive)
+- If forgotten, use recovery key to restore access
+
+**"Database locked"**
+- Close other OpenKeyring instances
+- Wait a few seconds and try again
+
+**"Keystore not found"**
+- If you have a backup, restore `~/.config/open-keyring/keystore.json`
+- If no backup, you'll need to reinitialize (data loss)
+
+**"Sync failed"**
+- Check internet connection
+- Verify sync provider credentials
+- Check sync configuration: `ok sync --status`
+- Try dry run first: `ok sync --dry-run`
+
+### Recovery Procedures
+
+**Forgot Master Password**
+1. Use your recovery key to restore access
+2. If recovery key is also lost, data cannot be recovered (by design)
+
+**Lost Device**
+1. Use `ok devices` to list trusted devices
+2. Remove lost device: `ok devices --remove "device-id"`
+
+For detailed troubleshooting, see [CLI Documentation](docs/cli.md).
+
 ## Support
 
 - 📧 Email: support@open-keyring.com
 - 💬 Discord: [Join our community](https://discord.gg/openkeyring)
 - 🐛 Issues: [GitHub Issues](https://github.com/open-keyring/keyring-cli/issues)
-- 📖 Documentation: [docs.open-keyring.com](https://docs.open-keyring.com)
+- 📖 Documentation: [CLI Documentation](docs/cli.md)
 
 ---
 
