@@ -2,11 +2,11 @@
 //!
 //! A privacy-first password manager with local-first architecture.
 
+pub mod clipboard;
 pub mod crypto;
 pub mod db;
-pub mod clipboard;
-pub mod sync;
-pub mod mcp;
 pub mod error;
+pub mod mcp;
+pub mod sync;
 
 pub use error::Result;
