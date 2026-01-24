@@ -5,7 +5,7 @@ use rusqlite::Connection;
 use std::path::Path;
 use uuid::Uuid;
 
-use super::models::Record;
+use super::models::{Record, RecordType};
 
 /// Vault for managing encrypted password records
 pub struct Vault {
@@ -20,10 +20,65 @@ impl Vault {
         Ok(Self { conn })
     }
 
-    /// List all records
+    /// List all non-deleted records with tags
     pub fn list_records(&self) -> Result<Vec<Record>> {
-        // TODO: Implement listing
-        Ok(vec![])
+        let mut stmt = self.conn.prepare(
+            "SELECT id, record_type, encrypted_data, created_at, updated_at
+         FROM records WHERE deleted = 0
+         ORDER BY updated_at DESC"
+        )?;
+
+        let record_iter = stmt.query_map([], |row| {
+            let id_str: String = row.get(0)?;
+            let record_type_str: String = row.get(1)?;
+            let encrypted_data: String = row.get(2)?;
+            let created_ts: i64 = row.get(3)?;
+            let updated_ts: i64 = row.get(4)?;
+
+            let uuid = Uuid::parse_str(&id_str)
+                .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+
+            Ok((
+                uuid,
+                record_type_str,
+                encrypted_data,
+                created_ts,
+                updated_ts,
+            ))
+        })?;
+
+        let mut records = Vec::new();
+        for record in record_iter {
+            let (uuid, record_type_str, encrypted_data, created_ts, updated_ts) = record?;
+
+            // Load tags for this record
+            let tags: Vec<String> = self
+                .conn
+                .prepare(
+                    "SELECT t.name FROM tags t
+             JOIN record_tags rt ON t.id = rt.tag_id
+             WHERE rt.record_id = ?1",
+                )?
+                .query_map([&uuid.to_string()], |row| row.get(0))?
+                .collect::<Result<Vec<_>, _>>()?;
+
+            records.push(Record {
+                id: uuid,
+                record_type: RecordType::from(record_type_str),
+                encrypted_data,
+                name: String::new(),
+                username: None,
+                url: None,
+                notes: None,
+                tags,
+                created_at: chrono::DateTime::from_timestamp(created_ts, 0)
+                    .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
+                updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
+                    .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
+            });
+        }
+
+        Ok(records)
     }
 
     /// Get a specific record by ID with tags

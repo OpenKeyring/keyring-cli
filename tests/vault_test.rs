@@ -154,3 +154,70 @@ fn test_get_record() {
     assert_eq!(retrieved.tags.len(), 1);
     assert_eq!(retrieved.tags[0], "work");
 }
+
+#[test]
+fn test_list_records() {
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let mut vault = Vault::open(&db_path, "test-password").unwrap();
+
+    let record1 = Record {
+        id: Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data: "data1".to_string(),
+        name: "record1".to_string(),
+        username: None,
+        url: None,
+        notes: None,
+        tags: vec![],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    let record2 = Record {
+        id: Uuid::new_v4(),
+        record_type: RecordType::SshKey,
+        encrypted_data: "data2".to_string(),
+        name: "record2".to_string(),
+        username: None,
+        url: None,
+        notes: None,
+        tags: vec![],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    vault.add_record(&record1).unwrap();
+    vault.add_record(&record2).unwrap();
+
+    let records = vault.list_records().unwrap();
+    assert_eq!(records.len(), 2);
+}
+
+#[test]
+fn test_list_records_with_tags() {
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let mut vault = Vault::open(&db_path, "test-password").unwrap();
+
+    let record1 = Record {
+        id: Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data: "data1".to_string(),
+        name: "record1".to_string(),
+        username: None,
+        url: None,
+        notes: None,
+        tags: vec!["work".to_string(), "important".to_string()],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    vault.add_record(&record1).unwrap();
+
+    let records = vault.list_records().unwrap();
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].tags.len(), 2);
+    assert!(records[0].tags.contains(&"work".to_string()));
+    assert!(records[0].tags.contains(&"important".to_string()));
+}
