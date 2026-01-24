@@ -93,6 +93,87 @@ impl CryptoManager {
     pub fn is_initialized(&self) -> bool {
         self.master_key.is_some()
     }
+
+    /// Generate a random password with specified length
+    pub fn generate_random_password(&self, length: usize) -> Result<String, KeyringError> {
+        use rand::Rng;
+        const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
+
+        if length < 4 {
+            return Err(KeyringError::InvalidInput {
+                context: "Password length must be at least 4 characters".to_string(),
+            });
+        }
+        if length > 128 {
+            return Err(KeyringError::InvalidInput {
+                context: "Password length cannot exceed 128 characters".to_string(),
+            });
+        }
+
+        let mut rng = rand::thread_rng();
+        let password: String = (0..length)
+            .map(|_| {
+                let idx = rng.gen_range(0..CHARSET.len());
+                CHARSET[idx] as char
+            })
+            .collect();
+
+        Ok(password)
+    }
+
+    /// Generate a memorable password using word-based approach
+    pub fn generate_memorable_password(&self, word_count: usize) -> Result<String, KeyringError> {
+        const WORDS: &[&str] = &[
+            "correct", "horse", "battery", "staple", "apple", "banana", "cherry", "dragon",
+            "elephant", "flower", "garden", "house", "island", "jungle", "kangaroo", "lemon",
+            "mountain", "nectar", "orange", "piano", "queen", "river", "sunshine", "tiger",
+            "umbrella", "violet", "whale", "xylophone", "yellow", "zebra", "castle", "desert",
+            "eagle", "forest", "giraffe", "harbor", "igloo", "journey", "kingdom", "lantern",
+            "meadow", "night", "ocean", "planet", "quartz", "rainbow", "star", "tower",
+            "universe", "valley", "wave", "crystal", "year", "zen", "bridge", "cloud",
+            "diamond", "emerald", "fountain", "galaxy", "horizon", "infinity", "jewel",
+        ];
+
+        if word_count < 3 {
+            return Err(KeyringError::InvalidInput {
+                context: "Word count must be at least 3".to_string(),
+            });
+        }
+        if word_count > 12 {
+            return Err(KeyringError::InvalidInput {
+                context: "Word count cannot exceed 12".to_string(),
+            });
+        }
+
+        use rand::seq::SliceRandom;
+        let mut rng = rand::thread_rng();
+        let selected: Vec<&str> = WORDS.choose_multiple(&mut rng, word_count).copied().collect();
+
+        Ok(selected.join("-"))
+    }
+
+    /// Generate a numeric PIN
+    pub fn generate_pin(&self, length: usize) -> Result<String, KeyringError> {
+        use rand::Rng;
+
+        if length < 4 {
+            return Err(KeyringError::InvalidInput {
+                context: "PIN length must be at least 4 digits".to_string(),
+            });
+        }
+        if length > 16 {
+            return Err(KeyringError::InvalidInput {
+                context: "PIN length cannot exceed 16 digits".to_string(),
+            });
+        }
+
+        let mut rng = rand::thread_rng();
+        let pin: String = (0..length)
+            .map(|_| rng.gen_range(0..10).to_string())
+            .collect();
+
+        Ok(pin)
+    }
 }
 
 impl Drop for CryptoManager {
