@@ -19,6 +19,7 @@ pub fn initialize_database(db_path: &std::path::Path) -> Result<Connection> {
     create_metadata_table(&conn)?;
     create_sync_state_table(&conn)?;
     create_mcp_sessions_table(&conn)?;
+    create_mcp_policies_table(&conn)?;
 
     Ok(conn)
 }
@@ -119,6 +120,28 @@ fn create_mcp_sessions_table(conn: &Connection) -> Result<()> {
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_mcp_sessions_last_activity
          ON mcp_sessions(last_activity DESC)",
+        [],
+    )?;
+
+    Ok(())
+}
+
+fn create_mcp_policies_table(conn: &Connection) -> Result<()> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS mcp_policies (
+            credential_id TEXT NOT NULL,
+            tag TEXT NOT NULL,
+            authz_mode TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+            PRIMARY KEY (credential_id, tag)
+        )",
+        [],
+    )?;
+
+    // Create index for efficient policy lookups
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_mcp_policies_credential
+         ON mcp_policies(credential_id)",
         [],
     )?;
 
