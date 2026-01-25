@@ -1,10 +1,10 @@
-use keyring_cli::clipboard::ClipboardService;
-use keyring_cli::clipboard::manager::{ClipboardConfig, ClipboardManager};
-use keyring_cli::clipboard::macos::MacOSClipboard;
 #[cfg(target_os = "linux")]
 use keyring_cli::clipboard::linux::LinuxClipboard;
+use keyring_cli::clipboard::macos::MacOSClipboard;
+use keyring_cli::clipboard::manager::{ClipboardConfig, ClipboardManager};
 #[cfg(target_os = "windows")]
 use keyring_cli::clipboard::windows::WindowsClipboard;
+use keyring_cli::clipboard::ClipboardService;
 use std::time::Duration;
 
 #[test]

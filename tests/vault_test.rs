@@ -1,5 +1,5 @@
-use keyring_cli::db::vault::Vault;
 use keyring_cli::db::models::{RecordType, StoredRecord};
+use keyring_cli::db::vault::Vault;
 use tempfile::TempDir;
 use uuid::Uuid;
 
@@ -22,19 +22,25 @@ fn test_add_record() {
     assert!(vault.add_record(&record).is_ok());
 
     // Verify record was inserted
-    let count: i64 = vault.conn.query_row(
-        "SELECT COUNT(*) FROM records WHERE id = ?1",
-        &[&record.id.to_string()],
-        |row: &rusqlite::Row| row.get(0),
-    ).unwrap();
+    let count: i64 = vault
+        .conn
+        .query_row(
+            "SELECT COUNT(*) FROM records WHERE id = ?1",
+            &[&record.id.to_string()],
+            |row: &rusqlite::Row| row.get(0),
+        )
+        .unwrap();
     assert_eq!(count, 1, "Record should be inserted into database");
 
     // Verify tags were inserted
-    let tag_count: i64 = vault.conn.query_row(
-        "SELECT COUNT(*) FROM record_tags WHERE record_id = ?1",
-        &[&record.id.to_string()],
-        |row: &rusqlite::Row| row.get(0),
-    ).unwrap();
+    let tag_count: i64 = vault
+        .conn
+        .query_row(
+            "SELECT COUNT(*) FROM record_tags WHERE record_id = ?1",
+            &[&record.id.to_string()],
+            |row: &rusqlite::Row| row.get(0),
+        )
+        .unwrap();
     assert_eq!(tag_count, 2, "Both tags should be linked to record");
 }
 
@@ -69,20 +75,25 @@ fn test_add_record_with_tags() {
     assert!(vault.add_record(&record2).is_ok());
 
     // Verify both records exist
-    let count: i64 = vault.conn.query_row(
-        "SELECT COUNT(*) FROM records",
-        [],
-        |row: &rusqlite::Row| row.get(0),
-    ).unwrap();
+    let count: i64 = vault
+        .conn
+        .query_row("SELECT COUNT(*) FROM records", [], |row: &rusqlite::Row| {
+            row.get(0)
+        })
+        .unwrap();
     assert_eq!(count, 2, "Both records should be inserted");
 
     // Verify tags are shared (work tag should be used by both records)
-    let unique_tags: i64 = vault.conn.query_row(
-        "SELECT COUNT(*) FROM tags",
-        [],
-        |row: &rusqlite::Row| row.get(0),
-    ).unwrap();
-    assert_eq!(unique_tags, 3, "Should have 3 unique tags: work, important, personal");
+    let unique_tags: i64 = vault
+        .conn
+        .query_row("SELECT COUNT(*) FROM tags", [], |row: &rusqlite::Row| {
+            row.get(0)
+        })
+        .unwrap();
+    assert_eq!(
+        unique_tags, 3,
+        "Should have 3 unique tags: work, important, personal"
+    );
 }
 
 #[test]
@@ -97,7 +108,11 @@ fn test_add_record_with_duplicate_tags() {
         record_type: RecordType::Password,
         encrypted_data: b"encrypted-data".to_vec(),
         nonce: [0u8; 12],
-        tags: vec!["work".to_string(), "work".to_string(), "important".to_string()],
+        tags: vec![
+            "work".to_string(),
+            "work".to_string(),
+            "important".to_string(),
+        ],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     };
@@ -106,12 +121,18 @@ fn test_add_record_with_duplicate_tags() {
     assert!(vault.add_record(&record).is_ok());
 
     // Verify deduplication: only 2 unique tags should be linked
-    let tag_count: i64 = vault.conn.query_row(
-        "SELECT COUNT(*) FROM record_tags WHERE record_id = ?1",
-        &[&record.id.to_string()],
-        |row: &rusqlite::Row| row.get(0),
-    ).unwrap();
-    assert_eq!(tag_count, 2, "Duplicate tags should be deduplicated to 2 unique tags");
+    let tag_count: i64 = vault
+        .conn
+        .query_row(
+            "SELECT COUNT(*) FROM record_tags WHERE record_id = ?1",
+            &[&record.id.to_string()],
+            |row: &rusqlite::Row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        tag_count, 2,
+        "Duplicate tags should be deduplicated to 2 unique tags"
+    );
 }
 
 #[test]
@@ -227,11 +248,14 @@ fn test_update_record() {
     vault.add_record(&record).unwrap();
 
     // Get initial version (should be 1 after add_record)
-    let initial_version: i64 = vault.conn.query_row(
-        "SELECT version FROM records WHERE id = ?1",
-        &[&record.id.to_string()],
-        |row| row.get(0),
-    ).unwrap();
+    let initial_version: i64 = vault
+        .conn
+        .query_row(
+            "SELECT version FROM records WHERE id = ?1",
+            &[&record.id.to_string()],
+            |row| row.get(0),
+        )
+        .unwrap();
     assert_eq!(initial_version, 1, "Initial version should be 1");
 
     record.encrypted_data = b"updated-data".to_vec();
@@ -245,12 +269,18 @@ fn test_update_record() {
     assert_eq!(retrieved.tags[0], "tag2");
 
     // Verify version was incremented
-    let updated_version: i64 = vault.conn.query_row(
-        "SELECT version FROM records WHERE id = ?1",
-        &[&record.id.to_string()],
-        |row| row.get(0),
-    ).unwrap();
-    assert_eq!(updated_version, 2, "Version should be incremented after update");
+    let updated_version: i64 = vault
+        .conn
+        .query_row(
+            "SELECT version FROM records WHERE id = ?1",
+            &[&record.id.to_string()],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        updated_version, 2,
+        "Version should be incremented after update"
+    );
 }
 
 #[test]
@@ -284,11 +314,14 @@ fn test_soft_delete_record() {
     assert_eq!(records.len(), 0);
 
     // Record should still exist in database with deleted=1
-    let count: i64 = vault.conn.query_row(
-        "SELECT COUNT(*) FROM records WHERE id = ?1 AND deleted = 1",
-        [&record.id.to_string()],
-        |row| row.get(0),
-    ).unwrap();
+    let count: i64 = vault
+        .conn
+        .query_row(
+            "SELECT COUNT(*) FROM records WHERE id = ?1 AND deleted = 1",
+            [&record.id.to_string()],
+            |row| row.get(0),
+        )
+        .unwrap();
     assert_eq!(count, 1);
 
     // Sync state should be updated

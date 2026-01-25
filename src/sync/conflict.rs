@@ -35,15 +35,27 @@ impl Conflict {
 }
 
 pub trait ConflictResolver {
-    fn detect_conflicts(&self, local_records: &[SyncRecord], remote_records: &[SyncRecord]) -> Vec<Conflict>;
-    fn resolve_conflicts(&self, conflicts: &[Conflict], resolution: ConflictResolution) -> Vec<Conflict>;
+    fn detect_conflicts(
+        &self,
+        local_records: &[SyncRecord],
+        remote_records: &[SyncRecord],
+    ) -> Vec<Conflict>;
+    fn resolve_conflicts(
+        &self,
+        conflicts: &[Conflict],
+        resolution: ConflictResolution,
+    ) -> Vec<Conflict>;
     fn auto_resolve_conflicts(&self, conflicts: &[Conflict]) -> Vec<Conflict>;
 }
 
 pub struct DefaultConflictResolver;
 
 impl ConflictResolver for DefaultConflictResolver {
-    fn detect_conflicts(&self, local_records: &[SyncRecord], remote_records: &[SyncRecord]) -> Vec<Conflict> {
+    fn detect_conflicts(
+        &self,
+        local_records: &[SyncRecord],
+        remote_records: &[SyncRecord],
+    ) -> Vec<Conflict> {
         let mut conflicts = Vec::new();
 
         // Create a map for easier lookup
@@ -65,8 +77,13 @@ impl ConflictResolver for DefaultConflictResolver {
         conflicts
     }
 
-    fn resolve_conflicts(&self, conflicts: &[Conflict], resolution: ConflictResolution) -> Vec<Conflict> {
-        conflicts.iter()
+    fn resolve_conflicts(
+        &self,
+        conflicts: &[Conflict],
+        resolution: ConflictResolution,
+    ) -> Vec<Conflict> {
+        conflicts
+            .iter()
             .cloned()
             .map(|mut c| {
                 c.resolution = Some(resolution.clone());
@@ -86,7 +103,11 @@ impl DefaultConflictResolver {
         local.updated_at != remote.updated_at
     }
 
-    fn get_newer_record<'a>(&self, local: &'a SyncRecord, remote: &'a SyncRecord) -> &'a SyncRecord {
+    fn get_newer_record<'a>(
+        &self,
+        local: &'a SyncRecord,
+        remote: &'a SyncRecord,
+    ) -> &'a SyncRecord {
         match local.updated_at.cmp(&remote.updated_at) {
             Ordering::Greater | Ordering::Equal => local,
             Ordering::Less => remote,

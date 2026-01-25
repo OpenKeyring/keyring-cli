@@ -1,13 +1,13 @@
 //! Sync service for manual incremental synchronization
 
-use crate::db::vault::Vault;
 use crate::db::models::{StoredRecord, SyncStatus};
-use crate::sync::export::{SyncExporter, JsonSyncExporter, SyncRecord};
-use crate::sync::import::{SyncImporter, JsonSyncImporter};
-use crate::sync::conflict::{ConflictResolver, DefaultConflictResolver, ConflictResolution};
+use crate::db::vault::Vault;
 use crate::error::{KeyringError, Result};
-use std::path::Path;
+use crate::sync::conflict::{ConflictResolution, ConflictResolver, DefaultConflictResolver};
+use crate::sync::export::{JsonSyncExporter, SyncExporter, SyncRecord};
+use crate::sync::import::{JsonSyncImporter, SyncImporter};
 use std::fs;
+use std::path::Path;
 
 /// Sync service for managing incremental synchronization
 pub struct SyncService {
@@ -55,8 +55,9 @@ impl SyncService {
         let mut exported = Vec::new();
 
         // Ensure sync directory exists
-        fs::create_dir_all(sync_dir)
-            .map_err(|e| KeyringError::IoError(format!("Failed to create sync directory: {}", e)))?;
+        fs::create_dir_all(sync_dir).map_err(|e| {
+            KeyringError::IoError(format!("Failed to create sync directory: {}", e))
+        })?;
 
         for record in &pending {
             let sync_record = self.exporter.export_record(record)?;
@@ -103,12 +104,16 @@ impl SyncService {
         }
 
         // Detect conflicts
-        let conflicts = self.conflict_resolver.detect_conflicts(&local_sync_records, &remote_records);
+        let conflicts = self
+            .conflict_resolver
+            .detect_conflicts(&local_sync_records, &remote_records);
 
         // Resolve conflicts
         let resolved_conflicts = match conflict_resolution {
             ConflictResolution::Newer => self.conflict_resolver.auto_resolve_conflicts(&conflicts),
-            _ => self.conflict_resolver.resolve_conflicts(&conflicts, conflict_resolution),
+            _ => self
+                .conflict_resolver
+                .resolve_conflicts(&conflicts, conflict_resolution),
         };
 
         let mut stats = SyncStats {
@@ -125,7 +130,9 @@ impl SyncService {
             if let Some(resolution) = &conflict.resolution {
                 let record_to_use = match resolution {
                     ConflictResolution::Newer => {
-                        if let (Some(local), Some(remote)) = (&conflict.local_record, &conflict.remote_record) {
+                        if let (Some(local), Some(remote)) =
+                            (&conflict.local_record, &conflict.remote_record)
+                        {
                             if local.updated_at >= remote.updated_at {
                                 local.clone()
                             } else {

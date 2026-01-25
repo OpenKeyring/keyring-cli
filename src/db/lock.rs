@@ -180,7 +180,8 @@ impl VaultLock {
                 !0,
                 !0,
                 &mut overlapped,
-            ).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+            )
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
         }
     }
 
@@ -201,7 +202,8 @@ impl VaultLock {
                 !0,
                 !0,
                 &mut overlapped,
-            ).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+            )
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
         }
     }
 }

@@ -1,7 +1,7 @@
 use crate::error::KeyringError;
 use crate::mcp::AuditLogger;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolDefinition {
@@ -61,11 +61,14 @@ impl McpToolRegistry {
     pub fn register_tool(&mut self, tool: ToolDefinition) -> Result<(), KeyringError> {
         // Validate tool definition
         if self.tools.contains_key(&tool.name) {
-            return Err(KeyringError::ToolExists { tool_name: tool.name });
+            return Err(KeyringError::ToolExists {
+                tool_name: tool.name,
+            });
         }
 
         self.tools.insert(tool.name.clone(), tool.clone());
-        self.audit_logger.log_event("tool_registered", &serde_json::to_string(&tool)?);
+        self.audit_logger
+            .log_event("tool_registered", &serde_json::to_string(&tool)?);
         Ok(())
     }
 
@@ -90,16 +93,22 @@ impl McpToolRegistry {
                 type_: "object".to_string(),
                 properties: {
                     let mut props = HashMap::new();
-                    props.insert("length".to_string(), SchemaProperty {
-                        type_: "integer".to_string(),
-                        description: Some("Password length".to_string()),
-                        enum_: None,
-                    });
-                    props.insert("include_symbols".to_string(), SchemaProperty {
-                        type_: "boolean".to_string(),
-                        description: Some("Include symbols".to_string()),
-                        enum_: None,
-                    });
+                    props.insert(
+                        "length".to_string(),
+                        SchemaProperty {
+                            type_: "integer".to_string(),
+                            description: Some("Password length".to_string()),
+                            enum_: None,
+                        },
+                    );
+                    props.insert(
+                        "include_symbols".to_string(),
+                        SchemaProperty {
+                            type_: "boolean".to_string(),
+                            description: Some("Include symbols".to_string()),
+                            enum_: None,
+                        },
+                    );
                     props
                 },
                 required: vec!["length".to_string()],
@@ -143,27 +152,32 @@ impl ToolExecutor {
         client_id: &str,
     ) -> Result<serde_json::Value, KeyringError> {
         // Get tool definition
-        let tool = self.registry.get_tool(tool_name)
-            .ok_or_else(|| KeyringError::ToolNotFound { tool_name: tool_name.to_string() })?;
+        let tool = self
+            .registry
+            .get_tool(tool_name)
+            .ok_or_else(|| KeyringError::ToolNotFound {
+                tool_name: tool_name.to_string(),
+            })?;
 
         // Log tool execution
-        self.registry.audit_logger.log_tool_execution(tool_name, client_id, &arguments, None, true)?;
+        self.registry
+            .audit_logger
+            .log_tool_execution(tool_name, client_id, &arguments, None, true)?;
 
         // Execute the tool (mock implementation for now)
         match tool_name {
-            "generate_password" => {
-                self.execute_generate_password(arguments)
-            }
-            "list_records" => {
-                self.execute_list_records()
-            }
-            _ => {
-                Err(KeyringError::ToolNotFound { tool_name: tool_name.to_string() })
-            }
+            "generate_password" => self.execute_generate_password(arguments),
+            "list_records" => self.execute_list_records(),
+            _ => Err(KeyringError::ToolNotFound {
+                tool_name: tool_name.to_string(),
+            }),
         }
     }
 
-    fn execute_generate_password(&self, args: serde_json::Value) -> Result<serde_json::Value, KeyringError> {
+    fn execute_generate_password(
+        &self,
+        args: serde_json::Value,
+    ) -> Result<serde_json::Value, KeyringError> {
         let length = args["length"].as_u64().unwrap_or(16) as usize;
         let include_symbols = args["include_symbols"].as_bool().unwrap_or(true);
 

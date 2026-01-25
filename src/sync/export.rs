@@ -1,7 +1,7 @@
-use crate::error::KeyringError;
 use crate::db::models::{RecordType, StoredRecord};
+use crate::error::KeyringError;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
@@ -62,8 +62,7 @@ impl SyncExporter for JsonSyncExporter {
     fn write_to_file(&self, record: &SyncRecord, path: &Path) -> Result<(), KeyringError> {
         let json = serde_json::to_string_pretty(record)?;
 
-        fs::write(path, json)
-            .map_err(|e| KeyringError::IoError(e.to_string()))?;
+        fs::write(path, json).map_err(|e| KeyringError::IoError(e.to_string()))?;
 
         Ok(())
     }

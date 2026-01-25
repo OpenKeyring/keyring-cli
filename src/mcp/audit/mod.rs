@@ -1,9 +1,9 @@
 use crate::error::KeyringError;
-use std::fs;
-use std::path::Path;
-use std::io::Write;
-use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::io::Write;
+use std::path::Path;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -126,7 +126,10 @@ impl AuditLogger {
         Ok(())
     }
 
-    pub fn get_audit_logs(&self, since: Option<DateTime<Utc>>) -> Result<Vec<AuditEvent>, KeyringError> {
+    pub fn get_audit_logs(
+        &self,
+        since: Option<DateTime<Utc>>,
+    ) -> Result<Vec<AuditEvent>, KeyringError> {
         if !Path::new(&self.log_file_path).exists() {
             return Ok(Vec::new());
         }

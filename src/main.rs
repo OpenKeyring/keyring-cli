@@ -1,5 +1,5 @@
-use clap::{Parser, Subcommand};
 use anyhow::Result;
+use clap::{Parser, Subcommand};
 
 /// OpenKeyring CLI - A privacy-first password manager
 #[derive(Parser, Debug)]
@@ -367,7 +367,13 @@ async fn main() -> Result<()> {
             tags,
             copy,
             sync,
-        } => commands::generate::execute(name, length, numbers, symbols, memorable, words, pin, username, url, notes, tags, copy, sync).await?,
+        } => {
+            commands::generate::execute(
+                name, length, numbers, symbols, memorable, words, pin, username, url, notes, tags,
+                copy, sync,
+            )
+            .await?
+        }
 
         Commands::List {
             r#type,
@@ -397,13 +403,24 @@ async fn main() -> Result<()> {
             add_tags,
             remove_tags,
             sync,
-        } => commands::update::execute(name, password, username, url, notes, tags, add_tags, remove_tags, sync).await?,
+        } => {
+            commands::update::execute(
+                name,
+                password,
+                username,
+                url,
+                notes,
+                tags,
+                add_tags,
+                remove_tags,
+                sync,
+            )
+            .await?
+        }
 
-        Commands::Delete {
-            name,
-            sync,
-            force,
-        } => commands::delete::execute(name, sync, force).await?,
+        Commands::Delete { name, sync, force } => {
+            commands::delete::execute(name, sync, force).await?
+        }
 
         Commands::Search {
             query,
@@ -430,7 +447,9 @@ async fn main() -> Result<()> {
             all,
         } => commands::health::execute(leaks, weak, duplicate, all).await?,
 
-        Commands::Mnemonic { mnemonic_command } => commands::mnemonic::execute(mnemonic_command).await?,
+        Commands::Mnemonic { mnemonic_command } => {
+            commands::mnemonic::execute(mnemonic_command).await?
+        }
     }
 
     Ok(())
@@ -466,7 +485,7 @@ fn setup_logging(verbose: bool, quiet: bool) {
 // Command stub modules - to be implemented in later tasks
 
 mod commands {
-    use super::{DeviceCommands, ConfigCommands, MnemonicCommands};
+    use super::{ConfigCommands, DeviceCommands, MnemonicCommands};
 
     pub mod generate {
         use anyhow::Result;
@@ -549,11 +568,7 @@ mod commands {
     pub mod delete {
         use anyhow::Result;
 
-        pub async fn execute(
-            _name: String,
-            _sync: bool,
-            _force: bool,
-        ) -> Result<()> {
+        pub async fn execute(_name: String, _sync: bool, _force: bool) -> Result<()> {
             log::info!("Delete command (stub)");
             println!("Delete command - to be implemented");
             Ok(())
@@ -577,11 +592,7 @@ mod commands {
     pub mod sync {
         use anyhow::Result;
 
-        pub async fn execute(
-            _dry_run: bool,
-            _full: bool,
-            _verbose: bool,
-        ) -> Result<()> {
+        pub async fn execute(_dry_run: bool, _full: bool, _verbose: bool) -> Result<()> {
             log::info!("Sync command (stub)");
             println!("Sync command - to be implemented");
             Ok(())
@@ -595,8 +606,8 @@ mod commands {
     }
 
     pub mod devices {
-        use anyhow::Result;
         use super::super::DeviceCommands;
+        use anyhow::Result;
 
         pub async fn execute(command: DeviceCommands) -> Result<()> {
             log::info!("Devices command {:?} (stub)", command);
@@ -606,8 +617,8 @@ mod commands {
     }
 
     pub mod config {
-        use anyhow::Result;
         use super::super::ConfigCommands;
+        use anyhow::Result;
 
         pub async fn execute(command: ConfigCommands) -> Result<()> {
             log::info!("Config command {:?} (stub)", command);
@@ -632,8 +643,8 @@ mod commands {
     }
 
     pub mod mnemonic {
-        use anyhow::Result;
         use super::super::MnemonicCommands;
+        use anyhow::Result;
 
         pub async fn execute(command: MnemonicCommands) -> Result<()> {
             log::info!("Mnemonic command {:?} (stub)", command);

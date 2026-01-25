@@ -1,4 +1,4 @@
-use keyring_cli::db::migration::{Migrator, Migration};
+use keyring_cli::db::migration::{Migration, Migrator};
 use tempfile::TempDir;
 
 #[test]

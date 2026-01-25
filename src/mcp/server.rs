@@ -1,8 +1,8 @@
 use crate::error::KeyringError;
-use crate::mcp::authorization::AuthManager;
 use crate::mcp::audit::AuditLogger;
+use crate::mcp::authorization::AuthManager;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 use tokio::sync::RwLock;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -68,8 +68,14 @@ impl McpServer {
 
     pub async fn start(&self) -> Result<(), KeyringError> {
         // In a real implementation, this would start the HTTP server
-        println!("[MOCK] MCP server starting on {}:{}", self.config.host, self.config.port);
-        println!("[MOCK] Authentication required: {}", self.config.auth_required);
+        println!(
+            "[MOCK] MCP server starting on {}:{}",
+            self.config.host, self.config.port
+        );
+        println!(
+            "[MOCK] Authentication required: {}",
+            self.config.auth_required
+        );
         Ok(())
     }
 

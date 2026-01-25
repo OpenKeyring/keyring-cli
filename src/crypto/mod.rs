@@ -1,10 +1,10 @@
 //! Cryptographic primitives for key derivation and encryption
 
-pub mod argon2id;
 pub mod aes256gcm;
-pub mod keywrap;
+pub mod argon2id;
 pub mod bip39;
 pub mod keystore;
+pub mod keywrap;
 pub mod record;
 
 use crate::error::KeyringError;
@@ -34,7 +34,11 @@ impl CryptoManager {
     }
 
     /// Initialize with existing salt (for loading from storage)
-    pub fn initialize_with_salt(&mut self, password: &str, salt: [u8; 16]) -> Result<(), KeyringError> {
+    pub fn initialize_with_salt(
+        &mut self,
+        password: &str,
+        salt: [u8; 16],
+    ) -> Result<(), KeyringError> {
         self.master_key = Some(argon2id::derive_key(password, &salt)?);
         self.salt = Some(salt);
         Ok(())
@@ -53,32 +57,54 @@ impl CryptoManager {
 
     /// Encrypt data using the current master key
     pub fn encrypt(&self, plaintext: &[u8]) -> Result<(Vec<u8>, [u8; 12]), KeyringError> {
-        let key = self.master_key.as_ref()
-            .ok_or_else(|| KeyringError::Crypto { context: "Not initialized".to_string() })?;
-        let key_array: [u8; 32] = key.as_slice().try_into()
-            .map_err(|_| KeyringError::Crypto { context: "Invalid key length".to_string() })?;
-        aes256gcm::encrypt(plaintext, &key_array)
-            .map_err(|e| KeyringError::Crypto { context: e.to_string() })
+        let key = self
+            .master_key
+            .as_ref()
+            .ok_or_else(|| KeyringError::Crypto {
+                context: "Not initialized".to_string(),
+            })?;
+        let key_array: [u8; 32] = key
+            .as_slice()
+            .try_into()
+            .map_err(|_| KeyringError::Crypto {
+                context: "Invalid key length".to_string(),
+            })?;
+        aes256gcm::encrypt(plaintext, &key_array).map_err(|e| KeyringError::Crypto {
+            context: e.to_string(),
+        })
     }
 
     /// Decrypt data using the current master key
     pub fn decrypt(&self, ciphertext: &[u8], nonce: &[u8; 12]) -> Result<Vec<u8>, KeyringError> {
-        let key = self.master_key.as_ref()
-            .ok_or_else(|| KeyringError::Crypto { context: "Not initialized".to_string() })?;
-        let key_array: [u8; 32] = key.as_slice().try_into()
-            .map_err(|_| KeyringError::Crypto { context: "Invalid key length".to_string() })?;
-        aes256gcm::decrypt(ciphertext, nonce, &key_array)
-            .map_err(|e| KeyringError::Crypto { context: e.to_string() })
+        let key = self
+            .master_key
+            .as_ref()
+            .ok_or_else(|| KeyringError::Crypto {
+                context: "Not initialized".to_string(),
+            })?;
+        let key_array: [u8; 32] = key
+            .as_slice()
+            .try_into()
+            .map_err(|_| KeyringError::Crypto {
+                context: "Invalid key length".to_string(),
+            })?;
+        aes256gcm::decrypt(ciphertext, nonce, &key_array).map_err(|e| KeyringError::Crypto {
+            context: e.to_string(),
+        })
     }
 
     /// Derive a sub-key using HKDF-like approach
     pub fn derive_sub_key(&self, context: &[u8]) -> Result<[u8; 32], KeyringError> {
-        let master = self.master_key.as_ref()
-            .ok_or_else(|| KeyringError::Crypto { context: "Not initialized".to_string() })?;
+        let master = self
+            .master_key
+            .as_ref()
+            .ok_or_else(|| KeyringError::Crypto {
+                context: "Not initialized".to_string(),
+            })?;
 
         // Simple sub-key derivation: hash(master || context)
-        use sha2::Sha256;
         use sha2::Digest;
+        use sha2::Sha256;
         let mut hasher = Sha256::new();
         hasher.update(master);
         hasher.update(context);
@@ -132,14 +158,69 @@ impl CryptoManager {
     /// Generate a memorable password using word-based approach
     pub fn generate_memorable_password(&self, word_count: usize) -> Result<String, KeyringError> {
         const WORDS: &[&str] = &[
-            "correct", "horse", "battery", "staple", "apple", "banana", "cherry", "dragon",
-            "elephant", "flower", "garden", "house", "island", "jungle", "kangaroo", "lemon",
-            "mountain", "nectar", "orange", "piano", "queen", "river", "sunshine", "tiger",
-            "umbrella", "violet", "whale", "xylophone", "yellow", "zebra", "castle", "desert",
-            "eagle", "forest", "giraffe", "harbor", "igloo", "journey", "kingdom", "lantern",
-            "meadow", "night", "ocean", "planet", "quartz", "rainbow", "star", "tower",
-            "universe", "valley", "wave", "crystal", "year", "zen", "bridge", "cloud",
-            "diamond", "emerald", "fountain", "galaxy", "horizon", "infinity", "jewel",
+            "correct",
+            "horse",
+            "battery",
+            "staple",
+            "apple",
+            "banana",
+            "cherry",
+            "dragon",
+            "elephant",
+            "flower",
+            "garden",
+            "house",
+            "island",
+            "jungle",
+            "kangaroo",
+            "lemon",
+            "mountain",
+            "nectar",
+            "orange",
+            "piano",
+            "queen",
+            "river",
+            "sunshine",
+            "tiger",
+            "umbrella",
+            "violet",
+            "whale",
+            "xylophone",
+            "yellow",
+            "zebra",
+            "castle",
+            "desert",
+            "eagle",
+            "forest",
+            "giraffe",
+            "harbor",
+            "igloo",
+            "journey",
+            "kingdom",
+            "lantern",
+            "meadow",
+            "night",
+            "ocean",
+            "planet",
+            "quartz",
+            "rainbow",
+            "star",
+            "tower",
+            "universe",
+            "valley",
+            "wave",
+            "crystal",
+            "year",
+            "zen",
+            "bridge",
+            "cloud",
+            "diamond",
+            "emerald",
+            "fountain",
+            "galaxy",
+            "horizon",
+            "infinity",
+            "jewel",
         ];
 
         if word_count < 3 {
@@ -155,7 +236,10 @@ impl CryptoManager {
 
         use rand::seq::SliceRandom;
         let mut rng = rand::thread_rng();
-        let selected: Vec<&str> = WORDS.choose_multiple(&mut rng, word_count).copied().collect();
+        let selected: Vec<&str> = WORDS
+            .choose_multiple(&mut rng, word_count)
+            .copied()
+            .collect();
 
         Ok(selected.join("-"))
     }
@@ -247,13 +331,10 @@ mod tests {
 }
 
 // Re-exports for convenience
+pub use aes256gcm::{decrypt, decrypt_with_aad, encrypt, encrypt_with_aad, EncryptedData};
 pub use argon2id::{
-    Argon2Params, DeviceCapability,
-    derive_key, derive_key_with_params, generate_salt,
-    hash_password, verify_password,
-    detect_device_capability, verify_params_security,
-    PasswordHash,
+    derive_key, derive_key_with_params, detect_device_capability, generate_salt, hash_password,
+    verify_params_security, verify_password, Argon2Params, DeviceCapability, PasswordHash,
 };
-pub use aes256gcm::{encrypt, decrypt, encrypt_with_aad, decrypt_with_aad, EncryptedData};
-pub use keywrap::{wrap_key, unwrap_key};
 pub use keystore::verify_recovery_key;
+pub use keywrap::{unwrap_key, wrap_key};
