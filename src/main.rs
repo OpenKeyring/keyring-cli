@@ -391,11 +391,19 @@ async fn main() -> Result<()> {
         Commands::List {
             r#type,
             tags,
-            tag,
-            sort,
-            reverse,
-            output,
-        } => commands::list::execute(r#type, tags, tag, sort, reverse, output).await?,
+            tag: _,
+            sort: _,
+            reverse: _,
+            output: _,
+        } => {
+            use cli::commands::list::ListArgs;
+            let args = ListArgs {
+                r#type,
+                tags,
+                limit: None,
+            };
+            commands::list::list_records(args).await?
+        }
 
         Commands::Show {
             name,
@@ -413,55 +421,118 @@ async fn main() -> Result<()> {
             url,
             notes,
             tags,
-            add_tags,
-            remove_tags,
+            add_tags: _,
+            remove_tags: _,
             sync,
         } => {
-            commands::update::execute(
+            use cli::commands::update::UpdateArgs;
+            let args = UpdateArgs {
                 name,
                 password,
                 username,
                 url,
                 notes,
                 tags,
-                add_tags,
-                remove_tags,
                 sync,
-            )
-            .await?
+            };
+            commands::update::update_record(args).await?
         }
 
         Commands::Delete { name, sync, force } => {
-            commands::delete::execute(name, sync, force).await?
+            use cli::commands::delete::DeleteArgs;
+            let args = DeleteArgs {
+                name,
+                confirm: force,
+                sync,
+            };
+            commands::delete::delete_record(args).await?
         }
 
         Commands::Search {
             query,
             r#type,
-            output,
-        } => commands::search::execute(query, r#type, output).await?,
+            output: _,
+        } => {
+            use cli::commands::search::SearchArgs;
+            let args = SearchArgs {
+                query,
+                r#type,
+                tags: vec![],
+                limit: None,
+            };
+            commands::search::search_records(args).await?
+        }
 
         Commands::Sync {
             dry_run,
             full,
-            verbose,
-        } => commands::sync::execute(dry_run, full, verbose).await?,
+            verbose: _,
+        } => {
+            use cli::commands::sync::SyncArgs;
+            let args = SyncArgs {
+                dry_run,
+                full,
+                status: false,
+                provider: None,
+            };
+            commands::sync::sync_records(args).await?
+        }
 
-        Commands::SyncStatus => commands::sync::execute_status().await?,
+        Commands::SyncStatus => {
+            use cli::commands::sync::SyncArgs;
+            let args = SyncArgs {
+                dry_run: false,
+                full: false,
+                status: true,
+                provider: None,
+            };
+            commands::sync::sync_records(args).await?
+        }
 
-        Commands::Devices { device_command } => commands::devices::execute(device_command).await?,
+        Commands::Devices { device_command } => {
+            use cli::commands::devices::DevicesArgs;
+            let args = match device_command {
+                DeviceCommands::List => DevicesArgs { remove: None },
+                DeviceCommands::Remove { device_id, force: _ } => DevicesArgs { remove: Some(device_id) },
+            };
+            commands::devices::manage_devices(args).await?
+        }
 
-        Commands::Config { config_command } => commands::config::execute(config_command).await?,
+        Commands::Config { config_command } => {
+            commands::config::execute(config_command).await?
+        }
 
         Commands::Health {
             leaks,
             weak,
             duplicate,
             all,
-        } => commands::health::execute(leaks, weak, duplicate, all).await?,
+        } => {
+            use cli::commands::health::HealthArgs;
+            let args = HealthArgs {
+                leaks,
+                weak,
+                duplicate,
+                all,
+            };
+            commands::health::check_health(args).await?
+        }
 
         Commands::Mnemonic { mnemonic_command } => {
-            commands::mnemonic::execute(mnemonic_command).await?
+            use cli::commands::mnemonic::MnemonicArgs;
+            let args = match mnemonic_command {
+                MnemonicCommands::Generate { words, language: _, name, hint: _ } => MnemonicArgs {
+                    generate: words,
+                    validate: None,
+                    name,
+                },
+                MnemonicCommands::Validate { words } => MnemonicArgs {
+                    generate: None,
+                    validate: Some(words),
+                    name: None,
+                },
+            };
+            commands::mnemonic::handle_mnemonic(args).await?
         }
     }
 
