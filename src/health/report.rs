@@ -1,6 +1,6 @@
 //! Health reporting structures
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Represents a health issue found during checks
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -40,15 +40,18 @@ pub struct HealthReport {
 
 impl HealthReport {
     pub fn from_issues(total_records: usize, issues: Vec<HealthIssue>) -> Self {
-        let weak_password_count = issues.iter()
+        let weak_password_count = issues
+            .iter()
             .filter(|i| i.issue_type == HealthIssueType::WeakPassword)
             .count();
 
-        let duplicate_password_count = issues.iter()
+        let duplicate_password_count = issues
+            .iter()
             .filter(|i| i.issue_type == HealthIssueType::DuplicatePassword)
             .count();
 
-        let compromised_password_count = issues.iter()
+        let compromised_password_count = issues
+            .iter()
             .filter(|i| i.issue_type == HealthIssueType::CompromisedPassword)
             .count();
 

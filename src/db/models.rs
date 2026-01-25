@@ -62,7 +62,6 @@ pub struct DecryptedRecord {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
-
 /// Tag model
 #[derive(Debug, Clone)]
 pub struct Tag {

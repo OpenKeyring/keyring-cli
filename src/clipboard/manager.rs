@@ -1,10 +1,10 @@
 use crate::error::KeyringError;
 use std::time::Duration;
 
-#[cfg(target_os = "macos")]
-use crate::clipboard::macos::MacOSClipboard;
 #[cfg(target_os = "linux")]
 use crate::clipboard::linux::LinuxClipboard;
+#[cfg(target_os = "macos")]
+use crate::clipboard::macos::MacOSClipboard;
 #[cfg(target_os = "windows")]
 use crate::clipboard::windows::WindowsClipboard;
 
@@ -42,7 +42,6 @@ impl<T: ClipboardManager> ClipboardService<T> {
         Self { manager, config }
     }
 }
-
 
 // Wrapper for Box<dyn ClipboardManager>
 pub struct BoxClipboardManager {
@@ -107,7 +106,10 @@ impl<T: ClipboardManager> ClipboardService<T> {
 
         if password.len() > self.config.max_content_length {
             return Err(KeyringError::InvalidInput {
-                context: format!("Content exceeds maximum length of {}", self.config.max_content_length),
+                context: format!(
+                    "Content exceeds maximum length of {}",
+                    self.config.max_content_length
+                ),
             });
         }
 

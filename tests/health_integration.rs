@@ -1,11 +1,11 @@
 // Health check integration tests
 
-use keyring_cli::health::{HealthChecker, HealthReport, HealthIssueType};
-use keyring_cli::crypto::CryptoManager;
-use keyring_cli::crypto::record::{encrypt_payload, RecordPayload};
-use keyring_cli::db::models::{StoredRecord, RecordType};
-use uuid::Uuid;
 use chrono::Utc;
+use keyring_cli::crypto::record::{encrypt_payload, RecordPayload};
+use keyring_cli::crypto::CryptoManager;
+use keyring_cli::db::models::{RecordType, StoredRecord};
+use keyring_cli::health::{HealthChecker, HealthIssueType, HealthReport};
+use uuid::Uuid;
 
 #[tokio::test]
 async fn test_full_health_check_workflow() {
@@ -23,8 +23,14 @@ async fn test_full_health_check_workflow() {
 
     // Verify results
     assert!(!report.is_healthy(), "Should find health issues");
-    assert!(report.weak_password_count > 0, "Should detect weak passwords");
-    assert!(report.duplicate_password_count > 0, "Should detect duplicates");
+    assert!(
+        report.weak_password_count > 0,
+        "Should detect weak passwords"
+    );
+    assert!(
+        report.duplicate_password_count > 0,
+        "Should detect duplicates"
+    );
 }
 
 #[tokio::test]
@@ -46,8 +52,14 @@ async fn test_health_check_with_only_strong_passwords() {
     let report = HealthReport::from_issues(records.len(), issues);
 
     // Should be healthy (no weak passwords or duplicates)
-    assert_eq!(report.weak_password_count, 0, "Should have no weak passwords");
-    assert_eq!(report.duplicate_password_count, 0, "Should have no duplicates");
+    assert_eq!(
+        report.weak_password_count, 0,
+        "Should have no weak passwords"
+    );
+    assert_eq!(
+        report.duplicate_password_count, 0,
+        "Should have no duplicates"
+    );
 }
 
 #[tokio::test]
@@ -74,8 +86,15 @@ async fn test_duplicate_detection_across_many_records() {
 
     // Should find exactly one duplicate issue covering 3 records
     assert_eq!(issues.len(), 1, "Should find exactly one duplicate issue");
-    assert_eq!(issues[0].record_names.len(), 3, "Duplicate should involve 3 records");
-    assert!(matches!(issues[0].issue_type, HealthIssueType::DuplicatePassword));
+    assert_eq!(
+        issues[0].record_names.len(),
+        3,
+        "Duplicate should involve 3 records"
+    );
+    assert!(matches!(
+        issues[0].issue_type,
+        HealthIssueType::DuplicatePassword
+    ));
 }
 
 #[tokio::test]
@@ -86,8 +105,8 @@ async fn test_weak_password_severity_levels() {
 
     // Create records with different weakness levels
     let records = vec![
-        create_record("very-weak", "password", &crypto),     // Very weak (< 40)
-        create_record("somewhat-weak", "Monkey1", &crypto),    // Somewhat weak (40-60)
+        create_record("very-weak", "password", &crypto), // Very weak (< 40)
+        create_record("somewhat-weak", "Monkey1", &crypto), // Somewhat weak (40-60)
     ];
 
     // Run health checks
@@ -98,15 +117,28 @@ async fn test_weak_password_severity_levels() {
     let issues = checker.check_all(&records).await;
 
     // Should find both weak passwords
-    assert_eq!(issues.len(), 2, "Should find both weak passwords: {:?}", issues);
+    assert_eq!(
+        issues.len(),
+        2,
+        "Should find both weak passwords: {:?}",
+        issues
+    );
 
     // Both should be WeakPassword type
-    assert!(issues.iter().all(|i| matches!(i.issue_type, HealthIssueType::WeakPassword)),
-            "All issues should be WeakPassword type");
+    assert!(
+        issues
+            .iter()
+            .all(|i| matches!(i.issue_type, HealthIssueType::WeakPassword)),
+        "All issues should be WeakPassword type"
+    );
 
     // At least one should have High severity (very weak)
-    assert!(issues.iter().any(|i| i.severity >= keyring_cli::health::report::Severity::High),
-            "At least one password should have High severity");
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.severity >= keyring_cli::health::report::Severity::High),
+        "At least one password should have High severity"
+    );
 }
 
 fn create_test_records(crypto: &CryptoManager) -> Vec<StoredRecord> {

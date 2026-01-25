@@ -36,23 +36,24 @@ impl AsyncToolExecutor {
         let start_time = std::time::Instant::now();
 
         // Get tool definition
-        let tool = self.registry.get_tool(tool_name)
-            .ok_or_else(|| KeyringError::ToolNotFound { tool_name: tool_name.to_string() })?;
+        let tool = self
+            .registry
+            .get_tool(tool_name)
+            .ok_or_else(|| KeyringError::ToolNotFound {
+                tool_name: tool_name.to_string(),
+            })?;
 
         // Log tool execution
-        self.audit_logger.log_tool_execution(tool_name, client_id, &args, None, true)?;
+        self.audit_logger
+            .log_tool_execution(tool_name, client_id, &args, None, true)?;
 
         // Execute the tool (mock implementation for now)
         let result = match tool_name {
-            "generate_password" => {
-                self.execute_generate_password(args.clone())
-            }
-            "list_records" => {
-                self.execute_list_records()
-            }
-            _ => {
-                Err(KeyringError::ToolNotFound { tool_name: tool_name.to_string() })
-            }
+            "generate_password" => self.execute_generate_password(args.clone()),
+            "list_records" => self.execute_list_records(),
+            _ => Err(KeyringError::ToolNotFound {
+                tool_name: tool_name.to_string(),
+            }),
         };
 
         let execution_time = start_time.elapsed();
@@ -64,7 +65,7 @@ impl AsyncToolExecutor {
                     client_id,
                     &args,
                     Some(execution_time),
-                    execution_result.success
+                    execution_result.success,
                 )?;
             }
             Err(_) => {
@@ -73,7 +74,7 @@ impl AsyncToolExecutor {
                     client_id,
                     &args,
                     Some(execution_time),
-                    false
+                    false,
                 )?;
             }
         }

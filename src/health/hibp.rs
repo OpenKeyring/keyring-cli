@@ -1,14 +1,17 @@
 //! HIBP (Have I Been Pwned) API integration for compromised password checking
 
+use crate::crypto::record::{decrypt_payload, RecordPayload};
 use crate::crypto::CryptoManager;
 use crate::db::models::StoredRecord;
 use crate::health::report::{HealthIssue, HealthIssueType, Severity};
-use crate::crypto::record::{decrypt_payload, RecordPayload};
-use sha1::{Sha1, Digest};
+use sha1::{Digest, Sha1};
 use std::time::Duration;
 
 /// Check for compromised passwords using HIBP API
-pub async fn check_compromised_passwords(records: &[StoredRecord], crypto: &CryptoManager) -> Vec<HealthIssue> {
+pub async fn check_compromised_passwords(
+    records: &[StoredRecord],
+    crypto: &CryptoManager,
+) -> Vec<HealthIssue> {
     let mut issues = Vec::new();
 
     for record in records {

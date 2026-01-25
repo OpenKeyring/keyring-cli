@@ -48,8 +48,9 @@ impl KeyStore {
         let (wrapped_device_key, wrapped_device_key_nonce) =
             keywrap::wrap_key(&device_key, &master_key)?;
 
-        let recovery_key = bip39::generate_mnemonic(24)
-            .map_err(|e| KeyringError::Crypto { context: e.to_string() })?;
+        let recovery_key = bip39::generate_mnemonic(24).map_err(|e| KeyringError::Crypto {
+            context: e.to_string(),
+        })?;
         let recovery_key_hash = hash_recovery_key(&recovery_key);
 
         let keystore_file = KeyStoreFile {
@@ -80,10 +81,7 @@ impl KeyStore {
 
         if keystore_file.version != KEYSTORE_VERSION {
             return Err(KeyringError::InvalidInput {
-                context: format!(
-                    "Unsupported keystore version: {}",
-                    keystore_file.version
-                ),
+                context: format!("Unsupported keystore version: {}", keystore_file.version),
             });
         }
 
@@ -97,21 +95,22 @@ impl KeyStore {
             });
         }
 
-        let wrapped_dek = STANDARD
-            .decode(keystore_file.wrapped_dek)
-            .map_err(|e| KeyringError::Crypto {
-                context: format!("Invalid wrapped DEK encoding: {}", e),
-            })?;
+        let wrapped_dek =
+            STANDARD
+                .decode(keystore_file.wrapped_dek)
+                .map_err(|e| KeyringError::Crypto {
+                    context: format!("Invalid wrapped DEK encoding: {}", e),
+                })?;
         let wrapped_dek_nonce = decode_fixed_nonce(&keystore_file.wrapped_dek_nonce)?;
         let dek = keywrap::unwrap_key(&wrapped_dek, &wrapped_dek_nonce, &master_key)?;
 
-        let wrapped_device_key = STANDARD
-            .decode(keystore_file.wrapped_device_key)
-            .map_err(|e| KeyringError::Crypto {
-                context: format!("Invalid wrapped device key encoding: {}", e),
-            })?;
-        let wrapped_device_key_nonce =
-            decode_fixed_nonce(&keystore_file.wrapped_device_key_nonce)?;
+        let wrapped_device_key =
+            STANDARD
+                .decode(keystore_file.wrapped_device_key)
+                .map_err(|e| KeyringError::Crypto {
+                    context: format!("Invalid wrapped device key encoding: {}", e),
+                })?;
+        let wrapped_device_key_nonce = decode_fixed_nonce(&keystore_file.wrapped_device_key_nonce)?;
         let device_key =
             keywrap::unwrap_key(&wrapped_device_key, &wrapped_device_key_nonce, &master_key)?;
 
@@ -124,8 +123,9 @@ impl KeyStore {
 }
 
 fn derive_master_key(password: &str, salt: &[u8; 16]) -> Result<[u8; 32]> {
-    let key_bytes = argon2id::derive_key(password, salt)
-        .map_err(|e| KeyringError::Crypto { context: e.to_string() })?;
+    let key_bytes = argon2id::derive_key(password, salt).map_err(|e| KeyringError::Crypto {
+        context: e.to_string(),
+    })?;
     let mut key = [0u8; 32];
     key.copy_from_slice(&key_bytes);
     Ok(key)

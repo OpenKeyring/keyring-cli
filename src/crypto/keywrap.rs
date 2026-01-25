@@ -5,10 +5,7 @@ use anyhow::Result;
 
 /// Wrap a key using AES-256-GCM
 /// Returns: (encrypted_key, nonce)
-pub fn wrap_key(
-    key_to_wrap: &[u8; 32],
-    wrapping_key: &[u8; 32],
-) -> Result<(Vec<u8>, [u8; 12])> {
+pub fn wrap_key(key_to_wrap: &[u8; 32], wrapping_key: &[u8; 32]) -> Result<(Vec<u8>, [u8; 12])> {
     aes256gcm::encrypt(key_to_wrap, wrapping_key)
 }
 

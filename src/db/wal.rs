@@ -8,7 +8,8 @@ use rusqlite::Connection;
 /// Returns the size of the -wal file associated with the database.
 pub fn get_wal_size(conn: &Connection) -> Result<u64> {
     // Try to get actual WAL file size
-    let wal_size: i64 = conn.pragma_query_value(None, "wal_size(DATABASE)", |row| row.get(0))
+    let wal_size: i64 = conn
+        .pragma_query_value(None, "wal_size(DATABASE)", |row| row.get(0))
         .unwrap_or(0);
 
     Ok(wal_size as u64)

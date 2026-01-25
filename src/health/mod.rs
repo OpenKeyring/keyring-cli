@@ -6,9 +6,9 @@
 //! - Compromised password detection via HIBP API
 
 pub mod checker;
-pub mod strength;
 pub mod hibp;
 pub mod report;
+pub mod strength;
 
 pub use checker::HealthChecker;
 pub use report::{HealthIssue, HealthIssueType, HealthReport};

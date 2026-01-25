@@ -1,23 +1,23 @@
 //! Database layer with SQLite storage
 
-pub mod schema;
-pub mod models;
-pub mod vault;
 pub mod lock;
-pub mod wal;
 pub mod migration;
+pub mod models;
+pub mod schema;
+pub mod vault;
+pub mod wal;
 
 use crate::error::KeyringError;
 use rusqlite::Connection;
 use std::path::Path;
 
 // Re-exports for convenience
+pub use lock::VaultLock;
+pub use migration::{Migration, Migrator};
+pub use models::{RecordType, StoredRecord, SyncState, SyncStatus};
 pub use schema::initialize_database;
 pub use vault::Vault;
-pub use lock::VaultLock;
 pub use wal::{checkpoint, truncate};
-pub use migration::{Migration, Migrator};
-pub use models::{RecordType, StoredRecord, SyncStatus, SyncState};
 
 /// High-level database manager
 pub struct DatabaseManager {
@@ -48,13 +48,15 @@ impl DatabaseManager {
 
     /// Get the connection for use with vault operations
     pub fn connection(&self) -> Result<&Connection, KeyringError> {
-        self.conn.as_ref()
-            .ok_or_else(|| KeyringError::Database { context: "Database not open".to_string() })
+        self.conn.as_ref().ok_or_else(|| KeyringError::Database {
+            context: "Database not open".to_string(),
+        })
     }
 
     /// Get mutable connection for use with vault operations
     pub fn connection_mut(&mut self) -> Result<&mut Connection, KeyringError> {
-        self.conn.as_mut()
-            .ok_or_else(|| KeyringError::Database { context: "Database not open".to_string() })
+        self.conn.as_mut().ok_or_else(|| KeyringError::Database {
+            context: "Database not open".to_string(),
+        })
     }
 }

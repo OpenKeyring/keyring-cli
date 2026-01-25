@@ -1,5 +1,5 @@
-use crate::error::KeyringError;
 use crate::db::models::StoredRecord;
+use crate::error::KeyringError;
 use crate::sync::export::SyncRecord;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::fs;
@@ -15,8 +15,7 @@ pub struct JsonSyncImporter;
 
 impl SyncImporter for JsonSyncImporter {
     fn import_from_file(&self, path: &Path) -> Result<SyncRecord, KeyringError> {
-        let json = fs::read_to_string(path)
-            .map_err(|e| KeyringError::IoError(e.to_string()))?;
+        let json = fs::read_to_string(path).map_err(|e| KeyringError::IoError(e.to_string()))?;
 
         self.import_from_json(&json)
     }
@@ -29,11 +28,14 @@ impl SyncImporter for JsonSyncImporter {
 
     fn sync_record_to_db(&self, sync_record: SyncRecord) -> Result<StoredRecord, KeyringError> {
         // In a real implementation, this would convert sync record to database record
-        let encrypted_data = STANDARD.decode(sync_record.encrypted_data)
-            .map_err(|e| KeyringError::Crypto {
-                context: format!("Invalid encrypted_data encoding: {}", e),
-            })?;
-        let nonce_bytes = STANDARD.decode(sync_record.nonce)
+        let encrypted_data =
+            STANDARD
+                .decode(sync_record.encrypted_data)
+                .map_err(|e| KeyringError::Crypto {
+                    context: format!("Invalid encrypted_data encoding: {}", e),
+                })?;
+        let nonce_bytes = STANDARD
+            .decode(sync_record.nonce)
             .map_err(|e| KeyringError::Crypto {
                 context: format!("Invalid nonce encoding: {}", e),
             })?;
