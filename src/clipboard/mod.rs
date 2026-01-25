@@ -8,7 +8,7 @@ pub mod manager;
 #[cfg(target_os = "windows")]
 pub mod windows;
 
-use std::time::Duration;
+// use std::time::Duration;  // Unused
 
 // Re-exports from manager module
 pub use manager::{create_platform_clipboard, ClipboardConfig, ClipboardManager, ClipboardService};
