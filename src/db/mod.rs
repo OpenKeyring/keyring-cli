@@ -11,6 +11,14 @@ use crate::error::KeyringError;
 use rusqlite::Connection;
 use std::path::Path;
 
+// Re-exports for convenience
+pub use schema::initialize_database;
+pub use vault::Vault;
+pub use lock::VaultLock;
+pub use wal::{checkpoint, truncate};
+pub use migration::{Migration, Migrator};
+pub use models::{RecordType, StoredRecord, SyncStatus, SyncState};
+
 /// High-level database manager
 pub struct DatabaseManager {
     conn: Option<Connection>,
