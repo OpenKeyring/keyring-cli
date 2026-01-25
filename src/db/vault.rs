@@ -15,9 +15,54 @@ pub struct Vault {
 
 impl Vault {
     /// Open or create a vault at the specified path
+    ///
+    /// For write operations, callers should use `Vault::with_write_lock()`
+    /// to ensure proper locking. Read-only operations can use `Vault::open()`.
     pub fn open(path: &Path, _master_password: &str) -> Result<Self> {
         let conn = super::schema::initialize_database(path)?;
         Ok(Self { conn })
+    }
+
+    /// Open vault with an exclusive write lock
+    ///
+    /// This ensures no other process (CLI or App) can write simultaneously.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use keyring_cli::db::vault::Vault;
+    /// use std::path::Path;
+    ///
+    /// let vault_path = Path::new("/path/to/vault");
+    /// let (vault, _lock) = Vault::with_write_lock(&vault_path, "password", 5000)?;
+    /// // ... perform write operations ...
+    /// // Lock is released when _lock goes out of scope
+    /// # Ok::<(), anyhow::Error>(())
+    /// ```
+    pub fn with_write_lock(path: &Path, master_password: &str, timeout_ms: u64) -> Result<(Self, super::lock::VaultLock)> {
+        let _lock = super::lock::VaultLock::acquire_write(path, timeout_ms)?;
+        let vault = Self::open(path, master_password)?;
+        Ok((vault, _lock))
+    }
+
+    /// Open vault with a shared read lock
+    ///
+    /// Multiple readers can hold locks simultaneously.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use keyring_cli::db::vault::Vault;
+    /// use std::path::Path;
+    ///
+    /// let vault_path = Path::new("/path/to/vault");
+    /// let (vault, _lock) = Vault::with_read_lock(&vault_path, "password", 5000)?;
+    /// // ... perform read operations ...
+    /// // Lock is released when _lock goes out of scope
+    /// # Ok::<(), anyhow::Error>(())
+    /// ```
+    pub fn with_read_lock(path: &Path, master_password: &str, timeout_ms: u64) -> Result<(Self, super::lock::VaultLock)> {
+        let _lock = super::lock::VaultLock::acquire_read(path, timeout_ms)?;
+        let vault = Self::open(path, master_password)?;
+        Ok((vault, _lock))
     }
 
     /// List all non-deleted records with tags
