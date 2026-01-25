@@ -18,6 +18,7 @@ pub fn initialize_database(db_path: &std::path::Path) -> Result<Connection> {
     create_tags_table(&conn)?;
     create_metadata_table(&conn)?;
     create_sync_state_table(&conn)?;
+    create_mcp_sessions_table(&conn)?;
 
     Ok(conn)
 }
@@ -99,5 +100,27 @@ fn create_sync_state_table(conn: &Connection) -> Result<()> {
         )",
         [],
     )?;
+    Ok(())
+}
+
+fn create_mcp_sessions_table(conn: &Connection) -> Result<()> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS mcp_sessions (
+            id TEXT PRIMARY KEY,
+            approved_credentials TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+            last_activity INTEGER NOT NULL,
+            ttl_seconds INTEGER NOT NULL
+        )",
+        [],
+    )?;
+
+    // Create index for efficient session lookups
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_mcp_sessions_last_activity
+         ON mcp_sessions(last_activity DESC)",
+        [],
+    )?;
+
     Ok(())
 }
