@@ -52,6 +52,10 @@ serde_yaml = "0.9"
 sysinfo = "0.30"
 dirs = "5.0"
 
+# System calls for file locking
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 # Clipboard (platform-specific)
 [target.'cfg(target_os = "macos")'.dependencies]
 # macOS uses pbcopy/pbpaste via std::process
@@ -62,6 +66,7 @@ dirs = "5.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 clipboard-win = "5.3"
+windows = { version = "0.58", features = ["Win32_Storage_FileSystem"] }
 
 [[bench]]
 name = "crypto-bench"
