@@ -252,3 +252,57 @@ fn test_update_record() {
     ).unwrap();
     assert_eq!(updated_version, 2, "Version should be incremented after update");
 }
+
+#[test]
+fn test_soft_delete_record() {
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let mut vault = Vault::open(&db_path, "test-password").unwrap();
+
+    // Create a record
+    let record = StoredRecord {
+        id: Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data: b"encrypted-data".to_vec(),
+        nonce: [0u8; 12],
+        tags: vec!["test-tag".to_string()],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    vault.add_record(&record).unwrap();
+
+    // Verify record exists in list
+    let records = vault.list_records().unwrap();
+    assert_eq!(records.len(), 1);
+
+    // Soft delete the record
+    vault.delete_record(&record.id.to_string()).unwrap();
+
+    // Record should not appear in list anymore
+    let records = vault.list_records().unwrap();
+    assert_eq!(records.len(), 0);
+
+    // Record should still exist in database with deleted=1
+    let count: i64 = vault.conn.query_row(
+        "SELECT COUNT(*) FROM records WHERE id = ?1 AND deleted = 1",
+        [&record.id.to_string()],
+        |row| row.get(0),
+    ).unwrap();
+    assert_eq!(count, 1);
+
+    // Sync state should be updated
+    let sync_state = vault.get_sync_state(&record.id.to_string()).unwrap();
+    assert!(sync_state.is_some());
+}
+
+#[test]
+fn test_delete_nonexistent_record() {
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let mut vault = Vault::open(&db_path, "test-password").unwrap();
+
+    let result = vault.delete_record(&Uuid::new_v4().to_string());
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("not found"));
+}

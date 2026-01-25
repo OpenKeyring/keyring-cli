@@ -312,9 +312,32 @@ impl Vault {
     }
 
     /// Delete a record (soft delete)
-    pub fn delete_record(&mut self, _id: &str) -> Result<()> {
-        // TODO: Implement soft delete
-        anyhow::bail!("Vault::delete_record not yet implemented")
+    ///
+    /// Marks the record as deleted (deleted=1) and updates the updated_at timestamp.
+    /// The record data is retained in the database for potential recovery and sync purposes.
+    ///
+    /// # Arguments
+    /// * `id` - The UUID of the record to delete
+    ///
+    /// # Returns
+    /// * `Ok(())` if the record was successfully marked as deleted
+    /// * `Err(...)` if the record doesn't exist or database error occurs
+    pub fn delete_record(&mut self, id: &str) -> Result<()> {
+        let rows_affected = self.conn.execute(
+            "UPDATE records
+             SET deleted = 1, updated_at = ?1
+             WHERE id = ?2 AND deleted = 0",
+            (chrono::Utc::now().timestamp(), id),
+        )?;
+
+        if rows_affected == 0 {
+            return Err(anyhow::anyhow!("Record not found or already deleted: {}", id));
+        }
+
+        // Mark record as pending sync (for deletion propagation)
+        self.mark_record_pending(id)?;
+
+        Ok(())
     }
 
     /// Get sync state for a record
