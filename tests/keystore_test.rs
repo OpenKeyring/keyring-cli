@@ -17,7 +17,7 @@ fn keystore_roundtrip_unlock() {
 #[test]
 fn recovery_key_verification() {
     use keyring_cli::crypto::verify_recovery_key;
-    
+
     let temp = tempfile::tempdir().unwrap();
     let path = temp.path().join("keystore.json");
     let master = "test-password";

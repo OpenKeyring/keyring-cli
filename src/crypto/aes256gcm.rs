@@ -54,11 +54,7 @@ pub fn decrypt(ciphertext: &[u8], nonce: &[u8; 12], key: &[u8; 32]) -> Result<Ve
 }
 
 /// Encrypt data with Additional Authenticated Data (AAD)
-pub fn encrypt_with_aad(
-    plaintext: &[u8],
-    aad: &[u8],
-    key: &[u8; 32],
-) -> Result<EncryptedData> {
+pub fn encrypt_with_aad(plaintext: &[u8], aad: &[u8], key: &[u8; 32]) -> Result<EncryptedData> {
     let cipher = Aes256Gcm::new(key.into());
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
 
@@ -77,11 +73,7 @@ pub fn encrypt_with_aad(
 }
 
 /// Decrypt data with Additional Authenticated Data (AAD)
-pub fn decrypt_with_aad(
-    encrypted: &EncryptedData,
-    aad: &[u8],
-    key: &[u8; 32],
-) -> Result<Vec<u8>> {
+pub fn decrypt_with_aad(encrypted: &EncryptedData, aad: &[u8], key: &[u8; 32]) -> Result<Vec<u8>> {
     let cipher = Aes256Gcm::new(key.into());
     let nonce = Nonce::from(encrypted.nonce);
 

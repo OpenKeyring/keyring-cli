@@ -1,4 +1,7 @@
-use keyring_cli::crypto::{CryptoManager, record::{RecordPayload, encrypt_payload, decrypt_payload}};
+use keyring_cli::crypto::{
+    record::{decrypt_payload, encrypt_payload, RecordPayload},
+    CryptoManager,
+};
 
 #[test]
 fn record_payload_encrypt_decrypt() {

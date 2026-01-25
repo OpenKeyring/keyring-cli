@@ -1,14 +1,12 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use keyring_cli::crypto::{argon2id, aes256gcm};
+use keyring_cli::crypto::{aes256gcm, argon2id};
 
 fn bench_argon2id_derive_key(c: &mut Criterion) {
     let password = "test-password-for-benchmarking";
     let salt = argon2id::generate_salt();
 
     c.bench_function("argon2id_derive_key", |b| {
-        b.iter(|| {
-            argon2id::derive_key(black_box(password), black_box(&salt)).unwrap()
-        })
+        b.iter(|| argon2id::derive_key(black_box(password), black_box(&salt)).unwrap())
     });
 }
 
@@ -17,9 +15,7 @@ fn bench_aes256gcm_encrypt(c: &mut Criterion) {
     let key = [0u8; 32];
 
     c.bench_function("aes256gcm_encrypt", |b| {
-        b.iter(|| {
-            aes256gcm::encrypt(black_box(plaintext), black_box(&key)).unwrap()
-        })
+        b.iter(|| aes256gcm::encrypt(black_box(plaintext), black_box(&key)).unwrap())
     });
 }
 
