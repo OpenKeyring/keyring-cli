@@ -16,6 +16,21 @@ A privacy-first, local-first password manager with cross-platform synchronizatio
 
 ### Installation
 
+#### Homebrew (macOS/Linux)
+
+```bash
+brew tap OpenKeyring/homebrew-tap
+brew install OpenKeyring/homebrew-tap/ok
+```
+
+#### Cargo (crates.io)
+
+```bash
+cargo install keyring-cli
+```
+
+#### From Source
+
 ```bash
 # Clone the repository
 git clone https://github.com/open-keyring/keyring-cli.git
