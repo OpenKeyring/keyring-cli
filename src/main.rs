@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use keyring_cli::cli::commands;
 
 /// OpenKeyring CLI - A privacy-first password manager
 #[derive(Parser, Debug)]
@@ -368,11 +369,23 @@ async fn main() -> Result<()> {
             copy,
             sync,
         } => {
-            commands::generate::execute(
-                name, length, numbers, symbols, memorable, words, pin, username, url, notes, tags,
-                copy, sync,
-            )
-            .await?
+            use cli::commands::generate::GenerateArgs;
+            let args = GenerateArgs {
+                name,
+                length,
+                numbers,
+                symbols,
+                memorable,
+                words,
+                pin,
+                username,
+                url,
+                notes,
+                tags,
+                copy,
+                sync,
+            };
+            commands::generate::execute(args).await?
         }
 
         Commands::List {
@@ -480,176 +493,4 @@ fn setup_logging(verbose: bool, quiet: bool) {
             )
         })
         .init();
-}
-
-// Command stub modules - to be implemented in later tasks
-
-mod commands {
-    use super::{ConfigCommands, DeviceCommands, MnemonicCommands};
-
-    pub mod generate {
-        use anyhow::Result;
-
-        pub async fn execute(
-            _name: String,
-            _length: usize,
-            _numbers: bool,
-            _symbols: bool,
-            _memorable: bool,
-            _words: usize,
-            _pin: bool,
-            _username: Option<String>,
-            _url: Option<String>,
-            _notes: Option<String>,
-            _tags: Vec<String>,
-            _copy: bool,
-            _sync: bool,
-        ) -> Result<()> {
-            log::info!("Generate command (stub)");
-            println!("Generate command - to be implemented");
-            Ok(())
-        }
-    }
-
-    pub mod list {
-        use anyhow::Result;
-
-        pub async fn execute(
-            _type: Option<String>,
-            _tags: Vec<String>,
-            _tag: Vec<String>,
-            _sort: Option<String>,
-            _reverse: bool,
-            _output: Option<String>,
-        ) -> Result<()> {
-            log::info!("List command (stub)");
-            println!("List command - to be implemented");
-            Ok(())
-        }
-    }
-
-    pub mod show {
-        use anyhow::Result;
-
-        pub async fn execute(
-            _name: String,
-            _password: bool,
-            _copy: bool,
-            _timeout: Option<u64>,
-            _field: Option<String>,
-            _history: bool,
-        ) -> Result<()> {
-            log::info!("Show command (stub)");
-            println!("Show command - to be implemented");
-            Ok(())
-        }
-    }
-
-    pub mod update {
-        use anyhow::Result;
-
-        pub async fn execute(
-            _name: String,
-            _password: Option<String>,
-            _username: Option<String>,
-            _url: Option<String>,
-            _notes: Option<String>,
-            _tags: Option<Vec<String>>,
-            _add_tags: Option<Vec<String>>,
-            _remove_tags: Option<Vec<String>>,
-            _sync: bool,
-        ) -> Result<()> {
-            log::info!("Update command (stub)");
-            println!("Update command - to be implemented");
-            Ok(())
-        }
-    }
-
-    pub mod delete {
-        use anyhow::Result;
-
-        pub async fn execute(_name: String, _sync: bool, _force: bool) -> Result<()> {
-            log::info!("Delete command (stub)");
-            println!("Delete command - to be implemented");
-            Ok(())
-        }
-    }
-
-    pub mod search {
-        use anyhow::Result;
-
-        pub async fn execute(
-            _query: String,
-            _type: Option<String>,
-            _output: Option<String>,
-        ) -> Result<()> {
-            log::info!("Search command (stub)");
-            println!("Search command - to be implemented");
-            Ok(())
-        }
-    }
-
-    pub mod sync {
-        use anyhow::Result;
-
-        pub async fn execute(_dry_run: bool, _full: bool, _verbose: bool) -> Result<()> {
-            log::info!("Sync command (stub)");
-            println!("Sync command - to be implemented");
-            Ok(())
-        }
-
-        pub async fn execute_status() -> Result<()> {
-            log::info!("SyncStatus command (stub)");
-            println!("SyncStatus command - to be implemented");
-            Ok(())
-        }
-    }
-
-    pub mod devices {
-        use super::super::DeviceCommands;
-        use anyhow::Result;
-
-        pub async fn execute(command: DeviceCommands) -> Result<()> {
-            log::info!("Devices command {:?} (stub)", command);
-            println!("Devices command - to be implemented");
-            Ok(())
-        }
-    }
-
-    pub mod config {
-        use super::super::ConfigCommands;
-        use anyhow::Result;
-
-        pub async fn execute(command: ConfigCommands) -> Result<()> {
-            log::info!("Config command {:?} (stub)", command);
-            println!("Config command - to be implemented");
-            Ok(())
-        }
-    }
-
-    pub mod health {
-        use anyhow::Result;
-
-        pub async fn execute(
-            _leaks: bool,
-            _weak: bool,
-            _duplicate: bool,
-            _all: bool,
-        ) -> Result<()> {
-            log::info!("Health command (stub)");
-            println!("Health command - to be implemented");
-            Ok(())
-        }
-    }
-
-    pub mod mnemonic {
-        use super::super::MnemonicCommands;
-        use anyhow::Result;
-
-        pub async fn execute(command: MnemonicCommands) -> Result<()> {
-            log::info!("Mnemonic command {:?} (stub)", command);
-            println!("Mnemonic command - to be implemented");
-            Ok(())
-        }
-    }
 }
