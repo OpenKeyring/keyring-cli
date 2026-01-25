@@ -1,7 +1,7 @@
 use clap::Parser;
 use crate::cli::ConfigManager;
-use crate::db::models::{Record, RecordType};
-use crate::error::{KeyringError, Result};
+use crate::db::models::{StoredRecord, RecordType};
+use crate::error::Result;
 use crate::cli::utils::PrettyPrinter;
 
 #[derive(Parser, Debug)]

@@ -1,8 +1,7 @@
 use clap::Parser;
-use crate::cli::ConfigManager;
-use crate::crypto::CryptoManager;
-use crate::error::{KeyringError, Result};
-use crate::db::models::{Record, RecordType};
+use crate::error::Result;
+use crate::db::models::{DecryptedRecord, RecordType};
+use crate::crypto::bip39;
 
 #[derive(Parser, Debug)]
 pub struct MnemonicArgs {
@@ -15,14 +14,10 @@ pub struct MnemonicArgs {
 }
 
 pub async fn handle_mnemonic(args: MnemonicArgs) -> Result<()> {
-    let mut config = ConfigManager::new()?;
-    let crypto_config = config.get_crypto_config()?;
-    let mut crypto = CryptoManager::new(&crypto_config);
-
     if let Some(word_count) = args.generate {
-        generate_mnemonic(&mut crypto, word_count, args.name).await?;
+        generate_mnemonic(word_count, args.name).await?;
     } else if let Some(words) = args.validate {
-        validate_mnemonic(&mut crypto, &words).await?;
+        validate_mnemonic(&words).await?;
     } else {
         println!("Please specify either --generate or --validate");
     }
@@ -30,18 +25,17 @@ pub async fn handle_mnemonic(args: MnemonicArgs) -> Result<()> {
     Ok(())
 }
 
-async fn generate_mnemonic(crypto: &mut CryptoManager, word_count: u8, name: Option<String>) -> Result<()> {
-    let mnemonic = crypto.generate_mnemonic(word_count)?;
+async fn generate_mnemonic(word_count: u8, name: Option<String>) -> Result<()> {
+    let mnemonic = bip39::generate_mnemonic(word_count as usize)?;
 
     if let Some(name) = name {
-        // Save as a mnemonic record
-        let master_password = ""; // This would come from config
-        let record = Record {
+        // Create a record placeholder for display purposes
+        let record = DecryptedRecord {
             id: uuid::Uuid::new_v4(),
             record_type: RecordType::Mnemonic,
-            encrypted_data: crypto.encrypt(&mnemonic, master_password)?,
             name,
             username: None,
+            password: mnemonic.clone(),
             url: None,
             notes: Some("Cryptocurrency wallet mnemonic".to_string()),
             tags: vec!["crypto".to_string(), "wallet".to_string()],
@@ -49,12 +43,9 @@ async fn generate_mnemonic(crypto: &mut CryptoManager, word_count: u8, name: Opt
             updated_at: chrono::Utc::now(),
         };
 
-        // Save to database
-        let mut config = ConfigManager::new()?;
-        let mut db = crate::db::DatabaseManager::new(&config.get_database_config()?).await?;
-        db.create_record(&record).await?;
-
-        println!("✅ Mnemonic generated and saved as '{}'", record.name);
+        // TODO: Save to database - requires proper encryption and storage
+        // For now, just display the mnemonic
+        println!("✅ Mnemonic generated as '{}'", record.name);
     }
 
     println!("🎯 Mnemonic: {}", mnemonic);
@@ -63,8 +54,8 @@ async fn generate_mnemonic(crypto: &mut CryptoManager, word_count: u8, name: Opt
     Ok(())
 }
 
-async fn validate_mnemonic(crypto: &mut CryptoManager, words: &str) -> Result<()> {
-    let is_valid = crypto.validate_mnemonic(words)?;
+async fn validate_mnemonic(words: &str) -> Result<()> {
+    let is_valid = bip39::validate_mnemonic(words)?;
 
     if is_valid {
         println!("✅ Mnemonic is valid");

@@ -1,10 +1,9 @@
-use crate::db::models::Record;
-use crate::error::Result;
+use crate::db::models::DecryptedRecord;
 
 pub struct PrettyPrinter;
 
 impl PrettyPrinter {
-    pub fn print_records(records: &[Record]) {
+    pub fn print_records(records: &[DecryptedRecord]) {
         if records.is_empty() {
             println!("📋 No records found");
             return;
@@ -19,7 +18,7 @@ impl PrettyPrinter {
         }
     }
 
-    fn print_single_record(record: &Record) {
+    fn print_single_record(record: &DecryptedRecord) {
         println!("🔹 Name: {}", record.name);
         println!("📝 Type: {:?}", record.record_type);
         println!("🏷️  Tags: {}", if record.tags.is_empty() { "None" } else { record.tags.join(", ") });
@@ -39,7 +38,7 @@ impl PrettyPrinter {
         }
     }
 
-    pub fn print_record(record: &Record) {
+    pub fn print_record(record: &DecryptedRecord) {
         Self::print_single_record(record);
     }
 
