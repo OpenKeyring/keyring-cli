@@ -128,13 +128,13 @@ impl AuditLogger {
 
     pub fn get_audit_logs(
         &self,
-        since: Option<DateTime<Utc>>,
+        _since: Option<DateTime<Utc>>,
     ) -> Result<Vec<AuditEvent>, KeyringError> {
         if !Path::new(&self.log_file_path).exists() {
             return Ok(Vec::new());
         }
 
-        let content = fs::read_to_string(&self.log_file_path)
+        let _content = fs::read_to_string(&self.log_file_path)
             .map_err(|e| KeyringError::IoError(e.to_string()))?;
 
         // Parse audit logs (in a real implementation, this would parse structured logs)

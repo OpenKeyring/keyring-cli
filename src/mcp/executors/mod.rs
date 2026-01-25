@@ -36,7 +36,7 @@ impl AsyncToolExecutor {
         let start_time = std::time::Instant::now();
 
         // Get tool definition
-        let tool = self
+        let _tool = self
             .registry
             .get_tool(tool_name)
             .ok_or_else(|| KeyringError::ToolNotFound {

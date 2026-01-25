@@ -40,7 +40,7 @@ pub async fn delete_record(args: DeleteArgs) -> Result<()> {
     Ok(())
 }
 
-async fn sync_deletion(config: &ConfigManager, record_id: &uuid::Uuid) -> Result<()> {
+async fn sync_deletion(_config: &ConfigManager, _record_id: &uuid::Uuid) -> Result<()> {
     println!("🔄 Syncing deletion...");
     Ok(())
 }

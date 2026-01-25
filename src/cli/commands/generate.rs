@@ -13,6 +13,7 @@ use crate::db::vault::Vault;
 use crate::db::models::{RecordType, StoredRecord};
 use crate::clipboard::{ClipboardService, ClipboardConfig, create_platform_clipboard};
 use crate::onboarding::is_initialized;
+use std::io::Write;
 use std::path::PathBuf;
 use rand::Rng;
 use rand::seq::SliceRandom;

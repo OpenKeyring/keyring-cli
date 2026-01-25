@@ -2,7 +2,7 @@ use anyhow::Result;
 use argon2::{Algorithm, Argon2, Params, Version};
 use rand::Rng;
 use sysinfo;
-use zeroize::ZeroizeOnDrop;
+// use zeroize::ZeroizeOnDrop;  // Unused
 
 /// Device capability level for Argon2id parameter selection
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

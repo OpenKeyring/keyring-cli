@@ -144,21 +144,21 @@ fn print_health_report(report: &HealthReport, show_weak: bool, show_dupes: bool,
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!("Total records checked: {}", report.total_records);
 
-    let mut total_issues = 0;
+    let mut _total_issues = 0;
 
     if show_weak {
         println!("Weak passwords:       {}", report.weak_password_count);
-        total_issues += report.weak_password_count;
+        _total_issues += report.weak_password_count;
     }
 
     if show_dupes {
         println!("Duplicate passwords:  {}", report.duplicate_password_count);
-        total_issues += report.duplicate_password_count;
+        _total_issues += report.duplicate_password_count;
     }
 
     if show_leaks {
         println!("Compromised:          {}", report.compromised_password_count);
-        total_issues += report.compromised_password_count;
+        _total_issues += report.compromised_password_count;
     }
 
     println!();
