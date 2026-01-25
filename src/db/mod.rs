@@ -5,6 +5,7 @@ pub mod models;
 pub mod vault;
 pub mod lock;
 pub mod wal;
+pub mod migration;
 
 use crate::error::KeyringError;
 use rusqlite::Connection;
