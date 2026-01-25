@@ -1,4 +1,4 @@
-use keyring_cli::crypto::{argon2id, aes256gcm, keywrap, CryptoManager};
+use keyring_cli::crypto::{aes256gcm, argon2id, keywrap, CryptoManager};
 
 #[test]
 fn test_full_crypto_workflow() {
@@ -42,10 +42,7 @@ fn test_different_passwords_different_keys() {
     let key2 = argon2id::derive_key("password2", &salt).unwrap();
 
     // Keys should be completely different
-    let diff_count = key1.iter()
-        .zip(key2.iter())
-        .filter(|(a, b)| a != b)
-        .count();
+    let diff_count = key1.iter().zip(key2.iter()).filter(|(a, b)| a != b).count();
 
     assert!(diff_count >= 28, "Keys should differ in most bytes");
 }
@@ -62,7 +59,10 @@ fn test_encryption_integrity_tampering() {
 
     // Decryption should fail
     let result = aes256gcm::decrypt(&ciphertext, &nonce, &key);
-    assert!(result.is_err(), "Tampered ciphertext should fail decryption");
+    assert!(
+        result.is_err(),
+        "Tampered ciphertext should fail decryption"
+    );
 }
 
 #[test]

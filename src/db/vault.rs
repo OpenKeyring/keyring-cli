@@ -5,7 +5,7 @@ use rusqlite::Connection;
 use std::path::Path;
 use uuid::Uuid;
 
-use super::models::{RecordType, StoredRecord, SyncStatus, SyncState};
+use super::models::{RecordType, StoredRecord, SyncState, SyncStatus};
 
 /// Vault for managing encrypted password records
 pub struct Vault {
@@ -38,7 +38,11 @@ impl Vault {
     /// // Lock is released when _lock goes out of scope
     /// # Ok::<(), anyhow::Error>(())
     /// ```
-    pub fn with_write_lock(path: &Path, master_password: &str, timeout_ms: u64) -> Result<(Self, super::lock::VaultLock)> {
+    pub fn with_write_lock(
+        path: &Path,
+        master_password: &str,
+        timeout_ms: u64,
+    ) -> Result<(Self, super::lock::VaultLock)> {
         let _lock = super::lock::VaultLock::acquire_write(path, timeout_ms)?;
         let vault = Self::open(path, master_password)?;
         Ok((vault, _lock))
@@ -59,7 +63,11 @@ impl Vault {
     /// // Lock is released when _lock goes out of scope
     /// # Ok::<(), anyhow::Error>(())
     /// ```
-    pub fn with_read_lock(path: &Path, master_password: &str, timeout_ms: u64) -> Result<(Self, super::lock::VaultLock)> {
+    pub fn with_read_lock(
+        path: &Path,
+        master_password: &str,
+        timeout_ms: u64,
+    ) -> Result<(Self, super::lock::VaultLock)> {
         let _lock = super::lock::VaultLock::acquire_read(path, timeout_ms)?;
         let vault = Self::open(path, master_password)?;
         Ok((vault, _lock))
@@ -78,7 +86,7 @@ impl Vault {
          LEFT JOIN tags t ON rt.tag_id = t.id
          WHERE r.deleted = 0
          GROUP BY r.id
-         ORDER BY r.updated_at DESC"
+         ORDER BY r.updated_at DESC",
         )?;
 
         let record_iter = stmt.query_map([], |row| {
@@ -94,7 +102,12 @@ impl Vault {
                 .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
 
             let tags = tags_csv
-                .map(|csv| csv.split(',').filter(|s| !s.is_empty()).map(String::from).collect())
+                .map(|csv| {
+                    csv.split(',')
+                        .filter(|s| !s.is_empty())
+                        .map(String::from)
+                        .collect()
+                })
                 .unwrap_or_default();
 
             let nonce = decode_nonce(&nonce_bytes).map_err(|_| {
@@ -139,25 +152,25 @@ impl Vault {
     /// Get a specific record by ID with tags
     pub fn get_record(&self, id: &str) -> Result<StoredRecord> {
         // Validate UUID format first
-        let uuid = Uuid::parse_str(id)
-            .map_err(|e| anyhow::anyhow!("Invalid UUID format: {}", e))?;
+        let uuid =
+            Uuid::parse_str(id).map_err(|e| anyhow::anyhow!("Invalid UUID format: {}", e))?;
 
         let (_id_str, record_type_str, encrypted_data, nonce_bytes, created_ts, updated_ts) =
             self.conn.query_row(
-            "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at
+                "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at
          FROM records WHERE id = ?1 AND deleted = 0",
-            &[id],
-            |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, Vec<u8>>(2)?,
-                    row.get::<_, Vec<u8>>(3)?,
-                    row.get::<_, i64>(4)?,
-                    row.get::<_, i64>(5)?,
-                ))
-            },
-        )?;
+                &[id],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, Vec<u8>>(2)?,
+                        row.get::<_, Vec<u8>>(3)?,
+                        row.get::<_, i64>(4)?,
+                        row.get::<_, i64>(5)?,
+                    ))
+                },
+            )?;
 
         let nonce = decode_nonce(&nonce_bytes)?;
 
@@ -224,7 +237,10 @@ impl Vault {
 
         // Verify record was inserted
         if rows_affected != 1 {
-            return Err(anyhow::anyhow!("Failed to insert record: expected 1 row affected, got {}", rows_affected));
+            return Err(anyhow::anyhow!(
+                "Failed to insert record: expected 1 row affected, got {}",
+                rows_affected
+            ));
         }
 
         // Deduplicate tags before processing
@@ -234,18 +250,18 @@ impl Vault {
         // Insert tags
         for tag_name in unique_tags {
             // Insert or get tag ID
-            let tag_id: i64 = tx.query_row(
-                "INSERT OR IGNORE INTO tags (name) VALUES (?1)
+            let tag_id: i64 = tx
+                .query_row(
+                    "INSERT OR IGNORE INTO tags (name) VALUES (?1)
              RETURNING id",
-                &[tag_name],
-                |row| row.get(0),
-            ).or_else(|_| {
-                tx.query_row(
-                    "SELECT id FROM tags WHERE name = ?1",
                     &[tag_name],
                     |row| row.get(0),
                 )
-            })?;
+                .or_else(|_| {
+                    tx.query_row("SELECT id FROM tags WHERE name = ?1", &[tag_name], |row| {
+                        row.get(0)
+                    })
+                })?;
 
             // Link record to tag
             tx.execute(
@@ -278,11 +294,11 @@ impl Vault {
     ///
     /// Returns `None` if the key does not exist.
     pub fn get_metadata(&self, key: &str) -> Result<Option<String>> {
-        let result = self.conn.query_row(
-            "SELECT value FROM metadata WHERE key = ?1",
-            [key],
-            |row| row.get(0),
-        );
+        let result =
+            self.conn
+                .query_row("SELECT value FROM metadata WHERE key = ?1", [key], |row| {
+                    row.get(0)
+                });
 
         match result {
             Ok(value) => Ok(Some(value)),
@@ -314,7 +330,10 @@ impl Vault {
 
         // Verify record was updated
         if rows_affected == 0 {
-            return Err(anyhow::anyhow!("Record not found or deleted: {}", record.id));
+            return Err(anyhow::anyhow!(
+                "Record not found or deleted: {}",
+                record.id
+            ));
         }
 
         // Update tags: remove old associations and add new ones
@@ -328,18 +347,18 @@ impl Vault {
         let record_id_str = record.id.to_string(); // Move outside loop to avoid repeated allocation
 
         for tag_name in unique_tags {
-            let tag_id: i64 = tx.query_row(
-                "INSERT OR IGNORE INTO tags (name) VALUES (?1)
+            let tag_id: i64 = tx
+                .query_row(
+                    "INSERT OR IGNORE INTO tags (name) VALUES (?1)
              RETURNING id",
-                &[tag_name],
-                |row| row.get(0),
-            ).or_else(|_| {
-                tx.query_row(
-                    "SELECT id FROM tags WHERE name = ?1",
                     &[tag_name],
                     |row| row.get(0),
                 )
-            })?;
+                .or_else(|_| {
+                    tx.query_row("SELECT id FROM tags WHERE name = ?1", &[tag_name], |row| {
+                        row.get(0)
+                    })
+                })?;
 
             tx.execute(
                 "INSERT OR IGNORE INTO record_tags (record_id, tag_id) VALUES (?1, ?2)",
@@ -376,7 +395,10 @@ impl Vault {
         )?;
 
         if rows_affected == 0 {
-            return Err(anyhow::anyhow!("Record not found or already deleted: {}", id));
+            return Err(anyhow::anyhow!(
+                "Record not found or already deleted: {}",
+                id
+            ));
         }
 
         // Mark record as pending sync (for deletion propagation)
@@ -451,7 +473,7 @@ impl Vault {
          LEFT JOIN tags t ON rt.tag_id = t.id
          WHERE r.deleted = 0 AND r.encrypted_data LIKE ?1
          GROUP BY r.id
-         ORDER BY r.updated_at DESC"
+         ORDER BY r.updated_at DESC",
         )?;
 
         let record_iter = stmt.query_map([&pattern], |row| {
@@ -467,7 +489,12 @@ impl Vault {
                 .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
 
             let tags = tags_csv
-                .map(|csv| csv.split(',').filter(|s| !s.is_empty()).map(String::from).collect())
+                .map(|csv| {
+                    csv.split(',')
+                        .filter(|s| !s.is_empty())
+                        .map(String::from)
+                        .collect()
+                })
                 .unwrap_or_default();
 
             let nonce = decode_nonce(&nonce_bytes).map_err(|_| {

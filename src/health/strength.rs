@@ -1,9 +1,9 @@
 //! Password strength checking module
 
+use crate::crypto::record::{decrypt_payload, RecordPayload};
 use crate::crypto::CryptoManager;
 use crate::db::models::StoredRecord;
 use crate::health::report::{HealthIssue, HealthIssueType, Severity};
-use crate::crypto::record::{decrypt_payload, RecordPayload};
 
 /// Check for weak passwords based on strength scoring
 pub fn check_weak_passwords(records: &[StoredRecord], crypto: &CryptoManager) -> Vec<HealthIssue> {
@@ -17,7 +17,11 @@ pub fn check_weak_passwords(records: &[StoredRecord], crypto: &CryptoManager) ->
                     issue_type: HealthIssueType::WeakPassword,
                     record_names: vec![record.id.to_string()],
                     description: format!("Weak password (strength score: {}/100)", score),
-                    severity: if score < 40 { Severity::High } else { Severity::Medium },
+                    severity: if score < 40 {
+                        Severity::High
+                    } else {
+                        Severity::Medium
+                    },
                 });
             }
         }
@@ -81,14 +85,18 @@ pub fn calculate_strength(password: &str) -> u8 {
     for window in chars.windows(4) {
         // Check for true sequences (each char is exactly +1 from previous)
         let sequential = window.iter().enumerate().all(|(i, &c)| {
-            if i == 0 { return true; }
+            if i == 0 {
+                return true;
+            }
             let prev = window[i - 1] as i32;
             let curr = c as i32;
             curr - prev == 1
         });
         // Also check for reverse sequences
         let reverse_sequential = window.iter().enumerate().all(|(i, &c)| {
-            if i == 0 { return true; }
+            if i == 0 {
+                return true;
+            }
             let prev = window[i - 1] as i32;
             let curr = c as i32;
             prev - curr == 1
@@ -113,9 +121,8 @@ pub fn calculate_strength(password: &str) -> u8 {
     let password_lower = password.to_lowercase();
 
     let common_patterns = [
-        "password", "qwerty", "asdfgh", "zxcvbn",
-        "letmein", "welcome", "login", "admin",
-        "123456", "111111", "123123",
+        "password", "qwerty", "asdfgh", "zxcvbn", "letmein", "welcome", "login", "admin", "123456",
+        "111111", "123123",
     ];
 
     for pattern in &common_patterns {
@@ -128,8 +135,13 @@ pub fn calculate_strength(password: &str) -> u8 {
 
     // Check for common substitutions (e.g., p@ssw0rd)
     let substitutions = [
-        ("@", "a"), ("0", "o"), ("3", "e"), ("1", "i"),
-        ("$", "s"), ("7", "t"), ("9", "g"),
+        ("@", "a"),
+        ("0", "o"),
+        ("3", "e"),
+        ("1", "i"),
+        ("$", "s"),
+        ("7", "t"),
+        ("9", "g"),
     ];
 
     let subbed = password_lower.clone();

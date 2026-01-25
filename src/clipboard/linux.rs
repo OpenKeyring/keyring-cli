@@ -16,11 +16,13 @@ impl ClipboardManager for LinuxClipboard {
 
         if let Some(stdin) = child.stdin.as_mut() {
             use std::io::Write;
-            stdin.write_all(content.as_bytes())
+            stdin
+                .write_all(content.as_bytes())
                 .map_err(|e| KeyringError::CommandFailed(e.to_string()))?;
         }
 
-        child.wait()
+        child
+            .wait()
             .map_err(|e| KeyringError::CommandFailed(e.to_string()))?;
 
         Ok(())
@@ -71,11 +73,13 @@ impl ClipboardManager for LinuxXselClipboard {
 
         if let Some(stdin) = child.stdin.as_mut() {
             use std::io::Write;
-            stdin.write_all(content.as_bytes())
+            stdin
+                .write_all(content.as_bytes())
                 .map_err(|e| KeyringError::CommandFailed(e.to_string()))?;
         }
 
-        child.wait()
+        child
+            .wait()
             .map_err(|e| KeyringError::CommandFailed(e.to_string()))?;
 
         Ok(())

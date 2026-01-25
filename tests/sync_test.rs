@@ -1,11 +1,11 @@
-use tempfile::TempDir;
-use std::path::Path;
-use keyring_cli::db::vault::Vault;
-use keyring_cli::db::models::{StoredRecord, RecordType};
-use keyring_cli::sync::export::{SyncExporter, JsonSyncExporter};
-use keyring_cli::sync::import::{SyncImporter, JsonSyncImporter};
-use uuid::Uuid;
 use chrono::Utc;
+use keyring_cli::db::models::{RecordType, StoredRecord};
+use keyring_cli::db::vault::Vault;
+use keyring_cli::sync::export::{JsonSyncExporter, SyncExporter};
+use keyring_cli::sync::import::{JsonSyncImporter, SyncImporter};
+use std::path::Path;
+use tempfile::TempDir;
+use uuid::Uuid;
 
 #[test]
 fn sync_export_import_roundtrip() {
@@ -49,5 +49,8 @@ fn sync_export_import_roundtrip() {
     assert_eq!(imported_record.encrypted_data, test_record.encrypted_data);
     assert_eq!(imported_record.nonce, test_record.nonce);
     assert_eq!(imported_record.tags, test_record.tags);
-    assert_eq!(imported_record.updated_at.timestamp(), test_record.updated_at.timestamp());
+    assert_eq!(
+        imported_record.updated_at.timestamp(),
+        test_record.updated_at.timestamp()
+    );
 }

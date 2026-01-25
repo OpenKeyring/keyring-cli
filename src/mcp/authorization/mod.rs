@@ -1,8 +1,8 @@
 use crate::error::KeyringError;
 use crate::mcp::AuditLogger;
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -38,7 +38,11 @@ impl AuthManager {
         }
     }
 
-    pub fn generate_token(&mut self, client_id: String, permissions: Vec<String>) -> Result<AuthToken, KeyringError> {
+    pub fn generate_token(
+        &mut self,
+        client_id: String,
+        permissions: Vec<String>,
+    ) -> Result<AuthToken, KeyringError> {
         let token = self.generate_random_token();
         let issued_at = Utc::now();
         let expires_at = issued_at + chrono::Duration::hours(24);
@@ -65,19 +69,23 @@ impl AuthManager {
             }
         }
 
-        Err(KeyringError::Unauthorized { reason: "Invalid or expired token".to_string() })
+        Err(KeyringError::Unauthorized {
+            reason: "Invalid or expired token".to_string(),
+        })
     }
 
     pub fn revoke_token(&mut self, token: &str) -> Result<(), KeyringError> {
         if let Some(auth_token) = self.tokens.remove(token) {
             self.active_clients.remove(&auth_token.client_id);
-            self.audit_logger.log_event("token_revoked", &serde_json::to_string(&auth_token)?);
+            self.audit_logger
+                .log_event("token_revoked", &serde_json::to_string(&auth_token)?);
         }
         Ok(())
     }
 
     pub fn list_active_clients(&self) -> Vec<ClientInfo> {
-        self.active_clients.values()
+        self.active_clients
+            .values()
             .map(|session| ClientInfo {
                 id: session.id.clone(),
                 created_at: session.created_at,
@@ -93,12 +101,15 @@ impl AuthManager {
 
     fn register_client_session(&mut self, client_id: String, permissions: Vec<String>) {
         let now = Utc::now();
-        self.active_clients.insert(client_id.clone(), ClientSession {
-            id: client_id.clone(),
-            created_at: now,
-            last_activity: now,
-            permissions,
-        });
+        self.active_clients.insert(
+            client_id.clone(),
+            ClientSession {
+                id: client_id.clone(),
+                created_at: now,
+                last_activity: now,
+                permissions,
+            },
+        );
     }
 
     fn update_client_activity(&mut self, client_id: &str) -> Result<(), KeyringError> {
@@ -106,7 +117,9 @@ impl AuthManager {
             session.last_activity = Utc::now();
             Ok(())
         } else {
-            Err(KeyringError::Unauthorized { reason: "Client not found".to_string() })
+            Err(KeyringError::Unauthorized {
+                reason: "Client not found".to_string(),
+            })
         }
     }
 }

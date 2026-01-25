@@ -29,11 +29,11 @@ fn device_revocation_stored_in_metadata() {
     let temp = tempdir().unwrap();
     let db_path = temp.path().join("devices_revoke.db");
     let mut vault = Vault::open(&db_path, "").unwrap();
-    
+
     // Revoke a device
     let revoked_json = r#"[{"device_id":"test-device-123","revoked_at":1234567890}]"#;
     vault.set_metadata("revoked_devices", revoked_json).unwrap();
-    
+
     // Verify it's stored
     let stored = vault.get_metadata("revoked_devices").unwrap();
     assert!(stored.is_some());

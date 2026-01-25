@@ -2,12 +2,12 @@
 
 #[cfg(test)]
 mod tests {
-    use keyring_cli::health::{HealthChecker, HealthIssueType};
-    use keyring_cli::db::models::StoredRecord;
-    use keyring_cli::crypto::CryptoManager;
-    use keyring_cli::crypto::record::{encrypt_payload, RecordPayload};
-    use uuid::Uuid;
     use chrono::Utc;
+    use keyring_cli::crypto::record::{encrypt_payload, RecordPayload};
+    use keyring_cli::crypto::CryptoManager;
+    use keyring_cli::db::models::StoredRecord;
+    use keyring_cli::health::{HealthChecker, HealthIssueType};
+    use uuid::Uuid;
 
     #[tokio::test]
     async fn test_health_checker_module_exists() {
@@ -52,7 +52,9 @@ mod tests {
         assert!(!issues.is_empty(), "Should detect weak password");
 
         // Check that weak password was detected
-        let weak_found = issues.iter().any(|i| matches!(i.issue_type, HealthIssueType::WeakPassword));
+        let weak_found = issues
+            .iter()
+            .any(|i| matches!(i.issue_type, HealthIssueType::WeakPassword));
         assert!(weak_found, "Should detect weak password issue");
     }
 
@@ -73,7 +75,9 @@ mod tests {
         let issues = checker.check_all(&[record1, record2]).await;
 
         // Check that duplicate password was detected
-        let dup_found = issues.iter().any(|i| matches!(i.issue_type, HealthIssueType::DuplicatePassword));
+        let dup_found = issues
+            .iter()
+            .any(|i| matches!(i.issue_type, HealthIssueType::DuplicatePassword));
         assert!(dup_found, "Should detect duplicate password issue");
     }
 

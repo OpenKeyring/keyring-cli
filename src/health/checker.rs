@@ -2,8 +2,8 @@
 
 use crate::crypto::CryptoManager;
 use crate::db::models::StoredRecord;
-use crate::health::{strength, hibp};
 use crate::health::report::{HealthIssue, HealthIssueType, Severity};
+use crate::health::{hibp, strength};
 use std::collections::HashMap;
 
 /// Main health checker that orchestrates all health checks
@@ -71,7 +71,7 @@ fn check_duplicates(records: &[StoredRecord], crypto: &CryptoManager) -> Vec<Hea
         if let Ok(password) = get_password_from_record(record, crypto) {
             password_counts
                 .entry(password.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(record.id.to_string());
         }
     }

@@ -23,13 +23,7 @@ fn cli_smoke_flow() {
 
     // Step 2: Generate a password
     let generate_output = Command::new(&ok_bin)
-        .args([
-            "generate",
-            "--name",
-            "github",
-            "--length",
-            "16",
-        ])
+        .args(["generate", "--name", "github", "--length", "16"])
         .output()
         .expect("failed to run ok generate");
 
@@ -79,12 +73,7 @@ fn cli_smoke_flow() {
 
     // Step 5: Update record
     let update_output = Command::new(&ok_bin)
-        .args([
-            "update",
-            "github",
-            "--username",
-            "test@example.com",
-        ])
+        .args(["update", "github", "--username", "test@example.com"])
         .output()
         .expect("failed to run ok update");
 

@@ -1,7 +1,7 @@
 //! Database migration system for schema versioning
 
 use anyhow::{Context, Result};
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 use std::path::Path;
 
 /// Migration trait for database schema changes
@@ -29,8 +29,7 @@ impl Migrator {
     ///
     /// Initializes the migration tracking table if it doesn't exist.
     pub fn new<P: AsRef<Path>>(db_path: P) -> Result<Self> {
-        let conn = Connection::open(db_path)
-            .context("Failed to open database for migration")?;
+        let conn = Connection::open(db_path).context("Failed to open database for migration")?;
 
         // Initialize migration tracking table
         conn.execute(
@@ -40,18 +39,21 @@ impl Migrator {
                 applied_at INTEGER NOT NULL
             )",
             [],
-        ).context("Failed to create schema_migrations table")?;
+        )
+        .context("Failed to create schema_migrations table")?;
 
         Ok(Self { conn })
     }
 
     /// Get the current migration version
     pub fn current_version(&self) -> i64 {
-        self.conn.query_row(
-            "SELECT COALESCE(MAX(version), 0) FROM schema_migrations",
-            [],
-            |row| row.get(0),
-        ).unwrap_or(0)
+        self.conn
+            .query_row(
+                "SELECT COALESCE(MAX(version), 0) FROM schema_migrations",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(0)
     }
 
     /// Check if a migration has been applied
@@ -69,18 +71,32 @@ impl Migrator {
     /// Wraps the migration in a transaction for safety.
     pub fn apply_migration(&mut self, migration: &dyn Migration) -> Result<()> {
         if self.is_applied(migration)? {
-            log::info!("Migration {} already applied, skipping", migration.version());
+            log::info!(
+                "Migration {} already applied, skipping",
+                migration.version()
+            );
             return Ok(());
         }
 
-        let tx = self.conn.unchecked_transaction()
+        let tx = self
+            .conn
+            .unchecked_transaction()
             .context("Failed to start transaction for migration")?;
 
-        log::info!("Applying migration {}: {}", migration.version(), migration.name());
+        log::info!(
+            "Applying migration {}: {}",
+            migration.version(),
+            migration.name()
+        );
 
         // Apply the migration
-        migration.up(&tx)
-            .with_context(|| format!("Migration {} ({}) failed", migration.version(), migration.name()))?;
+        migration.up(&tx).with_context(|| {
+            format!(
+                "Migration {} ({}) failed",
+                migration.version(),
+                migration.name()
+            )
+        })?;
 
         // Record the migration
         tx.execute(
@@ -90,9 +106,11 @@ impl Migrator {
                 migration.name(),
                 chrono::Utc::now().timestamp()
             ],
-        ).context("Failed to record migration")?;
+        )
+        .context("Failed to record migration")?;
 
-        tx.commit().context("Failed to commit migration transaction")?;
+        tx.commit()
+            .context("Failed to commit migration transaction")?;
 
         log::info!("Migration {} applied successfully", migration.version());
         Ok(())
@@ -101,25 +119,37 @@ impl Migrator {
     /// Rollback a migration (applies the down migration)
     pub fn rollback_migration(&mut self, migration: &dyn Migration) -> Result<()> {
         if !self.is_applied(migration)? {
-            return Err(anyhow::anyhow!("Migration {} is not applied", migration.version()));
+            return Err(anyhow::anyhow!(
+                "Migration {} is not applied",
+                migration.version()
+            ));
         }
 
-        let tx = self.conn.unchecked_transaction()
+        let tx = self
+            .conn
+            .unchecked_transaction()
             .context("Failed to start transaction for rollback")?;
 
-        log::info!("Rolling back migration {}: {}", migration.version(), migration.name());
+        log::info!(
+            "Rolling back migration {}: {}",
+            migration.version(),
+            migration.name()
+        );
 
         // Apply the rollback
-        migration.down(&tx)
+        migration
+            .down(&tx)
             .with_context(|| format!("Rollback of migration {} failed", migration.version()))?;
 
         // Remove migration record
         tx.execute(
             "DELETE FROM schema_migrations WHERE version = ?1",
             [migration.version()],
-        ).context("Failed to remove migration record")?;
+        )
+        .context("Failed to remove migration record")?;
 
-        tx.commit().context("Failed to commit rollback transaction")?;
+        tx.commit()
+            .context("Failed to commit rollback transaction")?;
 
         log::info!("Migration {} rolled back successfully", migration.version());
         Ok(())

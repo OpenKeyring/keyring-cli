@@ -13,7 +13,8 @@ fn test_wal_checkpoint() {
         conn.execute(
             "INSERT INTO metadata (key, value) VALUES (?1, ?2)",
             (format!("key-{}", i), format!("value-{}", i)),
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     // Get WAL size before checkpoint
@@ -40,7 +41,8 @@ fn test_wal_truncate() {
         conn.execute(
             "INSERT INTO metadata (key, value) VALUES (?1, ?2)",
             (format!("key-{}", i), format!("value-{}", i)),
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     // Run truncate checkpoint (most aggressive)

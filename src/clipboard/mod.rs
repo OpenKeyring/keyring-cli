@@ -1,31 +1,31 @@
 //! Secure clipboard with auto-clear functionality
 
-pub mod manager;
-#[cfg(target_os = "macos")]
-pub mod macos;
 #[cfg(target_os = "linux")]
 pub mod linux;
+#[cfg(target_os = "macos")]
+pub mod macos;
+pub mod manager;
 #[cfg(target_os = "windows")]
 pub mod windows;
 
 use std::time::Duration;
 
 // Re-exports from manager module
-pub use manager::{ClipboardService, ClipboardConfig, ClipboardManager, create_platform_clipboard};
+pub use manager::{create_platform_clipboard, ClipboardConfig, ClipboardManager, ClipboardService};
 
 // Platform-specific exports
-#[cfg(target_os = "macos")]
-pub use macos::MacOSClipboard;
 #[cfg(target_os = "linux")]
 pub use linux::LinuxClipboard;
+#[cfg(target_os = "macos")]
+pub use macos::MacOSClipboard;
 #[cfg(target_os = "windows")]
 pub use windows::WindowsClipboard;
 
 /// Clipboard clearing mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClearMode {
-    Clear,    // Empty clipboard
-    Restore,  // Restore original content
+    Clear,   // Empty clipboard
+    Restore, // Restore original content
 }
 
 /// Platform-specific clipboard backend trait
