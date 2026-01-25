@@ -64,7 +64,7 @@ pub async fn update_record(args: UpdateArgs) -> Result<()> {
     Ok(())
 }
 
-async fn sync_record(config: &ConfigManager, record: &crate::db::models::Record) -> Result<()> {
+async fn sync_record(config: &ConfigManager, record: &crate::db::models::DecryptedRecord) -> Result<()> {
     println!("🔄 Syncing record...");
     Ok(())
 }
