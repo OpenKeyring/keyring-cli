@@ -18,7 +18,7 @@ struct Cli {
     quiet: bool,
 
     /// Path to config file
-    #[arg(short, long, global = true)]
+    #[arg(long, global = true)]
     config: Option<String>,
 
     /// Path to database file
