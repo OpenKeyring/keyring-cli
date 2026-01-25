@@ -4,6 +4,7 @@ pub mod schema;
 pub mod models;
 pub mod vault;
 pub mod lock;
+pub mod wal;
 
 use crate::error::KeyringError;
 use rusqlite::Connection;
