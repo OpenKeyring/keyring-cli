@@ -165,12 +165,13 @@ impl VaultLock {
     /// Try to acquire exclusive lock (Windows)
     #[cfg(windows)]
     fn try_flock_exclusive(file: &File) -> std::io::Result<()> {
-        use std::os::windows::io::AsRawHandle;
+        use std::os::windows::io::AsHandle;
         use windows::Win32::Storage::FileSystem::LockFileEx;
         use windows::Win32::Storage::FileSystem::LOCKFILE_EXCLUSIVE_LOCK;
         use windows::Win32::Storage::FileSystem::LOCKFILE_FAIL_IMMEDIATELY;
+        use windows::Win32::Foundation::HANDLE;
 
-        let handle = file.as_raw_handle();
+        let handle = unsafe { HANDLE::from_raw_handle(file.as_handle().as_raw_handle()) };
         unsafe {
             let mut overlapped = std::mem::zeroed();
             LockFileEx(
@@ -188,11 +189,12 @@ impl VaultLock {
     /// Try to acquire shared lock (Windows)
     #[cfg(windows)]
     fn try_flock_shared(file: &File) -> std::io::Result<()> {
-        use std::os::windows::io::AsRawHandle;
+        use std::os::windows::io::AsHandle;
         use windows::Win32::Storage::FileSystem::LockFileEx;
         use windows::Win32::Storage::FileSystem::LOCKFILE_FAIL_IMMEDIATELY;
+        use windows::Win32::Foundation::HANDLE;
 
-        let handle = file.as_raw_handle();
+        let handle = unsafe { HANDLE::from_raw_handle(file.as_handle().as_raw_handle()) };
         unsafe {
             let mut overlapped = std::mem::zeroed();
             LockFileEx(
