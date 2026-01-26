@@ -10,6 +10,8 @@ pub mod record;
 use crate::error::KeyringError;
 use anyhow::Result;
 use zeroize::Zeroize;
+use rand::Rng;
+use rand::prelude::IndexedRandom;
 
 /// High-level crypto manager for key operations
 pub struct CryptoManager {
@@ -147,7 +149,7 @@ impl CryptoManager {
         let mut rng = rand::thread_rng();
         let password: String = (0..length)
             .map(|_| {
-                let idx = rng.gen_range(0..CHARSET.len());
+                let idx = rng.random_range(0..CHARSET.len());
                 CHARSET[idx] as char
             })
             .collect();
@@ -261,7 +263,7 @@ impl CryptoManager {
 
         let mut rng = rand::thread_rng();
         let pin: String = (0..length)
-            .map(|_| rng.gen_range(0..10).to_string())
+            .map(|_| rng.random_range(0..10).to_string())
             .collect();
 
         Ok(pin)

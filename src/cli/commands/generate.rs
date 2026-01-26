@@ -16,7 +16,7 @@ use crate::onboarding::is_initialized;
 use std::io::Write;
 use std::path::PathBuf;
 use rand::Rng;
-use rand::seq::SliceRandom;
+use rand::prelude::IndexedRandom;
 
 /// Arguments for the generate command
 #[derive(Parser, Debug)]
@@ -180,7 +180,7 @@ pub fn generate_random(length: usize, numbers: bool, symbols: bool) -> Result<St
     let mut rng = rand::thread_rng();
     let password: String = (0..length)
         .map(|_| {
-            let idx = rng.gen_range(0..chars.len());
+            let idx = rng.random_range(0..chars.len());
             chars[idx]
         })
         .collect();
@@ -262,7 +262,7 @@ pub fn generate_pin(length: usize) -> Result<String> {
     let mut rng = rand::thread_rng();
     let pin: String = (0..length)
         .map(|_| {
-            let idx = rng.gen_range(0..digits.len());
+            let idx = rng.random_range(0..digits.len());
             digits[idx] as char
         })
         .collect();

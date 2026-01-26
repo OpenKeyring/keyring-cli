@@ -28,6 +28,6 @@ pub fn get_or_create_device_id(vault: &mut Vault) -> Result<String> {
 
 fn generate_fingerprint() -> String {
     let mut rng = rand::thread_rng();
-    let bytes: [u8; 4] = rng.gen();
+    let bytes: [u8; 4] = rng.random();
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }

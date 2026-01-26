@@ -115,7 +115,7 @@ pub fn derive_key_with_params(
 
 /// Generate a random 16-byte salt
 pub fn generate_salt() -> [u8; 16] {
-    rand::thread_rng().gen()
+    rand::thread_rng().random()
 }
 
 /// Stored password hash with salt and parameters
