@@ -122,9 +122,9 @@ enum Commands {
         /// Password name or ID
         name: String,
 
-        /// Show password (default: hidden)
+        /// Print password to terminal (WARNING: visible in command history, requires confirmation)
         #[arg(long, short)]
-        password: bool,
+        print: bool,
 
         /// Copy password to clipboard
         #[arg(long, short)]
@@ -407,12 +407,12 @@ async fn main() -> Result<()> {
 
         Commands::Show {
             name,
-            password,
+            print,
             copy,
             timeout,
             field,
             history,
-        } => commands::show::execute(name, password, copy, timeout, field, history).await?,
+        } => commands::show::execute(name, print, copy, timeout, field, history).await?,
 
         Commands::Update {
             name,

@@ -338,13 +338,12 @@ pub async fn execute(args: GenerateArgs) -> Result<()> {
     let mut vault = Vault::open(&db_path, &master_password)?;
     vault.add_record(&record)?;
 
-    // Copy to clipboard (only if --copy flag is set)
-    if args.copy {
-        copy_to_clipboard(&password)?;
-    }
+    // Copy to clipboard by default (or if --copy flag is set)
+    // This is more secure than displaying the password in terminal
+    copy_to_clipboard(&password)?;
 
-    // Print success message
-    print_success_message(&args.name, &password, password_type, args.copy);
+    // Print success message (without displaying password)
+    print_success_message(&args.name, password_type, true);
 
     // Handle sync if requested
     if args.sync {
@@ -391,16 +390,15 @@ fn copy_to_clipboard(password: &str) -> Result<()> {
 }
 
 /// Print success message with password details
-fn print_success_message(name: &str, password: &str, password_type: PasswordType, copied: bool) {
+fn print_success_message(name: &str, password_type: PasswordType, copied: bool) {
     println!("✅ Password generated successfully!");
     println!("   Name: {}", name);
     println!("   Type: {}", format!("{:?}", password_type).to_lowercase());
-    println!("   Length: {}", password.len());
 
-    // Show password (in production, this should be optional)
-    println!("   Password: {}", password);
+    // Security note: password is NOT displayed in terminal
+    // It's only copied to clipboard to prevent command history logging
 
-    // Clipboard notice (only if copied)
+    // Clipboard notice
     if copied {
         println!("   📋 Copied to clipboard (auto-clears in 30s)");
     }
