@@ -42,40 +42,38 @@ jobs:
       - name: Cache cargo build
         uses: actions/cache@v4
         with:
-          path: keyring-cli/target
+          path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build for x86_64
         run: |
-          cd keyring-cli
           cargo build --target x86_64-apple-darwin --release --verbose
 
       - name: Build for aarch64
         run: |
-          cd keyring-cli
           cargo build --target aarch64-apple-darwin --release --verbose
 
       - name: Create universal binary
         run: |
           lipo -create \
-            keyring-cli/target/x86_64-apple-darwin/release/ok \
-            keyring-cli/target/aarch64-apple-darwin/release/ok \
-            -output keyring-cli/target/universal-apple-darwin-release/ok
-          chmod +x keyring-cli/target/universal-apple-darwin-release/ok
+            target/x86_64-apple-darwin/release/ok \
+            target/aarch64-apple-darwin/release/ok \
+            -output target/universal-apple-darwin-release/ok
+          chmod +x target/universal-apple-darwin-release/ok
 
       - name: Strip binary
-        run: strip -x keyring-cli/target/universal-apple-darwin-release/ok
+        run: strip -x target/universal-apple-darwin-release/ok
 
       - name: Upload macOS universal binary
         uses: actions/upload-artifact@v4
         with:
           name: ok-macos-universal
-          path: keyring-cli/target/universal-apple-darwin-release/ok
+          path: target/universal-apple-darwin-release/ok
 
       - name: Create archive
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          cd keyring-cli/target/universal-apple-darwin-release
+          cd target/universal-apple-darwin-release
           tar czf ok-macos-universal.tar.gz ok
           mv ok-macos-universal.tar.gz ../../../
 
@@ -109,27 +107,26 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            keyring-cli/target
+            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
         run: |
-          cd keyring-cli
           cargo build --release --verbose
 
       - name: Strip binary
-        run: strip keyring-cli/target/release/ok
+        run: strip target/release/ok
 
       - name: Upload Linux binary
         uses: actions/upload-artifact@v4
         with:
           name: ok-linux-x86_64
-          path: keyring-cli/target/release/ok
+          path: target/release/ok
 
       - name: Create archive
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          cd keyring-cli/target/release
+          cd target/release
           tar czf ok-linux-x86_64.tar.gz ok
           mv ok-linux-x86_64.tar.gz ../../../
 
@@ -165,29 +162,28 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            keyring-cli/target
+            target
           key: ${{ runner.os }}-cargo-arm64-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
         run: |
-          cd keyring-cli
           CC=aarch64-linux-gnu-gcc \
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc \
             cargo build --target aarch64-unknown-linux-gnu --release --verbose
 
       - name: Strip binary
-        run: aarch64-linux-gnu-strip keyring-cli/target/aarch64-unknown-linux-gnu/release/ok
+        run: aarch64-linux-gnu-strip target/aarch64-unknown-linux-gnu/release/ok
 
       - name: Upload Linux ARM64 binary
         uses: actions/upload-artifact@v4
         with:
           name: ok-linux-aarch64
-          path: keyring-cli/target/aarch64-unknown-linux-gnu/release/ok
+          path: target/aarch64-unknown-linux-gnu/release/ok
 
       - name: Create archive
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          cd keyring-cli/target/aarch64-unknown-linux-gnu/release
+          cd target/aarch64-unknown-linux-gnu/release
           tar czf ok-linux-aarch64.tar.gz ok
           mv ok-linux-aarch64.tar.gz ../../../
 
@@ -220,24 +216,23 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            keyring-cli/target
+            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
         run: |
-          cd keyring-cli
           cargo build --release --verbose
 
       - name: Upload Windows binary
         uses: actions/upload-artifact@v4
         with:
           name: ok-windows-x86_64
-          path: keyring-cli/target/release/ok.exe
+          path: target/release/ok.exe
 
       - name: Create archive
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          Compress-Archive -Path keyring-cli\target\release\ok.exe -DestinationPath ok-windows-x86_64.zip
+          Compress-Archive -Path target\release\ok.exe -DestinationPath ok-windows-x86_64.zip
 
       - name: Upload release asset
         if: startsWith(github.ref, 'refs/tags/v')
@@ -270,24 +265,23 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            keyring-cli/target
+            target
           key: ${{ runner.os }}-cargo-arm64-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
         run: |
-          cd keyring-cli
           cargo build --target aarch64-pc-windows-msvc --release --verbose
 
       - name: Upload Windows ARM64 binary
         uses: actions/upload-artifact@v4
         with:
           name: ok-windows-aarch64
-          path: keyring-cli/target/aarch64-pc-windows-msvc/release/ok.exe
+          path: target/aarch64-pc-windows-msvc/release/ok.exe
 
       - name: Create archive
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          Compress-Archive -Path keyring-cli\target\aarch64-pc-windows-msvc\release\ok.exe -DestinationPath ok-windows-aarch64.zip
+          Compress-Archive -Path target\aarch64-pc-windows-msvc\release\ok.exe -DestinationPath ok-windows-aarch64.zip
 
       - name: Upload release asset
         if: startsWith(github.ref, 'refs/tags/v')
@@ -326,20 +320,17 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            keyring-cli/target
+            target
           key: ${{ runner.os }}-test-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run tests
         run: |
-          cd keyring-cli
           cargo test --verbose --all-features
 
       - name: Run clippy
         run: |
-          cd keyring-cli
           cargo clippy -- -D warnings
 
       - name: Check formatting
         run: |
-          cd keyring-cli
           cargo fmt -- --check
