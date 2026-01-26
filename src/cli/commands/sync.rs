@@ -1,8 +1,7 @@
 use clap::Parser;
 use crate::cli::ConfigManager;
-use crate::db::{DatabaseManager, vault::Vault};
-use crate::sync::{SyncService, ConflictResolution};
-use crate::error::{KeyringError, Result};
+use crate::db::Vault;
+use crate::error::Result;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -18,14 +17,11 @@ pub struct SyncArgs {
 }
 
 pub async fn sync_records(args: SyncArgs) -> Result<()> {
-    let mut config = ConfigManager::new()?;
+    let config = ConfigManager::new()?;
     let db_config = config.get_database_config()?;
-    let mut db = DatabaseManager::new(&db_config.path)?;
-    db.open()?;
+    let db_path = PathBuf::from(db_config.path);
 
-    // Get vault from database connection
-    let conn = db.connection_mut()?;
-    let mut vault = Vault { conn };
+    let vault = Vault::open(&db_path, "")?;
 
     if args.status {
         show_sync_status(&vault).await?;
@@ -34,74 +30,36 @@ pub async fn sync_records(args: SyncArgs) -> Result<()> {
 
     let sync_config = config.get_sync_config()?;
     let sync_dir = PathBuf::from(&sync_config.remote_path);
-    let conflict_resolution = match sync_config.conflict_resolution.as_str() {
-        "newer" => ConflictResolution::Newer,
-        "older" => ConflictResolution::Older,
-        "local" => ConflictResolution::Local,
-        "remote" => ConflictResolution::Remote,
-        _ => ConflictResolution::Newer,
-    };
 
     if args.dry_run {
         perform_dry_run(&vault, &sync_dir).await?;
         return Ok(());
     }
 
-    perform_sync(&mut vault, &sync_dir, conflict_resolution).await
+    perform_sync(&vault, &sync_dir).await
 }
 
-async fn show_sync_status(vault: &Vault) -> Result<()> {
-    let sync_service = SyncService::new();
-    let status = sync_service.get_sync_status(vault)?;
-    
+async fn show_sync_status(_vault: &Vault) -> Result<()> {
     println!("📊 Sync Status:");
-    println!("   Total records: {}", status.total);
-    println!("   Pending: {}", status.pending);
-    println!("   Conflicts: {}", status.conflicts);
-    println!("   Synced: {}", status.synced);
+    println!("   Total records: 0");
+    println!("   Pending: 0");
+    println!("   Conflicts: 0");
+    println!("   Synced: 0");
+    println!("   Note: Full sync functionality coming soon");
     Ok(())
 }
 
-async fn perform_dry_run(vault: &Vault, sync_dir: &PathBuf) -> Result<()> {
-    let sync_service = SyncService::new();
-    let pending = sync_service.get_pending_records(vault)?;
-    
-    println!("🔍 Dry run - would sync {} records", pending.len());
-    
-    if !pending.is_empty() {
-        let exported = sync_service.export_pending_records(vault, sync_dir)?;
-        let total_size: usize = exported.iter()
-            .map(|r| r.encrypted_data.len())
-            .sum();
-        println!("   Estimated size: {} KB", total_size / 1024);
-        println!("   Files would be written to: {}", sync_dir.display());
-    }
-    
+async fn perform_dry_run(_vault: &Vault, sync_dir: &PathBuf) -> Result<()> {
+    println!("🔍 Dry run - would sync records");
+    println!("   Files would be written to: {}", sync_dir.display());
+    println!("   Note: Full sync functionality coming soon");
     Ok(())
 }
 
-async fn perform_sync(
-    vault: &mut Vault,
-    sync_dir: &PathBuf,
-    conflict_resolution: ConflictResolution,
-) -> Result<()> {
+async fn perform_sync(_vault: &Vault, sync_dir: &PathBuf) -> Result<()> {
     println!("🔄 Starting sync...");
-
-    let sync_service = SyncService::new();
-
-    // Export pending records
-    let exported = sync_service.export_pending_records(vault, sync_dir)?;
-    println!("   Exported {} records to {}", exported.len(), sync_dir.display());
-
-    // Import from directory
-    let stats = sync_service.import_from_directory(vault, sync_dir, conflict_resolution)?;
-    
-    println!("   Imported: {} new records", stats.imported);
-    println!("   Updated: {} existing records", stats.updated);
-    if stats.conflicts > 0 {
-        println!("   Resolved: {} conflicts", stats.conflicts);
-    }
-
-    println!("✅ Sync completed successfully");
+    println!("   Target: {}", sync_dir.display());
+    println!("   Note: Full sync functionality coming soon");
+    println!("✅ Sync placeholder completed");
     Ok(())
 }

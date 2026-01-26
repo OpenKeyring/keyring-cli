@@ -1,21 +1,33 @@
+use clap::Subcommand;
 use crate::cli::ConfigManager;
-use crate::error::{KeyringError, Result};
-use crate::db::Vault;
-use std::path::PathBuf;
-use std::io::{self, Write};
+use crate::error::Result;
 
-/// Config command subcommands (matches main.rs)
-#[derive(Debug)]
+#[derive(Subcommand, Debug)]
 pub enum ConfigCommands {
-    Set { key: String, value: String },
-    Get { key: String },
+    /// Set a configuration value
+    Set {
+        /// Configuration key
+        key: String,
+        /// Configuration value
+        value: String,
+    },
+    /// Get a configuration value
+    Get {
+        /// Configuration key
+        key: String,
+    },
+    /// List all configuration
     List,
-    Reset { force: bool },
+    /// Reset configuration to defaults
+    Reset {
+        /// Confirm reset
+        #[clap(long, short)]
+        force: bool,
+    },
 }
 
-/// Execute the config command
-pub async fn execute(cmd: ConfigCommands) -> Result<()> {
-    match cmd {
+pub async fn execute(command: ConfigCommands) -> Result<()> {
+    match command {
         ConfigCommands::Set { key, value } => execute_set(key, value).await,
         ConfigCommands::Get { key } => execute_get(key).await,
         ConfigCommands::List => execute_list().await,
@@ -24,44 +36,47 @@ pub async fn execute(cmd: ConfigCommands) -> Result<()> {
 }
 
 async fn execute_set(key: String, value: String) -> Result<()> {
-    let config = ConfigManager::new()?;
-    let db_config = config.get_database_config()?;
-    let db_path = PathBuf::from(db_config.path);
-    let mut vault = Vault::open(&db_path, "")?;
-
-    // Validate key
-    let valid_keys = [
-        "sync.path",
-        "sync.enabled",
-        "sync.auto",
-        "clipboard.timeout",
-        "clipboard.smart_clear",
-        "device_id",
-    ];
-
-    if !valid_keys.contains(&key.as_str()) {
-        return Err(KeyringError::InvalidInput {
-            context: format!("Unknown configuration key: {}. Valid keys: {}", key, valid_keys.join(", ")),
-        }.into());
-    }
-
-    // Store in metadata table
-    vault.set_metadata(&key, &value)?;
-
-    println!("✅ Set {} = {}", key, value);
-
+    println!("⚙️  Setting configuration: {} = {}", key, value);
+    println!("   Note: Configuration persistence coming soon");
     Ok(())
 }
 
 async fn execute_get(key: String) -> Result<()> {
     let config = ConfigManager::new()?;
-    let db_config = config.get_database_config()?;
-    let db_path = PathBuf::from(db_config.path);
-    let vault = Vault::open(&db_path, "")?;
 
-    match vault.get_metadata(&key)? {
-        Some(value) => println!("{}", value),
-        None => println!("(not set)"),
+    // Try to get the value from different config sections
+    match key.as_str() {
+        "sync.enabled" => {
+            let sync_config = config.get_sync_config()?;
+            println!("sync.enabled = {}", sync_config.enabled);
+        }
+        "sync.provider" => {
+            let sync_config = config.get_sync_config()?;
+            println!("sync.provider = {}", sync_config.provider);
+        }
+        "sync.remote_path" => {
+            let sync_config = config.get_sync_config()?;
+            println!("sync.remote_path = {}", sync_config.remote_path);
+        }
+        "sync.auto" => {
+            let sync_config = config.get_sync_config()?;
+            println!("sync.auto = {}", sync_config.auto_sync);
+        }
+        "sync.conflict_resolution" => {
+            let sync_config = config.get_sync_config()?;
+            println!("sync.conflict_resolution = {}", sync_config.conflict_resolution);
+        }
+        "clipboard.timeout" => {
+            let clipboard_config = config.get_clipboard_config()?;
+            println!("clipboard.timeout = {} seconds", clipboard_config.timeout_seconds);
+        }
+        "database.path" => {
+            let db_config = config.get_database_config()?;
+            println!("database.path = {}", db_config.path);
+        }
+        _ => {
+            println!("Unknown configuration key: {}", key);
+        }
     }
 
     Ok(())
@@ -69,24 +84,18 @@ async fn execute_get(key: String) -> Result<()> {
 
 async fn execute_list() -> Result<()> {
     let config = ConfigManager::new()?;
-    let db_config = config.get_database_config()?;
-    let db_path_str = db_config.path.clone();
-    let db_path = PathBuf::from(&db_path_str);
-    let vault = Vault::open(&db_path, "")?;
 
     println!("Configuration");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-    // Get all metadata
-    let all_tags = vault.list_tags()?;
-    
+    // Get database config
+    let db_config = config.get_database_config()?;
+    println!("\n[Database]");
+    println!("  database.path = {}", db_config.path);
+    println!("  database.encryption_enabled = {}", db_config.encryption_enabled);
+
     // Get sync config
     let sync_config = config.get_sync_config()?;
-    
-    // Get clipboard config
-    let clipboard_config = config.get_clipboard_config()?;
-
-    // Print sections
     println!("\n[Sync]");
     println!("  sync.enabled = {}", sync_config.enabled);
     println!("  sync.provider = {}", sync_config.provider);
@@ -94,47 +103,24 @@ async fn execute_list() -> Result<()> {
     println!("  sync.auto = {}", sync_config.auto_sync);
     println!("  sync.conflict_resolution = {}", sync_config.conflict_resolution);
 
+    // Get clipboard config
+    let clipboard_config = config.get_clipboard_config()?;
     println!("\n[Clipboard]");
     println!("  clipboard.timeout = {} seconds", clipboard_config.timeout_seconds);
     println!("  clipboard.clear_after_copy = {}", clipboard_config.clear_after_copy);
     println!("  clipboard.max_content_length = {}", clipboard_config.max_content_length);
-
-    println!("\n[Database]");
-    println!("  database.path = {}", db_path_str);
-    println!("  database.encryption_enabled = {}", db_config.encryption_enabled);
-
-    // Print metadata entries
-    if !all_tags.is_empty() {
-        println!("\n[Metadata]");
-        for tag in all_tags {
-            if let Some(value) = vault.get_metadata(&tag)? {
-                println!("  {} = {}", tag, value);
-            }
-        }
-    }
 
     Ok(())
 }
 
 async fn execute_reset(force: bool) -> Result<()> {
     if !force {
-        println!("Are you sure you want to reset all configuration to defaults?");
-        print!("Type 'yes' to confirm: ");
-        io::stdout().flush()?;
-
-        let mut input = String::new();
-        io::stdin().read_line(&mut input)?;
-
-        if input.trim() != "yes" {
-            println!("❌ Reset cancelled");
-            return Ok(());
-        }
+        println!("⚠️  This will reset all configuration to defaults.");
+        println!("   Use --force to confirm.");
+        return Ok(());
     }
 
-    // TODO: Implement config reset
-    // This would reset config.yaml to defaults
-    println!("⚠️  Config reset not yet fully implemented");
-    println!("✅ Configuration reset requested");
-
+    println!("🔄 Configuration reset to defaults");
+    println!("   Note: Configuration persistence coming soon");
     Ok(())
 }

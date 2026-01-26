@@ -70,7 +70,7 @@ libc = "0.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 clipboard-win = "5.3"
-windows = { version = "0.58", features = ["Win32_Storage_FileSystem"] }
+windows = { version = "0.58", features = ["Win32_Storage_FileSystem", "Win32_System_IO"] }
 
 [[bench]]
 name = "crypto-bench"

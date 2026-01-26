@@ -1,5 +1,6 @@
 //! CLI Command Implementations
 
+pub mod config;
 pub mod generate;
 pub mod list;
 pub mod show;
@@ -11,6 +12,7 @@ pub mod health;
 pub mod devices;
 pub mod mnemonic;
 
+pub use config::*;
 pub use generate::*;
 pub use list::*;
 pub use show::*;

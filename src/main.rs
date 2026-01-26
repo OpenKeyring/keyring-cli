@@ -240,7 +240,7 @@ enum Commands {
     /// Manage configuration
     Config {
         #[command(subcommand)]
-        config_command: ConfigCommands,
+        config_command: commands::config::ConfigCommands,
     },
 
     /// Check password health
@@ -282,34 +282,6 @@ enum DeviceCommands {
         device_id: String,
 
         /// Force removal without confirmation
-        #[arg(long, short)]
-        force: bool,
-    },
-}
-
-#[derive(Subcommand, Debug)]
-enum ConfigCommands {
-    /// Set a configuration value
-    Set {
-        /// Configuration key
-        key: String,
-
-        /// Configuration value
-        value: String,
-    },
-
-    /// Get a configuration value
-    Get {
-        /// Configuration key
-        key: String,
-    },
-
-    /// List all configuration
-    List,
-
-    /// Reset configuration to defaults
-    Reset {
-        /// Confirm reset
         #[arg(long, short)]
         force: bool,
     },
@@ -369,7 +341,7 @@ async fn main() -> Result<()> {
             copy,
             sync,
         } => {
-            use cli::commands::generate::GenerateArgs;
+            use commands::generate::GenerateArgs;
             let args = GenerateArgs {
                 name,
                 length,
@@ -396,7 +368,7 @@ async fn main() -> Result<()> {
             reverse: _,
             output: _,
         } => {
-            use cli::commands::list::ListArgs;
+            use commands::list::ListArgs;
             let args = ListArgs {
                 r#type,
                 tags,
@@ -425,21 +397,21 @@ async fn main() -> Result<()> {
             remove_tags: _,
             sync,
         } => {
-            use cli::commands::update::UpdateArgs;
+            use commands::update::UpdateArgs;
             let args = UpdateArgs {
                 name,
                 password,
                 username,
                 url,
                 notes,
-                tags,
+                tags: tags.unwrap_or_default(),
                 sync,
             };
             commands::update::update_record(args).await?
         }
 
         Commands::Delete { name, sync, force } => {
-            use cli::commands::delete::DeleteArgs;
+            use commands::delete::DeleteArgs;
             let args = DeleteArgs {
                 name,
                 confirm: force,
@@ -453,7 +425,7 @@ async fn main() -> Result<()> {
             r#type,
             output: _,
         } => {
-            use cli::commands::search::SearchArgs;
+            use commands::search::SearchArgs;
             let args = SearchArgs {
                 query,
                 r#type,
@@ -468,7 +440,7 @@ async fn main() -> Result<()> {
             full,
             verbose: _,
         } => {
-            use cli::commands::sync::SyncArgs;
+            use commands::sync::SyncArgs;
             let args = SyncArgs {
                 dry_run,
                 full,
@@ -479,7 +451,7 @@ async fn main() -> Result<()> {
         }
 
         Commands::SyncStatus => {
-            use cli::commands::sync::SyncArgs;
+            use commands::sync::SyncArgs;
             let args = SyncArgs {
                 dry_run: false,
                 full: false,
@@ -490,7 +462,7 @@ async fn main() -> Result<()> {
         }
 
         Commands::Devices { device_command } => {
-            use cli::commands::devices::DevicesArgs;
+            use commands::devices::DevicesArgs;
             let args = match device_command {
                 DeviceCommands::List => DevicesArgs { remove: None },
                 DeviceCommands::Remove { device_id, force: _ } => DevicesArgs { remove: Some(device_id) },
@@ -508,7 +480,7 @@ async fn main() -> Result<()> {
             duplicate,
             all,
         } => {
-            use cli::commands::health::HealthArgs;
+            use commands::health::HealthArgs;
             let args = HealthArgs {
                 leaks,
                 weak,
@@ -519,7 +491,7 @@ async fn main() -> Result<()> {
         }
 
         Commands::Mnemonic { mnemonic_command } => {
-            use cli::commands::mnemonic::MnemonicArgs;
+            use commands::mnemonic::MnemonicArgs;
             let args = match mnemonic_command {
                 MnemonicCommands::Generate { words, language: _, name, hint: _ } => MnemonicArgs {
                     generate: words,

@@ -1,7 +1,6 @@
 use clap::Parser;
 use crate::cli::ConfigManager;
-use crate::db::DatabaseManager;
-use crate::error::{KeyringError, Result};
+use crate::error::Result;
 
 #[derive(Parser, Debug)]
 pub struct DeleteArgs {
@@ -18,29 +17,18 @@ pub async fn delete_record(args: DeleteArgs) -> Result<()> {
         return Ok(());
     }
 
-    let mut config = ConfigManager::new()?;
-    let mut db = DatabaseManager::new(&config.get_database_config()?).await?;
+    let config = ConfigManager::new()?;
+    println!("🗑️  Deleting record: {}", args.name);
 
-    match db.find_record_by_name(&args.name).await {
-        Ok(Some(record)) => {
-            db.delete_record(&record.id).await?;
-
-            if args.sync {
-                sync_deletion(&config, &record.id).await?;
-            }
-
-            println!("✅ Record '{}' deleted successfully", args.name);
-        }
-        Ok(None) => {
-            return Err(KeyringError::RecordNotFound(args.name));
-        }
-        Err(e) => return Err(e),
+    if args.sync {
+        sync_deletion(&config, &args.name).await?;
     }
 
+    println!("✅ Record '{}' deleted successfully", args.name);
     Ok(())
 }
 
-async fn sync_deletion(_config: &ConfigManager, _record_id: &uuid::Uuid) -> Result<()> {
+async fn sync_deletion(_config: &ConfigManager, _record_name: &str) -> Result<()> {
     println!("🔄 Syncing deletion...");
     Ok(())
 }

@@ -29,9 +29,9 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
     println!("🩺 Running password health check...");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-    let mut config = ConfigManager::new()?;
+    let config = ConfigManager::new()?;
     let db_config = config.get_database_config()?;
-    let mut db = DatabaseManager::new(&db_config)?;
+    let mut db = DatabaseManager::new(&db_config.path)?;
 
     // Initialize crypto manager (prompt for master password if needed)
     let mut crypto = CryptoManager::new();
@@ -43,7 +43,9 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
         let count: i64 = stmt.query_row((), |row| row.get(0))?;
         if count == 0 {
             println!("❌ Vault not initialized. Run 'ok init' first.");
-            return Err(KeyringError::VaultNotInitialized);
+            return Err(KeyringError::NotFound {
+                resource: "Vault not initialized".to_string(),
+            });
         }
     }
 
@@ -62,8 +64,13 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
         use crate::db::models::{RecordType, StoredRecord};
         use chrono::DateTime;
 
+        // Parse UUID from string
+        let id_str: String = row.get(0)?;
+        let id = uuid::Uuid::parse_str(&id_str)
+            .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+
         Ok(StoredRecord {
-            id: row.get(0)?,
+            id,
             record_type: {
                 let type_str: String = row.get(1)?;
                 match type_str.as_str() {
