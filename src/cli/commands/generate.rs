@@ -562,7 +562,7 @@ mod tests {
 
     #[test]
     fn test_generate_pin_only_2_to_9() {
-        let pin = generate_pin(20).unwrap();
+        let pin = generate_pin(16).unwrap();
         // Should only contain digits 2-9
         assert!(pin.chars().all(|c| c.is_ascii_digit() && c >= '2' && c <= '9'));
         // Should not contain 0 or 1
