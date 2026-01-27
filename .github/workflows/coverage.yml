@@ -1,0 +1,61 @@
+name: Test Coverage
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run tests with coverage
+        run: |
+          cargo install cargo-tarpaulin
+          cd keyring-cli
+          cargo tarpaulin --out Html --output-dir coverage --timeout 300 --verbose
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: keyring-cli/coverage/
+
+      - name: Check coverage threshold
+        run: |
+          cd keyring-cli
+          COVERAGE=$(cargo tarpaulin --out Json 2>/dev/null | jq '.coverage // 0' || echo "0")
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Coverage below 80% (current: $COVERAGE%)"
+            exit 1
+          else
+            echo "✅ Coverage at $COVERAGE%"
+          fi
+
+      - name: Add coverage summary
+        run: |
+          cd keyring-cli
+          COVERAGE=$(cargo tarpaulin --out Json 2>/dev/null | jq '.coverage // 0' || echo "0")
+          echo "## Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "Current coverage: **$COVERAGE%**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Target: 80%+ for M1 v0.1 release" >> $GITHUB_STEP_SUMMARY
