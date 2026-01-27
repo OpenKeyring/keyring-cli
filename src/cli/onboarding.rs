@@ -107,6 +107,7 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
 
+    #[cfg(feature = "test-env")]
     #[test]
     fn test_ensure_initialized_creates_database() {
         let temp_dir = TempDir::new().unwrap();

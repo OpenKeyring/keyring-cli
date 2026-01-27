@@ -4,12 +4,15 @@
 //! Tests follow the TDD approach where tests are written first,
 //! then implementation follows to make tests pass.
 
+#![cfg(feature = "test-env")]
+
 use keyring_cli::cli::commands::generate::{
     generate_memorable, generate_password, generate_pin, generate_random, GenerateArgs,
     PasswordType,
 };
 use tempfile::TempDir;
 
+#[cfg(feature = "test-env")]
 #[tokio::test]
 async fn test_generate_random_password() {
     let temp_dir = TempDir::new().unwrap();
@@ -37,6 +40,7 @@ async fn test_generate_random_password() {
     assert!(result.is_ok(), "Password generation should succeed");
 }
 
+#[cfg(feature = "test-env")]
 #[tokio::test]
 async fn test_generate_memorable_password() {
     let temp_dir = TempDir::new().unwrap();
@@ -67,6 +71,7 @@ async fn test_generate_memorable_password() {
     );
 }
 
+#[cfg(feature = "test-env")]
 #[tokio::test]
 async fn test_generate_pin() {
     let temp_dir = TempDir::new().unwrap();

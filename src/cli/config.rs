@@ -176,6 +176,8 @@ impl ConfigManager {
     }
 }
 
+// Only allow OK_CONFIG_DIR when test-env feature is enabled
+#[cfg(feature = "test-env")]
 fn get_config_dir() -> PathBuf {
     if let Ok(config_dir) = std::env::var("OK_CONFIG_DIR") {
         PathBuf::from(config_dir)
@@ -185,6 +187,15 @@ fn get_config_dir() -> PathBuf {
     }
 }
 
+// Production: always use default path
+#[cfg(not(feature = "test-env"))]
+fn get_config_dir() -> PathBuf {
+    let home_dir = dirs::home_dir().unwrap_or_default();
+    home_dir.join(".config").join("open-keyring")
+}
+
+// Only allow OK_DATA_DIR when test-env feature is enabled
+#[cfg(feature = "test-env")]
 fn get_default_database_path() -> String {
     if let Ok(data_dir) = std::env::var("OK_DATA_DIR") {
         format!("{}/passwords.db", data_dir)
@@ -192,6 +203,13 @@ fn get_default_database_path() -> String {
         let home_dir = dirs::home_dir().unwrap_or_default();
         format!("{}/.local/share/open-keyring/passwords.db", home_dir.to_string_lossy())
     }
+}
+
+// Production: always use default path
+#[cfg(not(feature = "test-env"))]
+fn get_default_database_path() -> String {
+    let home_dir = dirs::home_dir().unwrap_or_default();
+    format!("{}/.local/share/open-keyring/passwords.db", home_dir.to_string_lossy())
 }
 
 fn save_config(path: &PathBuf, config: &OpenKeyringConfig) -> Result<()> {

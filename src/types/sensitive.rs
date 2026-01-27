@@ -2,6 +2,13 @@
 //!
 //! This module provides wrapper types for sensitive data that automatically
 //! zeroize memory when dropped, preventing sensitive data from remaining in memory.
+//!
+//! # Integration Status
+//!
+//! **M1 v0.1**: Type implemented and used in TUI password widget
+//! **M1 v0.2**: Full integration planned (Vault, Record, crypto operations)
+//!
+//! See `docs/plans/2026-01-27-m1-security-and-tui-design.md` for details.
 
 use zeroize::Zeroize;
 

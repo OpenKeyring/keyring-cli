@@ -10,10 +10,12 @@ use ratatui::{
     Frame,
 };
 
+use crate::types::sensitive::SensitiveString;
+
 /// Password popup widget
 pub struct PasswordPopup {
-    /// The password to display (redacted by default)
-    password: String,
+    /// The password to display (redacted by default, auto-zeroizes on drop)
+    password: SensitiveString<String>,
     /// Whether to show the actual password
     revealed: bool,
     /// Clipboard timeout in seconds
@@ -24,7 +26,7 @@ impl PasswordPopup {
     /// Create a new password popup
     pub fn new(password: String) -> Self {
         Self {
-            password,
+            password: SensitiveString::new(password),
             revealed: false,
             timeout_seconds: 30,
         }
@@ -76,9 +78,9 @@ impl PasswordPopup {
 
         // Password (revealed or redacted)
         let display_text = if self.revealed {
-            self.password.clone()
+            self.password.get().clone()
         } else {
-            "•".repeat(self.password.chars().count())
+            "•".repeat(self.password.get().chars().count())
         };
 
         let password_paragraph = Paragraph::new(Line::from(vec![Span::styled(
