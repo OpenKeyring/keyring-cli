@@ -9,10 +9,16 @@ mod update;
 mod delete;
 mod search;
 
+// Re-export command handlers for external use
+#[allow(unused_imports)]
 pub use list::handle_list;
+#[allow(unused_imports)]
 pub use show::handle_show;
+#[allow(unused_imports)]
 pub use new::handle_new;
+#[allow(unused_imports)]
 pub use update::handle_update;
+#[allow(unused_imports)]
 pub use delete::handle_delete;
 pub use search::handle_search;
 

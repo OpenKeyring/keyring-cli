@@ -1,12 +1,17 @@
 #[cfg(target_os = "linux")]
 use keyring_cli::clipboard::linux::LinuxClipboard;
+
+#[cfg(target_os = "macos")]
 use keyring_cli::clipboard::macos::MacOSClipboard;
-use keyring_cli::clipboard::manager::{ClipboardConfig, ClipboardManager};
+
 #[cfg(target_os = "windows")]
 use keyring_cli::clipboard::windows::WindowsClipboard;
+
+use keyring_cli::clipboard::manager::{ClipboardConfig, ClipboardManager};
 use keyring_cli::clipboard::ClipboardService;
 use std::time::Duration;
 
+#[cfg(target_os = "macos")]
 #[test]
 fn test_macos_clipboard() {
     let mut clipboard = MacOSClipboard;
@@ -49,9 +54,10 @@ fn test_linux_clipboard() {
     assert_eq!(clipboard.timeout(), Duration::from_secs(45));
 }
 
+#[cfg(target_os = "macos")]
 #[test]
 fn test_clipboard_service() {
-    let mut macos_clipboard = MacOSClipboard;
+    let macos_clipboard = MacOSClipboard;
     let config = ClipboardConfig {
         timeout_seconds: 60,
         clear_after_copy: true,
@@ -70,9 +76,10 @@ fn test_clipboard_service() {
     assert!(service.clear_clipboard().is_ok());
 }
 
+#[cfg(target_os = "macos")]
 #[test]
 fn test_content_length_limit() {
-    let mut macos_clipboard = MacOSClipboard;
+    let macos_clipboard = MacOSClipboard;
     let config = ClipboardConfig {
         timeout_seconds: 30,
         clear_after_copy: true,
