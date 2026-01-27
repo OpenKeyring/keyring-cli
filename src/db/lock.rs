@@ -175,7 +175,7 @@ impl VaultLock {
         use windows::Win32::Storage::FileSystem::LOCKFILE_EXCLUSIVE_LOCK;
         use windows::Win32::Storage::FileSystem::LOCKFILE_FAIL_IMMEDIATELY;
 
-        let handle = unsafe { HANDLE::from_raw_handle(file.as_handle().as_raw_handle()) };
+        let handle = unsafe { HANDLE::from_raw_borrowed_handle(file.as_handle()) };
         unsafe {
             let mut overlapped = std::mem::zeroed();
             LockFileEx(
@@ -198,7 +198,7 @@ impl VaultLock {
         use windows::Win32::Storage::FileSystem::LockFileEx;
         use windows::Win32::Storage::FileSystem::LOCKFILE_FAIL_IMMEDIATELY;
 
-        let handle = unsafe { HANDLE::from_raw_handle(file.as_handle().as_raw_handle()) };
+        let handle = unsafe { HANDLE::from_raw_borrowed_handle(file.as_handle()) };
         unsafe {
             let mut overlapped = std::mem::zeroed();
             LockFileEx(
