@@ -1,5 +1,8 @@
 //! CLI Command Implementations
 
+// Allow glob re-exports - command modules may have functions with same names
+#![allow(ambiguous_glob_reexports)]
+
 pub mod config;
 pub mod generate;
 pub mod list;

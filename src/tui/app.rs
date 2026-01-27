@@ -5,7 +5,7 @@
 use crate::error::{KeyringError, Result};
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Paragraph, Wrap},
@@ -162,7 +162,7 @@ impl TuiApp {
 
     /// Render the TUI
     pub fn render(&self, frame: &mut Frame) {
-        let size = frame.size();
+        let size = frame.area();
 
         // Split screen into output area and input area
         let chunks = Layout::default()
@@ -228,19 +228,19 @@ impl TuiApp {
         frame.render_widget(paragraph, area);
 
         // Set cursor position
-        frame.set_cursor(
+        frame.set_cursor_position((
             area.x + 2 + self.input_buffer.len() as u16,
             area.y + 1,
-        );
+        ));
     }
 }
 
 /// Initialize terminal for TUI mode
 pub fn init_terminal() -> TuiResult<Terminal<CrosstermBackend<Stdout>>> {
     use crossterm::{
-        event::{DisableMouseCapture, EnableMouseCapture},
+        event::EnableMouseCapture,
         execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        terminal::{enable_raw_mode, EnterAlternateScreen},
     };
 
     enable_raw_mode().map_err(|e| TuiError::InitFailed(e.to_string()))?;
@@ -305,7 +305,7 @@ pub fn run_tui() -> Result<()> {
                         KeyCode::Char(c) => app.handle_char(c),
                         KeyCode::Backspace | KeyCode::Delete => app.handle_backspace(),
                         KeyCode::Enter => app.handle_char('\n'),
-                        KeyCode::Esc | KeyCode::Char('d') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                        KeyCode::Esc | KeyCode::Char('q') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
                             app.quit();
                         }
                         _ => {}

@@ -62,7 +62,8 @@ tokio = { version = "1.38", features = ["full"] }
 async-trait = "0.1"
 
 # HTTP client for HIBP API
-reqwest = { version = "0.12", features = ["json"] }
+# Use native-tls-vendored for static OpenSSL linking to avoid cross-compilation issues
+reqwest = { version = "0.12", features = ["json", "native-tls-vendored"] }
 
 # YAML configuration
 serde_yaml = "0.9"

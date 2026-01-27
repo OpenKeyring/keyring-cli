@@ -5,7 +5,7 @@
 use crate::cli::{onboarding, ConfigManager};
 use crate::crypto::record::decrypt_payload;
 use crate::db::Vault;
-use crate::error::{KeyringError, Result};
+use crate::error::Result;
 use std::path::PathBuf;
 
 /// Handle the /show command

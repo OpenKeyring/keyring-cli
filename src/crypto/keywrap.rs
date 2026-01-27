@@ -81,21 +81,21 @@ impl KeyHierarchy {
     fn generate_dek() -> Result<DataEncryptionKey> {
         use rand::Rng;
         let mut key = [0u8; 32];
-        rand::thread_rng().fill(&mut key);
+        rand::rng().fill(&mut key);
         Ok(DataEncryptionKey(key))
     }
 
     fn generate_recovery_key() -> Result<RecoveryKey> {
         use rand::Rng;
         let mut key = [0u8; 32];
-        rand::thread_rng().fill(&mut key);
+        rand::rng().fill(&mut key);
         Ok(RecoveryKey(key))
     }
 
     fn generate_device_key() -> Result<DeviceKey> {
         use rand::Rng;
         let mut key = [0u8; 32];
-        rand::thread_rng().fill(&mut key);
+        rand::rng().fill(&mut key);
         Ok(DeviceKey(key))
     }
 }

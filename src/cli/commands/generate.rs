@@ -177,7 +177,7 @@ pub fn generate_random(length: usize, numbers: bool, symbols: bool) -> Result<St
     }
 
     let chars: Vec<char> = charset.chars().collect();
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     // Build password ensuring required character types are included
     let mut password_chars: Vec<char> = Vec::with_capacity(length);
@@ -235,7 +235,7 @@ pub fn generate_memorable(word_count: usize) -> Result<String> {
         });
     }
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let selected: Vec<&str> = WORDS.choose_multiple(&mut rng, word_count)
         .map(|w| *w)
         .collect();
@@ -276,7 +276,7 @@ pub fn generate_pin(length: usize) -> Result<String> {
 
     // Use only 2-9 to avoid ambiguous 0 and 1
     let digits = [b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9'];
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let pin: String = (0..length)
         .map(|_| {
             let idx = rng.random_range(0..digits.len());

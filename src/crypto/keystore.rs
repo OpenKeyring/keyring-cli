@@ -133,7 +133,7 @@ fn derive_master_key(password: &str, salt: &[u8; 16]) -> Result<[u8; 32]> {
 
 fn generate_random_key() -> [u8; 32] {
     let mut key = [0u8; 32];
-    rand::thread_rng().fill_bytes(&mut key);
+    rand::rng().fill_bytes(&mut key);
     key
 }
 

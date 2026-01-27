@@ -10,7 +10,6 @@ pub mod record;
 use crate::error::KeyringError;
 use anyhow::Result;
 use zeroize::Zeroize;
-use rand::Rng;
 use rand::prelude::IndexedRandom;
 
 /// High-level crypto manager for key operations
@@ -146,7 +145,7 @@ impl CryptoManager {
             });
         }
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let password: String = (0..length)
             .map(|_| {
                 let idx = rng.random_range(0..CHARSET.len());
@@ -236,8 +235,7 @@ impl CryptoManager {
             });
         }
 
-        use rand::seq::SliceRandom;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let selected: Vec<&str> = WORDS
             .choose_multiple(&mut rng, word_count)
             .copied()
@@ -261,7 +259,7 @@ impl CryptoManager {
             });
         }
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let pin: String = (0..length)
             .map(|_| rng.random_range(0..10).to_string())
             .collect();

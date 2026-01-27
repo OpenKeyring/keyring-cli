@@ -31,7 +31,7 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
 
     let config = ConfigManager::new()?;
     let db_config = config.get_database_config()?;
-    let mut db = DatabaseManager::new(&db_config.path)?;
+    let db = DatabaseManager::new(&db_config.path)?;
 
     // Initialize crypto manager (prompt for master password if needed)
     let mut crypto = CryptoManager::new();

@@ -3,7 +3,7 @@
 //! Interactive command input with autocomplete support.
 
 use ratatui::{
-    layout::{Alignment, Rect},
+    layout::Rect,
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Wrap},
@@ -156,6 +156,9 @@ impl CommandInput {
         frame.render_widget(paragraph, area);
 
         // Set cursor position
-        frame.set_cursor(area.x + 2 + self.cursor as u16, area.y + 1);
+        frame.set_cursor_position((
+            area.x + 2 + self.cursor as u16,
+            area.y + 1,
+        ));
     }
 }
