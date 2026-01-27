@@ -2,6 +2,7 @@
 name = "keyring-cli"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.75"
 authors = ["OpenKeyring Team"]
 license = "MIT"
 repository = "https://github.com/open-keyring/keyring-cli"
@@ -13,9 +14,23 @@ categories = ["command-line-utilities"]
 name = "ok"
 path = "src/main.rs"
 
+[features]
+default = []
+test-env = []  # Only for development/testing
+
 [dependencies]
 # CLI
 clap = { version = "4.5", features = ["derive"] }
+
+# TUI Framework
+ratatui = "0.28"
+crossterm = "0.28"
+
+# Interactive input
+dialoguer = "0.11"
+
+# Fuzzy matching for autocomplete
+fuzzy-matcher = "0.3"
 
 # Database
 rusqlite = { version = "0.38", features = ["bundled"] }

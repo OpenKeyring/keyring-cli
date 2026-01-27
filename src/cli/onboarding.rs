@@ -68,15 +68,20 @@ pub fn unlock_keystore() -> Result<CryptoManager> {
 
 /// Prompt user for master password
 ///
-/// First checks OK_MASTER_PASSWORD environment variable for automation/testing.
+/// First checks OK_MASTER_PASSWORD environment variable for automation/testing
+/// (only when test-env feature is enabled).
 /// Falls back to interactive prompt using rpassword crate.
 fn prompt_for_master_password() -> Result<String> {
     use std::io::Write;
 
     // Check for master password in environment variable (for testing/automation)
-    if let Ok(env_password) = std::env::var("OK_MASTER_PASSWORD") {
-        if !env_password.is_empty() {
-            return Ok(env_password);
+    // ONLY available when test-env feature is enabled
+    #[cfg(feature = "test-env")]
+    {
+        if let Ok(env_password) = std::env::var("OK_MASTER_PASSWORD") {
+            if !env_password.is_empty() {
+                return Ok(env_password);
+            }
         }
     }
 

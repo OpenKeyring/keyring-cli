@@ -1,5 +1,11 @@
 # OpenKeyring CLI
 
+[![Crates.io](https://img.shields.io/crates/v/keyring-cli)](https://crates.io/crates/keyring-cli)
+[![Test Coverage](https://img.shields.io/badge/coverage-in%20progress-yellow)](tests/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Rust Version](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org)
+[![Security: Zeroize + Alt Screen](https://img.shields.io/badge/security-zeroize--alt--screen-success)]()
+
 A privacy-first, local-first password manager with cross-platform synchronization.
 
 ## Features
@@ -290,6 +296,32 @@ clipboard:
 All types support optional: `username`, `url`, `notes`, `tags`
 
 ## Development
+
+### Test Coverage
+
+We maintain high test coverage for all core modules (target: 80%+ overall):
+
+- **Crypto**: Target >90% (Argon2id, AES-256-GCM, PBKDF2)
+- **Database**: Target >85% (Vault operations, transactions)
+- **CLI**: Target >80% (All commands, error handling)
+- **TUI**: Target >75% (Acceptable for UI code)
+
+Run tests:
+```bash
+# Run all tests
+cargo test --all-features
+
+# Run specific module tests
+cargo test --lib crypto
+cargo test --lib db
+cargo test --lib tui
+
+# Run with coverage (requires cargo-tarpaulin)
+cargo install cargo-tarpaulin
+cargo tarpaulin --out Html --output-dir coverage
+```
+
+View coverage report: `coverage/index.html`
 
 ### Building
 

@@ -139,9 +139,14 @@ impl ConfigManager {
     }
 
     pub fn get_master_password(&self) -> Result<String> {
-        if let Ok(password) = std::env::var("OK_MASTER_PASSWORD") {
-            if !password.is_empty() {
-                return Ok(password);
+        // Check for master password in environment variable (for testing/automation)
+        // ONLY available when test-env feature is enabled
+        #[cfg(feature = "test-env")]
+        {
+            if let Ok(password) = std::env::var("OK_MASTER_PASSWORD") {
+                if !password.is_empty() {
+                    return Ok(password);
+                }
             }
         }
 

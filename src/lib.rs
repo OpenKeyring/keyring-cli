@@ -12,5 +12,7 @@ pub mod health;
 pub mod mcp;
 pub mod onboarding;
 pub mod sync;
+pub mod tui;
+pub mod types;
 
 pub use error::Result;
