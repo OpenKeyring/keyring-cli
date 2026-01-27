@@ -1,14 +1,15 @@
 use clap::Parser;
-use crate::cli::ConfigManager;
+use crate::cli::{ConfigManager, onboarding};
+use crate::crypto::record::decrypt_payload;
 use crate::db::Vault;
 use crate::error::Result;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 pub struct ListArgs {
-    #[clap(short, long)]
+    #[clap(short = 't', long)]
     pub r#type: Option<String>,
-    #[clap(short, long)]
+    #[clap(short = 'T', long)]
     pub tags: Vec<String>,
     #[clap(short, long)]
     pub limit: Option<usize>,
@@ -18,6 +19,9 @@ pub async fn list_records(args: ListArgs) -> Result<()> {
     let config = ConfigManager::new()?;
     let db_config = config.get_database_config()?;
     let db_path = PathBuf::from(db_config.path);
+
+    // Unlock keystore to decrypt record names
+    let crypto = onboarding::unlock_keystore()?;
 
     let vault = Vault::open(&db_path, "")?;
     let records = vault.list_records()?;
@@ -54,7 +58,14 @@ pub async fn list_records(args: ListArgs) -> Result<()> {
     } else {
         println!("📋 Found {} records:", filtered.len());
         for record in filtered {
-            println!("  - {} ({})", record.id,
+            // Try to decrypt the record name
+            let name = if let Ok(payload) = decrypt_payload(&crypto, &record.encrypted_data, &record.nonce) {
+                payload.name
+            } else {
+                // If decryption fails, show UUID
+                record.id.to_string()
+            };
+            println!("  - {} ({})", name,
                 format!("{:?}", record.record_type).to_lowercase());
         }
     }

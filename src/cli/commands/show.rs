@@ -27,9 +27,8 @@ pub async fn execute(
     // Open vault
     let vault = Vault::open(&db_path, "")?;
 
-    // Search for record by name (using search_records)
-    // We need to decrypt records to find the matching name
-    let records = vault.search_records(&name)?;
+    // Get all records and search by name (since names are encrypted)
+    let records = vault.list_records()?;
 
     // Decrypt records to find the matching one
     let mut matched_record = None;

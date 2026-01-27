@@ -178,14 +178,31 @@ pub fn generate_random(length: usize, numbers: bool, symbols: bool) -> Result<St
 
     let chars: Vec<char> = charset.chars().collect();
     let mut rng = rand::thread_rng();
-    let password: String = (0..length)
-        .map(|_| {
-            let idx = rng.random_range(0..chars.len());
-            chars[idx]
-        })
-        .collect();
 
-    Ok(password)
+    // Build password ensuring required character types are included
+    let mut password_chars: Vec<char> = Vec::with_capacity(length);
+
+    // First, ensure at least one of each required type
+    if numbers {
+        let idx = rng.random_range(0..nums.len());
+        password_chars.push(nums.chars().nth(idx).unwrap());
+    }
+    if symbols {
+        let idx = rng.random_range(0..syms.len());
+        password_chars.push(syms.chars().nth(idx).unwrap());
+    }
+
+    // Fill remaining length with random characters from the full charset
+    while password_chars.len() < length {
+        let idx = rng.random_range(0..chars.len());
+        password_chars.push(chars[idx]);
+    }
+
+    // Shuffle to avoid predictable patterns (required chars at the start)
+    use rand::seq::SliceRandom;
+    password_chars.shuffle(&mut rng);
+
+    Ok(password_chars.into_iter().collect())
 }
 
 /// Generate a memorable password using word-based approach
@@ -338,12 +355,16 @@ pub async fn execute(args: GenerateArgs) -> Result<()> {
     let mut vault = Vault::open(&db_path, &master_password)?;
     vault.add_record(&record)?;
 
-    // Copy to clipboard by default (or if --copy flag is set)
-    // This is more secure than displaying the password in terminal
-    copy_to_clipboard(&password)?;
-
-    // Print success message (without displaying password)
-    print_success_message(&args.name, password_type, true);
+    // Copy to clipboard if requested
+    // Use --no-copy to display password in terminal (useful for testing/automation)
+    if args.copy {
+        copy_to_clipboard(&password)?;
+        print_success_message(&args.name, password_type, true);
+    } else {
+        print_success_message(&args.name, password_type, false);
+        // Display password when --no-copy is used
+        println!("   Password: {}", password);
+    }
 
     // Handle sync if requested
     if args.sync {
@@ -395,10 +416,7 @@ fn print_success_message(name: &str, password_type: PasswordType, copied: bool) 
     println!("   Name: {}", name);
     println!("   Type: {}", format!("{:?}", password_type).to_lowercase());
 
-    // Security note: password is NOT displayed in terminal
-    // It's only copied to clipboard to prevent command history logging
-
-    // Clipboard notice
+    // Clipboard notice (only when copied)
     if copied {
         println!("   📋 Copied to clipboard (auto-clears in 30s)");
     }

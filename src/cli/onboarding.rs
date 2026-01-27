@@ -68,14 +68,23 @@ pub fn unlock_keystore() -> Result<CryptoManager> {
 
 /// Prompt user for master password
 ///
-/// Uses rpassword crate to securely read password from stdin.
+/// First checks OK_MASTER_PASSWORD environment variable for automation/testing.
+/// Falls back to interactive prompt using rpassword crate.
 fn prompt_for_master_password() -> Result<String> {
-    use rpassword::read_password;
     use std::io::Write;
 
+    // Check for master password in environment variable (for testing/automation)
+    if let Ok(env_password) = std::env::var("OK_MASTER_PASSWORD") {
+        if !env_password.is_empty() {
+            return Ok(env_password);
+        }
+    }
+
+    // Interactive prompt
+    use rpassword::read_password;
     print!("🔐 Enter master password: ");
     let _ = std::io::stdout().flush();
-    
+
     let password = read_password()
         .map_err(|e| KeyringError::IoError(format!("Failed to read password: {}", e)))?;
 

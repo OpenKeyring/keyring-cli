@@ -1,4 +1,5 @@
 use std::env;
+use std::io::Write;
 use std::process::Command;
 use tempfile::TempDir;
 
@@ -19,8 +20,15 @@ fn cli_generate_then_show_decrypts() {
         .output()
         .expect("failed to run ok generate");
 
-    assert!(generate_output.status.success());
+    // Print generate output for debugging
+    let generate_stderr = String::from_utf8_lossy(&generate_output.stderr);
     let generate_stdout = String::from_utf8_lossy(&generate_output.stdout);
+    eprintln!("Generate stderr: {}", generate_stderr);
+    eprintln!("Generate stdout: {}", generate_stdout);
+    eprintln!("Generate exit code: {:?}", generate_output.status.code());
+
+    assert!(generate_output.status.success(), "Generate failed: stderr={}, stdout={}", generate_stderr, generate_stdout);
+
     let password_line = generate_stdout
         .lines()
         .find(|line| line.trim_start().starts_with("Password:"))
@@ -33,15 +41,27 @@ fn cli_generate_then_show_decrypts() {
         .to_string();
     assert!(!generated_password.is_empty());
 
-    let show_output = Command::new(&ok_bin)
-        .args(["show", "github", "--password"])
-        .output()
-        .expect("failed to run ok show");
+    // Run show command with stdin input for confirmation
+    let mut show_process = Command::new(&ok_bin)
+        .args(["show", "github", "--field", "password"])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("failed to spawn ok show");
 
-    assert!(show_output.status.success());
+    // Write "y" to stdin for confirmation
+    if let Some(mut stdin) = show_process.stdin.as_ref() {
+        writeln!(stdin, "y").expect("failed to write to stdin");
+    }
+
+    let show_output = show_process.wait_with_output().expect("failed to read show output");
+
+    assert!(show_output.status.success(), "show command failed: {}", String::from_utf8_lossy(&show_output.stderr));
     let show_stdout = String::from_utf8_lossy(&show_output.stdout);
     assert!(
         show_stdout.contains(&generated_password),
-        "show output should include decrypted password"
+        "show output should include decrypted password. Got: {}",
+        show_stdout
     );
 }

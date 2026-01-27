@@ -8,10 +8,15 @@ use keyring_cli::cli::commands::generate::{
     generate_memorable, generate_password, generate_pin, generate_random, GenerateArgs,
     PasswordType,
 };
+use tempfile::TempDir;
 
 #[tokio::test]
 async fn test_generate_random_password() {
-    // Test generating a random password
+    let temp_dir = TempDir::new().unwrap();
+    std::env::set_var("OK_CONFIG_DIR", temp_dir.path().join("config"));
+    std::env::set_var("OK_DATA_DIR", temp_dir.path().join("data"));
+    std::env::set_var("OK_MASTER_PASSWORD", "test-master-password");
+
     let args = GenerateArgs {
         name: "test-password".to_string(),
         length: 16,
@@ -34,6 +39,11 @@ async fn test_generate_random_password() {
 
 #[tokio::test]
 async fn test_generate_memorable_password() {
+    let temp_dir = TempDir::new().unwrap();
+    std::env::set_var("OK_CONFIG_DIR", temp_dir.path().join("config"));
+    std::env::set_var("OK_DATA_DIR", temp_dir.path().join("data"));
+    std::env::set_var("OK_MASTER_PASSWORD", "test-master-password");
+
     let args = GenerateArgs {
         name: "test-memorable".to_string(),
         length: 16,
@@ -59,6 +69,11 @@ async fn test_generate_memorable_password() {
 
 #[tokio::test]
 async fn test_generate_pin() {
+    let temp_dir = TempDir::new().unwrap();
+    std::env::set_var("OK_CONFIG_DIR", temp_dir.path().join("config"));
+    std::env::set_var("OK_DATA_DIR", temp_dir.path().join("data"));
+    std::env::set_var("OK_MASTER_PASSWORD", "test-master-password");
+
     let args = GenerateArgs {
         name: "test-pin".to_string(),
         length: 6,

@@ -92,11 +92,11 @@ enum Commands {
     #[command(alias = "ls")]
     List {
         /// Filter by type
-        #[arg(short, long, value_parser = ["password", "ssh_key", "api_credential", "mnemonic", "private_key"])]
+        #[arg(short = 't', long, value_parser = ["password", "ssh_key", "api_credential", "mnemonic", "private_key"])]
         r#type: Option<String>,
 
         /// Filter by tags (AND logic)
-        #[arg(short, long, value_delimiter = ',')]
+        #[arg(short = 'T', long, value_delimiter = ',')]
         tags: Vec<String>,
 
         /// Filter by tag (OR logic, can be used multiple times)
