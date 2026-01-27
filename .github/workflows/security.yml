@@ -38,18 +38,17 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: security-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build release without test-env
         run: |
-          cd keyring-cli
           cargo build --release --no-default-features
 
       - name: Verify test-env NOT in release binary (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           echo "Checking for test environment variables in release binary..."
-          if grep -r "OK_MASTER_PASSWORD\|OK_CONFIG_DIR\|OK_DATA_DIR" keyring-cli/target/release/keyring-cli 2>/dev/null; then
+          if grep -r "OK_MASTER_PASSWORD\|OK_CONFIG_DIR\|OK_DATA_DIR" target/release/keyring-cli 2>/dev/null; then
             echo "❌ ERROR: Test environment variables leaked to release!"
             exit 1
           fi
@@ -60,7 +59,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Checking for test environment variables in release binary..."
-          $binaryPath = "keyring-cli\target\release\keyring-cli.exe"
+          $binaryPath = "target\release\keyring-cli.exe"
           if (Test-Path $binaryPath) {
             $content = Get-Content $binaryPath -Raw -Encoding ASCII
             if ($content -match "OK_MASTER_PASSWORD|OK_CONFIG_DIR|OK_DATA_DIR") {
@@ -72,19 +71,16 @@ jobs:
 
       - name: Verify test-env feature works
         run: |
-          cd keyring-cli
           cargo build --features test-env
           echo "✅ Build with test-env feature successful"
 
       - name: Run security audit
         run: |
           cargo install cargo-audit
-          cd keyring-cli
           cargo audit || echo "⚠️  Security audit found potential issues"
 
       - name: Check MSRV in Cargo.toml
         run: |
-          cd keyring-cli
           if grep -q "rust-version" Cargo.toml; then
             echo "✅ MSRV declared in Cargo.toml"
             grep "rust-version" Cargo.toml
