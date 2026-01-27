@@ -2,7 +2,7 @@
 //!
 //! Handles the /list command in TUI mode.
 
-use crate::cli::{ConfigManager, onboarding};
+use crate::cli::{onboarding, ConfigManager};
 use crate::crypto::record::decrypt_payload;
 use crate::db::Vault;
 use crate::error::Result;
@@ -56,8 +56,13 @@ pub fn handle_list(args: Vec<&str>) -> Result<Vec<String>> {
 
         for record in filtered {
             // Try to decrypt the record name
-            let (name, record_type) = if let Ok(payload) = decrypt_payload(&crypto, &record.encrypted_data, &record.nonce) {
-                (payload.name, format!("{:?}", record.record_type).to_lowercase())
+            let (name, record_type) = if let Ok(payload) =
+                decrypt_payload(&crypto, &record.encrypted_data, &record.nonce)
+            {
+                (
+                    payload.name,
+                    format!("{:?}", record.record_type).to_lowercase(),
+                )
             } else {
                 (record.id.to_string(), "unknown".to_string())
             };

@@ -9,8 +9,8 @@ pub mod record;
 
 use crate::error::KeyringError;
 use anyhow::Result;
-use zeroize::Zeroize;
 use rand::prelude::IndexedRandom;
+use zeroize::Zeroize;
 
 /// High-level crypto manager for key operations
 pub struct CryptoManager {

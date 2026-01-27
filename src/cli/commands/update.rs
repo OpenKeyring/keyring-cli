@@ -1,6 +1,6 @@
-use clap::Parser;
 use crate::cli::ConfigManager;
 use crate::error::Result;
+use clap::Parser;
 
 #[derive(Parser, Debug)]
 pub struct UpdateArgs {

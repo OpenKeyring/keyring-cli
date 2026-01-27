@@ -41,10 +41,9 @@ pub async fn execute(
         }
     }
 
-    let (_record, decrypted_payload) = matched_record
-        .ok_or_else(|| KeyringError::NotFound {
-            resource: format!("Record with name '{}'", name),
-        })?;
+    let (_record, decrypted_payload) = matched_record.ok_or_else(|| KeyringError::NotFound {
+        resource: format!("Record with name '{}'", name),
+    })?;
 
     // Handle copy to clipboard (explicit --copy flag or default behavior)
     if copy || (!print && field.is_none() && !history) {
@@ -55,7 +54,10 @@ pub async fn execute(
         clipboard.copy_password(&decrypted_payload.password)?;
 
         let timeout_secs = timeout.unwrap_or(30);
-        println!("📋 Password copied to clipboard (auto-clears in {} seconds)", timeout_secs);
+        println!(
+            "📋 Password copied to clipboard (auto-clears in {} seconds)",
+            timeout_secs
+        );
 
         // Show non-sensitive record info
         println!("Name: {}", decrypted_payload.name);

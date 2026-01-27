@@ -1,7 +1,7 @@
-use clap::Parser;
 use crate::cli::ConfigManager;
 use crate::db::Vault;
 use crate::error::Result;
+use clap::Parser;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -26,7 +26,11 @@ pub async fn search_records(args: SearchArgs) -> Result<()> {
     if records.is_empty() {
         println!("🔍 No records found matching '{}'", args.query);
     } else {
-        println!("🔍 Found {} records matching '{}':", records.len(), args.query);
+        println!(
+            "🔍 Found {} records matching '{}':",
+            records.len(),
+            args.query
+        );
         for record in records {
             println!("  - {}", record.id);
         }

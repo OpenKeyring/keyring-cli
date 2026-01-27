@@ -27,7 +27,12 @@ fn cli_generate_then_show_decrypts() {
     eprintln!("Generate stdout: {}", generate_stdout);
     eprintln!("Generate exit code: {:?}", generate_output.status.code());
 
-    assert!(generate_output.status.success(), "Generate failed: stderr={}, stdout={}", generate_stderr, generate_stdout);
+    assert!(
+        generate_output.status.success(),
+        "Generate failed: stderr={}, stdout={}",
+        generate_stderr,
+        generate_stdout
+    );
 
     let password_line = generate_stdout
         .lines()
@@ -55,9 +60,15 @@ fn cli_generate_then_show_decrypts() {
         writeln!(stdin, "y").expect("failed to write to stdin");
     }
 
-    let show_output = show_process.wait_with_output().expect("failed to read show output");
+    let show_output = show_process
+        .wait_with_output()
+        .expect("failed to read show output");
 
-    assert!(show_output.status.success(), "show command failed: {}", String::from_utf8_lossy(&show_output.stderr));
+    assert!(
+        show_output.status.success(),
+        "show command failed: {}",
+        String::from_utf8_lossy(&show_output.stderr)
+    );
     let show_stdout = String::from_utf8_lossy(&show_output.stdout);
     assert!(
         show_stdout.contains(&generated_password),

@@ -1,6 +1,6 @@
-use clap::Subcommand;
 use crate::cli::ConfigManager;
 use crate::error::Result;
+use clap::Subcommand;
 
 #[derive(Subcommand, Debug)]
 pub enum ConfigCommands {
@@ -64,11 +64,17 @@ async fn execute_get(key: String) -> Result<()> {
         }
         "sync.conflict_resolution" => {
             let sync_config = config.get_sync_config()?;
-            println!("sync.conflict_resolution = {}", sync_config.conflict_resolution);
+            println!(
+                "sync.conflict_resolution = {}",
+                sync_config.conflict_resolution
+            );
         }
         "clipboard.timeout" => {
             let clipboard_config = config.get_clipboard_config()?;
-            println!("clipboard.timeout = {} seconds", clipboard_config.timeout_seconds);
+            println!(
+                "clipboard.timeout = {} seconds",
+                clipboard_config.timeout_seconds
+            );
         }
         "database.path" => {
             let db_config = config.get_database_config()?;
@@ -92,7 +98,10 @@ async fn execute_list() -> Result<()> {
     let db_config = config.get_database_config()?;
     println!("\n[Database]");
     println!("  database.path = {}", db_config.path);
-    println!("  database.encryption_enabled = {}", db_config.encryption_enabled);
+    println!(
+        "  database.encryption_enabled = {}",
+        db_config.encryption_enabled
+    );
 
     // Get sync config
     let sync_config = config.get_sync_config()?;
@@ -101,14 +110,26 @@ async fn execute_list() -> Result<()> {
     println!("  sync.provider = {}", sync_config.provider);
     println!("  sync.remote_path = {}", sync_config.remote_path);
     println!("  sync.auto = {}", sync_config.auto_sync);
-    println!("  sync.conflict_resolution = {}", sync_config.conflict_resolution);
+    println!(
+        "  sync.conflict_resolution = {}",
+        sync_config.conflict_resolution
+    );
 
     // Get clipboard config
     let clipboard_config = config.get_clipboard_config()?;
     println!("\n[Clipboard]");
-    println!("  clipboard.timeout = {} seconds", clipboard_config.timeout_seconds);
-    println!("  clipboard.clear_after_copy = {}", clipboard_config.clear_after_copy);
-    println!("  clipboard.max_content_length = {}", clipboard_config.max_content_length);
+    println!(
+        "  clipboard.timeout = {} seconds",
+        clipboard_config.timeout_seconds
+    );
+    println!(
+        "  clipboard.clear_after_copy = {}",
+        clipboard_config.clear_after_copy
+    );
+    println!(
+        "  clipboard.max_content_length = {}",
+        clipboard_config.max_content_length
+    );
 
     Ok(())
 }

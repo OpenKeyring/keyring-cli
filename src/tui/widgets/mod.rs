@@ -5,6 +5,6 @@
 // Widgets are part of the TUI API but may not all be used yet
 #![allow(dead_code)]
 
-mod password;
-mod mnemonic;
 mod input;
+mod mnemonic;
+mod password;

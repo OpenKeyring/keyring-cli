@@ -39,9 +39,9 @@ impl MnemonicDisplay {
             .direction(Direction::Vertical)
             .constraints(
                 [
-                    Constraint::Length(3),  // Title
-                    Constraint::Min(1),     // Mnemonic words
-                    Constraint::Length(2),  // Instructions
+                    Constraint::Length(3), // Title
+                    Constraint::Min(1),    // Mnemonic words
+                    Constraint::Length(2), // Instructions
                 ]
                 .as_ref(),
             )
@@ -96,12 +96,13 @@ impl MnemonicDisplay {
             Span::styled("⚠️  ", Style::default().fg(Color::Yellow)),
             Span::styled(
                 "Save this key securely. It will not be shown again.",
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
             ),
         ]);
 
-        let instructions_paragraph = Paragraph::new(instructions)
-            .alignment(Alignment::Center);
+        let instructions_paragraph = Paragraph::new(instructions).alignment(Alignment::Center);
 
         frame.render_widget(instructions_paragraph, popup_chunks[2]);
     }

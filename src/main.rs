@@ -337,8 +337,7 @@ async fn main() -> Result<()> {
             return Ok(());
         } else {
             // No command: launch TUI mode
-            return keyring_cli::tui::run_tui()
-                .map_err(|e| anyhow::anyhow!("TUI error: {}", e));
+            return keyring_cli::tui::run_tui().map_err(|e| anyhow::anyhow!("TUI error: {}", e));
         }
     }
 
@@ -483,14 +482,17 @@ async fn main() -> Result<()> {
             use commands::devices::DevicesArgs;
             let args = match device_command {
                 DeviceCommands::List => DevicesArgs { remove: None },
-                DeviceCommands::Remove { device_id, force: _ } => DevicesArgs { remove: Some(device_id) },
+                DeviceCommands::Remove {
+                    device_id,
+                    force: _,
+                } => DevicesArgs {
+                    remove: Some(device_id),
+                },
             };
             commands::devices::manage_devices(args).await?
         }
 
-        Commands::Config { config_command } => {
-            commands::config::execute(config_command).await?
-        }
+        Commands::Config { config_command } => commands::config::execute(config_command).await?,
 
         Commands::Health {
             leaks,
@@ -511,7 +513,12 @@ async fn main() -> Result<()> {
         Commands::Mnemonic { mnemonic_command } => {
             use commands::mnemonic::MnemonicArgs;
             let args = match mnemonic_command {
-                MnemonicCommands::Generate { words, language: _, name, hint: _ } => MnemonicArgs {
+                MnemonicCommands::Generate {
+                    words,
+                    language: _,
+                    name,
+                    hint: _,
+                } => MnemonicArgs {
                     generate: words,
                     validate: None,
                     name,

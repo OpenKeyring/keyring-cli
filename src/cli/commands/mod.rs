@@ -4,25 +4,25 @@
 #![allow(ambiguous_glob_reexports)]
 
 pub mod config;
-pub mod generate;
-pub mod list;
-pub mod show;
-pub mod update;
 pub mod delete;
-pub mod search;
-pub mod sync;
-pub mod health;
 pub mod devices;
+pub mod generate;
+pub mod health;
+pub mod list;
 pub mod mnemonic;
+pub mod search;
+pub mod show;
+pub mod sync;
+pub mod update;
 
 pub use config::*;
-pub use generate::*;
-pub use list::*;
-pub use show::*;
-pub use update::*;
 pub use delete::*;
-pub use search::*;
-pub use sync::*;
-pub use health::*;
 pub use devices::*;
+pub use generate::*;
+pub use health::*;
+pub use list::*;
 pub use mnemonic::*;
+pub use search::*;
+pub use show::*;
+pub use sync::*;
+pub use update::*;

@@ -1,7 +1,7 @@
-use clap::Parser;
-use crate::error::Result;
-use crate::db::models::{DecryptedRecord, RecordType};
 use crate::crypto::bip39;
+use crate::db::models::{DecryptedRecord, RecordType};
+use crate::error::Result;
+use clap::Parser;
 
 #[derive(Parser, Debug)]
 pub struct MnemonicArgs {

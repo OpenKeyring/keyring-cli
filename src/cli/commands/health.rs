@@ -1,9 +1,9 @@
-use clap::Parser;
 use crate::cli::ConfigManager;
-use crate::db::DatabaseManager;
 use crate::crypto::CryptoManager;
-use crate::health::{HealthChecker, HealthReport};
+use crate::db::DatabaseManager;
 use crate::error::{KeyringError, Result};
+use crate::health::{HealthChecker, HealthReport};
+use clap::Parser;
 use std::collections::HashMap;
 
 #[derive(Parser, Debug)]
@@ -57,7 +57,7 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
     let conn = db.connection()?;
     let mut stmt = conn.prepare(
         "SELECT id, record_type, encrypted_data, nonce, tags, created_at, updated_at
-         FROM records WHERE deleted = 0"
+         FROM records WHERE deleted = 0",
     )?;
 
     let records_vec = stmt.query_map((), |row| {
@@ -164,7 +164,10 @@ fn print_health_report(report: &HealthReport, show_weak: bool, show_dupes: bool,
     }
 
     if show_leaks {
-        println!("Compromised:          {}", report.compromised_password_count);
+        println!(
+            "Compromised:          {}",
+            report.compromised_password_count
+        );
         _total_issues += report.compromised_password_count;
     }
 
@@ -179,7 +182,10 @@ fn print_health_report(report: &HealthReport, show_weak: bool, show_dupes: bool,
     let mut by_severity: HashMap<String, Vec<_>> = HashMap::new();
     for issue in &report.issues {
         let severity = format!("{:?}", issue.severity);
-        by_severity.entry(severity).or_insert_with(Vec::new).push(issue);
+        by_severity
+            .entry(severity)
+            .or_insert_with(Vec::new)
+            .push(issue);
     }
 
     // Display issues by severity
@@ -193,7 +199,12 @@ fn print_health_report(report: &HealthReport, show_weak: bool, show_dupes: bool,
                     crate::health::report::Severity::Medium => "🟡",
                     crate::health::report::Severity::Low => "🟢",
                 };
-                println!("  {} {} - {}", icon, issue.record_names.join(", "), issue.description);
+                println!(
+                    "  {} {} - {}",
+                    icon,
+                    issue.record_names.join(", "),
+                    issue.description
+                );
             }
             println!();
         }

@@ -53,9 +53,9 @@ impl PasswordPopup {
             .direction(Direction::Vertical)
             .constraints(
                 [
-                    Constraint::Length(3),  // Title
-                    Constraint::Length(3),  // Password
-                    Constraint::Length(2),  // Instructions
+                    Constraint::Length(3), // Title
+                    Constraint::Length(3), // Password
+                    Constraint::Length(2), // Instructions
                 ]
                 .as_ref(),
             )

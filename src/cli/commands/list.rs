@@ -1,8 +1,8 @@
-use clap::Parser;
-use crate::cli::{ConfigManager, onboarding};
+use crate::cli::{onboarding, ConfigManager};
 use crate::crypto::record::decrypt_payload;
 use crate::db::Vault;
 use crate::error::Result;
+use clap::Parser;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -29,7 +29,8 @@ pub async fn list_records(args: ListArgs) -> Result<()> {
     // Filter by type if specified
     let filtered: Vec<_> = if let Some(type_str) = args.r#type {
         let record_type = crate::db::models::RecordType::from(type_str);
-        records.into_iter()
+        records
+            .into_iter()
             .filter(|r| r.record_type == record_type)
             .collect()
     } else {
@@ -38,10 +39,9 @@ pub async fn list_records(args: ListArgs) -> Result<()> {
 
     // Filter by tags if specified
     let filtered: Vec<_> = if !args.tags.is_empty() {
-        filtered.into_iter()
-            .filter(|record| {
-                args.tags.iter().all(|tag| record.tags.contains(tag))
-            })
+        filtered
+            .into_iter()
+            .filter(|record| args.tags.iter().all(|tag| record.tags.contains(tag)))
             .collect()
     } else {
         filtered
@@ -59,14 +59,19 @@ pub async fn list_records(args: ListArgs) -> Result<()> {
         println!("📋 Found {} records:", filtered.len());
         for record in filtered {
             // Try to decrypt the record name
-            let name = if let Ok(payload) = decrypt_payload(&crypto, &record.encrypted_data, &record.nonce) {
+            let name = if let Ok(payload) =
+                decrypt_payload(&crypto, &record.encrypted_data, &record.nonce)
+            {
                 payload.name
             } else {
                 // If decryption fails, show UUID
                 record.id.to_string()
             };
-            println!("  - {} ({})", name,
-                format!("{:?}", record.record_type).to_lowercase());
+            println!(
+                "  - {} ({})",
+                name,
+                format!("{:?}", record.record_type).to_lowercase()
+            );
         }
     }
 

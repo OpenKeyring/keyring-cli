@@ -7,7 +7,7 @@ use crate::cli::ConfigManager;
 use crate::crypto::{keystore::KeyStore, CryptoManager};
 use crate::db::Vault;
 use crate::error::{KeyringError, Result};
-use crate::onboarding::{is_initialized, initialize_keystore};
+use crate::onboarding::{initialize_keystore, is_initialized};
 use std::path::PathBuf;
 
 /// Ensure the vault is initialized
@@ -24,15 +24,15 @@ pub fn ensure_initialized() -> Result<()> {
 
     // Ensure parent directory exists
     if let Some(parent) = db_path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| KeyringError::IoError(format!("Failed to create data directory: {}", e)))?;
+        std::fs::create_dir_all(parent).map_err(|e| {
+            KeyringError::IoError(format!("Failed to create data directory: {}", e))
+        })?;
     }
 
     // Open vault (creates database if it doesn't exist)
-    let _vault = Vault::open(&db_path, "")
-        .map_err(|e| KeyringError::Database {
-            context: format!("Failed to initialize vault: {}", e),
-        })?;
+    let _vault = Vault::open(&db_path, "").map_err(|e| KeyringError::Database {
+        context: format!("Failed to initialize vault: {}", e),
+    })?;
 
     Ok(())
 }
@@ -47,7 +47,7 @@ pub fn unlock_keystore() -> Result<CryptoManager> {
     let config = ConfigManager::new()?;
     let master_password = prompt_for_master_password()?;
     let keystore_path = config.get_keystore_path();
-    
+
     // Unlock or initialize keystore
     let keystore = if is_initialized(&keystore_path) {
         KeyStore::unlock(&keystore_path, &master_password)?
@@ -58,7 +58,7 @@ pub fn unlock_keystore() -> Result<CryptoManager> {
         }
         keystore
     };
-    
+
     // Initialize CryptoManager with DEK
     let mut crypto = CryptoManager::new();
     crypto.initialize_with_key(keystore.dek);
@@ -112,14 +112,14 @@ mod tests {
     fn test_ensure_initialized_creates_database() {
         let temp_dir = TempDir::new().unwrap();
         let db_path = temp_dir.path().join("test.db");
-        
+
         // Set environment variable to use temp directory
         std::env::set_var("OK_DATA_DIR", temp_dir.path().to_str().unwrap());
-        
+
         // This should create the database
         let result = ensure_initialized();
         assert!(result.is_ok());
-        
+
         // Cleanup
         std::env::remove_var("OK_DATA_DIR");
     }

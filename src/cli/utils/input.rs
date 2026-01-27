@@ -1,5 +1,5 @@
-use std::io::{self, Write};
 use rpassword::read_password;
+use std::io::{self, Write};
 
 pub fn prompt_for_password(prompt: &str) -> io::Result<String> {
     print!("{}", prompt);

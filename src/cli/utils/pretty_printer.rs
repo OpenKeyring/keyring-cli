@@ -21,9 +21,22 @@ impl PrettyPrinter {
     fn print_single_record(record: &DecryptedRecord) {
         println!("🔹 Name: {}", record.name);
         println!("📝 Type: {:?}", record.record_type);
-        println!("🏷️  Tags: {}", if record.tags.is_empty() { "None".to_string() } else { record.tags.join(", ") });
-        println!("📅 Created: {}", record.created_at.format("%Y-%m-%d %H:%M:%S UTC"));
-        println!("🔄 Updated: {}", record.updated_at.format("%Y-%m-%d %H:%M:%S UTC"));
+        println!(
+            "🏷️  Tags: {}",
+            if record.tags.is_empty() {
+                "None".to_string()
+            } else {
+                record.tags.join(", ")
+            }
+        );
+        println!(
+            "📅 Created: {}",
+            record.created_at.format("%Y-%m-%d %H:%M:%S UTC")
+        );
+        println!(
+            "🔄 Updated: {}",
+            record.updated_at.format("%Y-%m-%d %H:%M:%S UTC")
+        );
 
         if let Some(username) = &record.username {
             println!("👤 Username: {}", username);

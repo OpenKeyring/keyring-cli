@@ -156,9 +156,6 @@ impl CommandInput {
         frame.render_widget(paragraph, area);
 
         // Set cursor position
-        frame.set_cursor_position((
-            area.x + 2 + self.cursor as u16,
-            area.y + 1,
-        ));
+        frame.set_cursor_position((area.x + 2 + self.cursor as u16, area.y + 1));
     }
 }

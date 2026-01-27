@@ -152,10 +152,12 @@ impl TuiApp {
                 ]);
             }
             cmd if cmd.starts_with('/') => {
-                self.output_lines.push(format!("Command '{}' not yet implemented", cmd));
+                self.output_lines
+                    .push(format!("Command '{}' not yet implemented", cmd));
             }
             _ => {
-                self.output_lines.push("Unknown command. Type /help for available commands.".to_string());
+                self.output_lines
+                    .push("Unknown command. Type /help for available commands.".to_string());
             }
         }
     }
@@ -201,13 +203,12 @@ impl TuiApp {
     fn render_input(&self, frame: &mut Frame, area: Rect) {
         let input_text = if self.input_buffer.is_empty() {
             vec![Line::from(vec![
-                Span::styled(
-                    "> ",
-                    Style::default().fg(Color::Gray),
-                ),
+                Span::styled("> ", Style::default().fg(Color::Gray)),
                 Span::styled(
                     "Type a command...",
-                    Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+                    Style::default()
+                        .fg(Color::DarkGray)
+                        .add_modifier(Modifier::ITALIC),
                 ),
             ])]
         } else {
@@ -228,10 +229,7 @@ impl TuiApp {
         frame.render_widget(paragraph, area);
 
         // Set cursor position
-        frame.set_cursor_position((
-            area.x + 2 + self.input_buffer.len() as u16,
-            area.y + 1,
-        ));
+        frame.set_cursor_position((area.x + 2 + self.input_buffer.len() as u16, area.y + 1));
     }
 }
 
@@ -254,9 +252,7 @@ pub fn init_terminal() -> TuiResult<Terminal<CrosstermBackend<Stdout>>> {
 }
 
 /// Restore terminal after TUI mode
-pub fn restore_terminal(
-    mut terminal: Terminal<CrosstermBackend<Stdout>>,
-) -> TuiResult<()> {
+pub fn restore_terminal(mut terminal: Terminal<CrosstermBackend<Stdout>>) -> TuiResult<()> {
     use crossterm::{
         execute,
         terminal::{disable_raw_mode, LeaveAlternateScreen},
@@ -281,8 +277,8 @@ pub fn restore_terminal(
 pub fn run_tui() -> Result<()> {
     use crossterm::event;
 
-    let mut terminal = init_terminal()
-        .map_err(|e| KeyringError::IoError(format!("Failed to init TUI: {}", e)))?;
+    let mut terminal =
+        init_terminal().map_err(|e| KeyringError::IoError(format!("Failed to init TUI: {}", e)))?;
 
     let mut app = TuiApp::new();
 
@@ -372,7 +368,10 @@ mod tests {
         app.handle_char('p');
         app.handle_char('\n');
         assert_eq!(app.input_buffer, "");
-        assert!(app.output_lines.iter().any(|l| l.contains("Available Commands")));
+        assert!(app
+            .output_lines
+            .iter()
+            .any(|l| l.contains("Available Commands")));
     }
 
     #[test]

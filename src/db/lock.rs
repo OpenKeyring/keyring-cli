@@ -170,10 +170,10 @@ impl VaultLock {
     #[cfg(windows)]
     fn try_flock_exclusive(file: &File) -> std::io::Result<()> {
         use std::os::windows::io::AsHandle;
+        use windows::Win32::Foundation::HANDLE;
         use windows::Win32::Storage::FileSystem::LockFileEx;
         use windows::Win32::Storage::FileSystem::LOCKFILE_EXCLUSIVE_LOCK;
         use windows::Win32::Storage::FileSystem::LOCKFILE_FAIL_IMMEDIATELY;
-        use windows::Win32::Foundation::HANDLE;
 
         let handle = unsafe { HANDLE::from_raw_handle(file.as_handle().as_raw_handle()) };
         unsafe {
@@ -194,9 +194,9 @@ impl VaultLock {
     #[cfg(windows)]
     fn try_flock_shared(file: &File) -> std::io::Result<()> {
         use std::os::windows::io::AsHandle;
+        use windows::Win32::Foundation::HANDLE;
         use windows::Win32::Storage::FileSystem::LockFileEx;
         use windows::Win32::Storage::FileSystem::LOCKFILE_FAIL_IMMEDIATELY;
-        use windows::Win32::Foundation::HANDLE;
 
         let handle = unsafe { HANDLE::from_raw_handle(file.as_handle().as_raw_handle()) };
         unsafe {

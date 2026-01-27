@@ -5,18 +5,22 @@
 //! - Memorable: Word-based passphrases (e.g., "Correct-Horse-Battery-Staple")
 //! - PIN: Numeric PIN codes
 
-use clap::Parser;
 use crate::cli::ConfigManager;
-use crate::crypto::{CryptoManager, keystore::KeyStore, record::{RecordPayload, encrypt_payload}};
-use crate::error::{KeyringError, Result};
-use crate::db::vault::Vault;
+use crate::clipboard::{create_platform_clipboard, ClipboardConfig, ClipboardService};
+use crate::crypto::{
+    keystore::KeyStore,
+    record::{encrypt_payload, RecordPayload},
+    CryptoManager,
+};
 use crate::db::models::{RecordType, StoredRecord};
-use crate::clipboard::{ClipboardService, ClipboardConfig, create_platform_clipboard};
+use crate::db::vault::Vault;
+use crate::error::{KeyringError, Result};
 use crate::onboarding::is_initialized;
+use clap::Parser;
+use rand::prelude::IndexedRandom;
+use rand::Rng;
 use std::io::Write;
 use std::path::PathBuf;
-use rand::Rng;
-use rand::prelude::IndexedRandom;
 
 /// Arguments for the generate command
 #[derive(Parser, Debug)]
@@ -96,7 +100,8 @@ impl GenerateArgs {
             PasswordType::Memorable => {
                 if self.words < 3 || self.words > 12 {
                     return Err(KeyringError::InvalidInput {
-                        context: "Memorable password word count must be between 3 and 12".to_string(),
+                        context: "Memorable password word count must be between 3 and 12"
+                            .to_string(),
                     });
                 }
             }
@@ -214,14 +219,69 @@ pub fn generate_random(length: usize, numbers: bool, symbols: bool) -> Result<St
 /// A memorable passphrase with capitalized words (e.g., "Correct-Horse-Battery-Staple")
 pub fn generate_memorable(word_count: usize) -> Result<String> {
     const WORDS: &[&str] = &[
-        "correct", "horse", "battery", "staple", "apple", "banana", "cherry", "dragon",
-        "elephant", "flower", "garden", "house", "island", "jungle", "kangaroo", "lemon",
-        "mountain", "nectar", "orange", "piano", "queen", "river", "sunshine", "tiger",
-        "umbrella", "violet", "whale", "xylophone", "yellow", "zebra", "castle", "desert",
-        "eagle", "forest", "giraffe", "harbor", "igloo", "journey", "kingdom", "lantern",
-        "meadow", "night", "ocean", "planet", "quartz", "rainbow", "star", "tower",
-        "universe", "valley", "wave", "crystal", "year", "zen", "bridge", "cloud",
-        "diamond", "emerald", "fountain", "galaxy", "horizon", "infinity", "jewel",
+        "correct",
+        "horse",
+        "battery",
+        "staple",
+        "apple",
+        "banana",
+        "cherry",
+        "dragon",
+        "elephant",
+        "flower",
+        "garden",
+        "house",
+        "island",
+        "jungle",
+        "kangaroo",
+        "lemon",
+        "mountain",
+        "nectar",
+        "orange",
+        "piano",
+        "queen",
+        "river",
+        "sunshine",
+        "tiger",
+        "umbrella",
+        "violet",
+        "whale",
+        "xylophone",
+        "yellow",
+        "zebra",
+        "castle",
+        "desert",
+        "eagle",
+        "forest",
+        "giraffe",
+        "harbor",
+        "igloo",
+        "journey",
+        "kingdom",
+        "lantern",
+        "meadow",
+        "night",
+        "ocean",
+        "planet",
+        "quartz",
+        "rainbow",
+        "star",
+        "tower",
+        "universe",
+        "valley",
+        "wave",
+        "crystal",
+        "year",
+        "zen",
+        "bridge",
+        "cloud",
+        "diamond",
+        "emerald",
+        "fountain",
+        "galaxy",
+        "horizon",
+        "infinity",
+        "jewel",
     ];
 
     if word_count < 3 {
@@ -236,12 +296,14 @@ pub fn generate_memorable(word_count: usize) -> Result<String> {
     }
 
     let mut rng = rand::rng();
-    let selected: Vec<&str> = WORDS.choose_multiple(&mut rng, word_count)
+    let selected: Vec<&str> = WORDS
+        .choose_multiple(&mut rng, word_count)
         .copied()
         .collect();
 
     // Capitalize first letter of each word and join with hyphens
-    let password = selected.iter()
+    let password = selected
+        .iter()
         .map(|w| {
             let mut chars = w.chars();
             match chars.next() {
@@ -583,7 +645,9 @@ mod tests {
     fn test_generate_pin_only_2_to_9() {
         let pin = generate_pin(16).unwrap();
         // Should only contain digits 2-9
-        assert!(pin.chars().all(|c| c.is_ascii_digit() && c >= '2' && c <= '9'));
+        assert!(pin
+            .chars()
+            .all(|c| c.is_ascii_digit() && c >= '2' && c <= '9'));
         // Should not contain 0 or 1
         assert!(!pin.contains('0'));
         assert!(!pin.contains('1'));

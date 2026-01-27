@@ -159,12 +159,12 @@ impl ToolExecutor {
         client_id: &str,
     ) -> Result<serde_json::Value, KeyringError> {
         // Get tool definition
-        let _tool = self
-            .registry
-            .get_tool(tool_name)
-            .ok_or_else(|| KeyringError::ToolNotFound {
-                tool_name: tool_name.to_string(),
-            })?;
+        let _tool =
+            self.registry
+                .get_tool(tool_name)
+                .ok_or_else(|| KeyringError::ToolNotFound {
+                    tool_name: tool_name.to_string(),
+                })?;
 
         // Log tool execution
         self.registry

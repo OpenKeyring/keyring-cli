@@ -7,6 +7,6 @@ pub mod config;
 pub mod onboarding;
 pub mod utils;
 
-pub use commands::{generate, list, show, update, delete, search, sync, health};
+pub use commands::{delete, generate, health, list, search, show, sync, update};
 pub use config::ConfigManager;
 pub use utils::PrettyPrinter;

@@ -1,8 +1,8 @@
-use clap::Parser;
 use crate::cli::ConfigManager;
 use crate::db::vault::Vault;
 use crate::device::get_or_create_device_id;
 use crate::error::{KeyringError, Result};
+use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -45,16 +45,20 @@ pub async fn manage_devices(args: DevicesArgs) -> Result<()> {
 
 async fn list_devices(vault: &mut Vault) -> Result<()> {
     let current_device_id = get_or_create_device_id(vault)?;
-    
+
     // Get trusted devices from metadata
     let trusted_devices = get_trusted_devices(vault)?;
     let revoked_device_ids = get_revoked_device_ids(vault)?;
 
     println!("📱 Your Devices:");
-    
+
     // Always show current device first
     let is_revoked = revoked_device_ids.contains(&current_device_id);
-    let status = if is_revoked { " (Revoked)" } else { " (This device)" };
+    let status = if is_revoked {
+        " (Revoked)"
+    } else {
+        " (This device)"
+    };
     println!("   • {}{}", current_device_id, status);
 
     // Show other trusted devices
@@ -65,7 +69,10 @@ async fn list_devices(vault: &mut Vault) -> Result<()> {
             let last_seen = chrono::DateTime::from_timestamp(device.last_seen, 0)
                 .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
                 .unwrap_or_else(|| "unknown".to_string());
-            println!("   • {}{} (last seen: {})", device.device_id, status, last_seen);
+            println!(
+                "   • {}{} (last seen: {})",
+                device.device_id, status, last_seen
+            );
         }
     }
 
@@ -78,7 +85,7 @@ async fn list_devices(vault: &mut Vault) -> Result<()> {
 
 async fn remove_device(vault: &mut Vault, device_id: &str) -> Result<()> {
     let current_device_id = get_or_create_device_id(vault)?;
-    
+
     if device_id == current_device_id {
         return Err(KeyringError::InvalidInput {
             context: "Cannot remove the current device".to_string(),
@@ -87,7 +94,7 @@ async fn remove_device(vault: &mut Vault, device_id: &str) -> Result<()> {
 
     // Get existing revoked devices
     let mut revoked_devices = get_revoked_devices(vault)?;
-    
+
     // Check if already revoked
     if revoked_devices.iter().any(|d| d.device_id == device_id) {
         return Err(KeyringError::InvalidInput {
@@ -102,11 +109,11 @@ async fn remove_device(vault: &mut Vault, device_id: &str) -> Result<()> {
     });
 
     // Save back to metadata
-    let revoked_json = serde_json::to_string(&revoked_devices)
-        .map_err(|e| KeyringError::InvalidInput {
+    let revoked_json =
+        serde_json::to_string(&revoked_devices).map_err(|e| KeyringError::InvalidInput {
             context: format!("Failed to serialize revoked devices: {}", e),
         })?;
-    
+
     vault.set_metadata(REVOKED_DEVICES_METADATA_KEY, &revoked_json)?;
 
     println!("✅ Device {} revoked successfully", device_id);
@@ -116,8 +123,8 @@ async fn remove_device(vault: &mut Vault, device_id: &str) -> Result<()> {
 fn get_trusted_devices(vault: &Vault) -> Result<Vec<TrustedDevice>> {
     match vault.get_metadata(TRUSTED_DEVICES_METADATA_KEY)? {
         Some(json_str) => {
-            let devices: Vec<TrustedDevice> = serde_json::from_str(&json_str)
-                .map_err(|e| KeyringError::InvalidInput {
+            let devices: Vec<TrustedDevice> =
+                serde_json::from_str(&json_str).map_err(|e| KeyringError::InvalidInput {
                     context: format!("Failed to parse trusted devices: {}", e),
                 })?;
             Ok(devices)
@@ -129,8 +136,8 @@ fn get_trusted_devices(vault: &Vault) -> Result<Vec<TrustedDevice>> {
 fn get_revoked_devices(vault: &Vault) -> Result<Vec<RevokedDevice>> {
     match vault.get_metadata(REVOKED_DEVICES_METADATA_KEY)? {
         Some(json_str) => {
-            let devices: Vec<RevokedDevice> = serde_json::from_str(&json_str)
-                .map_err(|e| KeyringError::InvalidInput {
+            let devices: Vec<RevokedDevice> =
+                serde_json::from_str(&json_str).map_err(|e| KeyringError::InvalidInput {
                     context: format!("Failed to parse revoked devices: {}", e),
                 })?;
             Ok(devices)

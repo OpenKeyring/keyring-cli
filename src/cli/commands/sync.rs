@@ -1,7 +1,7 @@
-use clap::Parser;
 use crate::cli::ConfigManager;
 use crate::db::Vault;
 use crate::error::Result;
+use clap::Parser;
 use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]

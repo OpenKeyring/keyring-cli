@@ -1,7 +1,7 @@
 use crate::error::{KeyringError, Result};
-use std::path::PathBuf;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::fs;
+use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DatabaseConfig {
@@ -170,8 +170,10 @@ impl ConfigManager {
     fn load_config(&self) -> Result<OpenKeyringConfig> {
         let content = fs::read_to_string(&self.config_file)
             .map_err(|e| KeyringError::IoError(e.to_string()))?;
-        let config: OpenKeyringConfig = serde_yaml::from_str(&content)
-            .map_err(|e| KeyringError::ConfigurationError { context: e.to_string() })?;
+        let config: OpenKeyringConfig =
+            serde_yaml::from_str(&content).map_err(|e| KeyringError::ConfigurationError {
+                context: e.to_string(),
+            })?;
         Ok(config)
     }
 }
@@ -201,7 +203,10 @@ fn get_default_database_path() -> String {
         format!("{}/passwords.db", data_dir)
     } else {
         let home_dir = dirs::home_dir().unwrap_or_default();
-        format!("{}/.local/share/open-keyring/passwords.db", home_dir.to_string_lossy())
+        format!(
+            "{}/.local/share/open-keyring/passwords.db",
+            home_dir.to_string_lossy()
+        )
     }
 }
 
@@ -209,13 +214,16 @@ fn get_default_database_path() -> String {
 #[cfg(not(feature = "test-env"))]
 fn get_default_database_path() -> String {
     let home_dir = dirs::home_dir().unwrap_or_default();
-    format!("{}/.local/share/open-keyring/passwords.db", home_dir.to_string_lossy())
+    format!(
+        "{}/.local/share/open-keyring/passwords.db",
+        home_dir.to_string_lossy()
+    )
 }
 
 fn save_config(path: &PathBuf, config: &OpenKeyringConfig) -> Result<()> {
-    let yaml = serde_yaml::to_string(config)
-        .map_err(|e| KeyringError::ConfigurationError { context: e.to_string() })?;
-    fs::write(path, yaml)
-        .map_err(|e| KeyringError::IoError(e.to_string()))?;
+    let yaml = serde_yaml::to_string(config).map_err(|e| KeyringError::ConfigurationError {
+        context: e.to_string(),
+    })?;
+    fs::write(path, yaml).map_err(|e| KeyringError::IoError(e.to_string()))?;
     Ok(())
 }
