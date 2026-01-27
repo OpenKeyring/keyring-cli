@@ -28,30 +28,43 @@ impl Default for ServerConfig {
 
 pub struct McpServer {
     config: ServerConfig,
+    #[allow(dead_code)]
     auth_manager: AuthManager,
+    #[allow(dead_code)]
     audit_logger: AuditLogger,
+    #[allow(dead_code)]
     tool_registry: super::tools::McpToolRegistry,
+    #[allow(dead_code)]
     state: RwLock<ServerState>,
 }
 
 #[derive(Debug, Default)]
 struct ServerState {
+    #[allow(dead_code)]
     connected_clients: HashMap<String, ClientInfo>,
+    #[allow(dead_code)]
     running_tools: HashMap<String, ToolSession>,
 }
 
 #[derive(Debug)]
 struct ClientInfo {
+    #[allow(dead_code)]
     id: String,
+    #[allow(dead_code)]
     connected_at: chrono::DateTime<chrono::Utc>,
+    #[allow(dead_code)]
     last_activity: chrono::DateTime<chrono::Utc>,
+    #[allow(dead_code)]
     permissions: Vec<String>,
 }
 
 #[derive(Debug)]
 struct ToolSession {
+    #[allow(dead_code)]
     tool_name: String,
+    #[allow(dead_code)]
     started_at: chrono::DateTime<chrono::Utc>,
+    #[allow(dead_code)]
     client_id: String,
 }
 

@@ -29,6 +29,12 @@ struct ClientSession {
     permissions: Vec<String>,
 }
 
+impl Default for AuthManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AuthManager {
     pub fn new() -> Self {
         Self {
@@ -77,7 +83,8 @@ impl AuthManager {
     pub fn revoke_token(&mut self, token: &str) -> Result<(), KeyringError> {
         if let Some(auth_token) = self.tokens.remove(token) {
             self.active_clients.remove(&auth_token.client_id);
-            self.audit_logger
+            let _ = self
+                .audit_logger
                 .log_event("token_revoked", &serde_json::to_string(&auth_token)?);
         }
         Ok(())

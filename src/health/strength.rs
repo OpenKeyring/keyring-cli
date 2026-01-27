@@ -167,7 +167,7 @@ pub fn calculate_strength(password: &str) -> u8 {
         score += 5;
     }
 
-    score.max(0).min(100)
+    score.min(100)
 }
 
 /// Extract password from a stored record using decryption

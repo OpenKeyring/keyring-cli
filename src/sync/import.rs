@@ -57,6 +57,12 @@ pub struct SyncImporterService {
     importer: Box<dyn SyncImporter>,
 }
 
+impl Default for SyncImporterService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SyncImporterService {
     pub fn new() -> Self {
         Self {

@@ -16,6 +16,12 @@ pub struct SyncService {
     conflict_resolver: DefaultConflictResolver,
 }
 
+impl Default for SyncService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SyncService {
     pub fn new() -> Self {
         Self {

@@ -42,7 +42,7 @@ fn cli_generate_then_show_decrypts() {
     assert!(!generated_password.is_empty());
 
     // Run show command with stdin input for confirmation
-    let mut show_process = Command::new(&ok_bin)
+    let show_process = Command::new(&ok_bin)
         .args(["show", "github", "--field", "password"])
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())

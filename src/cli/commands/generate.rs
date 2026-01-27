@@ -237,7 +237,7 @@ pub fn generate_memorable(word_count: usize) -> Result<String> {
 
     let mut rng = rand::rng();
     let selected: Vec<&str> = WORDS.choose_multiple(&mut rng, word_count)
-        .map(|w| *w)
+        .copied()
         .collect();
 
     // Capitalize first letter of each word and join with hyphens
@@ -375,6 +375,7 @@ pub async fn execute(args: GenerateArgs) -> Result<()> {
 }
 
 /// Prompt user for master password
+#[allow(dead_code)]
 fn prompt_for_master_password() -> Result<String> {
     use rpassword::read_password;
 

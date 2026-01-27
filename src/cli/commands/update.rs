@@ -20,7 +20,7 @@ pub struct UpdateArgs {
 }
 
 pub async fn update_record(args: UpdateArgs) -> Result<()> {
-    let mut config = ConfigManager::new()?;
+    let config = ConfigManager::new()?;
 
     // For now, just show a message that the update command is being processed
     println!("🔄 Updating record: {}", args.name);

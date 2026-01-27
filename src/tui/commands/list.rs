@@ -9,6 +9,7 @@ use crate::error::Result;
 use std::path::PathBuf;
 
 /// Handle the /list command
+#[allow(dead_code)]
 pub fn handle_list(args: Vec<&str>) -> Result<Vec<String>> {
     let mut output = vec!["📋 Password Records".to_string()];
 

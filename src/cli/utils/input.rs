@@ -16,7 +16,7 @@ pub fn prompt_for_password_confirm(prompt: &str, confirm_prompt: &str) -> io::Re
     let password2 = prompt_for_password(confirm_prompt)?;
 
     if password1 != password2 {
-        return Err(io::Error::new(io::ErrorKind::Other, "Passwords do not match"));
+        return Err(io::Error::other("Passwords do not match"));
     }
 
     Ok(password1.trim().to_string())
@@ -43,7 +43,7 @@ pub fn prompt_for_input(prompt: &str, required: bool) -> io::Result<String> {
     let input = input.trim().to_string();
 
     if required && input.is_empty() {
-        return Err(io::Error::new(io::ErrorKind::Other, "Input is required"));
+        return Err(io::Error::other("Input is required"));
     }
 
     Ok(input)

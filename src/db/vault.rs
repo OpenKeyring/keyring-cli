@@ -159,7 +159,7 @@ impl Vault {
             self.conn.query_row(
                 "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at
          FROM records WHERE id = ?1 AND deleted = 0",
-                &[id],
+                [id],
                 |row| {
                     Ok((
                         row.get::<_, String>(0)?,
@@ -194,7 +194,7 @@ impl Vault {
          JOIN record_tags rt ON t.id = rt.tag_id
          WHERE rt.record_id = ?1",
             )?
-            .query_map(&[id], |row| row.get(0))?
+            .query_map([id], |row| row.get(0))?
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(StoredRecord { tags, ..record })
@@ -254,11 +254,11 @@ impl Vault {
                 .query_row(
                     "INSERT OR IGNORE INTO tags (name) VALUES (?1)
              RETURNING id",
-                    &[tag_name],
+                    [tag_name],
                     |row| row.get(0),
                 )
                 .or_else(|_| {
-                    tx.query_row("SELECT id FROM tags WHERE name = ?1", &[tag_name], |row| {
+                    tx.query_row("SELECT id FROM tags WHERE name = ?1", [tag_name], |row| {
                         row.get(0)
                     })
                 })?;
@@ -351,11 +351,11 @@ impl Vault {
                 .query_row(
                     "INSERT OR IGNORE INTO tags (name) VALUES (?1)
              RETURNING id",
-                    &[tag_name],
+                    [tag_name],
                     |row| row.get(0),
                 )
                 .or_else(|_| {
-                    tx.query_row("SELECT id FROM tags WHERE name = ?1", &[tag_name], |row| {
+                    tx.query_row("SELECT id FROM tags WHERE name = ?1", [tag_name], |row| {
                         row.get(0)
                     })
                 })?;

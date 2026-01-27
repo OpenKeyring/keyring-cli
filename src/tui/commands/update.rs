@@ -5,6 +5,7 @@
 use crate::error::Result;
 
 /// Handle the /update command
+#[allow(dead_code)]
 pub fn handle_update(args: Vec<&str>) -> Result<Vec<String>> {
     if args.is_empty() {
         return Ok(vec![

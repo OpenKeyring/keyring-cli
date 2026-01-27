@@ -14,6 +14,7 @@ pub struct ExecutionResult {
 
 pub struct AsyncToolExecutor {
     registry: McpToolRegistry,
+    #[allow(dead_code)]
     max_execution_time: Duration,
     audit_logger: AuditLogger,
 }

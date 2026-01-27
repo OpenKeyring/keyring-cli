@@ -103,6 +103,7 @@ impl DefaultConflictResolver {
         local.updated_at != remote.updated_at
     }
 
+    #[allow(dead_code)]
     fn get_newer_record<'a>(
         &self,
         local: &'a SyncRecord,

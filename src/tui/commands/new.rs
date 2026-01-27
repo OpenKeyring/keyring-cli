@@ -5,6 +5,7 @@
 use crate::error::Result;
 
 /// Handle the /new command
+#[allow(dead_code)]
 pub fn handle_new() -> Result<Vec<String>> {
     // TODO: Implement interactive new record wizard
     // For now, provide usage instructions

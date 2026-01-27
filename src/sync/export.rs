@@ -36,7 +36,7 @@ impl SyncExporter for JsonSyncExporter {
     fn export_record(&self, record: &StoredRecord) -> Result<SyncRecord, KeyringError> {
         let sync_record = SyncRecord {
             id: record.id.to_string(),
-            record_type: record.record_type.clone(),
+            record_type: record.record_type,
             encrypted_data: STANDARD.encode(&record.encrypted_data),
             nonce: STANDARD.encode(record.nonce),
             metadata: RecordMetadata {

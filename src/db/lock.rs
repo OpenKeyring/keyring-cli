@@ -9,8 +9,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 ///
 /// Uses fslock-style file locking with platform-specific implementations.
 /// The lock file is created alongside the vault database.
+#[allow(dead_code)]
 pub struct VaultLock {
+    #[allow(dead_code)]
     lock_file: File,
+    #[allow(dead_code)]
     lock_path: std::path::PathBuf,
     _held: AtomicBool,
 }
@@ -116,6 +119,7 @@ impl VaultLock {
 
         OpenOptions::new()
             .create(true)
+            .truncate(true)
             .read(true)
             .write(true)
             .open(lock_path)
@@ -137,7 +141,7 @@ impl VaultLock {
             if err.kind() == std::io::ErrorKind::WouldBlock {
                 Err(err)
             } else {
-                Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+                Err(std::io::Error::other(err))
             }
         }
     }
@@ -157,7 +161,7 @@ impl VaultLock {
             if err.kind() == std::io::ErrorKind::WouldBlock {
                 Err(err)
             } else {
-                Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+                Err(std::io::Error::other(err))
             }
         }
     }

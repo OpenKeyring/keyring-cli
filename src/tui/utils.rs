@@ -5,6 +5,7 @@
 use ratatui::layout::Rect;
 
 /// Calculate centered popup area
+#[allow(dead_code)]
 pub fn centered_popup(width: u16, height: u16, terminal_size: Rect) -> Rect {
     let x = (terminal_size.width.saturating_sub(width)) / 2;
     let y = (terminal_size.height.saturating_sub(height)) / 2;
@@ -13,6 +14,7 @@ pub fn centered_popup(width: u16, height: u16, terminal_size: Rect) -> Rect {
 }
 
 /// Calculate popup area with percentage of terminal size
+#[allow(dead_code)]
 pub fn percentage_popup(width_percent: u16, height_percent: u16, terminal_size: Rect) -> Rect {
     let width = (terminal_size.width * width_percent) / 100;
     let height = (terminal_size.height * height_percent) / 100;
@@ -20,6 +22,7 @@ pub fn percentage_popup(width_percent: u16, height_percent: u16, terminal_size: 
 }
 
 /// Truncate text to fit width with ellipsis
+#[allow(dead_code)]
 pub fn truncate_text(text: &str, width: usize) -> String {
     if text.len() <= width {
         return text.to_string();

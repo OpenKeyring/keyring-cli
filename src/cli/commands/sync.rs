@@ -2,7 +2,7 @@ use clap::Parser;
 use crate::cli::ConfigManager;
 use crate::db::Vault;
 use crate::error::Result;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 pub struct SyncArgs {
@@ -49,14 +49,14 @@ async fn show_sync_status(_vault: &Vault) -> Result<()> {
     Ok(())
 }
 
-async fn perform_dry_run(_vault: &Vault, sync_dir: &PathBuf) -> Result<()> {
+async fn perform_dry_run(_vault: &Vault, sync_dir: &Path) -> Result<()> {
     println!("🔍 Dry run - would sync records");
     println!("   Files would be written to: {}", sync_dir.display());
     println!("   Note: Full sync functionality coming soon");
     Ok(())
 }
 
-async fn perform_sync(_vault: &Vault, sync_dir: &PathBuf) -> Result<()> {
+async fn perform_sync(_vault: &Vault, sync_dir: &Path) -> Result<()> {
     println!("🔄 Starting sync...");
     println!("   Target: {}", sync_dir.display());
     println!("   Note: Full sync functionality coming soon");

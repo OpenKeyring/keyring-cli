@@ -145,8 +145,8 @@ pub async fn execute(
 
 /// Prompt user for confirmation before printing password
 fn confirm_print_password() -> Result<bool> {
-    print!("⚠️  WARNING: Password will be visible in terminal and command history.\n");
-    print!("This may be captured by screen recording, terminal logs, or shoulder surfing.\n");
+    println!("⚠️  WARNING: Password will be visible in terminal and command history.");
+    println!("This may be captured by screen recording, terminal logs, or shoulder surfing.");
     print!("Continue? [y/N]: ");
     io::stdout().flush()?;
 

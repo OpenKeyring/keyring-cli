@@ -305,7 +305,7 @@ pub fn run_tui() -> Result<()> {
                         KeyCode::Char(c) => app.handle_char(c),
                         KeyCode::Backspace | KeyCode::Delete => app.handle_backspace(),
                         KeyCode::Enter => app.handle_char('\n'),
-                        KeyCode::Esc | KeyCode::Char('q') if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                        KeyCode::Esc if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
                             app.quit();
                         }
                         _ => {}

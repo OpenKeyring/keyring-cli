@@ -9,6 +9,7 @@ use crate::error::Result;
 use std::path::PathBuf;
 
 /// Handle the /show command
+#[allow(dead_code)]
 pub fn handle_show(args: Vec<&str>) -> Result<Vec<String>> {
     if args.is_empty() {
         return Ok(vec![

@@ -26,6 +26,7 @@ pub use delete::handle_delete;
 pub use search::handle_search;
 
 /// Parse a command string into command name and arguments
+#[allow(dead_code)]
 pub fn parse_command(input: &str) -> Option<(&str, Vec<&str>)> {
     let input = input.trim();
     if !input.starts_with('/') {
