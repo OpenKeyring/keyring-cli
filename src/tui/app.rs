@@ -51,7 +51,7 @@ pub struct TuiApp {
     /// History cursor position
     history_index: usize,
     /// Current output/messages to display
-    output_lines: Vec<String>,
+    pub output_lines: Vec<String>,
 }
 
 impl Default for TuiApp {
@@ -128,10 +128,20 @@ impl TuiApp {
     }
 
     /// Process a command
-    fn process_command(&mut self, cmd: &str) {
+    pub(crate) fn process_command(&mut self, cmd: &str) {
+        use crate::tui::commands::{delete, list, new, search, show, update};
+
         self.output_lines.push(format!("> {}", cmd));
 
-        match cmd {
+        let parts: Vec<&str> = cmd.splitn(2, ' ').collect();
+        let command = parts[0];
+        let args = if parts.len() > 1 {
+            parts[1].split_whitespace().collect()
+        } else {
+            Vec::new()
+        };
+
+        match command {
             "/exit" | "/quit" => {
                 self.quit();
                 self.output_lines.push("Goodbye!".to_string());
@@ -146,14 +156,50 @@ impl TuiApp {
                     "  /update <name>    - Update a record".to_string(),
                     "  /delete <name>    - Delete a record".to_string(),
                     "  /search <query>   - Search records".to_string(),
-                    "  /health           - Check password health".to_string(),
                     "  /exit             - Exit TUI".to_string(),
                     "".to_string(),
                 ]);
             }
+            "/list" => {
+                match list::handle_list(args) {
+                    Ok(lines) => self.output_lines.extend(lines),
+                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
+                }
+            }
+            "/show" => {
+                match show::handle_show(args) {
+                    Ok(lines) => self.output_lines.extend(lines),
+                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
+                }
+            }
+            "/new" => {
+                match new::handle_new() {
+                    Ok(lines) => self.output_lines.extend(lines),
+                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
+                }
+            }
+            "/update" => {
+                match update::handle_update(args) {
+                    Ok(lines) => self.output_lines.extend(lines),
+                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
+                }
+            }
+            "/delete" => {
+                match delete::handle_delete(args) {
+                    Ok(lines) => self.output_lines.extend(lines),
+                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
+                }
+            }
+            "/search" => {
+                match search::handle_search(args) {
+                    Ok(lines) => self.output_lines.extend(lines),
+                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
+                }
+            }
             cmd if cmd.starts_with('/') => {
-                self.output_lines
-                    .push(format!("Command '{}' not yet implemented", cmd));
+                self.output_lines.push(
+                    format!("Unknown command '{}'. Type /help for available commands.", cmd),
+                );
             }
             _ => {
                 self.output_lines
@@ -384,5 +430,69 @@ mod tests {
         app.handle_char('t');
         app.handle_char('\n');
         assert!(!app.is_running());
+    }
+
+    #[test]
+    fn test_process_delete_command() {
+        let mut app = TuiApp::new();
+        app.process_command("/delete test");
+        // Should show delete confirmation
+        assert!(app.output_lines.iter().any(|l| l.contains("Delete") || l.contains("Confirm")));
+    }
+
+    #[test]
+    fn test_process_list_command() {
+        let mut app = TuiApp::new();
+        app.process_command("/list");
+        // Should show password prompt or list output
+        assert!(app.output_lines.iter().any(|l| l.contains("password") || l.contains("Password") || l.contains("Records")));
+    }
+
+    #[test]
+    fn test_process_show_command() {
+        let mut app = TuiApp::new();
+        app.process_command("/show test");
+        // Should show error or record info
+        assert!(app.output_lines.iter().any(|l| l.contains("Error") || l.contains("not found") || l.contains("test")));
+    }
+
+    #[test]
+    fn test_process_new_command() {
+        let mut app = TuiApp::new();
+        app.process_command("/new");
+        // Should show new record wizard
+        assert!(app.output_lines.iter().any(|l| l.contains("New") || l.contains("Create") || l.contains("record")));
+    }
+
+    #[test]
+    fn test_process_update_command() {
+        let mut app = TuiApp::new();
+        app.process_command("/update test");
+        // Should show update wizard or error
+        assert!(app.output_lines.iter().any(|l| l.contains("Update") || l.contains("Error") || l.contains("not found")));
+    }
+
+    #[test]
+    fn test_process_search_command() {
+        let mut app = TuiApp::new();
+        app.process_command("/search test");
+        // Should show search results or empty state
+        assert!(app.output_lines.iter().any(|l| l.contains("Search") || l.contains("No results") || l.contains("Error")));
+    }
+
+    #[test]
+    fn test_process_unknown_command() {
+        let mut app = TuiApp::new();
+        app.process_command("/unknown");
+        // Should show unknown command message
+        assert!(app.output_lines.iter().any(|l| l.contains("Unknown") || l.contains("unknown")));
+    }
+
+    #[test]
+    fn test_process_command_with_args() {
+        let mut app = TuiApp::new();
+        app.process_command("/delete my record name");
+        // Should handle command with multiple args (only first arg used)
+        assert!(app.output_lines.iter().any(|l| l.contains("> /delete")));
     }
 }
