@@ -273,6 +273,26 @@ enum Commands {
         #[command(subcommand)]
         mnemonic_command: MnemonicCommands,
     },
+
+    /// Manage keyboard shortcuts
+    #[command(alias = "kb")]
+    Keybindings {
+        /// List all keyboard shortcuts
+        #[arg(long, short)]
+        list: bool,
+
+        /// Validate keybindings configuration
+        #[arg(long, short)]
+        validate: bool,
+
+        /// Reset keybindings to defaults
+        #[arg(long, short)]
+        reset: bool,
+
+        /// Edit keybindings configuration
+        #[arg(long, short)]
+        edit: bool,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -530,6 +550,22 @@ async fn main() -> Result<()> {
                 },
             };
             commands::mnemonic::handle_mnemonic(args).await?
+        }
+
+        Commands::Keybindings {
+            list,
+            validate,
+            reset,
+            edit,
+        } => {
+            use commands::keybindings::KeybindingsArgs;
+            let args = KeybindingsArgs {
+                list,
+                validate,
+                reset,
+                edit,
+            };
+            commands::keybindings::manage_keybindings(args).await?
         }
     }
 

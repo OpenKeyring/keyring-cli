@@ -3,6 +3,7 @@
 //! Core TUI application handling alternate screen mode, rendering, and event loop.
 
 use crate::error::{KeyringError, Result};
+use crate::tui::keybindings::{Action, KeyBindingManager};
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
@@ -13,6 +14,7 @@ use ratatui::{
 };
 use std::io::{self, Stdout};
 use std::time::Duration;
+use chrono::{DateTime, Utc};
 
 /// TUI-specific error type
 #[derive(Debug)]
@@ -40,6 +42,48 @@ impl std::error::Error for TuiError {}
 /// TUI result type
 pub type TuiResult<T> = std::result::Result<T, TuiError>;
 
+/// Sync status for the statusline
+#[derive(Debug, Clone)]
+pub enum SyncStatus {
+    /// Last sync time
+    Synced(DateTime<Utc>),
+    /// Not synced
+    Unsynced,
+    /// Currently syncing
+    Syncing,
+    /// Sync failed with error message
+    Failed(String),
+}
+
+impl SyncStatus {
+    /// Get display text for sync status
+    pub fn display(&self) -> String {
+        match self {
+            SyncStatus::Synced(dt) => {
+                let now = Utc::now();
+                let duration = now.signed_duration_since(*dt);
+                let mins = duration.num_minutes();
+                if mins < 1 {
+                    "Just now".to_string()
+                } else if mins < 60 {
+                    format!("{}m ago", mins)
+                } else {
+                    let hours = mins / 60;
+                    if hours < 24 {
+                        format!("{}h ago", hours)
+                    } else {
+                        let days = hours / 24;
+                        format!("{}d ago", days)
+                    }
+                }
+            }
+            SyncStatus::Unsynced => "Unsynced".to_string(),
+            SyncStatus::Syncing => "Syncing...".to_string(),
+            SyncStatus::Failed(msg) => format!("Sync failed: {}", msg),
+        }
+    }
+}
+
 /// TUI Application State
 pub struct TuiApp {
     /// Running state
@@ -52,6 +96,16 @@ pub struct TuiApp {
     history_index: usize,
     /// Current output/messages to display
     pub output_lines: Vec<String>,
+    /// Keybinding manager
+    keybinding_manager: KeyBindingManager,
+    /// Lock status
+    locked: bool,
+    /// Record count
+    record_count: usize,
+    /// Sync status
+    sync_status: SyncStatus,
+    /// Version string
+    version: String,
 }
 
 impl Default for TuiApp {
@@ -73,6 +127,154 @@ impl TuiApp {
                 "Type /help for available commands".to_string(),
                 "".to_string(),
             ],
+            keybinding_manager: KeyBindingManager::new(),
+            locked: false,
+            record_count: 0,
+            sync_status: SyncStatus::Unsynced,
+            version: env!("CARGO_PKG_VERSION").to_string(),
+        }
+    }
+
+    /// Handle keyboard shortcut events
+    pub fn handle_key_event(&mut self, event: crossterm::event::KeyEvent) {
+        if let Some(action) = self.keybinding_manager.get_action(&event) {
+            self.execute_action(action);
+        }
+    }
+
+    /// Execute an action triggered by a keyboard shortcut
+    fn execute_action(&mut self, action: Action) {
+        match action {
+            Action::New => {
+                self.process_command("/new");
+            }
+            Action::List => {
+                self.process_command("/list");
+            }
+            Action::Search => {
+                self.output_lines.push("Search: ".to_string());
+            }
+            Action::Show => {
+                self.output_lines.push("Usage: /show <name>".to_string());
+            }
+            Action::Update => {
+                self.output_lines.push("Usage: /update <name>".to_string());
+            }
+            Action::Delete => {
+                self.output_lines.push("Usage: /delete <name>".to_string());
+            }
+            Action::Quit => {
+                self.quit();
+                self.output_lines.push("Goodbye!".to_string());
+            }
+            Action::Help => {
+                self.show_help();
+            }
+            Action::Clear => {
+                self.clear_output();
+            }
+            Action::CopyPassword => {
+                self.output_lines.push("Use /show <name> to copy password".to_string());
+            }
+            Action::CopyUsername => {
+                self.output_lines.push("Use /show <name> to copy username".to_string());
+            }
+            Action::Config => {
+                self.process_command("/config");
+            }
+        }
+    }
+
+    /// Show help with keyboard shortcuts
+    fn show_help(&mut self) {
+        let bindings = self.keybinding_manager.all_bindings();
+
+        self.output_lines.extend_from_slice(&[
+            "".to_string(),
+            "Keyboard Shortcuts:".to_string(),
+            "".to_string(),
+        ]);
+
+        for (action, key_event) in bindings {
+            let key_str = KeyBindingManager::format_key(&key_event);
+            self.output_lines.push(format!("  {:20} - {}", key_str, action.description()));
+        }
+
+        self.output_lines.extend_from_slice(&[
+            "".to_string(),
+            "Commands:".to_string(),
+            "  /list [filter]    - List password records".to_string(),
+            "  /show <name>      - Show a password record".to_string(),
+            "  /new              - Create a new record".to_string(),
+            "  /update <name>    - Update a record".to_string(),
+            "  /delete <name>    - Delete a record".to_string(),
+            "  /search <query>   - Search records".to_string(),
+            "  /config [sub]     - Manage configuration".to_string(),
+            "  /exit             - Exit TUI".to_string(),
+            "".to_string(),
+        ]);
+    }
+
+    /// Clear output lines
+    fn clear_output(&mut self) {
+        self.output_lines.clear();
+    }
+
+    /// Render the statusline
+    pub fn render_statusline(&self, width: u16) -> Vec<Span> {
+        let mut spans = Vec::new();
+
+        // Narrow screen (<60 columns): show only sync status
+        if width < 60 {
+            spans.push(Span::styled(
+                format!(" {}", self.sync_status.display()),
+                Style::default().fg(Color::DarkGray),
+            ));
+            return spans;
+        }
+
+        // Full statusline for width >= 60 columns
+        let width_usize = width as usize;
+
+        // Left: lock status + record count
+        let lock_icon = if self.locked { "🔒" } else { "🔓" };
+        let left_part = format!("{} {} rec", lock_icon, self.record_count);
+        spans.push(Span::styled(left_part, Style::default().fg(Color::Yellow)));
+        spans.push(Span::raw(" | "));
+
+        // Center-left: sync status
+        spans.push(Span::styled(
+            self.sync_status.display(),
+            Style::default().fg(Color::Green),
+        ));
+        spans.push(Span::raw(" | "));
+
+        // Center-right: version
+        spans.push(Span::styled(
+            format!("v{}", self.version),
+            Style::default().fg(Color::DarkGray),
+        ));
+        spans.push(Span::raw(" | "));
+
+        // Right: keyboard hints (most important shortcuts)
+        let hints = self.get_keyboard_hints(width_usize);
+        spans.push(Span::styled(
+            hints,
+            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        ));
+
+        spans
+    }
+
+    /// Get keyboard hints for the statusline
+    fn get_keyboard_hints(&self, width: usize) -> String {
+        // For very wide screens, show more hints
+        if width >= 100 {
+            format!("Ctrl+N new | Ctrl+L list | Ctrl+Q quit")
+        } else if width >= 80 {
+            format!("Ctrl+N new | Ctrl+Q quit")
+        } else {
+            format!("Ctrl+Q quit")
         }
     }
 
@@ -147,19 +349,7 @@ impl TuiApp {
                 self.output_lines.push("Goodbye!".to_string());
             }
             "/help" => {
-                self.output_lines.extend_from_slice(&[
-                    "".to_string(),
-                    "Available Commands:".to_string(),
-                    "  /list [filter]    - List password records".to_string(),
-                    "  /show <name>      - Show a password record".to_string(),
-                    "  /new              - Create a new record".to_string(),
-                    "  /update <name>    - Update a record".to_string(),
-                    "  /delete <name>    - Delete a record".to_string(),
-                    "  /search <query>   - Search records".to_string(),
-                    "  /config [sub]     - Manage configuration".to_string(),
-                    "  /exit             - Exit TUI".to_string(),
-                    "".to_string(),
-                ]);
+                self.show_help();
             }
             "/config" => {
                 match config::handle_config(args) {
@@ -219,10 +409,17 @@ impl TuiApp {
     pub fn render(&self, frame: &mut Frame) {
         let size = frame.area();
 
-        // Split screen into output area and input area
+        // Split screen into output area, input area, and statusline
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Min(1), Constraint::Length(3)].as_ref())
+            .constraints(
+                [
+                    Constraint::Min(1),   // Output area (flexible)
+                    Constraint::Length(3), // Input area
+                    Constraint::Length(1), // Statusline
+                ]
+                .as_ref(),
+            )
             .split(size);
 
         // Render output area
@@ -230,6 +427,25 @@ impl TuiApp {
 
         // Render input area
         self.render_input(frame, chunks[1]);
+
+        // Render statusline
+        self.render_statusline_widget(frame, chunks[2]);
+    }
+
+    /// Render the statusline widget
+    fn render_statusline_widget(&self, frame: &mut Frame, area: Rect) {
+        let spans = self.render_statusline(area.width);
+        let line = Line::from(spans);
+
+        let paragraph = Paragraph::new(Text::from(line))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::DarkGray)),
+            )
+            .wrap(Wrap { trim: false });
+
+        frame.render_widget(paragraph, area);
     }
 
     /// Render the output area
@@ -350,14 +566,21 @@ pub fn run_tui() -> Result<()> {
             {
                 event::Event::Key(key) => {
                     use crossterm::event::KeyCode;
-                    match key.code {
-                        KeyCode::Char(c) => app.handle_char(c),
-                        KeyCode::Backspace | KeyCode::Delete => app.handle_backspace(),
-                        KeyCode::Enter => app.handle_char('\n'),
-                        KeyCode::Esc if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
-                            app.quit();
+
+                    // Check for keyboard shortcuts first (Ctrl keys)
+                    if key.modifiers.contains(event::KeyModifiers::CONTROL) {
+                        app.handle_key_event(key);
+                    } else {
+                        // Regular input handling
+                        match key.code {
+                            KeyCode::Char(c) => app.handle_char(c),
+                            KeyCode::Backspace | KeyCode::Delete => app.handle_backspace(),
+                            KeyCode::Enter => app.handle_char('\n'),
+                            KeyCode::Esc if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                                app.quit();
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 }
                 event::Event::Resize(_, _) => {
@@ -517,5 +740,72 @@ mod tests {
         app.process_command("/delete my record name");
         // Should handle command with multiple args (only first arg used)
         assert!(app.output_lines.iter().any(|l| l.contains("> /delete")));
+    }
+
+    #[test]
+    fn test_statusline_render_full_width() {
+        let app = TuiApp::new();
+        // Test statusline at full width (>=60 columns)
+        let statusline = app.render_statusline(80);
+        // Should contain version info
+        assert!(statusline.iter().any(|s| s.content.contains("v0.1") || s.content.contains("0.1.0")));
+    }
+
+    #[test]
+    fn test_statusline_render_narrow_width() {
+        let app = TuiApp::new();
+        // Test statusline at narrow width (<60 columns)
+        let statusline = app.render_statusline(40);
+        // Narrow screens should only show minimal info
+        assert!(statusline.len() > 0);
+    }
+
+    #[test]
+    fn test_statusline_shows_lock_icon() {
+        let app = TuiApp::new();
+        let statusline = app.render_statusline(80);
+        // Should show lock status icon
+        assert!(statusline.iter().any(|s| s.content.contains("🔓") || s.content.contains("🔒")));
+    }
+
+    #[test]
+    fn test_keybinding_ctrl_q_triggers_quit() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+        let mut app = TuiApp::new();
+        let ctrl_q = KeyEvent::new(KeyCode::Char('q'), KeyModifiers::CONTROL);
+        app.handle_key_event(ctrl_q);
+        assert!(!app.is_running());
+    }
+
+    #[test]
+    fn test_keybinding_ctrl_h_triggers_help() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+        let mut app = TuiApp::new();
+        let ctrl_h = KeyEvent::new(KeyCode::Char('h'), KeyModifiers::CONTROL);
+        app.handle_key_event(ctrl_h);
+        assert!(app.output_lines.iter().any(|l| l.contains("Keyboard Shortcuts") || l.contains("Available Commands")));
+    }
+
+    #[test]
+    fn test_keybinding_ctrl_l_triggers_list() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+        let mut app = TuiApp::new();
+        let ctrl_l = KeyEvent::new(KeyCode::Char('l'), KeyModifiers::CONTROL);
+        app.handle_key_event(ctrl_l);
+        assert!(app.output_lines.iter().any(|l| l.contains("> /list")));
+    }
+
+    #[test]
+    fn test_keybinding_ctrl_r_clears_output() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+        let mut app = TuiApp::new();
+        // Add some output first
+        app.output_lines.push("test line".to_string());
+        assert!(app.output_lines.len() > 3);
+
+        let ctrl_r = KeyEvent::new(KeyCode::Char('r'), KeyModifiers::CONTROL);
+        app.handle_key_event(ctrl_r);
+        // Output should be cleared
+        assert!(app.output_lines.is_empty() || app.output_lines.len() <= 3);
     }
 }
