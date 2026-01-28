@@ -9,9 +9,9 @@ fn test_search_requires_query() {
 }
 
 #[test]
-fn test_search_attempts_search() {
+fn test_search_returns_results() {
     let result = handle_search(vec!["test"]);
     // The search will fail without an initialized vault, which is expected
-    // We're just verifying the command structure is correct
-    assert!(result.is_ok() || result.is_err());
+    // Verify that the command properly requires an initialized vault
+    assert!(result.is_err(), "Search should fail without initialized vault");
 }

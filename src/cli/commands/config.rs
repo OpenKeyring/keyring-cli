@@ -2,6 +2,7 @@ use crate::cli::ConfigManager;
 use crate::db::Vault;
 use crate::error::Result;
 use clap::Subcommand;
+use std::io::{self, Write};
 use std::path::PathBuf;
 
 #[derive(Subcommand, Debug)]
@@ -38,6 +39,31 @@ pub async fn execute(command: ConfigCommands) -> Result<()> {
 }
 
 async fn execute_set(key: String, value: String) -> Result<()> {
+    // Validate configuration key
+    let valid_keys = [
+        "sync.path",
+        "sync.enabled",
+        "sync.auto",
+        "sync.provider",
+        "sync.remote_path",
+        "sync.conflict_resolution",
+        "clipboard.timeout",
+        "clipboard.smart_clear",
+        "clipboard.clear_after_copy",
+        "clipboard.max_content_length",
+        "device_id",
+    ];
+
+    if !valid_keys.contains(&key.as_str()) {
+        return Err(crate::error::Error::ConfigurationError {
+            context: format!(
+                "Invalid configuration key '{}'. Valid keys are:\n  {}",
+                key,
+                valid_keys.join("\n  ")
+            ),
+        });
+    }
+
     println!("⚙️  Setting configuration: {} = {}", key, value);
 
     // Open vault and persist to metadata
@@ -47,6 +73,7 @@ async fn execute_set(key: String, value: String) -> Result<()> {
     let mut vault = Vault::open(&db_path, "")?;
 
     vault.set_metadata(&key, &value)?;
+    println!("✓ Configuration saved successfully");
 
     Ok(())
 }
@@ -167,9 +194,19 @@ async fn execute_list() -> Result<()> {
 
 async fn execute_reset(force: bool) -> Result<()> {
     if !force {
-        println!("⚠️  This will reset all configuration to defaults.");
-        println!("   Use --force to confirm.");
-        return Ok(());
+        println!("⚠️  This will reset all custom configuration to defaults.");
+        println!("   Custom configuration keys (starting with 'custom.') will be removed.");
+        print!("\nContinue? (y/N): ");
+        io::stdout().flush()?;
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+
+        let input = input.trim().to_lowercase();
+        if input != "y" && input != "yes" {
+            println!("Reset cancelled.");
+            return Ok(());
+        }
     }
 
     println!("🔄 Configuration reset to defaults");
@@ -186,7 +223,9 @@ async fn execute_reset(force: bool) -> Result<()> {
     }
 
     if !custom_keys.is_empty() {
-        println!("   Cleared {} custom configuration value(s)", custom_keys.len());
+        println!("   ✓ Cleared {} custom configuration value(s)", custom_keys.len());
+    } else {
+        println!("   No custom configuration to clear");
     }
 
     Ok(())

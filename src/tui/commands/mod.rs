@@ -2,6 +2,7 @@
 //!
 //! Handlers for slash commands in TUI mode.
 
+pub mod config;
 pub mod delete;
 pub mod list;
 pub mod new;
@@ -12,6 +13,8 @@ pub mod update;
 // Re-export command handlers for external use
 // Note: Command handlers are exported but may not be used internally
 // They are part of the public API for external consumers
+#[allow(unused_imports)]
+pub use config::handle_config;
 #[allow(unused_imports)]
 pub use delete::handle_delete;
 #[allow(unused_imports)]

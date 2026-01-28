@@ -129,7 +129,7 @@ impl TuiApp {
 
     /// Process a command
     pub(crate) fn process_command(&mut self, cmd: &str) {
-        use crate::tui::commands::{delete, list, new, search, show, update};
+        use crate::tui::commands::{config, delete, list, new, search, show, update};
 
         self.output_lines.push(format!("> {}", cmd));
 
@@ -156,9 +156,16 @@ impl TuiApp {
                     "  /update <name>    - Update a record".to_string(),
                     "  /delete <name>    - Delete a record".to_string(),
                     "  /search <query>   - Search records".to_string(),
+                    "  /config [sub]     - Manage configuration".to_string(),
                     "  /exit             - Exit TUI".to_string(),
                     "".to_string(),
                 ]);
+            }
+            "/config" => {
+                match config::handle_config(args) {
+                    Ok(lines) => self.output_lines.extend(lines),
+                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
+                }
             }
             "/list" => {
                 match list::handle_list(args) {
@@ -478,6 +485,22 @@ mod tests {
         app.process_command("/search test");
         // Should show search results or empty state
         assert!(app.output_lines.iter().any(|l| l.contains("Search") || l.contains("No results") || l.contains("Error")));
+    }
+
+    #[test]
+    fn test_process_config_command() {
+        let mut app = TuiApp::new();
+        app.process_command("/config");
+        // Should show configuration list
+        assert!(app.output_lines.iter().any(|l| l.contains("Configuration") || l.contains("[Database]") || l.contains("Error")));
+    }
+
+    #[test]
+    fn test_process_config_get_command() {
+        let mut app = TuiApp::new();
+        app.process_command("/config get sync.enabled");
+        // Should show configuration value or error
+        assert!(app.output_lines.iter().any(|l| l.contains("=") || l.contains("Error")));
     }
 
     #[test]
