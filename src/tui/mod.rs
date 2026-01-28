@@ -4,7 +4,7 @@
 //! in alternate screen mode to prevent terminal scrollback leakage.
 
 mod app;
-mod commands;
+pub mod commands;
 mod utils;
 mod widgets;
 

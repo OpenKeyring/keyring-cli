@@ -2,7 +2,7 @@
 //!
 //! Handlers for slash commands in TUI mode.
 
-mod delete;
+pub mod delete;
 mod list;
 mod new;
 mod search;
