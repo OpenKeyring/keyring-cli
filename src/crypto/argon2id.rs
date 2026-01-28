@@ -51,6 +51,12 @@ impl Argon2Params {
 
 /// Detect current device capability
 pub fn detect_device_capability() -> DeviceCapability {
+    // Use Medium capability in test environment or when OK_TEST_MODE is set
+    // to avoid sysinfo issues in certain environments
+    if cfg!(test) || std::env::var("OK_TEST_MODE").is_ok() {
+        return DeviceCapability::Medium;
+    }
+
     let mut sys = sysinfo::System::new_all();
     sys.refresh_all();
 

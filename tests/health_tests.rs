@@ -11,7 +11,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_health_checker_module_exists() {
-        let records: Vec<StoredRecord> = vec![];
+        let _records: Vec<StoredRecord> = vec![];
         // Health module structure exists
         assert!(true);
     }
@@ -45,7 +45,8 @@ mod tests {
         };
 
         // Run health check - should detect weak password
-        let checker = HealthChecker::new(crypto);
+        // Disable leak check to avoid reqwest client issues in test environment
+        let checker = HealthChecker::new(crypto).with_leaks(false);
         let issues = checker.check_all(&[record]).await;
 
         // Should detect at least weak password

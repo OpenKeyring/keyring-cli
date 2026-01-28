@@ -2,11 +2,12 @@
 
 #[test]
 fn test_keybindings_args_list() {
-    use keyring_cli::cli::commands::KeybindingsArgs;
     use clap::Parser;
+    use keyring_cli::cli::commands::KeybindingsArgs;
 
-    // Note: We're testing the library's KeybindingsArgs, not main.rs command
-    let args = KeybindingsArgs::parse_from(&["ok", "keybindings", "--list"]);
+    // KeybindingsArgs is an Args struct, not a Subcommand
+    // So we parse flags directly without the "keybindings" subcommand
+    let args = KeybindingsArgs::parse_from(&["ok", "--list"]);
     assert!(args.list);
     assert!(!args.validate);
     assert!(!args.reset);
@@ -15,31 +16,30 @@ fn test_keybindings_args_list() {
 
 #[test]
 fn test_keybindings_args_validate() {
-    use keyring_cli::cli::commands::KeybindingsArgs;
     use clap::Parser;
+    use keyring_cli::cli::commands::KeybindingsArgs;
 
-    let args = KeybindingsArgs::parse_from(&["ok", "keybindings", "--validate"]);
+    let args = KeybindingsArgs::parse_from(&["ok", "--validate"]);
     assert!(args.validate);
     assert!(!args.list);
 }
 
 #[test]
 fn test_keybindings_args_reset() {
-    use keyring_cli::cli::commands::KeybindingsArgs;
     use clap::Parser;
+    use keyring_cli::cli::commands::KeybindingsArgs;
 
-    let args = KeybindingsArgs::parse_from(&["ok", "keybindings", "--reset"]);
+    let args = KeybindingsArgs::parse_from(&["ok", "--reset"]);
     assert!(args.reset);
     assert!(!args.list);
 }
 
 #[test]
 fn test_keybindings_args_edit() {
-    use keyring_cli::cli::commands::KeybindingsArgs;
     use clap::Parser;
+    use keyring_cli::cli::commands::KeybindingsArgs;
 
-    let args = KeybindingsArgs::parse_from(&["ok", "keybindings", "--edit"]);
+    let args = KeybindingsArgs::parse_from(&["ok", "--edit"]);
     assert!(args.edit);
     assert!(!args.list);
 }
-

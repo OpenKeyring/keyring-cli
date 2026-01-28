@@ -36,21 +36,22 @@ impl std::error::Error for ParseError {}
 /// # Examples
 ///
 /// ```
-/// use keyring_cli::keybindings::parser::parseShortcut;
+/// use keyring_cli::tui::keybindings::parse_shortcut;
+/// use crossterm::event::KeyCode;
 ///
 /// // Simple Ctrl+Char
-/// let event = parseShortcut("Ctrl+N").unwrap();
+/// let event = parse_shortcut("Ctrl+N").unwrap();
 /// assert_eq!(event.code, KeyCode::Char('n'));
 ///
 /// // Function key
-/// let event = parseShortcut("F5").unwrap();
+/// let event = parse_shortcut("F5").unwrap();
 /// assert_eq!(event.code, KeyCode::F(5));
 ///
 /// // Multiple modifiers
-/// let event = parseShortcut("Ctrl+Shift+N").unwrap();
+/// let event = parse_shortcut("Ctrl+Shift+N").unwrap();
 /// assert_eq!(event.code, KeyCode::Char('N'));
 /// ```
-pub fn parseShortcut(input: &str) -> Result<KeyEvent, ParseError> {
+pub fn parse_shortcut(input: &str) -> Result<KeyEvent, ParseError> {
     let input = input.trim();
 
     if input.is_empty() {
@@ -85,13 +86,13 @@ pub fn parseShortcut(input: &str) -> Result<KeyEvent, ParseError> {
     }
 
     // Parse key
-    let code = parseKeyCode(key_part, modifiers.contains(KeyModifiers::SHIFT))?;
+    let code = parse_key_code(key_part, modifiers.contains(KeyModifiers::SHIFT))?;
 
     Ok(KeyEvent::new(code, modifiers))
 }
 
 /// Parse the key part of a shortcut string
-fn parseKeyCode(key_str: &str, has_shift: bool) -> Result<KeyCode, ParseError> {
+fn parse_key_code(key_str: &str, has_shift: bool) -> Result<KeyCode, ParseError> {
     let key_upper = key_str.to_uppercase();
 
     // Special keys
@@ -115,8 +116,7 @@ fn parseKeyCode(key_str: &str, has_shift: bool) -> Result<KeyCode, ParseError> {
     }
 
     // Function keys F1-F12
-    if key_upper.starts_with('F') {
-        let num_str = &key_upper[1..];
+    if let Some(num_str) = key_upper.strip_prefix('F') {
         if let Ok(num) = num_str.parse::<u8>() {
             if (1..=12).contains(&num) {
                 return Ok(KeyCode::F(num));
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn test_parse_ctrl_char() {
-        let result = parseShortcut("Ctrl+N").unwrap();
+        let result = parse_shortcut("Ctrl+N").unwrap();
         assert_eq!(result.code, KeyCode::Char('n'));
         assert!(result.modifiers.contains(KeyModifiers::CONTROL));
         assert!(!result.modifiers.contains(KeyModifiers::SHIFT));
@@ -152,21 +152,21 @@ mod tests {
 
     #[test]
     fn test_parse_ctrl_uppercase() {
-        let result = parseShortcut("CTRL+N").unwrap();
+        let result = parse_shortcut("CTRL+N").unwrap();
         assert_eq!(result.code, KeyCode::Char('n'));
         assert!(result.modifiers.contains(KeyModifiers::CONTROL));
     }
 
     #[test]
     fn test_parse_function_key() {
-        let result = parseShortcut("F5").unwrap();
+        let result = parse_shortcut("F5").unwrap();
         assert_eq!(result.code, KeyCode::F(5));
         assert!(!result.modifiers.contains(KeyModifiers::CONTROL));
     }
 
     #[test]
     fn test_parse_ctrl_shift_char() {
-        let result = parseShortcut("Ctrl+Shift+N").unwrap();
+        let result = parse_shortcut("Ctrl+Shift+N").unwrap();
         assert_eq!(result.code, KeyCode::Char('N'));
         assert!(result.modifiers.contains(KeyModifiers::CONTROL));
         assert!(result.modifiers.contains(KeyModifiers::SHIFT));
@@ -174,7 +174,7 @@ mod tests {
 
     #[test]
     fn test_parse_ctrl_alt_char() {
-        let result = parseShortcut("Ctrl+Alt+T").unwrap();
+        let result = parse_shortcut("Ctrl+Alt+T").unwrap();
         assert_eq!(result.code, KeyCode::Char('t'));
         assert!(result.modifiers.contains(KeyModifiers::CONTROL));
         assert!(result.modifiers.contains(KeyModifiers::ALT));
@@ -182,49 +182,52 @@ mod tests {
 
     #[test]
     fn test_parse_special_keys() {
-        assert_eq!(parseShortcut("Enter").unwrap().code, KeyCode::Enter);
-        assert_eq!(parseShortcut("Tab").unwrap().code, KeyCode::Tab);
-        assert_eq!(parseShortcut("Esc").unwrap().code, KeyCode::Esc);
-        assert_eq!(parseShortcut("Backspace").unwrap().code, KeyCode::Backspace);
-        assert_eq!(parseShortcut("Space").unwrap().code, KeyCode::Char(' '));
+        assert_eq!(parse_shortcut("Enter").unwrap().code, KeyCode::Enter);
+        assert_eq!(parse_shortcut("Tab").unwrap().code, KeyCode::Tab);
+        assert_eq!(parse_shortcut("Esc").unwrap().code, KeyCode::Esc);
+        assert_eq!(
+            parse_shortcut("Backspace").unwrap().code,
+            KeyCode::Backspace
+        );
+        assert_eq!(parse_shortcut("Space").unwrap().code, KeyCode::Char(' '));
     }
 
     #[test]
     fn test_parse_navigation_keys() {
-        assert_eq!(parseShortcut("Up").unwrap().code, KeyCode::Up);
-        assert_eq!(parseShortcut("Down").unwrap().code, KeyCode::Down);
-        assert_eq!(parseShortcut("Left").unwrap().code, KeyCode::Left);
-        assert_eq!(parseShortcut("Right").unwrap().code, KeyCode::Right);
+        assert_eq!(parse_shortcut("Up").unwrap().code, KeyCode::Up);
+        assert_eq!(parse_shortcut("Down").unwrap().code, KeyCode::Down);
+        assert_eq!(parse_shortcut("Left").unwrap().code, KeyCode::Left);
+        assert_eq!(parse_shortcut("Right").unwrap().code, KeyCode::Right);
     }
 
     #[test]
     fn test_parse_empty_input() {
-        let result = parseShortcut("");
+        let result = parse_shortcut("");
         assert_eq!(result, Err(ParseError::EmptyInput));
     }
 
     #[test]
     fn test_parse_invalid_shortcut() {
-        let result = parseShortcut("Invalid");
+        let result = parse_shortcut("Invalid");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_parse_unknown_modifier() {
-        let result = parseShortcut("Win+N");
+        let result = parse_shortcut("Win+N");
         assert!(matches!(result, Err(ParseError::UnknownModifier(_))));
     }
 
     #[test]
     fn test_parse_ctrl_plus_enter() {
-        let result = parseShortcut("Ctrl+Enter").unwrap();
+        let result = parse_shortcut("Ctrl+Enter").unwrap();
         assert_eq!(result.code, KeyCode::Enter);
         assert!(result.modifiers.contains(KeyModifiers::CONTROL));
     }
 
     #[test]
     fn test_parse_function_key_with_modifier() {
-        let result = parseShortcut("Ctrl+F5").unwrap();
+        let result = parse_shortcut("Ctrl+F5").unwrap();
         assert_eq!(result.code, KeyCode::F(5));
         assert!(result.modifiers.contains(KeyModifiers::CONTROL));
     }

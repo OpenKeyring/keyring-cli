@@ -104,23 +104,21 @@ fn prompt_for_master_password() -> Result<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use tempfile::TempDir;
-
     #[cfg(feature = "test-env")]
     #[test]
     fn test_ensure_initialized_creates_database() {
-        let temp_dir = TempDir::new().unwrap();
-        let db_path = temp_dir.path().join("test.db");
+        let temp_dir = tempfile::TempDir::new().unwrap();
 
-        // Set environment variable to use temp directory
+        // Set environment variables to use temp directory
         std::env::set_var("OK_DATA_DIR", temp_dir.path().to_str().unwrap());
+        std::env::set_var("OK_CONFIG_DIR", temp_dir.path().join("config").to_str().unwrap());
 
         // This should create the database
-        let result = ensure_initialized();
-        assert!(result.is_ok());
+        let result = super::ensure_initialized();
+        assert!(result.is_ok(), "ensure_initialized should succeed: {:?}", result);
 
         // Cleanup
         std::env::remove_var("OK_DATA_DIR");
+        std::env::remove_var("OK_CONFIG_DIR");
     }
 }
