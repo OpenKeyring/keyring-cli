@@ -3,11 +3,11 @@
 //! Handlers for slash commands in TUI mode.
 
 pub mod delete;
-mod list;
-mod new;
-mod search;
-mod show;
-mod update;
+pub mod list;
+pub mod new;
+pub mod search;
+pub mod show;
+pub mod update;
 
 // Re-export command handlers for external use
 // Note: Command handlers are exported but may not be used internally
