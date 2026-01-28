@@ -7,6 +7,7 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #13 | 10:31 PM | 🟣 | Completed keyboard shortcuts system implementation with full test coverage | ~886 |
+| #8 | 10:28 PM | 🟣 | Implemented CLI keybindings management commands | ~703 |
 | #5 | 10:27 PM | 🟣 | Fixed type conversion in keybindings validation conflict detection | ~361 |
-| #4 | " | 🟣 | Implemented CLI keybindings management commands | ~724 |
 </claude-mem-context>

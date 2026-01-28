@@ -7,6 +7,7 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #15 | 10:32 PM | 🟣 | Delivered complete keyboard shortcuts system for TUI with configurable bindings, CLI management, and responsive statusline widget | ~1123 |
+| #13 | 10:31 PM | 🟣 | Completed keyboard shortcuts system implementation with full test coverage | ~886 |
 | #6 | 10:28 PM | 🔴 | Fixed CLI keybindings tests to use direct flag parsing instead of full command | ~497 |
-| #1 | 10:24 PM | 🟣 | Implemented configurable keyboard shortcuts system for TUI | ~613 |
 </claude-mem-context>
