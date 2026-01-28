@@ -223,7 +223,10 @@ async fn execute_reset(force: bool) -> Result<()> {
     }
 
     if !custom_keys.is_empty() {
-        println!("   ✓ Cleared {} custom configuration value(s)", custom_keys.len());
+        println!(
+            "   ✓ Cleared {} custom configuration value(s)",
+            custom_keys.len()
+        );
     } else {
         println!("   No custom configuration to clear");
     }

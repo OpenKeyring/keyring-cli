@@ -4,6 +4,7 @@
 
 use crate::error::{KeyringError, Result};
 use crate::tui::keybindings::{Action, KeyBindingManager};
+use chrono::{DateTime, Utc};
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Rect},
@@ -14,7 +15,6 @@ use ratatui::{
 };
 use std::io::{self, Stdout};
 use std::time::Duration;
-use chrono::{DateTime, Utc};
 
 /// TUI-specific error type
 #[derive(Debug)]
@@ -44,6 +44,7 @@ pub type TuiResult<T> = std::result::Result<T, TuiError>;
 
 /// Sync status for the statusline
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum SyncStatus {
     /// Last sync time
     Synced(DateTime<Utc>),
@@ -174,10 +175,12 @@ impl TuiApp {
                 self.clear_output();
             }
             Action::CopyPassword => {
-                self.output_lines.push("Use /show <name> to copy password".to_string());
+                self.output_lines
+                    .push("Use /show <name> to copy password".to_string());
             }
             Action::CopyUsername => {
-                self.output_lines.push("Use /show <name> to copy username".to_string());
+                self.output_lines
+                    .push("Use /show <name> to copy username".to_string());
             }
             Action::Config => {
                 self.process_command("/config");
@@ -197,7 +200,8 @@ impl TuiApp {
 
         for (action, key_event) in bindings {
             let key_str = KeyBindingManager::format_key(&key_event);
-            self.output_lines.push(format!("  {:20} - {}", key_str, action.description()));
+            self.output_lines
+                .push(format!("  {:20} - {}", key_str, action.description()));
         }
 
         self.output_lines.extend_from_slice(&[
@@ -221,7 +225,7 @@ impl TuiApp {
     }
 
     /// Render the statusline
-    pub fn render_statusline(&self, width: u16) -> Vec<Span> {
+    pub fn render_statusline(&self, width: u16) -> Vec<Span<'_>> {
         let mut spans = Vec::new();
 
         // Narrow screen (<60 columns): show only sync status
@@ -260,7 +264,9 @@ impl TuiApp {
         let hints = self.get_keyboard_hints(width_usize);
         spans.push(Span::styled(
             hints,
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
         ));
 
         spans
@@ -270,11 +276,11 @@ impl TuiApp {
     fn get_keyboard_hints(&self, width: usize) -> String {
         // For very wide screens, show more hints
         if width >= 100 {
-            format!("Ctrl+N new | Ctrl+L list | Ctrl+Q quit")
+            "Ctrl+N new | Ctrl+L list | Ctrl+Q quit".to_string()
         } else if width >= 80 {
-            format!("Ctrl+N new | Ctrl+Q quit")
+            "Ctrl+N new | Ctrl+Q quit".to_string()
         } else {
-            format!("Ctrl+Q quit")
+            "Ctrl+Q quit".to_string()
         }
     }
 
@@ -351,52 +357,39 @@ impl TuiApp {
             "/help" => {
                 self.show_help();
             }
-            "/config" => {
-                match config::handle_config(args) {
-                    Ok(lines) => self.output_lines.extend(lines),
-                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
-                }
-            }
-            "/list" => {
-                match list::handle_list(args) {
-                    Ok(lines) => self.output_lines.extend(lines),
-                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
-                }
-            }
-            "/show" => {
-                match show::handle_show(args) {
-                    Ok(lines) => self.output_lines.extend(lines),
-                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
-                }
-            }
-            "/new" => {
-                match new::handle_new() {
-                    Ok(lines) => self.output_lines.extend(lines),
-                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
-                }
-            }
-            "/update" => {
-                match update::handle_update(args) {
-                    Ok(lines) => self.output_lines.extend(lines),
-                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
-                }
-            }
-            "/delete" => {
-                match delete::handle_delete(args) {
-                    Ok(lines) => self.output_lines.extend(lines),
-                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
-                }
-            }
-            "/search" => {
-                match search::handle_search(args) {
-                    Ok(lines) => self.output_lines.extend(lines),
-                    Err(e) => self.output_lines.push(format!("Error: {}", e)),
-                }
-            }
+            "/config" => match config::handle_config(args) {
+                Ok(lines) => self.output_lines.extend(lines),
+                Err(e) => self.output_lines.push(format!("Error: {}", e)),
+            },
+            "/list" => match list::handle_list(args) {
+                Ok(lines) => self.output_lines.extend(lines),
+                Err(e) => self.output_lines.push(format!("Error: {}", e)),
+            },
+            "/show" => match show::handle_show(args) {
+                Ok(lines) => self.output_lines.extend(lines),
+                Err(e) => self.output_lines.push(format!("Error: {}", e)),
+            },
+            "/new" => match new::handle_new() {
+                Ok(lines) => self.output_lines.extend(lines),
+                Err(e) => self.output_lines.push(format!("Error: {}", e)),
+            },
+            "/update" => match update::handle_update(args) {
+                Ok(lines) => self.output_lines.extend(lines),
+                Err(e) => self.output_lines.push(format!("Error: {}", e)),
+            },
+            "/delete" => match delete::handle_delete(args) {
+                Ok(lines) => self.output_lines.extend(lines),
+                Err(e) => self.output_lines.push(format!("Error: {}", e)),
+            },
+            "/search" => match search::handle_search(args) {
+                Ok(lines) => self.output_lines.extend(lines),
+                Err(e) => self.output_lines.push(format!("Error: {}", e)),
+            },
             cmd if cmd.starts_with('/') => {
-                self.output_lines.push(
-                    format!("Unknown command '{}'. Type /help for available commands.", cmd),
-                );
+                self.output_lines.push(format!(
+                    "Unknown command '{}'. Type /help for available commands.",
+                    cmd
+                ));
             }
             _ => {
                 self.output_lines
@@ -414,7 +407,7 @@ impl TuiApp {
             .direction(Direction::Vertical)
             .constraints(
                 [
-                    Constraint::Min(1),   // Output area (flexible)
+                    Constraint::Min(1),    // Output area (flexible)
                     Constraint::Length(3), // Input area
                     Constraint::Length(1), // Statusline
                 ]
@@ -576,7 +569,9 @@ pub fn run_tui() -> Result<()> {
                             KeyCode::Char(c) => app.handle_char(c),
                             KeyCode::Backspace | KeyCode::Delete => app.handle_backspace(),
                             KeyCode::Enter => app.handle_char('\n'),
-                            KeyCode::Esc if key.modifiers.contains(event::KeyModifiers::CONTROL) => {
+                            KeyCode::Esc
+                                if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                            {
                                 app.quit();
                             }
                             _ => {}
@@ -644,10 +639,11 @@ mod tests {
         app.handle_char('p');
         app.handle_char('\n');
         assert_eq!(app.input_buffer, "");
+        // Check for either keyboard shortcuts or commands section
         assert!(app
             .output_lines
             .iter()
-            .any(|l| l.contains("Available Commands")));
+            .any(|l| l.contains("Keyboard Shortcuts") || l.contains("Commands:")));
     }
 
     #[test]
@@ -667,7 +663,10 @@ mod tests {
         let mut app = TuiApp::new();
         app.process_command("/delete test");
         // Should show delete confirmation
-        assert!(app.output_lines.iter().any(|l| l.contains("Delete") || l.contains("Confirm")));
+        assert!(app
+            .output_lines
+            .iter()
+            .any(|l| l.contains("Delete") || l.contains("Confirm")));
     }
 
     #[test]
@@ -675,7 +674,10 @@ mod tests {
         let mut app = TuiApp::new();
         app.process_command("/list");
         // Should show password prompt or list output
-        assert!(app.output_lines.iter().any(|l| l.contains("password") || l.contains("Password") || l.contains("Records")));
+        assert!(app
+            .output_lines
+            .iter()
+            .any(|l| l.contains("password") || l.contains("Password") || l.contains("Records")));
     }
 
     #[test]
@@ -683,7 +685,10 @@ mod tests {
         let mut app = TuiApp::new();
         app.process_command("/show test");
         // Should show error or record info
-        assert!(app.output_lines.iter().any(|l| l.contains("Error") || l.contains("not found") || l.contains("test")));
+        assert!(app
+            .output_lines
+            .iter()
+            .any(|l| l.contains("Error") || l.contains("not found") || l.contains("test")));
     }
 
     #[test]
@@ -691,7 +696,10 @@ mod tests {
         let mut app = TuiApp::new();
         app.process_command("/new");
         // Should show new record wizard
-        assert!(app.output_lines.iter().any(|l| l.contains("New") || l.contains("Create") || l.contains("record")));
+        assert!(app
+            .output_lines
+            .iter()
+            .any(|l| l.contains("New") || l.contains("Create") || l.contains("record")));
     }
 
     #[test]
@@ -699,7 +707,10 @@ mod tests {
         let mut app = TuiApp::new();
         app.process_command("/update test");
         // Should show update wizard or error
-        assert!(app.output_lines.iter().any(|l| l.contains("Update") || l.contains("Error") || l.contains("not found")));
+        assert!(app
+            .output_lines
+            .iter()
+            .any(|l| l.contains("Update") || l.contains("Error") || l.contains("not found")));
     }
 
     #[test]
@@ -707,7 +718,10 @@ mod tests {
         let mut app = TuiApp::new();
         app.process_command("/search test");
         // Should show search results or empty state
-        assert!(app.output_lines.iter().any(|l| l.contains("Search") || l.contains("No results") || l.contains("Error")));
+        assert!(app
+            .output_lines
+            .iter()
+            .any(|l| l.contains("Search") || l.contains("No results") || l.contains("Error")));
     }
 
     #[test]
@@ -715,7 +729,9 @@ mod tests {
         let mut app = TuiApp::new();
         app.process_command("/config");
         // Should show configuration list
-        assert!(app.output_lines.iter().any(|l| l.contains("Configuration") || l.contains("[Database]") || l.contains("Error")));
+        assert!(app.output_lines.iter().any(|l| l.contains("Configuration")
+            || l.contains("[Database]")
+            || l.contains("Error")));
     }
 
     #[test]
@@ -723,7 +739,10 @@ mod tests {
         let mut app = TuiApp::new();
         app.process_command("/config get sync.enabled");
         // Should show configuration value or error
-        assert!(app.output_lines.iter().any(|l| l.contains("=") || l.contains("Error")));
+        assert!(app
+            .output_lines
+            .iter()
+            .any(|l| l.contains("=") || l.contains("Error")));
     }
 
     #[test]
@@ -731,7 +750,10 @@ mod tests {
         let mut app = TuiApp::new();
         app.process_command("/unknown");
         // Should show unknown command message
-        assert!(app.output_lines.iter().any(|l| l.contains("Unknown") || l.contains("unknown")));
+        assert!(app
+            .output_lines
+            .iter()
+            .any(|l| l.contains("Unknown") || l.contains("unknown")));
     }
 
     #[test]
@@ -748,7 +770,9 @@ mod tests {
         // Test statusline at full width (>=60 columns)
         let statusline = app.render_statusline(80);
         // Should contain version info
-        assert!(statusline.iter().any(|s| s.content.contains("v0.1") || s.content.contains("0.1.0")));
+        assert!(statusline
+            .iter()
+            .any(|s| s.content.contains("v0.1") || s.content.contains("0.1.0")));
     }
 
     #[test]
@@ -757,7 +781,7 @@ mod tests {
         // Test statusline at narrow width (<60 columns)
         let statusline = app.render_statusline(40);
         // Narrow screens should only show minimal info
-        assert!(statusline.len() > 0);
+        assert!(!statusline.is_empty());
     }
 
     #[test]
@@ -765,7 +789,9 @@ mod tests {
         let app = TuiApp::new();
         let statusline = app.render_statusline(80);
         // Should show lock status icon
-        assert!(statusline.iter().any(|s| s.content.contains("🔓") || s.content.contains("🔒")));
+        assert!(statusline
+            .iter()
+            .any(|s| s.content.contains("🔓") || s.content.contains("🔒")));
     }
 
     #[test]
@@ -783,7 +809,10 @@ mod tests {
         let mut app = TuiApp::new();
         let ctrl_h = KeyEvent::new(KeyCode::Char('h'), KeyModifiers::CONTROL);
         app.handle_key_event(ctrl_h);
-        assert!(app.output_lines.iter().any(|l| l.contains("Keyboard Shortcuts") || l.contains("Available Commands")));
+        assert!(app
+            .output_lines
+            .iter()
+            .any(|l| l.contains("Keyboard Shortcuts") || l.contains("Available Commands")));
     }
 
     #[test]

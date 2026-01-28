@@ -2,22 +2,24 @@
 //!
 //! Test-Driven Development tests for the keybindings system.
 
-use keyring_cli::tui::keybindings::{parseShortcut, Action, KeyBinding, KeyBindingManager};
+use keyring_cli::tui::keybindings::{parse_shortcut, Action, KeyBinding, KeyBindingManager};
 
 #[test]
 fn test_parse_ctrl_char() {
     // Test parsing "Ctrl+N" into KeyEvent
     // This will fail until we implement the parser
-    let result = parseShortcut("Ctrl+N");
+    let result = parse_shortcut("Ctrl+N");
     assert!(result.is_ok());
     let event = result.unwrap();
     assert_eq!(event.code, crossterm::event::KeyCode::Char('n'));
-    assert!(event.modifiers.contains(crossterm::event::KeyModifiers::CONTROL));
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::CONTROL));
 }
 
 #[test]
 fn test_parse_function_key() {
-    let result = parseShortcut("F5");
+    let result = parse_shortcut("F5");
     assert!(result.is_ok());
     let event = result.unwrap();
     assert_eq!(event.code, crossterm::event::KeyCode::F(5));
@@ -25,17 +27,21 @@ fn test_parse_function_key() {
 
 #[test]
 fn test_parse_ctrl_shift_char() {
-    let result = parseShortcut("Ctrl+Shift+N");
+    let result = parse_shortcut("Ctrl+Shift+N");
     assert!(result.is_ok());
     let event = result.unwrap();
     assert_eq!(event.code, crossterm::event::KeyCode::Char('N'));
-    assert!(event.modifiers.contains(crossterm::event::KeyModifiers::CONTROL));
-    assert!(event.modifiers.contains(crossterm::event::KeyModifiers::SHIFT));
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::CONTROL));
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::SHIFT));
 }
 
 #[test]
 fn test_parse_invalid_shortcut() {
-    let result = parseShortcut("Invalid");
+    let result = parse_shortcut("Invalid");
     assert!(result.is_err());
 }
 
@@ -100,7 +106,6 @@ shortcuts:
 
 #[test]
 fn test_all_default_actions_have_bindings() {
-    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
     let manager = KeyBindingManager::new();
 
@@ -122,13 +127,17 @@ fn test_all_default_actions_have_bindings() {
 
     for action in all_actions {
         let key = manager.get_key(action);
-        assert!(key.is_some(), "Action {:?} should have a key binding", action);
+        assert!(
+            key.is_some(),
+            "Action {:?} should have a key binding",
+            action
+        );
     }
 }
 
 #[test]
 fn test_manager_get_key_for_action() {
-    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use crossterm::event::KeyCode;
 
     let manager = KeyBindingManager::new();
 
@@ -146,7 +155,10 @@ fn test_manager_format_key() {
     let ctrl_n = KeyEvent::new(KeyCode::Char('n'), KeyModifiers::CONTROL);
     assert_eq!(KeyBindingManager::format_key(&ctrl_n), "Ctrl+n");
 
-    let ctrl_shift_n = KeyEvent::new(KeyCode::Char('N'), KeyModifiers::CONTROL | KeyModifiers::SHIFT);
+    let ctrl_shift_n = KeyEvent::new(
+        KeyCode::Char('N'),
+        KeyModifiers::CONTROL | KeyModifiers::SHIFT,
+    );
     assert_eq!(KeyBindingManager::format_key(&ctrl_shift_n), "Ctrl+Shift+N");
 
     let f5 = KeyEvent::new(KeyCode::F(5), KeyModifiers::empty());
@@ -155,55 +167,88 @@ fn test_manager_format_key() {
 
 #[test]
 fn test_parse_alt_key() {
-    let result = parseShortcut("Alt+T");
+    let result = parse_shortcut("Alt+T");
     assert!(result.is_ok());
     let event = result.unwrap();
     assert_eq!(event.code, crossterm::event::KeyCode::Char('t'));
-    assert!(event.modifiers.contains(crossterm::event::KeyModifiers::ALT));
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::ALT));
 }
 
 #[test]
 fn test_parse_ctrl_alt_key() {
-    let result = parseShortcut("Ctrl+Alt+Delete");
+    let result = parse_shortcut("Ctrl+Alt+Delete");
     assert!(result.is_ok());
     let event = result.unwrap();
-    assert!(event.modifiers.contains(crossterm::event::KeyModifiers::CONTROL));
-    assert!(event.modifiers.contains(crossterm::event::KeyModifiers::ALT));
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::CONTROL));
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::ALT));
 }
 
 #[test]
 fn test_parse_empty_input() {
-    let result = parseShortcut("");
+    let result = parse_shortcut("");
     assert!(result.is_err());
 }
 
 #[test]
 fn test_parse_whitespace_only() {
-    let result = parseShortcut("   ");
+    let result = parse_shortcut("   ");
     assert!(result.is_err());
 }
 
 #[test]
 fn test_parse_special_keys() {
-    assert_eq!(parseShortcut("Enter").unwrap().code, crossterm::event::KeyCode::Enter);
-    assert_eq!(parseShortcut("Tab").unwrap().code, crossterm::event::KeyCode::Tab);
-    assert_eq!(parseShortcut("Esc").unwrap().code, crossterm::event::KeyCode::Esc);
-    assert_eq!(parseShortcut("Backspace").unwrap().code, crossterm::event::KeyCode::Backspace);
-    assert_eq!(parseShortcut("Space").unwrap().code, crossterm::event::KeyCode::Char(' '));
+    assert_eq!(
+        parse_shortcut("Enter").unwrap().code,
+        crossterm::event::KeyCode::Enter
+    );
+    assert_eq!(
+        parse_shortcut("Tab").unwrap().code,
+        crossterm::event::KeyCode::Tab
+    );
+    assert_eq!(
+        parse_shortcut("Esc").unwrap().code,
+        crossterm::event::KeyCode::Esc
+    );
+    assert_eq!(
+        parse_shortcut("Backspace").unwrap().code,
+        crossterm::event::KeyCode::Backspace
+    );
+    assert_eq!(
+        parse_shortcut("Space").unwrap().code,
+        crossterm::event::KeyCode::Char(' ')
+    );
 }
 
 #[test]
 fn test_parse_navigation_keys() {
-    assert_eq!(parseShortcut("Up").unwrap().code, crossterm::event::KeyCode::Up);
-    assert_eq!(parseShortcut("Down").unwrap().code, crossterm::event::KeyCode::Down);
-    assert_eq!(parseShortcut("Left").unwrap().code, crossterm::event::KeyCode::Left);
-    assert_eq!(parseShortcut("Right").unwrap().code, crossterm::event::KeyCode::Right);
+    assert_eq!(
+        parse_shortcut("Up").unwrap().code,
+        crossterm::event::KeyCode::Up
+    );
+    assert_eq!(
+        parse_shortcut("Down").unwrap().code,
+        crossterm::event::KeyCode::Down
+    );
+    assert_eq!(
+        parse_shortcut("Left").unwrap().code,
+        crossterm::event::KeyCode::Left
+    );
+    assert_eq!(
+        parse_shortcut("Right").unwrap().code,
+        crossterm::event::KeyCode::Right
+    );
 }
 
 #[test]
 fn test_parse_function_keys_f1_to_f12() {
     for i in 1..=12 {
-        let result = parseShortcut(&format!("F{}", i));
+        let result = parse_shortcut(&format!("F{}", i));
         assert!(result.is_ok(), "F{} should parse", i);
         assert_eq!(result.unwrap().code, crossterm::event::KeyCode::F(i));
     }
@@ -211,9 +256,9 @@ fn test_parse_function_keys_f1_to_f12() {
 
 #[test]
 fn test_parse_case_insensitive_modifiers() {
-    let ctrl_lower = parseShortcut("ctrl+n");
-    let ctrl_upper = parseShortcut("CTRL+N");
-    let ctrl_mixed = parseShortcut("Ctrl+N");
+    let ctrl_lower = parse_shortcut("ctrl+n");
+    let ctrl_upper = parse_shortcut("CTRL+N");
+    let ctrl_mixed = parse_shortcut("Ctrl+N");
 
     assert!(ctrl_lower.is_ok());
     assert!(ctrl_upper.is_ok());

@@ -11,7 +11,7 @@ mod parser;
 
 pub use binding::{Action, KeyBinding};
 pub use manager::KeyBindingManager;
-pub use parser::parseShortcut;
+pub use parser::parse_shortcut;
 
 /// Default keybindings configuration
 pub const DEFAULT_KEYBINDINGS: &str = r#"version: "1.0"

@@ -6,7 +6,7 @@ use crate::error::{KeyringError, Result};
 use crate::tui::keybindings::KeyBindingManager;
 use clap::Parser;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 #[derive(Parser, Debug)]
@@ -35,10 +35,9 @@ pub async fn manage_keybindings(args: KeybindingsArgs) -> Result<()> {
     // Ensure config directory exists
     if let Some(parent) = config_path.parent() {
         if !parent.exists() {
-            fs::create_dir_all(parent).map_err(|e| KeyringError::IoError(format!(
-                "Failed to create config directory: {}",
-                e
-            )))?;
+            fs::create_dir_all(parent).map_err(|e| {
+                KeyringError::IoError(format!("Failed to create config directory: {}", e))
+            })?;
         }
     }
 
@@ -65,12 +64,15 @@ fn get_config_path() -> PathBuf {
         config_dir.join("open-keyring").join("keybindings.yaml")
     } else {
         let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        PathBuf::from(home).join(".config").join("open-keyring").join("keybindings.yaml")
+        PathBuf::from(home)
+            .join(".config")
+            .join("open-keyring")
+            .join("keybindings.yaml")
     }
 }
 
 /// List all keyboard shortcuts
-fn list_keybindings(config_path: &PathBuf) -> Result<()> {
+fn list_keybindings(config_path: &Path) -> Result<()> {
     let manager = KeyBindingManager::new();
     let bindings = manager.all_bindings();
 
@@ -95,7 +97,7 @@ fn list_keybindings(config_path: &PathBuf) -> Result<()> {
 }
 
 /// Validate keybindings configuration
-fn validate_keybindings(config_path: &PathBuf) -> Result<()> {
+fn validate_keybindings(config_path: &Path) -> Result<()> {
     println!("🔍 Validating keybindings configuration...");
     println!("   File: {}", config_path.display());
     println!();
@@ -106,10 +108,8 @@ fn validate_keybindings(config_path: &PathBuf) -> Result<()> {
     }
 
     // Try to parse the file
-    let content = fs::read_to_string(config_path).map_err(|e| KeyringError::IoError(format!(
-        "Failed to read config file: {}",
-        e
-    )))?;
+    let content = fs::read_to_string(config_path)
+        .map_err(|e| KeyringError::IoError(format!("Failed to read config file: {}", e)))?;
 
     match serde_yaml::from_str::<serde_yaml::Value>(&content) {
         Ok(value) => {
@@ -124,11 +124,16 @@ fn validate_keybindings(config_path: &PathBuf) -> Result<()> {
                     if let Some(shortcut_str) = shortcut_val.as_str() {
                         if let Some(existing_action) = seen.get(shortcut_str) {
                             let action_str = action_key.as_str().unwrap_or("?");
-                            println!("⚠️  Conflict: '{}' is used by both '{}' and '{}'",
-                                shortcut_str, existing_action, action_str);
+                            println!(
+                                "⚠️  Conflict: '{}' is used by both '{}' and '{}'",
+                                shortcut_str, existing_action, action_str
+                            );
                             has_conflicts = true;
                         } else {
-                            seen.insert(shortcut_str.to_string(), action_key.as_str().unwrap_or("?").to_string());
+                            seen.insert(
+                                shortcut_str.to_string(),
+                                action_key.as_str().unwrap_or("?").to_string(),
+                            );
                         }
                     }
                 }
@@ -140,16 +145,14 @@ fn validate_keybindings(config_path: &PathBuf) -> Result<()> {
 
             Ok(())
         }
-        Err(e) => {
-            Err(KeyringError::InvalidInput {
-                context: format!("Invalid YAML: {}", e),
-            })
-        }
+        Err(e) => Err(KeyringError::InvalidInput {
+            context: format!("Invalid YAML: {}", e),
+        }),
     }
 }
 
 /// Reset keybindings to defaults
-fn reset_keybindings(config_path: &PathBuf) -> Result<()> {
+fn reset_keybindings(config_path: &Path) -> Result<()> {
     println!("🔄 Resetting keybindings to defaults...");
 
     // Write default configuration
@@ -163,7 +166,7 @@ fn reset_keybindings(config_path: &PathBuf) -> Result<()> {
 }
 
 /// Edit keybindings configuration
-fn edit_keybindings(config_path: &PathBuf) -> Result<()> {
+fn edit_keybindings(config_path: &Path) -> Result<()> {
     // Ensure default config exists
     if !config_path.exists() {
         fs::write(config_path, crate::tui::keybindings::DEFAULT_KEYBINDINGS)
@@ -266,7 +269,7 @@ mod tests {
     fn test_keybindings_args_list() {
         use clap::Parser;
 
-        let args = KeybindingsArgs::parse_from(&["ok", "keybindings", "--list"]);
+        let args = KeybindingsArgs::parse_from(&["ok", "--list"]);
         assert!(args.list);
         assert!(!args.validate);
         assert!(!args.reset);
@@ -277,7 +280,7 @@ mod tests {
     fn test_keybindings_args_validate() {
         use clap::Parser;
 
-        let args = KeybindingsArgs::parse_from(&["ok", "keybindings", "--validate"]);
+        let args = KeybindingsArgs::parse_from(&["ok", "--validate"]);
         assert!(args.validate);
         assert!(!args.list);
     }
@@ -286,7 +289,7 @@ mod tests {
     fn test_keybindings_args_reset() {
         use clap::Parser;
 
-        let args = KeybindingsArgs::parse_from(&["ok", "keybindings", "--reset"]);
+        let args = KeybindingsArgs::parse_from(&["ok", "--reset"]);
         assert!(args.reset);
         assert!(!args.list);
     }
@@ -295,7 +298,7 @@ mod tests {
     fn test_keybindings_args_edit() {
         use clap::Parser;
 
-        let args = KeybindingsArgs::parse_from(&["ok", "keybindings", "--edit"]);
+        let args = KeybindingsArgs::parse_from(&["ok", "--edit"]);
         assert!(args.edit);
         assert!(!args.list);
     }

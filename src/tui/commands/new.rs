@@ -2,16 +2,17 @@
 //!
 //! Handles the /new command in TUI mode with interactive wizard.
 
-use crate::cli::commands::generate::{generate_memorable, generate_pin, generate_random, PasswordType};
+use crate::cli::commands::generate::{
+    generate_memorable, generate_pin, generate_random, PasswordType,
+};
 use crate::cli::ConfigManager;
 use crate::crypto::record::{encrypt_payload, RecordPayload};
+use crate::crypto::{keystore::KeyStore, CryptoManager};
 use crate::db::models::{RecordType, StoredRecord};
 use crate::db::Vault;
 use crate::error::Result;
-use crate::crypto::{keystore::KeyStore, CryptoManager};
 
 /// Handle the /new command with interactive wizard
-#[allow(dead_code)]
 pub fn handle_new() -> Result<Vec<String>> {
     Ok(vec![
         "✏️  Create New Record".to_string(),
@@ -34,7 +35,6 @@ pub fn handle_new() -> Result<Vec<String>> {
 }
 
 /// Create a new record with generated password
-#[allow(dead_code)]
 pub fn create_record(
     name: &str,
     password_type: PasswordType,

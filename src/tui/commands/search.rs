@@ -8,7 +8,6 @@ use crate::db::Vault;
 use crate::error::Result;
 
 /// Handle the /search command with fuzzy matching
-#[allow(dead_code)]
 pub fn handle_search(args: Vec<&str>) -> Result<Vec<String>> {
     if args.is_empty() {
         return Ok(vec![
@@ -53,9 +52,11 @@ pub fn handle_search(args: Vec<&str>) -> Result<Vec<String>> {
                 }
             }
             // Check tags match
-            let matched_tag: Option<String> = payload.tags.iter()
+            let matched_tag: Option<String> = payload
+                .tags
+                .iter()
                 .find(|tag| tag.to_lowercase().contains(&query))
-                .map(|tag| tag.clone());
+                .cloned();
             if let Some(tag) = matched_tag {
                 results.push((record, payload, format!("tag: {}", tag)));
                 continue;

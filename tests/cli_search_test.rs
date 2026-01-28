@@ -57,9 +57,10 @@ fn test_search_filters_by_type() {
         limit: None,
     };
 
-    tokio::runtime::Runtime::new().unwrap().block_on(async {
-        search_records(search_args).await
-    }).unwrap();
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { search_records(search_args).await })
+        .unwrap();
 
     // Verify by checking vault directly (since search_records only prints)
     let results = vault.search_records("test").unwrap();
@@ -113,9 +114,10 @@ fn test_search_filters_by_tags() {
         limit: None,
     };
 
-    tokio::runtime::Runtime::new().unwrap().block_on(async {
-        search_records(search_args).await
-    }).unwrap();
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { search_records(search_args).await })
+        .unwrap();
 }
 
 #[test]
@@ -155,7 +157,8 @@ fn test_search_respects_limit() {
         limit: Some(2),
     };
 
-    tokio::runtime::Runtime::new().unwrap().block_on(async {
-        search_records(search_args).await
-    }).unwrap();
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { search_records(search_args).await })
+        .unwrap();
 }

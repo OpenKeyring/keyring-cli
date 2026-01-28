@@ -42,8 +42,8 @@ pub async fn update_record(args: UpdateArgs) -> Result<()> {
     println!("🔄 Updating record: {}", args.name);
 
     // Parse existing encrypted data as JSON
-    let mut payload: serde_json::Value = serde_json::from_slice(&record.encrypted_data)
-        .map_err(|e| Error::InvalidInput {
+    let mut payload: serde_json::Value =
+        serde_json::from_slice(&record.encrypted_data).map_err(|e| Error::InvalidInput {
             context: format!("Failed to parse record data: {}", e),
         })?;
 

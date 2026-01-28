@@ -254,7 +254,10 @@ fn handle_config_reset(args: Vec<&str>) -> Result<Vec<String>> {
     } else {
         Ok(vec![
             "🔄 Configuration reset to defaults".to_string(),
-            format!("   ✓ Cleared {} custom configuration value(s)", custom_keys.len()),
+            format!(
+                "   ✓ Cleared {} custom configuration value(s)",
+                custom_keys.len()
+            ),
         ])
     }
 }

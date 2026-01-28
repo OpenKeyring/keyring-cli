@@ -316,9 +316,9 @@ impl Vault {
 
     /// List all metadata keys matching a prefix
     pub fn list_metadata_keys(&self, prefix: &str) -> Result<Vec<String>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT key FROM metadata WHERE key LIKE ?1",
-        )?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT key FROM metadata WHERE key LIKE ?1")?;
 
         let mut keys = Vec::new();
         let mut rows = stmt.query([format!("{}%", prefix)])?;
@@ -603,23 +603,32 @@ impl Vault {
         )?;
 
         // Count records by sync status
-        let pending: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM sync_state WHERE sync_status = 0",
-            [],
-            |row| row.get(0),
-        ).unwrap_or(0);
+        let pending: i64 = self
+            .conn
+            .query_row(
+                "SELECT COUNT(*) FROM sync_state WHERE sync_status = 0",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
 
-        let synced: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM sync_state WHERE sync_status = 1",
-            [],
-            |row| row.get(0),
-        ).unwrap_or(0);
+        let synced: i64 = self
+            .conn
+            .query_row(
+                "SELECT COUNT(*) FROM sync_state WHERE sync_status = 1",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
 
-        let conflicts: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM sync_state WHERE sync_status = 2",
-            [],
-            |row| row.get(0),
-        ).unwrap_or(0);
+        let conflicts: i64 = self
+            .conn
+            .query_row(
+                "SELECT COUNT(*) FROM sync_state WHERE sync_status = 2",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
 
         Ok(super::SyncStats {
             total,

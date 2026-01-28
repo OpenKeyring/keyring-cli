@@ -8,7 +8,6 @@ use crate::db::Vault;
 use crate::error::Result;
 
 /// Handle the /delete command with interactive confirmation
-#[allow(dead_code)]
 pub fn handle_delete(args: Vec<&str>) -> Result<Vec<String>> {
     if args.is_empty() {
         return Ok(vec![
@@ -92,7 +91,6 @@ fn try_get_record_display_name(name: &str) -> Option<String> {
 }
 
 /// Actually delete the record (called after confirmation)
-#[allow(dead_code)]
 pub fn execute_delete(name: &str) -> Result<Vec<String>> {
     let config = ConfigManager::new()?;
     let db_config = config.get_database_config()?;
@@ -104,9 +102,7 @@ pub fn execute_delete(name: &str) -> Result<Vec<String>> {
     let record = match vault.find_record_by_name(name)? {
         Some(r) => r,
         None => {
-            return Ok(vec![
-                format!("❌ Record '{}' not found", name),
-            ]);
+            return Ok(vec![format!("❌ Record '{}' not found", name)]);
         }
     };
 

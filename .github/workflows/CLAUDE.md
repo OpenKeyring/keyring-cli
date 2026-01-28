@@ -7,5 +7,6 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
-| #241 | 12:14 AM | 🔴 | Fixed sysinfo dependency issues in CI test environment | ~245 |
+| #251 | 12:19 AM | 🔴 | Fixed Test Coverage workflow missing dependencies | ~264 |
+| #250 | " | 🔴 | Fixed Windows MSRV check shell conflict in security workflow | ~284 |
 </claude-mem-context>

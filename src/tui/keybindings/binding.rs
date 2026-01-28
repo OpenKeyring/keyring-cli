@@ -2,7 +2,7 @@
 //!
 //! Defines the Action enum and KeyBinding configuration struct.
 
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::KeyEvent;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
@@ -155,13 +155,16 @@ impl KeyBinding {
                 _ => continue, // Unknown action, skip
             };
 
-            match super::parser::parseShortcut(shortcut_str) {
+            match super::parser::parse_shortcut(shortcut_str) {
                 Ok(key_event) => {
                     result.insert(action, key_event);
                 }
                 Err(e) => {
                     // Log warning but continue
-                    eprintln!("Warning: Failed to parse shortcut '{}': {}", shortcut_str, e);
+                    eprintln!(
+                        "Warning: Failed to parse shortcut '{}': {}",
+                        shortcut_str, e
+                    );
                 }
             }
         }

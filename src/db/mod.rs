@@ -14,7 +14,7 @@ use std::path::Path;
 // Re-exports for convenience
 pub use lock::VaultLock;
 pub use migration::{Migration, Migrator};
-pub use models::{RecordType, StoredRecord, SyncState, SyncStatus, SyncStats};
+pub use models::{RecordType, StoredRecord, SyncState, SyncStats, SyncStatus};
 pub use schema::initialize_database;
 pub use vault::Vault;
 pub use wal::{checkpoint, truncate};

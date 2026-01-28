@@ -84,7 +84,11 @@ async fn perform_dry_run(vault: &Vault, sync_dir: &Path) -> Result<()> {
     Ok(())
 }
 
-async fn perform_sync(vault: &mut Vault, sync_dir: &Path, conflict_resolution: ConflictResolution) -> Result<()> {
+async fn perform_sync(
+    vault: &mut Vault,
+    sync_dir: &Path,
+    conflict_resolution: ConflictResolution,
+) -> Result<()> {
     let sync_service = SyncService::new();
 
     println!("🔄 Starting sync...");
@@ -98,14 +102,12 @@ async fn perform_sync(vault: &mut Vault, sync_dir: &Path, conflict_resolution: C
     }
 
     // Import records from sync directory
-    let stats = sync_service.import_from_directory(
-        vault,
-        sync_dir,
-        conflict_resolution,
-    )?;
+    let stats = sync_service.import_from_directory(vault, sync_dir, conflict_resolution)?;
 
-    println!("   Imported: {}, Updated: {}, Resolved: {}",
-             stats.imported, stats.updated, stats.conflicts);
+    println!(
+        "   Imported: {}, Updated: {}, Resolved: {}",
+        stats.imported, stats.updated, stats.conflicts
+    );
     println!("✅ Sync completed");
 
     Ok(())

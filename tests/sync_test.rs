@@ -3,7 +3,6 @@ use keyring_cli::db::models::{RecordType, StoredRecord};
 use keyring_cli::db::vault::Vault;
 use keyring_cli::sync::export::{JsonSyncExporter, SyncExporter};
 use keyring_cli::sync::import::{JsonSyncImporter, SyncImporter};
-use std::path::Path;
 use tempfile::TempDir;
 use uuid::Uuid;
 

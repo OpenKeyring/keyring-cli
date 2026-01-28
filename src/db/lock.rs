@@ -226,7 +226,6 @@ impl Drop for VaultLock {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_lock_path_construction() {

@@ -8,7 +8,6 @@ use crate::db::Vault;
 use crate::error::Result;
 
 /// Handle the /update command with interactive wizard
-#[allow(dead_code)]
 pub fn handle_update(args: Vec<&str>) -> Result<Vec<String>> {
     if args.is_empty() {
         return Ok(vec![
@@ -26,7 +25,13 @@ pub fn handle_update(args: Vec<&str>) -> Result<Vec<String>> {
     let mut output = vec![
         "✏️  Update Record".to_string(),
         "".to_string(),
-        format!("Name: {}", display_info.as_ref().map(|i| i.name.as_str()).unwrap_or(name)),
+        format!(
+            "Name: {}",
+            display_info
+                .as_ref()
+                .map(|i| i.name.as_str())
+                .unwrap_or(name)
+        ),
     ];
 
     if let Some(ref info) = display_info {
@@ -118,7 +123,6 @@ fn try_get_record_info(name: &str) -> Option<RecordInfo> {
 }
 
 /// Update a specific field
-#[allow(dead_code)]
 pub fn update_field(name: &str, field: &str, value: &str) -> Result<Vec<String>> {
     let crypto = onboarding::unlock_keystore()?;
     let config = ConfigManager::new()?;
@@ -139,13 +143,25 @@ pub fn update_field(name: &str, field: &str, value: &str) -> Result<Vec<String>>
     // Update the specified field
     match field {
         "username" => {
-            payload.username = if value.is_empty() { None } else { Some(value.to_string()) };
+            payload.username = if value.is_empty() {
+                None
+            } else {
+                Some(value.to_string())
+            };
         }
         "url" => {
-            payload.url = if value.is_empty() { None } else { Some(value.to_string()) };
+            payload.url = if value.is_empty() {
+                None
+            } else {
+                Some(value.to_string())
+            };
         }
         "notes" => {
-            payload.notes = if value.is_empty() { None } else { Some(value.to_string()) };
+            payload.notes = if value.is_empty() {
+                None
+            } else {
+                Some(value.to_string())
+            };
         }
         "tags" => {
             let tags: Vec<String> = value.split(',').map(|s| s.trim().to_string()).collect();
@@ -173,7 +189,6 @@ pub fn update_field(name: &str, field: &str, value: &str) -> Result<Vec<String>>
 }
 
 /// Generate new password for record
-#[allow(dead_code)]
 pub fn update_password(name: &str, new_password: &str) -> Result<Vec<String>> {
     let crypto = onboarding::unlock_keystore()?;
     let config = ConfigManager::new()?;

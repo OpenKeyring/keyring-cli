@@ -5,11 +5,11 @@
 #![cfg(feature = "test-env")]
 
 use keyring_cli::cli::commands::delete::{delete_record, DeleteArgs};
-use keyring_cli::db::vault::Vault;
 use keyring_cli::db::models::{RecordType, StoredRecord};
+use keyring_cli::db::vault::Vault;
 use keyring_cli::error::Error;
-use tempfile::TempDir;
 use std::env;
+use tempfile::TempDir;
 use uuid::Uuid;
 
 #[test]
@@ -64,16 +64,20 @@ fn test_delete_record_without_confirm_returns_early() {
     };
 
     // Should succeed but NOT delete the record
-    let result = tokio::runtime::Runtime::new().unwrap().block_on(async {
-        delete_record(args).await
-    });
+    let result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { delete_record(args).await });
 
     assert!(result.is_ok());
 
     // Verify record still exists (not deleted)
     let vault = Vault::open(&db_path, "").unwrap();
     let records = vault.list_records().unwrap();
-    assert_eq!(records.len(), 1, "Record should still exist when --confirm is not set");
+    assert_eq!(
+        records.len(),
+        1,
+        "Record should still exist when --confirm is not set"
+    );
 }
 
 #[test]
@@ -127,9 +131,9 @@ fn test_delete_record_successfully_marks_as_deleted() {
         sync: false,
     };
 
-    let result = tokio::runtime::Runtime::new().unwrap().block_on(async {
-        delete_record(args).await
-    });
+    let result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { delete_record(args).await });
 
     if let Err(ref e) = result {
         eprintln!("Error: {:?}", e);
@@ -139,7 +143,11 @@ fn test_delete_record_successfully_marks_as_deleted() {
     // Verify record is marked as deleted (should not appear in list_records)
     let vault = Vault::open(&db_path, "").unwrap();
     let records = vault.list_records().unwrap();
-    assert_eq!(records.len(), 0, "Record should be marked as deleted and not appear in list");
+    assert_eq!(
+        records.len(),
+        0,
+        "Record should be marked as deleted and not appear in list"
+    );
 }
 
 #[test]
@@ -170,11 +178,14 @@ fn test_delete_nonexistent_record_returns_error() {
         sync: false,
     };
 
-    let result = tokio::runtime::Runtime::new().unwrap().block_on(async {
-        delete_record(args).await
-    });
+    let result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { delete_record(args).await });
 
-    assert!(result.is_err(), "Delete should fail for non-existent record");
+    assert!(
+        result.is_err(),
+        "Delete should fail for non-existent record"
+    );
 
     // Verify it's the correct error type
     match result {
@@ -237,9 +248,9 @@ fn test_delete_record_with_sync_calls_sync_deletion() {
         sync: true,
     };
 
-    let result = tokio::runtime::Runtime::new().unwrap().block_on(async {
-        delete_record(args).await
-    });
+    let result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { delete_record(args).await });
 
     assert!(result.is_ok(), "Delete with sync should succeed");
 

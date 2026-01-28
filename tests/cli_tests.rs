@@ -8,7 +8,6 @@
 
 use keyring_cli::cli::commands::generate::{
     generate_memorable, generate_password, generate_pin, generate_random, GenerateArgs,
-    PasswordType,
 };
 use tempfile::TempDir;
 

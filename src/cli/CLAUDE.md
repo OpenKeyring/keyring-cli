@@ -7,5 +7,6 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
-| #241 | 12:14 AM | 🔴 | Fixed sysinfo dependency issues in CI test environment | ~245 |
+| #240 | 12:13 AM | 🔴 | Fixed sysinfo compatibility issue in test environment | ~220 |
+| #228 | 12:09 AM | 🔴 | Fixed unused import warning in Rust test module | ~154 |
 </claude-mem-context>

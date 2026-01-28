@@ -41,9 +41,7 @@ pub async fn search_records(args: SearchArgs) -> Result<()> {
 
     // Apply tags filter (records must have ALL specified tags)
     if !args.tags.is_empty() {
-        records.retain(|r| {
-            args.tags.iter().all(|tag| r.tags.contains(tag))
-        });
+        records.retain(|r| args.tags.iter().all(|tag| r.tags.contains(tag)));
     }
 
     // Apply limit

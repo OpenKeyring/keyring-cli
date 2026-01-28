@@ -5,8 +5,8 @@
 #![cfg(feature = "test-env")]
 
 use keyring_cli::cli::commands::update::{update_record, UpdateArgs};
-use keyring_cli::db::vault::Vault;
 use keyring_cli::db::models::{RecordType, StoredRecord};
+use keyring_cli::db::vault::Vault;
 use keyring_cli::error::Error;
 use tempfile::TempDir;
 use uuid::Uuid;
@@ -60,16 +60,17 @@ fn test_update_username_field() {
         sync: false,
     };
 
-    let result = tokio::runtime::Runtime::new().unwrap().block_on(async {
-        update_record(args).await
-    });
+    let result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { update_record(args).await });
 
     assert!(result.is_ok(), "Update should succeed");
 
     // Verify username was updated
     let vault = Vault::open(&db_path, "").unwrap();
     let updated = vault.find_record_by_name("test-record").unwrap().unwrap();
-    let updated_payload: serde_json::Value = serde_json::from_slice(&updated.encrypted_data).unwrap();
+    let updated_payload: serde_json::Value =
+        serde_json::from_slice(&updated.encrypted_data).unwrap();
     assert_eq!(updated_payload["username"], "new@example.com");
 }
 
@@ -122,16 +123,20 @@ fn test_update_url_field() {
         sync: false,
     };
 
-    let result = tokio::runtime::Runtime::new().unwrap().block_on(async {
-        update_record(args).await
-    });
+    let result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { update_record(args).await });
 
     assert!(result.is_ok(), "Update should succeed");
 
     // Verify URL was updated
     let vault = Vault::open(&db_path, "").unwrap();
-    let updated = vault.find_record_by_name("test-record-url").unwrap().unwrap();
-    let updated_payload: serde_json::Value = serde_json::from_slice(&updated.encrypted_data).unwrap();
+    let updated = vault
+        .find_record_by_name("test-record-url")
+        .unwrap()
+        .unwrap();
+    let updated_payload: serde_json::Value =
+        serde_json::from_slice(&updated.encrypted_data).unwrap();
     assert_eq!(updated_payload["url"], "https://new.example.com");
 }
 
@@ -184,16 +189,20 @@ fn test_update_notes_field() {
         sync: false,
     };
 
-    let result = tokio::runtime::Runtime::new().unwrap().block_on(async {
-        update_record(args).await
-    });
+    let result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { update_record(args).await });
 
     assert!(result.is_ok(), "Update should succeed");
 
     // Verify notes were updated
     let vault = Vault::open(&db_path, "").unwrap();
-    let updated = vault.find_record_by_name("test-record-notes").unwrap().unwrap();
-    let updated_payload: serde_json::Value = serde_json::from_slice(&updated.encrypted_data).unwrap();
+    let updated = vault
+        .find_record_by_name("test-record-notes")
+        .unwrap()
+        .unwrap();
+    let updated_payload: serde_json::Value =
+        serde_json::from_slice(&updated.encrypted_data).unwrap();
     assert_eq!(updated_payload["notes"], "New updated notes");
 }
 
@@ -246,17 +255,22 @@ fn test_update_tags_replace() {
         sync: false,
     };
 
-    let result = tokio::runtime::Runtime::new().unwrap().block_on(async {
-        update_record(args).await
-    });
+    let result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { update_record(args).await });
 
     assert!(result.is_ok(), "Update should succeed");
 
     // Verify tags were replaced (check both encrypted data and database tags)
     let vault = Vault::open(&db_path, "").unwrap();
-    let updated = vault.find_record_by_name("test-record-tags").unwrap().unwrap();
-    let updated_payload: serde_json::Value = serde_json::from_slice(&updated.encrypted_data).unwrap();
-    let updated_tags: Vec<String> = updated_payload["tags"].as_array()
+    let updated = vault
+        .find_record_by_name("test-record-tags")
+        .unwrap()
+        .unwrap();
+    let updated_payload: serde_json::Value =
+        serde_json::from_slice(&updated.encrypted_data).unwrap();
+    let updated_tags: Vec<String> = updated_payload["tags"]
+        .as_array()
         .unwrap()
         .iter()
         .filter_map(|v| v.as_str())
@@ -302,11 +316,14 @@ fn test_update_nonexistent_record_returns_error() {
         sync: false,
     };
 
-    let result = tokio::runtime::Runtime::new().unwrap().block_on(async {
-        update_record(args).await
-    });
+    let result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { update_record(args).await });
 
-    assert!(result.is_err(), "Update should fail for non-existent record");
+    assert!(
+        result.is_err(),
+        "Update should fail for non-existent record"
+    );
 
     // Verify it's the correct error type
     match result {
@@ -369,15 +386,19 @@ fn test_update_password_with_encryption() {
         sync: false,
     };
 
-    let result = tokio::runtime::Runtime::new().unwrap().block_on(async {
-        update_record(args).await
-    });
+    let result = tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async { update_record(args).await });
 
     assert!(result.is_ok(), "Password update should succeed");
 
     // Verify password was updated (encrypted data changed)
     let vault = Vault::open(&db_path, "").unwrap();
-    let updated = vault.find_record_by_name("test-record-password").unwrap().unwrap();
-    let updated_payload: serde_json::Value = serde_json::from_slice(&updated.encrypted_data).unwrap();
+    let updated = vault
+        .find_record_by_name("test-record-password")
+        .unwrap()
+        .unwrap();
+    let updated_payload: serde_json::Value =
+        serde_json::from_slice(&updated.encrypted_data).unwrap();
     assert_eq!(updated_payload["password"], "new-password-456");
 }

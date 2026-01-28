@@ -7,5 +7,5 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
-| #241 | 12:14 AM | 🔴 | Fixed sysinfo dependency issues in CI test environment | ~245 |
+| #224 | 12:07 AM | 🔴 | Fixed doctest import path in keybindings parser module | ~247 |
 </claude-mem-context>

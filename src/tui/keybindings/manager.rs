@@ -28,7 +28,10 @@ impl KeyBindingManager {
         // Try to load from file, fall back to defaults
         let key_to_action = if config_path.exists() {
             Self::load_from_file(&config_path).unwrap_or_else(|e| {
-                eprintln!("Warning: Failed to load keybindings from {:?}: {}", config_path, e);
+                eprintln!(
+                    "Warning: Failed to load keybindings from {:?}: {}",
+                    config_path, e
+                );
                 eprintln!("Using default keybindings");
                 Self::default_keymap()
             })
@@ -41,10 +44,7 @@ impl KeyBindingManager {
         };
 
         // Build reverse mapping
-        let action_to_key = key_to_action
-            .iter()
-            .map(|(k, v)| (*v, *k))
-            .collect();
+        let action_to_key = key_to_action.iter().map(|(k, v)| (*v, *k)).collect();
 
         Self {
             key_to_action,
@@ -60,7 +60,10 @@ impl KeyBindingManager {
         } else {
             // Fallback to ~/.config/open-keyring
             let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-            PathBuf::from(home).join(".config").join("open-keyring").join("keybindings.yaml")
+            PathBuf::from(home)
+                .join(".config")
+                .join("open-keyring")
+                .join("keybindings.yaml")
         }
     }
 
@@ -131,11 +134,11 @@ impl KeyBindingManager {
 
     /// Load keybindings from a YAML file
     fn load_from_file(path: &PathBuf) -> Result<HashMap<KeyEvent, Action>, String> {
-        let content = fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read file: {}", e))?;
+        let content =
+            fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))?;
 
-        let binding: KeyBinding = serde_yaml::from_str(&content)
-            .map_err(|e| format!("Failed to parse YAML: {}", e))?;
+        let binding: KeyBinding =
+            serde_yaml::from_str(&content).map_err(|e| format!("Failed to parse YAML: {}", e))?;
 
         // Convert HashMap<Action, KeyEvent> to HashMap<KeyEvent, Action>
         let action_to_key = binding.parse_shortcuts()?;
@@ -151,8 +154,7 @@ impl KeyBindingManager {
     fn create_default_config(path: &PathBuf) -> Result<(), String> {
         // Create parent directory if it doesn't exist
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create directory: {}", e))?;
+            fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
         }
 
         fs::write(path, super::DEFAULT_KEYBINDINGS)
@@ -173,20 +175,14 @@ impl KeyBindingManager {
 
     /// Get all keybindings for display
     pub fn all_bindings(&self) -> Vec<(Action, KeyEvent)> {
-        self.action_to_key
-            .iter()
-            .map(|(a, k)| (*a, *k))
-            .collect()
+        self.action_to_key.iter().map(|(a, k)| (*a, *k)).collect()
     }
 
     /// Reload configuration from file
     pub fn reload(&mut self) -> Result<(), String> {
         if self.config_path.exists() {
             let key_to_action = Self::load_from_file(&self.config_path)?;
-            let action_to_key = key_to_action
-                .iter()
-                .map(|(k, v)| (*v, *k))
-                .collect();
+            let action_to_key = key_to_action.iter().map(|(k, v)| (*v, *k)).collect();
             self.key_to_action = key_to_action;
             self.action_to_key = action_to_key;
             Ok(())
@@ -199,10 +195,7 @@ impl KeyBindingManager {
     pub fn reset(&mut self) -> Result<(), String> {
         Self::create_default_config(&self.config_path)?;
         self.key_to_action = Self::default_keymap();
-        self.action_to_key = self.key_to_action
-            .iter()
-            .map(|(k, v)| (*v, *k))
-            .collect();
+        self.action_to_key = self.key_to_action.iter().map(|(k, v)| (*v, *k)).collect();
         Ok(())
     }
 
@@ -212,13 +205,22 @@ impl KeyBindingManager {
 
         let mut parts = Vec::new();
 
-        if event.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) {
+        if event
+            .modifiers
+            .contains(crossterm::event::KeyModifiers::CONTROL)
+        {
             parts.push("Ctrl".to_string());
         }
-        if event.modifiers.contains(crossterm::event::KeyModifiers::SHIFT) {
+        if event
+            .modifiers
+            .contains(crossterm::event::KeyModifiers::SHIFT)
+        {
             parts.push("Shift".to_string());
         }
-        if event.modifiers.contains(crossterm::event::KeyModifiers::ALT) {
+        if event
+            .modifiers
+            .contains(crossterm::event::KeyModifiers::ALT)
+        {
             parts.push("Alt".to_string());
         }
 

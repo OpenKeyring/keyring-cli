@@ -350,7 +350,10 @@ fn test_find_record_by_name_not_found() {
     // Try to find a record that doesn't exist
     let result = vault.find_record_by_name("nonexistent-record");
     assert!(result.is_ok());
-    assert!(result.unwrap().is_none(), "Should return None for non-existent record");
+    assert!(
+        result.unwrap().is_none(),
+        "Should return None for non-existent record"
+    );
 }
 
 #[test]
@@ -530,5 +533,8 @@ fn test_get_pending_records_with_pending() {
 
     let pending = vault.get_pending_records().unwrap();
     assert_eq!(pending.len(), 1, "Should return 1 pending record");
-    assert_eq!(pending[0].id, record1.id, "Should return record1 as pending");
+    assert_eq!(
+        pending[0].id, record1.id,
+        "Should return record1 as pending"
+    );
 }
