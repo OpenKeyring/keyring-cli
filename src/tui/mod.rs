@@ -5,6 +5,7 @@
 
 mod app;
 pub mod commands;
+pub mod keybindings;
 mod utils;
 mod widgets;
 
