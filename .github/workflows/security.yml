@@ -12,13 +12,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-2022]
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
           - os: macos-latest
             target: x86_64-apple-darwin
-          - os: windows-latest
+          - os: windows-2022
             target: x86_64-pc-windows-msvc
 
     steps:
@@ -80,6 +80,7 @@ jobs:
           cargo audit || echo "⚠️  Security audit found potential issues"
 
       - name: Check MSRV in Cargo.toml
+        if: runner.os != 'Windows'
         run: |
           if grep -q "rust-version" Cargo.toml; then
             echo "✅ MSRV declared in Cargo.toml"
@@ -88,6 +89,20 @@ jobs:
             echo "❌ ERROR: MSRV not declared in Cargo.toml"
             exit 1
           fi
+
+      - name: Check MSRV in Cargo.toml (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "Checking MSRV in Cargo.toml..."
+          $content = Get-Content Cargo.toml -Raw
+          if ($content -match "rust-version") {
+            Write-Host "✅ MSRV declared in Cargo.toml"
+            Write-Host $content | Select-String "rust-version"
+          } else {
+            Write-Host "❌ ERROR: MSRV not declared in Cargo.toml"
+            exit 1
+          }
 
       - name: Security summary
         run: |

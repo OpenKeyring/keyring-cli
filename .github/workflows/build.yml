@@ -193,7 +193,7 @@ jobs:
   # Build for Windows
   build-windows:
     name: Build Windows (x86_64)
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     defaults:
       run:
@@ -240,7 +240,7 @@ jobs:
   # Build for Windows ARM64
   build-windows-arm64:
     name: Build Windows (ARM64)
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     defaults:
       run:
