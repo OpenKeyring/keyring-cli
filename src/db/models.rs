@@ -84,3 +84,12 @@ pub struct SyncState {
     pub cloud_updated_at: Option<i64>,
     pub sync_status: SyncStatus,
 }
+
+/// Sync statistics aggregation
+#[derive(Debug, Clone)]
+pub struct SyncStats {
+    pub total: i64,
+    pub pending: i64,
+    pub synced: i64,
+    pub conflicts: i64,
+}

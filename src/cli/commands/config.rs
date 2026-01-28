@@ -1,6 +1,8 @@
 use crate::cli::ConfigManager;
+use crate::db::Vault;
 use crate::error::Result;
 use clap::Subcommand;
+use std::path::PathBuf;
 
 #[derive(Subcommand, Debug)]
 pub enum ConfigCommands {
@@ -37,7 +39,15 @@ pub async fn execute(command: ConfigCommands) -> Result<()> {
 
 async fn execute_set(key: String, value: String) -> Result<()> {
     println!("⚙️  Setting configuration: {} = {}", key, value);
-    println!("   Note: Configuration persistence coming soon");
+
+    // Open vault and persist to metadata
+    let config = ConfigManager::new()?;
+    let db_config = config.get_database_config()?;
+    let db_path = PathBuf::from(db_config.path);
+    let mut vault = Vault::open(&db_path, "")?;
+
+    vault.set_metadata(&key, &value)?;
+
     Ok(())
 }
 
@@ -45,22 +55,26 @@ async fn execute_get(key: String) -> Result<()> {
     let config = ConfigManager::new()?;
 
     // Try to get the value from different config sections
-    match key.as_str() {
+    let known_key = match key.as_str() {
         "sync.enabled" => {
             let sync_config = config.get_sync_config()?;
             println!("sync.enabled = {}", sync_config.enabled);
+            true
         }
         "sync.provider" => {
             let sync_config = config.get_sync_config()?;
             println!("sync.provider = {}", sync_config.provider);
+            true
         }
         "sync.remote_path" => {
             let sync_config = config.get_sync_config()?;
             println!("sync.remote_path = {}", sync_config.remote_path);
+            true
         }
         "sync.auto" => {
             let sync_config = config.get_sync_config()?;
             println!("sync.auto = {}", sync_config.auto_sync);
+            true
         }
         "sync.conflict_resolution" => {
             let sync_config = config.get_sync_config()?;
@@ -68,6 +82,7 @@ async fn execute_get(key: String) -> Result<()> {
                 "sync.conflict_resolution = {}",
                 sync_config.conflict_resolution
             );
+            true
         }
         "clipboard.timeout" => {
             let clipboard_config = config.get_clipboard_config()?;
@@ -75,13 +90,29 @@ async fn execute_get(key: String) -> Result<()> {
                 "clipboard.timeout = {} seconds",
                 clipboard_config.timeout_seconds
             );
+            true
         }
         "database.path" => {
             let db_config = config.get_database_config()?;
             println!("database.path = {}", db_config.path);
+            true
         }
-        _ => {
-            println!("Unknown configuration key: {}", key);
+        _ => false,
+    };
+
+    // If not a known key, check metadata for custom config
+    if !known_key {
+        let db_config = config.get_database_config()?;
+        let db_path = PathBuf::from(db_config.path);
+        let vault = Vault::open(&db_path, "")?;
+
+        match vault.get_metadata(&key)? {
+            Some(value) => {
+                println!("{} = {}", key, value);
+            }
+            None => {
+                println!("Unknown configuration key: {}", key);
+            }
         }
     }
 
@@ -142,6 +173,21 @@ async fn execute_reset(force: bool) -> Result<()> {
     }
 
     println!("🔄 Configuration reset to defaults");
-    println!("   Note: Configuration persistence coming soon");
+
+    // Open vault and clear all custom metadata (keys starting with "custom.")
+    let config = ConfigManager::new()?;
+    let db_config = config.get_database_config()?;
+    let db_path = PathBuf::from(db_config.path);
+    let mut vault = Vault::open(&db_path, "")?;
+
+    let custom_keys = vault.list_metadata_keys("custom.")?;
+    for key in &custom_keys {
+        vault.delete_metadata(key)?;
+    }
+
+    if !custom_keys.is_empty() {
+        println!("   Cleared {} custom configuration value(s)", custom_keys.len());
+    }
+
     Ok(())
 }

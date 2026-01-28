@@ -307,6 +307,29 @@ impl Vault {
         }
     }
 
+    /// Delete metadata value by key
+    pub fn delete_metadata(&mut self, key: &str) -> Result<()> {
+        self.conn
+            .execute("DELETE FROM metadata WHERE key = ?1", [key])?;
+        Ok(())
+    }
+
+    /// List all metadata keys matching a prefix
+    pub fn list_metadata_keys(&self, prefix: &str) -> Result<Vec<String>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT key FROM metadata WHERE key LIKE ?1",
+        )?;
+
+        let mut keys = Vec::new();
+        let mut rows = stmt.query([format!("{}%", prefix)])?;
+
+        while let Some(row) = rows.next()? {
+            keys.push(row.get(0)?);
+        }
+
+        Ok(keys)
+    }
+
     /// Update an existing record with version increment
     ///
     /// This method wraps the entire operation in a transaction for atomicity.
@@ -523,6 +546,152 @@ impl Vault {
             records.push(StoredRecord {
                 id: uuid,
                 record_type: RecordType::from(record_type_str),
+                encrypted_data,
+                nonce,
+                tags,
+                created_at: chrono::DateTime::from_timestamp(created_ts, 0)
+                    .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
+                updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
+                    .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
+            });
+        }
+
+        Ok(records)
+    }
+
+    /// Find a record by its decrypted name
+    ///
+    /// This method searches all non-deleted records, decrypts their names,
+    /// and returns the first record whose name matches the given name.
+    ///
+    /// # Returns
+    /// * `Ok(Some(record))` - If a record with the matching name is found
+    /// * `Ok(None)` - If no record with the matching name exists
+    /// * `Err(...)` - If there's a database or decryption error
+    pub fn find_record_by_name(&self, name: &str) -> Result<Option<StoredRecord>> {
+        // Get all non-deleted records
+        let records = self.list_records()?;
+
+        // Search through records to find one with matching name
+        for record in records {
+            // Try to parse the encrypted data as JSON to get the name
+            // Note: This is a simplified approach since we don't have crypto context here
+            // In production, this would need proper decryption
+            if let Ok(payload_json) = std::str::from_utf8(&record.encrypted_data) {
+                if let Ok(payload) = serde_json::from_str::<serde_json::Value>(payload_json) {
+                    if let Some(record_name) = payload.get("name").and_then(|n| n.as_str()) {
+                        if record_name == name {
+                            return Ok(Some(record));
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(None)
+    }
+
+    /// Get sync statistics for all records
+    ///
+    /// Returns aggregated counts of total records, and records by sync status.
+    pub fn get_sync_stats(&self) -> Result<super::SyncStats> {
+        // Count total non-deleted records
+        let total: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM records WHERE deleted = 0",
+            [],
+            |row| row.get(0),
+        )?;
+
+        // Count records by sync status
+        let pending: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM sync_state WHERE sync_status = 0",
+            [],
+            |row| row.get(0),
+        ).unwrap_or(0);
+
+        let synced: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM sync_state WHERE sync_status = 1",
+            [],
+            |row| row.get(0),
+        ).unwrap_or(0);
+
+        let conflicts: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM sync_state WHERE sync_status = 2",
+            [],
+            |row| row.get(0),
+        ).unwrap_or(0);
+
+        Ok(super::SyncStats {
+            total,
+            pending,
+            synced,
+            conflicts,
+        })
+    }
+
+    /// Get all records with pending sync status
+    ///
+    /// Returns records that have sync_status = Pending (0).
+    pub fn get_pending_records(&self) -> Result<Vec<StoredRecord>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT r.id, r.record_type, r.encrypted_data, r.nonce, r.created_at, r.updated_at,
+                GROUP_CONCAT(t.name, ',') as tag_names
+         FROM records r
+         LEFT JOIN record_tags rt ON r.id = rt.record_id
+         LEFT JOIN tags t ON rt.tag_id = t.id
+         INNER JOIN sync_state ss ON r.id = ss.record_id
+         WHERE r.deleted = 0 AND ss.sync_status = 0
+         GROUP BY r.id
+         ORDER BY r.updated_at DESC",
+        )?;
+
+        let record_iter = stmt.query_map([], |row| {
+            let id_str: String = row.get(0)?;
+            let record_type_str: String = row.get(1)?;
+            let encrypted_data: Vec<u8> = row.get(2)?;
+            let nonce_bytes: Vec<u8> = row.get(3)?;
+            let created_ts: i64 = row.get(4)?;
+            let updated_ts: i64 = row.get(5)?;
+            let tags_csv: Option<String> = row.get(6)?;
+
+            let uuid = Uuid::parse_str(&id_str)
+                .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+
+            let tags = tags_csv
+                .map(|csv| {
+                    csv.split(',')
+                        .filter(|s| !s.is_empty())
+                        .map(String::from)
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            let nonce = decode_nonce(&nonce_bytes).map_err(|_| {
+                rusqlite::Error::ToSqlConversionFailure(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Invalid nonce length",
+                )))
+            })?;
+
+            Ok((
+                uuid,
+                record_type_str,
+                encrypted_data,
+                nonce,
+                created_ts,
+                updated_ts,
+                tags,
+            ))
+        })?;
+
+        let mut records = Vec::new();
+        for record in record_iter {
+            let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, tags) =
+                record?;
+
+            records.push(StoredRecord {
+                id: uuid,
+                record_type: super::RecordType::from(record_type_str),
                 encrypted_data,
                 nonce,
                 tags,

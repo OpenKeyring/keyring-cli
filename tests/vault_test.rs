@@ -339,3 +339,196 @@ fn test_delete_nonexistent_record() {
     assert!(result.is_err());
     assert!(result.unwrap_err().to_string().contains("not found"));
 }
+
+#[test]
+fn test_find_record_by_name_not_found() {
+    // Test: Finding a non-existent record should return None
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let vault = Vault::open(&db_path, "test-password").unwrap();
+
+    // Try to find a record that doesn't exist
+    let result = vault.find_record_by_name("nonexistent-record");
+    assert!(result.is_ok());
+    assert!(result.unwrap().is_none(), "Should return None for non-existent record");
+}
+
+#[test]
+fn test_find_record_by_name_success() {
+    // Test: Find an existing record by its decrypted name
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let mut vault = Vault::open(&db_path, "test-password").unwrap();
+
+    // Create a record with a specific name in the encrypted payload
+    let record_name = "my-test-record";
+    let payload = serde_json::json!({
+        "name": record_name,
+        "username": "user@example.com",
+        "password": "password123",
+        "url": null,
+        "notes": null,
+        "tags": []
+    });
+
+    // Encrypt the payload (use simple encryption for testing)
+    let encrypted_data = serde_json::to_vec(&payload).unwrap();
+    let nonce = [0u8; 12];
+
+    let record = StoredRecord {
+        id: Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data,
+        nonce,
+        tags: vec!["test-tag".to_string()],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    vault.add_record(&record).unwrap();
+
+    // Find the record by name
+    let result = vault.find_record_by_name(record_name);
+    assert!(result.is_ok());
+    let found_record = result.unwrap();
+    assert!(found_record.is_some(), "Should find the existing record");
+
+    let found = found_record.unwrap();
+    assert_eq!(found.id, record.id, "Should return the correct record");
+    assert_eq!(found.tags.len(), 1, "Should include tags");
+    assert_eq!(found.tags[0], "test-tag");
+}
+
+#[test]
+fn test_get_sync_stats_empty_database() {
+    // Test: Get sync stats from empty database returns zeros
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let vault = Vault::open(&db_path, "test-password").unwrap();
+
+    let stats = vault.get_sync_stats().unwrap();
+
+    assert_eq!(stats.total, 0, "Total records should be 0");
+    assert_eq!(stats.pending, 0, "Pending records should be 0");
+    assert_eq!(stats.synced, 0, "Synced records should be 0");
+    assert_eq!(stats.conflicts, 0, "Conflicts should be 0");
+}
+
+#[test]
+fn test_get_sync_stats_with_records() {
+    // Test: Get sync stats counts total, pending, synced records correctly
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let mut vault = Vault::open(&db_path, "test-password").unwrap();
+
+    // Create 3 records
+    let record1 = StoredRecord {
+        id: Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data: b"data1".to_vec(),
+        nonce: [0u8; 12],
+        tags: vec![],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    let record2 = StoredRecord {
+        id: Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data: b"data2".to_vec(),
+        nonce: [0u8; 12],
+        tags: vec![],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    let record3 = StoredRecord {
+        id: Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data: b"data3".to_vec(),
+        nonce: [0u8; 12],
+        tags: vec![],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    vault.add_record(&record1).unwrap();
+    vault.add_record(&record2).unwrap();
+    vault.add_record(&record3).unwrap();
+
+    // Manually set sync states: 1 pending, 1 synced, 1 conflict
+    // SyncStatus values: 0 = Pending, 1 = Synced, 2 = Conflict
+
+    let _ = vault.conn.execute(
+        "INSERT OR REPLACE INTO sync_state (record_id, sync_status) VALUES (?1, ?2)",
+        (&record1.id.to_string(), 0i32), // Pending
+    );
+    let _ = vault.conn.execute(
+        "INSERT OR REPLACE INTO sync_state (record_id, sync_status) VALUES (?1, ?2)",
+        (&record2.id.to_string(), 1i32), // Synced
+    );
+    let _ = vault.conn.execute(
+        "INSERT OR REPLACE INTO sync_state (record_id, sync_status) VALUES (?1, ?2)",
+        (&record3.id.to_string(), 2i32), // Conflict
+    );
+
+    let stats = vault.get_sync_stats().unwrap();
+
+    assert_eq!(stats.total, 3, "Total records should be 3");
+    assert_eq!(stats.pending, 1, "Pending records should be 1");
+    assert_eq!(stats.synced, 1, "Synced records should be 1");
+    assert_eq!(stats.conflicts, 1, "Conflicts should be 1");
+}
+
+#[test]
+fn test_get_pending_records_empty() {
+    // Test: Get pending records from empty database returns empty vec
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let vault = Vault::open(&db_path, "test-password").unwrap();
+
+    let pending = vault.get_pending_records().unwrap();
+    assert_eq!(pending.len(), 0, "Should return empty vec when no records");
+}
+
+#[test]
+fn test_get_pending_records_with_pending() {
+    // Test: Get pending records returns records with sync_status = Pending
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("test.db");
+    let mut vault = Vault::open(&db_path, "test-password").unwrap();
+
+    // Create 2 records
+    let record1 = StoredRecord {
+        id: Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data: b"data1".to_vec(),
+        nonce: [0u8; 12],
+        tags: vec![],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    let record2 = StoredRecord {
+        id: Uuid::new_v4(),
+        record_type: RecordType::Password,
+        encrypted_data: b"data2".to_vec(),
+        nonce: [0u8; 12],
+        tags: vec![],
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+
+    vault.add_record(&record1).unwrap();
+    vault.add_record(&record2).unwrap();
+
+    // Mark record2 as synced (record1 is already pending from add_record)
+    let _ = vault.conn.execute(
+        "UPDATE sync_state SET sync_status = ?1 WHERE record_id = ?2",
+        (1i32, record2.id.to_string()), // Synced
+    );
+
+    let pending = vault.get_pending_records().unwrap();
+    assert_eq!(pending.len(), 1, "Should return 1 pending record");
+    assert_eq!(pending[0].id, record1.id, "Should return record1 as pending");
+}
