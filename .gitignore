@@ -119,7 +119,10 @@ temp/
 
 # OpenKeyring specific
 passwords.db
+passwords.db-wal
+passwords.db-shm
 keys/
 device.id
 sync-backups/
 cache/
+CLAUDE.md

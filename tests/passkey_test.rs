@@ -1,5 +1,5 @@
 // tests/passkey_test.rs
-use keyring_cli::crypto::passkey::{Passkey, PasskeySeed};
+use keyring_cli::crypto::passkey::Passkey;
 
 #[test]
 fn test_generate_passkey_24_words() {

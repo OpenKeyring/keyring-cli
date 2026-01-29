@@ -1,21 +1,18 @@
-//! BIP39 mnemonic for recovery key
-
+// Legacy stub module - now uses passkey module internally
+use crate::crypto::passkey::Passkey;
 use anyhow::Result;
 
-/// Generate a BIP39 mnemonic phrase (12 or 24 words)
+/// Generate a BIP39 mnemonic (24 words)
 pub fn generate_mnemonic(word_count: usize) -> Result<String> {
-    match word_count {
-        12 | 24 => Ok(format!("stub-mnemonic-{}-words", word_count)),
-        _ => anyhow::bail!("word_count must be 12 or 24"),
-    }
+    let passkey = Passkey::generate(word_count)?;
+    Ok(passkey.to_words().join(" "))
 }
 
-/// Validate a BIP39 mnemonic phrase
+/// Validate a BIP39 mnemonic
 pub fn validate_mnemonic(mnemonic: &str) -> Result<bool> {
-    Ok(mnemonic.starts_with("stub-")) // Stub validation
-}
-
-/// Convert mnemonic to entropy bytes
-pub fn mnemonic_to_entropy(_mnemonic: &str) -> Result<Vec<u8>> {
-    Ok(vec![0u8; 32])
+    let words: Vec<String> = mnemonic.split_whitespace().map(String::from).collect();
+    match Passkey::from_words(&words) {
+        Ok(_) => Ok(true),
+        Err(_) => Ok(false),
+    }
 }

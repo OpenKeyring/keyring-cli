@@ -3,20 +3,26 @@
 pub mod aes256gcm;
 pub mod argon2id;
 pub mod bip39;
+pub mod hkdf;
 pub mod keystore;
 pub mod keywrap;
 pub mod passkey;
 pub mod record;
 
+use crate::crypto::passkey::Passkey;
 use crate::error::KeyringError;
 use anyhow::Result;
 use rand::prelude::IndexedRandom;
+use std::path::{Path, PathBuf};
 use zeroize::Zeroize;
+
+use base64::Engine;
 
 /// High-level crypto manager for key operations
 pub struct CryptoManager {
     master_key: Option<Vec<u8>>,
     salt: Option<[u8; 16]>,
+    device_key: Option<[u8; 32]>,
 }
 
 impl CryptoManager {
@@ -24,6 +30,7 @@ impl CryptoManager {
         Self {
             master_key: None,
             salt: None,
+            device_key: None,
         }
     }
 
@@ -123,6 +130,7 @@ impl CryptoManager {
             key.zeroize();
         }
         self.salt = None;
+        self.device_key = None;
     }
 
     /// Check if initialized
@@ -267,6 +275,109 @@ impl CryptoManager {
 
         Ok(pin)
     }
+
+    /// Initialize with Passkey root key architecture
+    ///
+    /// This method derives a device-specific Master Key from the root master key using HKDF,
+    /// wraps the Passkey seed with the device password, and stores it locally.
+    ///
+    /// # Arguments
+    /// * `passkey` - The BIP39 Passkey (24-word mnemonic)
+    /// * `device_password` - Password to wrap the Passkey seed
+    /// * `root_master_key` - The 32-byte root master key (cross-device)
+    /// * `device_id` - The unique device identifier
+    /// * `keyring_dir` - Optional custom keyring directory (uses default if None)
+    ///
+    /// # Returns
+    /// * `Ok(())` if initialization succeeds
+    /// * `Err(KeyringError)` if initialization fails
+    pub fn initialize_with_passkey(
+        &mut self,
+        passkey: &Passkey,
+        device_password: &str,
+        root_master_key: &[u8; 32],
+        device_id: &str,
+        keyring_dir: Option<&Path>,
+    ) -> Result<(), KeyringError> {
+        // Derive device-specific Master Key using HKDF
+        let device_master_key = crate::crypto::hkdf::derive_device_key(root_master_key, device_id);
+
+        // Store the device Master Key
+        self.master_key = Some(device_master_key.to_vec());
+        self.salt = None; // No salt used for Passkey initialization
+        self.device_key = Some(device_master_key);
+
+        // Convert Passkey to seed
+        let seed = passkey.to_seed(None).map_err(|e| KeyringError::Crypto {
+            context: format!("Failed to derive Passkey seed: {}", e),
+        })?;
+
+        // Derive wrapping key from device password
+        let password_salt = argon2id::generate_salt();
+        let wrapping_key_bytes = argon2id::derive_key(device_password, &password_salt)
+            .map_err(|e| KeyringError::Crypto {
+                context: format!("Failed to derive wrapping key: {}", e),
+            })?;
+        let wrapping_key: [u8; 32] = wrapping_key_bytes.try_into().map_err(|_| KeyringError::Crypto {
+            context: "Invalid wrapping key length".to_string(),
+        })?;
+
+        // Wrap the first 32 bytes of the Passkey seed (the seed is 64 bytes)
+        let seed_bytes: [u8; 32] = seed.0[0..32].try_into().map_err(|_| KeyringError::Crypto {
+            context: "Failed to extract first 32 bytes of seed".to_string(),
+        })?;
+        let (wrapped_seed, nonce) = crate::crypto::keywrap::wrap_key(&seed_bytes, &wrapping_key)
+            .map_err(|e| KeyringError::Crypto {
+                context: format!("Failed to wrap Passkey seed: {}", e),
+            })?;
+
+        // Get the keyring directory
+        let keyring_path = if let Some(custom_dir) = keyring_dir {
+            custom_dir.to_path_buf()
+        } else {
+            get_keyring_dir()?
+        };
+
+        // Create directory if it doesn't exist
+        std::fs::create_dir_all(&keyring_path).map_err(|e| KeyringError::Io(e))?;
+
+        // Store wrapped Passkey
+        let wrapped_passkey_path = keyring_path.join("wrapped_passkey");
+        let wrapped_data = serde_json::json!({
+            "wrapped_seed": base64::engine::general_purpose::STANDARD.encode(wrapped_seed),
+            "nonce": base64::engine::general_purpose::STANDARD.encode(nonce),
+            "salt": base64::engine::general_purpose::STANDARD.encode(password_salt),
+        });
+
+        std::fs::write(
+            &wrapped_passkey_path,
+            serde_json::to_string_pretty(&wrapped_data).map_err(|e| KeyringError::Serialization(e))?,
+        )
+        .map_err(|e| KeyringError::Io(e))?;
+
+        Ok(())
+    }
+
+    /// Get the current device Master Key
+    ///
+    /// Returns the device Master Key if initialized with Passkey, None otherwise.
+    pub fn get_device_key(&self) -> Option<[u8; 32]> {
+        self.device_key
+    }
+}
+
+/// Get the keyring directory path
+///
+/// Returns `~/.local/share/open-keyring` on Unix systems or
+/// `%LOCALAPPDATA%\open-keyring` on Windows.
+fn get_keyring_dir() -> Result<PathBuf, KeyringError> {
+    if let Some(home) = dirs::home_dir() {
+        Ok(home.join(".local/share/open-keyring"))
+    } else {
+        Err(KeyringError::Internal {
+            context: "Failed to determine home directory".to_string(),
+        })
+    }
 }
 
 impl Drop for CryptoManager {
@@ -337,5 +448,6 @@ pub use argon2id::{
     derive_key, derive_key_with_params, detect_device_capability, generate_salt, hash_password,
     verify_params_security, verify_password, Argon2Params, DeviceCapability, PasswordHash,
 };
+pub use hkdf::derive_device_key;
 pub use keystore::verify_recovery_key;
 pub use keywrap::{unwrap_key, wrap_key};
