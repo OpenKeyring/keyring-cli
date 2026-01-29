@@ -2,11 +2,13 @@ pub mod conflict;
 pub mod export;
 pub mod import;
 pub mod service;
+pub mod watcher;
 
 pub use conflict::{ConflictResolution, ConflictResolver};
 pub use export::SyncExporter;
 pub use import::SyncImporter;
 pub use service::{SyncService, SyncStats, SyncStatusInfo};
+pub use watcher::{SyncEvent, SyncWatcher};
 
 pub enum SyncStatus {
     Idle,

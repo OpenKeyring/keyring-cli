@@ -66,6 +66,9 @@ base64 = "0.22"
 tokio = { version = "1.38", features = ["full"] }
 async-trait = "0.1"
 
+# File system watcher
+notify = "6.0"
+
 # Cloud storage abstraction
 opendal = { version = "0.50", features = ["services-fs", "services-webdav", "services-sftp"] }
 
