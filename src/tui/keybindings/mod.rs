@@ -20,15 +20,15 @@ shortcuts:
   # Core operations
   new: "Ctrl+N"
   list: "Ctrl+L"
-  search: "Ctrl+S"
+  search: "Ctrl+F"
   show: "Ctrl+O"
   update: "Ctrl+E"
-  delete: "Ctrl+D"
+  delete: "Ctrl+X"
 
   # Navigation
   quit: "Ctrl+Q"
-  help: "Ctrl+H"
-  clear: "Ctrl+R"
+  help: "F1"
+  clear: "Ctrl+K"
 
   # Password operations
   copy_password: "Ctrl+Y"
@@ -36,4 +36,12 @@ shortcuts:
 
   # Config
   config: "Ctrl+P"
+
+  # Sync-related actions
+  open_settings: "F2"
+  sync_now: "F5"
+  show_help: "?"
+  refresh_view: "Ctrl+R"
+  save_config: "Ctrl+S"
+  disable_sync: "Ctrl+D"
 "#;

@@ -35,6 +35,18 @@ pub enum Action {
     CopyUsername,
     /// Open configuration
     Config,
+    /// Open settings screen
+    OpenSettings,
+    /// Trigger sync now
+    SyncNow,
+    /// Show help screen
+    ShowHelp,
+    /// Refresh current view
+    RefreshView,
+    /// Save configuration
+    SaveConfig,
+    /// Disable sync
+    DisableSync,
 }
 
 impl fmt::Display for Action {
@@ -52,6 +64,12 @@ impl fmt::Display for Action {
             Action::CopyPassword => write!(f, "CopyPassword"),
             Action::CopyUsername => write!(f, "CopyUsername"),
             Action::Config => write!(f, "Config"),
+            Action::OpenSettings => write!(f, "OpenSettings"),
+            Action::SyncNow => write!(f, "SyncNow"),
+            Action::ShowHelp => write!(f, "ShowHelp"),
+            Action::RefreshView => write!(f, "RefreshView"),
+            Action::SaveConfig => write!(f, "SaveConfig"),
+            Action::DisableSync => write!(f, "DisableSync"),
         }
     }
 }
@@ -72,6 +90,12 @@ impl Action {
             Action::CopyPassword => "/copy_password",
             Action::CopyUsername => "/copy_username",
             Action::Config => "/config",
+            Action::OpenSettings => "/settings",
+            Action::SyncNow => "/sync",
+            Action::ShowHelp => "/help",
+            Action::RefreshView => "/refresh",
+            Action::SaveConfig => "/save",
+            Action::DisableSync => "/disable_sync",
         }
     }
 
@@ -90,6 +114,12 @@ impl Action {
             Action::CopyPassword => "Copy password to clipboard",
             Action::CopyUsername => "Copy username to clipboard",
             Action::Config => "Open configuration",
+            Action::OpenSettings => "Open settings screen",
+            Action::SyncNow => "Trigger synchronization",
+            Action::ShowHelp => "Show help screen",
+            Action::RefreshView => "Refresh current view",
+            Action::SaveConfig => "Save configuration",
+            Action::DisableSync => "Disable synchronization",
         }
     }
 }
@@ -152,6 +182,12 @@ impl KeyBinding {
                 "copy_password" => Action::CopyPassword,
                 "copy_username" => Action::CopyUsername,
                 "config" => Action::Config,
+                "open_settings" => Action::OpenSettings,
+                "sync_now" => Action::SyncNow,
+                "show_help" => Action::ShowHelp,
+                "refresh_view" => Action::RefreshView,
+                "save_config" => Action::SaveConfig,
+                "disable_sync" => Action::DisableSync,
                 _ => continue, // Unknown action, skip
             };
 

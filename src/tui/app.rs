@@ -185,6 +185,28 @@ impl TuiApp {
             Action::Config => {
                 self.process_command("/config");
             }
+            Action::OpenSettings => {
+                self.output_lines
+                    .push("Opening settings... (TODO: implement settings screen)".to_string());
+            }
+            Action::SyncNow => {
+                self.output_lines
+                    .push("Syncing... (TODO: implement sync)".to_string());
+            }
+            Action::ShowHelp => {
+                self.show_help();
+            }
+            Action::RefreshView => {
+                self.output_lines.push("Refreshing view...".to_string());
+            }
+            Action::SaveConfig => {
+                self.output_lines
+                    .push("Saving configuration... (TODO: implement)".to_string());
+            }
+            Action::DisableSync => {
+                self.output_lines
+                    .push("Disabling sync... (TODO: implement)".to_string());
+            }
         }
     }
 
@@ -809,11 +831,11 @@ mod tests {
     }
 
     #[test]
-    fn test_keybinding_ctrl_h_triggers_help() {
+    fn test_keybinding_f1_triggers_help() {
         use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
         let mut app = TuiApp::new();
-        let ctrl_h = KeyEvent::new(KeyCode::Char('h'), KeyModifiers::CONTROL);
-        app.handle_key_event(ctrl_h);
+        let f1 = KeyEvent::new(KeyCode::F(1), KeyModifiers::empty());
+        app.handle_key_event(f1);
         assert!(app
             .output_lines
             .iter()
@@ -830,15 +852,15 @@ mod tests {
     }
 
     #[test]
-    fn test_keybinding_ctrl_r_clears_output() {
+    fn test_keybinding_ctrl_k_clears_output() {
         use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
         let mut app = TuiApp::new();
         // Add some output first
         app.output_lines.push("test line".to_string());
         assert!(app.output_lines.len() > 3);
 
-        let ctrl_r = KeyEvent::new(KeyCode::Char('r'), KeyModifiers::CONTROL);
-        app.handle_key_event(ctrl_r);
+        let ctrl_k = KeyEvent::new(KeyCode::Char('k'), KeyModifiers::CONTROL);
+        app.handle_key_event(ctrl_k);
         // Output should be cleared
         assert!(app.output_lines.is_empty() || app.output_lines.len() <= 3);
     }

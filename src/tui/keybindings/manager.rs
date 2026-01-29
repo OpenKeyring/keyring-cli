@@ -83,7 +83,7 @@ impl KeyBindingManager {
             Action::List,
         );
         keymap.insert(
-            KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL),
+            KeyEvent::new(KeyCode::Char('f'), KeyModifiers::CONTROL),
             Action::Search,
         );
         keymap.insert(
@@ -95,7 +95,7 @@ impl KeyBindingManager {
             Action::Update,
         );
         keymap.insert(
-            KeyEvent::new(KeyCode::Char('d'), KeyModifiers::CONTROL),
+            KeyEvent::new(KeyCode::Char('x'), KeyModifiers::CONTROL),
             Action::Delete,
         );
 
@@ -105,11 +105,11 @@ impl KeyBindingManager {
             Action::Quit,
         );
         keymap.insert(
-            KeyEvent::new(KeyCode::Char('h'), KeyModifiers::CONTROL),
+            KeyEvent::new(KeyCode::F(1), KeyModifiers::empty()),
             Action::Help,
         );
         keymap.insert(
-            KeyEvent::new(KeyCode::Char('r'), KeyModifiers::CONTROL),
+            KeyEvent::new(KeyCode::Char('k'), KeyModifiers::CONTROL),
             Action::Clear,
         );
 
@@ -127,6 +127,32 @@ impl KeyBindingManager {
         keymap.insert(
             KeyEvent::new(KeyCode::Char('p'), KeyModifiers::CONTROL),
             Action::Config,
+        );
+
+        // Sync-related actions
+        keymap.insert(
+            KeyEvent::new(KeyCode::F(2), KeyModifiers::empty()),
+            Action::OpenSettings,
+        );
+        keymap.insert(
+            KeyEvent::new(KeyCode::F(5), KeyModifiers::empty()),
+            Action::SyncNow,
+        );
+        keymap.insert(
+            KeyEvent::new(KeyCode::Char('?'), KeyModifiers::empty()),
+            Action::ShowHelp,
+        );
+        keymap.insert(
+            KeyEvent::new(KeyCode::Char('r'), KeyModifiers::CONTROL),
+            Action::RefreshView,
+        );
+        keymap.insert(
+            KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL),
+            Action::SaveConfig,
+        );
+        keymap.insert(
+            KeyEvent::new(KeyCode::Char('d'), KeyModifiers::CONTROL),
+            Action::DisableSync,
         );
 
         keymap

@@ -231,4 +231,23 @@ mod tests {
         assert_eq!(result.code, KeyCode::F(5));
         assert!(result.modifiers.contains(KeyModifiers::CONTROL));
     }
+
+    #[test]
+    fn test_parse_question_mark() {
+        let result = parse_shortcut("?").unwrap();
+        // ? is a special character that requires Shift
+        assert_eq!(result.code, KeyCode::Char('?'));
+    }
+
+    #[test]
+    fn test_parse_f1_f2_f5() {
+        let f1 = parse_shortcut("F1").unwrap();
+        assert_eq!(f1.code, KeyCode::F(1));
+
+        let f2 = parse_shortcut("F2").unwrap();
+        assert_eq!(f2.code, KeyCode::F(2));
+
+        let f5 = parse_shortcut("F5").unwrap();
+        assert_eq!(f5.code, KeyCode::F(5));
+    }
 }
