@@ -44,6 +44,7 @@ aes-gcm = "0.10"
 rand = "0.9"
 sha2 = "0.10"
 sha-1 = "0.10"
+hkdf = "0.12"
 zeroize = { version = "1.8", features = ["zeroize_derive"] }
 bip39 = { version = "2.0", features = ["rand"] }
 
