@@ -1,6 +1,8 @@
 // src/crypto/passkey.rs
 use anyhow::{anyhow, Result};
 use bip39::{Language, Mnemonic};
+use pbkdf2::pbkdf2_hmac;
+use sha2::Sha256;
 use zeroize::ZeroizeOnDrop;
 
 /// Passkey: 24-word BIP39 mnemonic as root key
@@ -53,6 +55,36 @@ impl Passkey {
     pub fn is_valid_word(word: &str) -> bool {
         let word_lower = word.to_lowercase();
         Language::English.word_list().contains(&word_lower.as_str())
+    }
+}
+
+impl PasskeySeed {
+    /// Derive root master key from Passkey seed using PBKDF2-SHA256
+    ///
+    /// This method derives a 32-byte root master key from the 64-byte Passkey seed
+    /// using PBKDF2-HMAC-SHA256 with 600,000 iterations as recommended by OWASP.
+    ///
+    /// # Arguments
+    /// * `salt` - 16-byte salt for key derivation
+    ///
+    /// # Returns
+    /// 32-byte root master key
+    ///
+    /// # Security Note
+    /// PBKDF2 with 600,000 iterations provides cross-device compatibility and
+    /// is recommended by OWASP for password-based key derivation (2023).
+    pub fn derive_root_master_key(&self, salt: &[u8; 16]) -> Result<[u8; 32]> {
+        let mut root_mk = [0u8; 32];
+
+        // Use PBKDF2-HMAC-SHA256 with 600,000 iterations (OWASP 2023 recommendation)
+        pbkdf2_hmac::<Sha256>(
+            &self.0,  // Use the full 64-byte seed as the input
+            salt,
+            600_000,  // OWASP 2023 recommendation for PBKDF2
+            &mut root_mk,
+        );
+
+        Ok(root_mk)
     }
 }
 
