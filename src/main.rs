@@ -305,6 +305,14 @@ enum Commands {
         #[arg(long, short)]
         edit: bool,
     },
+
+    /// Recover vault using Passkey
+    #[command(alias = "restore")]
+    Recover {
+        /// 24-word Passkey (optional, will prompt if not provided)
+        #[arg(long, short)]
+        passkey: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -581,6 +589,12 @@ async fn main() -> Result<()> {
                 edit,
             };
             commands::keybindings::manage_keybindings(args).await?
+        }
+
+        Commands::Recover { passkey } => {
+            use commands::recover::RecoverArgs;
+            let args = RecoverArgs { passkey };
+            commands::recover::execute(args).await?
         }
     }
 
