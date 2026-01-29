@@ -7,6 +7,7 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #260 | 12:35 AM | 🔴 | Fixed GitHub Actions Windows compatibility issues | ~281 |
 | #251 | 12:19 AM | 🔴 | Fixed Test Coverage workflow missing dependencies | ~264 |
 | #250 | " | 🔴 | Fixed Windows MSRV check shell conflict in security workflow | ~284 |
 </claude-mem-context>
