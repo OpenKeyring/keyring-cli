@@ -66,6 +66,9 @@ base64 = "0.22"
 tokio = { version = "1.38", features = ["full"] }
 async-trait = "0.1"
 
+# Cloud storage abstraction
+opendal = { version = "0.50", features = ["services-fs", "services-webdav", "services-sftp"] }
+
 # HTTP client for HIBP API
 # Use native-tls-vendored for static OpenSSL linking to avoid cross-compilation issues
 reqwest = { version = "0.12", features = ["json", "native-tls-vendored"] }
