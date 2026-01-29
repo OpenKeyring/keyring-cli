@@ -229,6 +229,18 @@ enum Commands {
         /// Verbose output
         #[arg(short, long)]
         verbose: bool,
+
+        /// Configure cloud storage provider
+        #[arg(long, short)]
+        config: bool,
+
+        /// Cloud storage provider (icloud, dropbox, gdrive, onedrive, webdav, sftp, aliyundrive, oss)
+        #[arg(long)]
+        provider: Option<String>,
+
+        /// Sync direction: up, down, or both
+        #[arg(short, long, default_value = "both")]
+        direction: String,
     },
 
     /// Show sync status
@@ -476,13 +488,16 @@ async fn main() -> Result<()> {
             dry_run,
             full,
             verbose: _,
+            config,
+            provider,
+            direction: _,
         } => {
             use commands::sync::SyncArgs;
             let args = SyncArgs {
                 dry_run,
                 full,
-                status: false,
-                provider: None,
+                status: config,
+                provider,
             };
             commands::sync::sync_records(args).await?
         }

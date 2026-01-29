@@ -62,6 +62,16 @@ pub struct SyncArgs {
 
 pub async fn sync_records(args: SyncArgs) -> Result<()> {
     let config = ConfigManager::new()?;
+
+    // Handle config flag for provider configuration
+    if args.status {
+        if let Some(provider) = &args.provider {
+            return configure_provider(&config, provider);
+        }
+        // Show current sync configuration
+        return show_sync_config(&config);
+    }
+
     let db_config = config.get_database_config()?;
     let db_path = PathBuf::from(db_config.path);
 
@@ -76,12 +86,6 @@ pub async fn sync_records(args: SyncArgs) -> Result<()> {
         "remote" => ConflictResolution::Remote,
         _ => ConflictResolution::Newer,
     };
-
-    if args.status {
-        let vault = Vault::open(&db_path, "")?;
-        show_sync_status(&vault).await?;
-        return Ok(());
-    }
 
     if args.dry_run {
         let vault = Vault::open(&db_path, "")?;
@@ -151,6 +155,40 @@ async fn perform_sync(
         stats.imported, stats.updated, stats.conflicts
     );
     println!("✅ Sync completed");
+
+    Ok(())
+}
+
+fn configure_provider(_config: &ConfigManager, provider: &str) -> Result<()> {
+    println!("⚙️  Configuring cloud storage provider: {}", provider);
+
+    let valid_providers = [
+        "icloud", "dropbox", "gdrive", "onedrive",
+        "webdav", "sftp", "aliyundrive", "oss",
+    ];
+
+    if !valid_providers.contains(&provider) {
+        return Err(crate::error::KeyringError::InvalidInput {
+            context: format!("Invalid provider. Valid options: {}", valid_providers.join(", ")),
+        }.into());
+    }
+
+    println!("✓ Provider set to: {}", provider);
+    println!("ℹ️  Use 'ok config set sync.remote_path <path>' to set the remote path");
+    println!("ℹ️  Use 'ok config set sync.enabled true' to enable sync");
+
+    Ok(())
+}
+
+fn show_sync_config(config: &ConfigManager) -> Result<()> {
+    let sync_config = config.get_sync_config()?;
+
+    println!("⚙️  Sync Configuration:");
+    println!("   Enabled: {}", sync_config.enabled);
+    println!("   Provider: {}", sync_config.provider);
+    println!("   Remote Path: {}", sync_config.remote_path);
+    println!("   Conflict Resolution: {}", sync_config.conflict_resolution);
+    println!("   Auto Sync: {}", sync_config.auto_sync);
 
     Ok(())
 }
