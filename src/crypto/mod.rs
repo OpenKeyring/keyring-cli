@@ -13,7 +13,7 @@ use crate::crypto::passkey::Passkey;
 use crate::error::KeyringError;
 use anyhow::Result;
 use rand::prelude::IndexedRandom;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use zeroize::Zeroize;
 
 use base64::Engine;
@@ -130,7 +130,9 @@ impl CryptoManager {
             key.zeroize();
         }
         self.salt = None;
-        self.device_key = None;
+        if let Some(mut key) = self.device_key.take() {
+            key.zeroize();
+        }
     }
 
     /// Check if initialized
@@ -285,8 +287,8 @@ impl CryptoManager {
     /// * `passkey` - The BIP39 Passkey (24-word mnemonic)
     /// * `device_password` - Password to wrap the Passkey seed
     /// * `root_master_key` - The 32-byte root master key (cross-device)
-    /// * `device_id` - The unique device identifier
-    /// * `keyring_dir` - Optional custom keyring directory (uses default if None)
+    /// * `device_index` - The device type index (MacOS, IOS, Windows, Linux, CLI)
+    /// * `kdf_nonce` - The 32-byte KDF nonce for entropy injection
     ///
     /// # Returns
     /// * `Ok(())` if initialization succeeds
@@ -296,11 +298,12 @@ impl CryptoManager {
         passkey: &Passkey,
         device_password: &str,
         root_master_key: &[u8; 32],
-        device_id: &str,
-        keyring_dir: Option<&Path>,
+        device_index: crate::crypto::hkdf::DeviceIndex,
+        kdf_nonce: &[u8; 32],
     ) -> Result<(), KeyringError> {
-        // Derive device-specific Master Key using HKDF
-        let device_master_key = crate::crypto::hkdf::derive_device_key(root_master_key, device_id);
+        // Use DeviceKeyDeriver to derive device-specific Master Key
+        let deriver = crate::crypto::hkdf::DeviceKeyDeriver::new(root_master_key, kdf_nonce);
+        let device_master_key = deriver.derive_device_key(device_index);
 
         // Store the device Master Key
         self.master_key = Some(device_master_key.to_vec());
@@ -331,12 +334,8 @@ impl CryptoManager {
                 context: format!("Failed to wrap Passkey seed: {}", e),
             })?;
 
-        // Get the keyring directory
-        let keyring_path = if let Some(custom_dir) = keyring_dir {
-            custom_dir.to_path_buf()
-        } else {
-            get_keyring_dir()?
-        };
+        // Get the keyring directory (use default path)
+        let keyring_path = get_keyring_dir()?;
 
         // Create directory if it doesn't exist
         std::fs::create_dir_all(&keyring_path).map_err(|e| KeyringError::Io(e))?;
@@ -448,6 +447,6 @@ pub use argon2id::{
     derive_key, derive_key_with_params, detect_device_capability, generate_salt, hash_password,
     verify_params_security, verify_password, Argon2Params, DeviceCapability, PasswordHash,
 };
-pub use hkdf::derive_device_key;
+pub use hkdf::{derive_device_key, DeviceIndex, DeviceKeyDeriver};
 pub use keystore::verify_recovery_key;
 pub use keywrap::{unwrap_key, wrap_key};

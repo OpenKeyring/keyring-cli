@@ -1,15 +1,10 @@
 //! Tests for CryptoManager Passkey integration and device key derivation
 
-use keyring_cli::crypto::{passkey::Passkey, CryptoManager};
+use keyring_cli::crypto::{passkey::Passkey, CryptoManager, DeviceIndex};
 use std::fs;
-use tempfile::TempDir;
 
 #[test]
 fn test_passkey_initialization_flow() {
-    // Create a temporary directory for testing
-    let temp_dir = TempDir::new().unwrap();
-    let keyring_dir = temp_dir.path();
-
     // Generate a new Passkey (24-word BIP39 mnemonic)
     let passkey = Passkey::generate(24).expect("Failed to generate passkey");
     let words = passkey.to_words();
@@ -29,13 +24,13 @@ fn test_passkey_initialization_flow() {
     // Create CryptoManager and initialize with Passkey
     let mut crypto_manager = CryptoManager::new();
 
-    // This should fail because the method doesn't exist yet
+    // Initialize with CLI device type
     let result = crypto_manager.initialize_with_passkey(
         &passkey,
         device_password,
         &root_master_key,
-        "test-device-cli-abc123",
-        Some(keyring_dir),
+        DeviceIndex::CLI,
+        &kdf_nonce,
     );
 
     // After implementation, this should succeed
@@ -46,8 +41,9 @@ fn test_passkey_initialization_flow() {
     assert!(device_key.is_some(), "Device key should be available after initialization");
     assert_eq!(device_key.unwrap().len(), 32, "Device key should be 32 bytes");
 
-    // Verify wrapped Passkey file was created
-    let wrapped_passkey_path = keyring_dir.join("wrapped_passkey");
+    // Verify wrapped Passkey file was created in default location
+    let home = dirs::home_dir().expect("Failed to get home directory");
+    let wrapped_passkey_path = home.join(".local/share/open-keyring/wrapped_passkey");
     assert!(wrapped_passkey_path.exists(), "Wrapped Passkey file should be created");
 
     // Verify the wrapped Passkey can be read and decrypted
@@ -58,7 +54,7 @@ fn test_passkey_initialization_flow() {
     assert!(!wrapped_content.is_empty(), "Wrapped Passkey should not be empty");
 
     // Cleanup
-    drop(temp_dir);
+    let _ = std::fs::remove_file(&wrapped_passkey_path);
 }
 
 #[test]
@@ -68,9 +64,12 @@ fn test_device_key_derivation_and_use() {
     // Same root master key
     let root_master_key = [1u8; 32];
 
-    // Different device IDs should produce different device keys
-    let device_id_1 = "macos-MacBookPro-abc123";
-    let device_id_2 = "ios-iPhone15-def456";
+    // Same KDF nonce
+    let kdf_nonce = [2u8; 32];
+
+    // Different device types should produce different device keys
+    let device_index_1 = DeviceIndex::MacOS;
+    let device_index_2 = DeviceIndex::IOS;
 
     let mut crypto_manager_1 = CryptoManager::new();
     let mut crypto_manager_2 = CryptoManager::new();
@@ -79,17 +78,14 @@ fn test_device_key_derivation_and_use() {
     let passkey = Passkey::generate(24).expect("Failed to generate passkey");
     let device_password = "test-password";
 
-    let temp_dir = TempDir::new().unwrap();
-    let keyring_dir = temp_dir.path();
-
-    // Initialize both devices with same root key but different device IDs
+    // Initialize both devices with same root key but different device types
     crypto_manager_1
         .initialize_with_passkey(
             &passkey,
             device_password,
             &root_master_key,
-            device_id_1,
-            Some(keyring_dir),
+            device_index_1,
+            &kdf_nonce,
         )
         .expect("Device 1 initialization should succeed");
 
@@ -98,8 +94,8 @@ fn test_device_key_derivation_and_use() {
             &passkey,
             device_password,
             &root_master_key,
-            device_id_2,
-            Some(keyring_dir),
+            device_index_2,
+            &kdf_nonce,
         )
         .expect("Device 2 initialization should succeed");
 
@@ -107,21 +103,21 @@ fn test_device_key_derivation_and_use() {
     let device_key_1 = crypto_manager_1.get_device_key().expect("Device 1 key should exist");
     let device_key_2 = crypto_manager_2.get_device_key().expect("Device 2 key should exist");
 
-    // Device keys should be different for different device IDs
+    // Device keys should be different for different device types
     assert_ne!(
         device_key_1, device_key_2,
-        "Different device IDs should produce different device keys"
+        "Different device types should produce different device keys"
     );
 
-    // But same device ID should produce same device key (deterministic)
+    // But same device type should produce same device key (deterministic)
     let mut crypto_manager_3 = CryptoManager::new();
     crypto_manager_3
         .initialize_with_passkey(
             &passkey,
             device_password,
             &root_master_key,
-            device_id_1,
-            Some(keyring_dir),
+            device_index_1,
+            &kdf_nonce,
         )
         .expect("Device 3 initialization should succeed");
 
@@ -129,11 +125,12 @@ fn test_device_key_derivation_and_use() {
 
     assert_eq!(
         device_key_1, device_key_3,
-        "Same device ID should produce same device key (deterministic)"
+        "Same device type should produce same device key (deterministic)"
     );
 
     // Cleanup
-    drop(temp_dir);
+    let home = dirs::home_dir().expect("Failed to get home directory");
+    let _ = std::fs::remove_file(home.join(".local/share/open-keyring/wrapped_passkey"));
 }
 
 #[test]
@@ -149,21 +146,22 @@ fn test_get_device_key_returns_none_when_not_initialized() {
 fn test_get_keyring_dir() {
     // Test that get_keyring_dir returns the correct path
     // This will be a private helper function, so we test it indirectly
-    // through initialize_with_passkey with None path
+    // through initialize_with_passkey
 
     let passkey = Passkey::generate(24).expect("Failed to generate passkey");
     let root_master_key = [1u8; 32];
     let device_password = "test-password";
+    let kdf_nonce = [2u8; 32];
 
     let mut crypto_manager = CryptoManager::new();
 
-    // Initialize with None path (should use default keyring dir)
+    // Initialize (should use default keyring dir)
     let result = crypto_manager.initialize_with_passkey(
         &passkey,
         device_password,
         &root_master_key,
-        "test-device",
-        None, // Use default path
+        DeviceIndex::Windows,
+        &kdf_nonce,
     );
 
     // This should create the wrapped_passkey in the default location
@@ -178,18 +176,19 @@ fn test_get_keyring_dir() {
     // Note: This might fail if the directory doesn't exist or permissions are wrong
     // In a real test, we'd need to set up the environment properly
     // For now, we'll just check that the initialization succeeded
+
+    // Cleanup
+    let _ = std::fs::remove_file(home.join(".local/share/open-keyring/wrapped_passkey"));
 }
 
 #[test]
 fn test_passkey_seed_wrapping_and_storage() {
     // Test that the Passkey seed is properly wrapped and stored
 
-    let temp_dir = TempDir::new().unwrap();
-    let keyring_dir = temp_dir.path();
-
     let passkey = Passkey::generate(24).expect("Failed to generate passkey");
     let root_master_key = [1u8; 32];
     let device_password = "strong-device-password-123";
+    let kdf_nonce = [3u8; 32];
 
     let mut crypto_manager = CryptoManager::new();
 
@@ -198,13 +197,14 @@ fn test_passkey_seed_wrapping_and_storage() {
             &passkey,
             device_password,
             &root_master_key,
-            "test-device",
-            Some(keyring_dir),
+            DeviceIndex::Linux,
+            &kdf_nonce,
         )
         .expect("Initialization should succeed");
 
-    // Read the wrapped Passkey file
-    let wrapped_passkey_path = keyring_dir.join("wrapped_passkey");
+    // Read the wrapped Passkey file from default location
+    let home = dirs::home_dir().expect("Failed to get home directory");
+    let wrapped_passkey_path = home.join(".local/share/open-keyring/wrapped_passkey");
     let wrapped_content = fs::read_to_string(&wrapped_passkey_path)
         .expect("Failed to read wrapped Passkey");
 
@@ -212,9 +212,10 @@ fn test_passkey_seed_wrapping_and_storage() {
     let wrapped_data: serde_json::Value = serde_json::from_str(&wrapped_content)
         .expect("Failed to parse wrapped Passkey as JSON");
 
-    // Should have wrapped_seed and nonce fields
+    // Should have wrapped_seed, nonce, and salt fields
     assert!(wrapped_data.get("wrapped_seed").is_some(), "Should have wrapped_seed field");
     assert!(wrapped_data.get("nonce").is_some(), "Should have nonce field");
+    assert!(wrapped_data.get("salt").is_some(), "Should have salt field");
 
     // The wrapped seed should be base64-encoded (not plaintext)
     let wrapped_seed = wrapped_data["wrapped_seed"].as_str().unwrap();
@@ -222,5 +223,5 @@ fn test_passkey_seed_wrapping_and_storage() {
             "Wrapped seed should not contain plaintext mnemonic");
 
     // Cleanup
-    drop(temp_dir);
+    let _ = std::fs::remove_file(&wrapped_passkey_path);
 }

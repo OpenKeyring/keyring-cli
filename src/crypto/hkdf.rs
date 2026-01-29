@@ -8,6 +8,82 @@
 use hkdf::Hkdf;
 use sha2::Sha256;
 
+/// Device index for key derivation
+///
+/// Represents different platform types for device-specific key derivation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum DeviceIndex {
+    MacOS,
+    IOS,
+    Windows,
+    Linux,
+    CLI,
+}
+
+impl DeviceIndex {
+    /// Convert to string for use in HKDF info parameter
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            DeviceIndex::MacOS => "macos",
+            DeviceIndex::IOS => "ios",
+            DeviceIndex::Windows => "windows",
+            DeviceIndex::Linux => "linux",
+            DeviceIndex::CLI => "cli",
+        }
+    }
+}
+
+/// Device key deriver for batch derivation
+///
+/// This struct encapsulates the root master key and KDF nonce for efficient
+/// batch derivation of multiple device keys.
+pub struct DeviceKeyDeriver {
+    root_master_key: [u8; 32],
+    kdf_nonce: [u8; 32],
+}
+
+impl DeviceKeyDeriver {
+    /// Create a new DeviceKeyDeriver
+    ///
+    /// # Arguments
+    /// * `root_master_key` - The 32-byte root master key (cross-device)
+    /// * `kdf_nonce` - The 32-byte KDF nonce for entropy injection
+    pub fn new(root_master_key: &[u8; 32], kdf_nonce: &[u8; 32]) -> Self {
+        let mut key = [0u8; 32];
+        key.copy_from_slice(root_master_key);
+
+        let mut nonce = [0u8; 32];
+        nonce.copy_from_slice(kdf_nonce);
+
+        Self {
+            root_master_key: key,
+            kdf_nonce: nonce,
+        }
+    }
+
+    /// Derive a device-specific key
+    ///
+    /// # Arguments
+    /// * `device_index` - The device type index
+    ///
+    /// # Returns
+    /// A 32-byte device-specific key
+    pub fn derive_device_key(&self, device_index: DeviceIndex) -> [u8; 32] {
+        // Combine root_master_key with kdf_nonce as salt for entropy injection
+        let salt = Some(&self.kdf_nonce[..]);
+
+        // Create HKDF instance with SHA256
+        let hk = Hkdf::<Sha256>::new(salt, &self.root_master_key);
+
+        // Derive device key using device_index as info
+        let mut device_key = [0u8; 32];
+        hk.expand(device_index.as_str().as_bytes(), &mut device_key)
+            .expect("HKDF expansion should not fail with valid parameters");
+
+        device_key
+    }
+}
+
 /// Derive a device-specific key from the master key using HKDF-SHA256.
 ///
 /// # Arguments
