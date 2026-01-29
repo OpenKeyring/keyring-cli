@@ -20,13 +20,13 @@ fn cli_smoke_flow() {
 
     // Step 1: Generate a password
     let generate_output = Command::new(&ok_bin)
-        .args(["generate", "--name", "github", "--length", "16"])
+        .args(["new", "--name", "github", "--length", "16"])
         .output()
-        .expect("failed to run ok generate");
+        .expect("failed to run ok new");
 
     assert!(
         generate_output.status.success(),
-        "generate command should succeed. stderr: {}",
+        "new command should succeed. stderr: {}",
         String::from_utf8_lossy(&generate_output.stderr)
     );
 

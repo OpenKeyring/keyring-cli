@@ -24,7 +24,7 @@ This guide covers common workflows and best practices for using OpenKeyring CLI 
 When you first run `ok`, it will automatically initialize:
 
 ```bash
-ok generate --name "example" --length 16
+ok new --name "example" --length 16
 ```
 
 You'll be prompted to:
@@ -36,15 +36,17 @@ You'll be prompted to:
 ### Your First Password
 
 ```bash
-# Generate a random password
-ok generate --name "github" --length 20
+# Generate a random password (new command)
+ok new --name "github" --length 20
 
 # Generate a memorable password
-ok generate --name "wifi" --memorable --words 4
+ok new --name "wifi" --memorable --words 4
 # Example: "correct-horse-battery-staple"
 
 # Generate a PIN
-ok generate --name "phone" --pin --length 6
+ok new --name "phone" --pin --length 6
+
+# Note: 'ok generate' still works for backward compatibility
 ```
 
 ### Finding Your Passwords
@@ -73,8 +75,8 @@ ok show "github" --copy
 ### Adding Passwords
 
 ```bash
-# Generate and store a new password
-ok generate --name "service" --length 16
+# Generate and store a new password (new command)
+ok new --name "service" --length 16
 
 # Add an existing password
 ok add --name "bank" --password "MyP@ssw0rd" \
@@ -85,8 +87,8 @@ ok add --name "bank" --password "MyP@ssw0rd" \
 ### Organizing with Tags
 
 ```bash
-# Add tags when creating
-ok generate --name "work-github" --length 16 --tags "work,git"
+# Add tags when creating (new command)
+ok new --name "work-github" --length 16 --tags "work,git"
 
 # Add tags later
 ok update "github" --add-tags "social,dev"
@@ -252,7 +254,7 @@ ok config set sync.conflict_resolution newer  # or: newer, older, manual
 
 ## Password Health
 
-### Checking Password Strength
+### CLI Mode
 
 ```bash
 # Check for weak passwords
@@ -266,6 +268,25 @@ ok health --duplicate
 
 # Check everything
 ok health --leaks --weak --duplicate
+```
+
+### TUI Mode
+
+In TUI mode, use the `/health` command:
+
+```
+/health --weak      Check for weak passwords
+/health --duplicate Check for duplicate passwords
+/health --leaks     Check for leaked passwords (HIBP API)
+/health --all       Run all health checks
+```
+
+Launch TUI and run health checks:
+```bash
+ok  # Launch TUI
+
+# In TUI, type:
+/health --all
 ```
 
 ### Understanding the Report

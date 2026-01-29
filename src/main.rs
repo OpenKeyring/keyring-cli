@@ -37,8 +37,8 @@ struct Cli {
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Generate a new password
-    #[command(alias = "gen")]
-    Generate {
+    #[command(alias = "generate")]
+    New {
         /// Password name (required)
         #[arg(short, long)]
         name: String,
@@ -363,7 +363,7 @@ async fn main() -> Result<()> {
 
     // Execute command (CLI mode)
     match cli.command.unwrap() {
-        Commands::Generate {
+        Commands::New {
             name,
             length,
             numbers,
@@ -378,8 +378,8 @@ async fn main() -> Result<()> {
             copy,
             sync,
         } => {
-            use commands::generate::GenerateArgs;
-            let args = GenerateArgs {
+            use commands::generate::NewArgs;
+            let args = NewArgs {
                 name,
                 length,
                 numbers,

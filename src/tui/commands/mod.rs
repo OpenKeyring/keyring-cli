@@ -4,6 +4,7 @@
 
 pub mod config;
 pub mod delete;
+pub mod health;
 pub mod list;
 pub mod new;
 pub mod search;
@@ -17,6 +18,8 @@ pub mod update;
 pub use config::handle_config;
 #[allow(unused_imports)]
 pub use delete::handle_delete;
+#[allow(unused_imports)]
+pub use health::handle_health;
 #[allow(unused_imports)]
 pub use list::handle_list;
 #[allow(unused_imports)]

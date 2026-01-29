@@ -1,4 +1,4 @@
-//! Generate password command
+//! Password generation command (accessible via 'new' subcommand)
 //!
 //! This module provides password generation functionality with three types:
 //! - Random: High-entropy random passwords with special characters
@@ -22,9 +22,9 @@ use rand::Rng;
 use std::io::Write;
 use std::path::PathBuf;
 
-/// Arguments for the generate command
+/// Arguments for the generate command (now accessible via 'new' subcommand)
 #[derive(Parser, Debug)]
-pub struct GenerateArgs {
+pub struct NewArgs {
     /// Name/identifier for the password
     #[clap(short, long)]
     pub name: String,
@@ -78,7 +78,7 @@ pub struct GenerateArgs {
     pub copy: bool,
 }
 
-impl GenerateArgs {
+impl NewArgs {
     /// Validate the generate arguments
     pub fn validate(&self) -> Result<()> {
         if self.name.is_empty() {
@@ -350,7 +350,7 @@ pub fn generate_pin(length: usize) -> Result<String> {
 }
 
 /// Execute the generate command
-pub async fn execute(args: GenerateArgs) -> Result<()> {
+pub async fn execute(args: NewArgs) -> Result<()> {
     // Validate arguments
     args.validate()?;
 
@@ -492,8 +492,8 @@ pub use execute as generate_password;
 mod tests {
     use super::*;
 
-    fn create_test_args() -> GenerateArgs {
-        GenerateArgs {
+    fn create_test_args() -> NewArgs {
+        NewArgs {
             name: "test".to_string(),
             length: 16,
             memorable: false,

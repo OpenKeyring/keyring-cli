@@ -66,7 +66,7 @@ When you run your first command, OpenKeyring automatically initializes:
 
 ```bash
 # First command triggers initialization
-ok generate --name "github" --length 16
+ok new --name "github" --length 16
 
 # You'll see:
 # 🔐 Enter master password: [your password]
@@ -85,8 +85,8 @@ The recovery key is a 24-word BIP39 mnemonic phrase that serves as a backup to y
 **Basic Usage**
 
 ```bash
-# Generate a password
-ok generate --name "github" --length 16
+# Generate a password (new command)
+ok new --name "github" --length 16
 
 # List all passwords
 ok list
@@ -128,15 +128,16 @@ ok list --no-tui
 **TUI Commands**
 
 ```
-/list [filter]    List password records
-/show <name>      Show a password record
-/new              Create a new record
-/update <name>    Update a record
-/delete <name>    Delete a record
-/search <query>   Search records
-/config [sub]     Manage configuration
-/keybindings list Show keyboard shortcuts
-/exit             Exit TUI
+/list [filter]       List password records
+/show <name>         Show a password record
+/new                 Create a new record
+/update <name>       Update a record
+/delete <name>       Delete a record
+/search <query>      Search records
+/health [flags]      Check password health
+/config [sub]        Manage configuration
+/keybindings list    Show keyboard shortcuts
+/exit                Exit TUI
 ```
 
 ## Keyboard Shortcuts
@@ -262,10 +263,12 @@ The TUI status bar displays (from left to right):
 ### Password Management
 
 ```bash
-# Generate passwords
-ok generate --name "service" --length 16
-ok generate --name "memorable" --memorable --words 4
-ok generate --name "pin" --pin --length 6
+# Generate passwords (new command - shorter and more intuitive)
+ok new --name "service" --length 16
+ok new --name "memorable" --memorable --words 4
+ok new --name "pin" --pin --length 6
+
+# Note: 'ok generate' still works for backward compatibility
 
 # List records
 ok list

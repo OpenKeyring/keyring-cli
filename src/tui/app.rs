@@ -213,6 +213,7 @@ impl TuiApp {
             "  /update <name>    - Update a record".to_string(),
             "  /delete <name>    - Delete a record".to_string(),
             "  /search <query>   - Search records".to_string(),
+            "  /health [flags]   - Check password health".to_string(),
             "  /config [sub]     - Manage configuration".to_string(),
             "  /exit             - Exit TUI".to_string(),
             "".to_string(),
@@ -337,7 +338,7 @@ impl TuiApp {
 
     /// Process a command
     pub(crate) fn process_command(&mut self, cmd: &str) {
-        use crate::tui::commands::{config, delete, list, new, search, show, update};
+        use crate::tui::commands::{config, delete, health, list, new, search, show, update};
 
         self.output_lines.push(format!("> {}", cmd));
 
@@ -382,6 +383,10 @@ impl TuiApp {
                 Err(e) => self.output_lines.push(format!("Error: {}", e)),
             },
             "/search" => match search::handle_search(args) {
+                Ok(lines) => self.output_lines.extend(lines),
+                Err(e) => self.output_lines.push(format!("Error: {}", e)),
+            },
+            "/health" => match health::handle_health(args) {
                 Ok(lines) => self.output_lines.extend(lines),
                 Err(e) => self.output_lines.push(format!("Error: {}", e)),
             },

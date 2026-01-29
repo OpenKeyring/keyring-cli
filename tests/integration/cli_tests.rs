@@ -4,7 +4,7 @@
 //! Tests follow the TDD approach where tests are written first,
 //! then implementation follows to make tests pass.
 
-use keyring_cli::cli::commands::generate::{GenerateArgs, generate_password};
+use keyring_cli::cli::commands::generate::{NewArgs, generate_password};
 use keyring_cli::cli::ConfigManager;
 use keyring_cli::crypto::CryptoManager;
 use keyring_cli::db::vault::Vault;

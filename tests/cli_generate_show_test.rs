@@ -16,9 +16,9 @@ fn cli_generate_then_show_decrypts() {
     let ok_bin = env!("CARGO_BIN_EXE_ok");
 
     let generate_output = Command::new(&ok_bin)
-        .args(["generate", "--name", "github", "--length", "16"])
+        .args(["new", "--name", "github", "--length", "16"])
         .output()
-        .expect("failed to run ok generate");
+        .expect("failed to run ok new");
 
     // Print generate output for debugging
     let generate_stderr = String::from_utf8_lossy(&generate_output.stderr);
