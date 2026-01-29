@@ -7,6 +7,8 @@
 
 use hkdf::Hkdf;
 use sha2::Sha256;
+use std::fmt;
+use zeroize::ZeroizeOnDrop;
 
 /// Device index for key derivation
 ///
@@ -37,9 +39,19 @@ impl DeviceIndex {
 ///
 /// This struct encapsulates the root master key and KDF nonce for efficient
 /// batch derivation of multiple device keys.
+#[derive(ZeroizeOnDrop)]
 pub struct DeviceKeyDeriver {
     root_master_key: [u8; 32],
     kdf_nonce: [u8; 32],
+}
+
+impl fmt::Debug for DeviceKeyDeriver {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("DeviceKeyDeriver")
+            .field("root_master_key", &"<redacted>")
+            .field("kdf_nonce", &"<redacted>")
+            .finish()
+    }
 }
 
 impl DeviceKeyDeriver {
@@ -151,9 +163,18 @@ mod tests {
         let key2 = derive_device_key(&master_key, "device-2");
         let key3 = derive_device_key(&master_key, "device-3");
 
-        assert_ne!(key1, key2, "Different device IDs must produce different keys");
-        assert_ne!(key2, key3, "Different device IDs must produce different keys");
-        assert_ne!(key1, key3, "Different device IDs must produce different keys");
+        assert_ne!(
+            key1, key2,
+            "Different device IDs must produce different keys"
+        );
+        assert_ne!(
+            key2, key3,
+            "Different device IDs must produce different keys"
+        );
+        assert_ne!(
+            key1, key3,
+            "Different device IDs must produce different keys"
+        );
     }
 
     #[test]
@@ -192,7 +213,11 @@ mod tests {
         let master_key = [0u8; 32];
 
         let key = derive_device_key(&master_key, "");
-        assert_eq!(key.len(), 32, "Empty device ID must produce valid 32-byte key");
+        assert_eq!(
+            key.len(),
+            32,
+            "Empty device ID must produce valid 32-byte key"
+        );
     }
 
     #[test]
@@ -278,13 +303,8 @@ mod tests {
         }
 
         // Verify all keys are unique
-        let unique_keys: std::collections::HashSet<[u8; 32]> =
-            keys.iter().cloned().collect();
-        assert_eq!(
-            unique_keys.len(),
-            100,
-            "All derived keys must be unique"
-        );
+        let unique_keys: std::collections::HashSet<[u8; 32]> = keys.iter().cloned().collect();
+        assert_eq!(unique_keys.len(), 100, "All derived keys must be unique");
     }
 
     #[test]
@@ -354,8 +374,7 @@ mod tests {
         }
 
         // All should be unique
-        let unique_count: std::collections::HashSet<&[u8; 32]> =
-            keys.iter().collect();
+        let unique_count: std::collections::HashSet<&[u8; 32]> = keys.iter().collect();
         assert_eq!(
             unique_count.len(),
             device_ids.len(),
@@ -402,8 +421,8 @@ mod tests {
 
         // Test encryption/decryption
         let plaintext = b"sensitive test data";
-        let (ciphertext, nonce) = encrypt(plaintext, &device_key)
-            .expect("Device key should support encryption");
+        let (ciphertext, nonce) =
+            encrypt(plaintext, &device_key).expect("Device key should support encryption");
 
         let decrypted = decrypt(&ciphertext, &nonce, &device_key)
             .expect("Device key should support decryption");
@@ -430,8 +449,8 @@ mod tests {
 
         // Encrypt with device 1 key
         let plaintext = b"secret data";
-        let (ciphertext, nonce) = encrypt(plaintext, &device_key_1)
-            .expect("Encryption should succeed");
+        let (ciphertext, nonce) =
+            encrypt(plaintext, &device_key_1).expect("Encryption should succeed");
 
         // Try to decrypt with device 2 key (should fail)
         let result = decrypt(&ciphertext, &nonce, &device_key_2);

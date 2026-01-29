@@ -19,10 +19,7 @@ use std::path::PathBuf;
 /// * `Result<Vec<String>>` - Formatted output lines for TUI display
 #[allow(dead_code)]
 pub fn handle_health(args: Vec<&str>) -> Result<Vec<String>> {
-    let mut output = vec![
-        "Password Health Check".to_string(),
-        "".to_string()
-    ];
+    let mut output = vec!["Password Health Check".to_string(), "".to_string()];
 
     // Parse arguments
     let mut check_weak = false;
@@ -185,7 +182,12 @@ pub fn handle_health(args: Vec<&str>) -> Result<Vec<String>> {
     let report = HealthReport::from_issues(records.len(), issues);
 
     // Format results for TUI display
-    output.extend_from_slice(&format_health_report(&report, check_weak, check_duplicates, check_leaks));
+    output.extend_from_slice(&format_health_report(
+        &report,
+        check_weak,
+        check_duplicates,
+        check_leaks,
+    ));
 
     Ok(output)
 }
@@ -205,15 +207,24 @@ fn format_health_report(
     output.push("".to_string());
 
     if show_weak {
-        output.push(format!("Weak passwords:       {}", report.weak_password_count));
+        output.push(format!(
+            "Weak passwords:       {}",
+            report.weak_password_count
+        ));
     }
 
     if show_dupes {
-        output.push(format!("Duplicate passwords:  {}", report.duplicate_password_count));
+        output.push(format!(
+            "Duplicate passwords:  {}",
+            report.duplicate_password_count
+        ));
     }
 
     if show_leaks {
-        output.push(format!("Compromised:          {}", report.compromised_password_count));
+        output.push(format!(
+            "Compromised:          {}",
+            report.compromised_password_count
+        ));
     }
 
     output.push("".to_string());
@@ -245,7 +256,12 @@ fn format_health_report(
                     crate::health::report::Severity::Medium => "[*]",
                     crate::health::report::Severity::Low => "[.]",
                 };
-                output.push(format!("  {} {} - {}", icon, issue.record_names.join(", "), issue.description));
+                output.push(format!(
+                    "  {} {} - {}",
+                    icon,
+                    issue.record_names.join(", "),
+                    issue.description
+                ));
             }
             output.push("".to_string());
         }

@@ -32,7 +32,10 @@ impl TestEnv {
 
         let db_path = data_dir.join("passwords.db");
 
-        Self { _temp_dir: temp_dir, db_path }
+        Self {
+            _temp_dir: temp_dir,
+            db_path,
+        }
     }
 }
 
@@ -144,8 +147,16 @@ fn test_config_reset_clears_custom_metadata() {
     let value1 = vault.get_metadata("custom.key1").unwrap();
     let value2 = vault.get_metadata("custom.key2").unwrap();
 
-    assert_eq!(value1, None, "Custom metadata should be cleared after reset, got {:?}", value1);
-    assert_eq!(value2, None, "Custom metadata should be cleared after reset, got {:?}", value2);
+    assert_eq!(
+        value1, None,
+        "Custom metadata should be cleared after reset, got {:?}",
+        value1
+    );
+    assert_eq!(
+        value2, None,
+        "Custom metadata should be cleared after reset, got {:?}",
+        value2
+    );
 }
 
 #[test]

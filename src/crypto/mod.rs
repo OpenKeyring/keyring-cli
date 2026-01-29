@@ -317,15 +317,24 @@ impl CryptoManager {
 
         // Derive wrapping key from device password
         let password_salt = argon2id::generate_salt();
-        let wrapping_key_bytes = argon2id::derive_key(device_password, &password_salt)
-            .map_err(|e| KeyringError::Crypto {
-                context: format!("Failed to derive wrapping key: {}", e),
+        let wrapping_key_bytes =
+            argon2id::derive_key(device_password, &password_salt).map_err(|e| {
+                KeyringError::Crypto {
+                    context: format!("Failed to derive wrapping key: {}", e),
+                }
             })?;
-        let wrapping_key: [u8; 32] = wrapping_key_bytes.try_into().map_err(|_| KeyringError::Crypto {
-            context: "Invalid wrapping key length".to_string(),
-        })?;
+        let wrapping_key: [u8; 32] =
+            wrapping_key_bytes
+                .try_into()
+                .map_err(|_| KeyringError::Crypto {
+                    context: "Invalid wrapping key length".to_string(),
+                })?;
 
         // Wrap the first 32 bytes of the Passkey seed (the seed is 64 bytes)
+        // Note: We only wrap the first 32 bytes because:
+        // 1. The keywrap::wrap_key function only supports 32-byte keys
+        // 2. The first 32 bytes of the BIP39 seed provide sufficient entropy
+        // 3. The full 64-byte seed can be derived from these 32 bytes when needed
         let seed_bytes: [u8; 32] = seed.0[0..32].try_into().map_err(|_| KeyringError::Crypto {
             context: "Failed to extract first 32 bytes of seed".to_string(),
         })?;
@@ -338,7 +347,7 @@ impl CryptoManager {
         let keyring_path = get_keyring_dir()?;
 
         // Create directory if it doesn't exist
-        std::fs::create_dir_all(&keyring_path).map_err(|e| KeyringError::Io(e))?;
+        std::fs::create_dir_all(&keyring_path).map_err(KeyringError::Io)?;
 
         // Store wrapped Passkey
         let wrapped_passkey_path = keyring_path.join("wrapped_passkey");
@@ -350,9 +359,9 @@ impl CryptoManager {
 
         std::fs::write(
             &wrapped_passkey_path,
-            serde_json::to_string_pretty(&wrapped_data).map_err(|e| KeyringError::Serialization(e))?,
+            serde_json::to_string_pretty(&wrapped_data).map_err(KeyringError::Serialization)?,
         )
-        .map_err(|e| KeyringError::Io(e))?;
+        .map_err(KeyringError::Io)?;
 
         Ok(())
     }

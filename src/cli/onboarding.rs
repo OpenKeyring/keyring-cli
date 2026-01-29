@@ -111,11 +111,18 @@ mod tests {
 
         // Set environment variables to use temp directory
         std::env::set_var("OK_DATA_DIR", temp_dir.path().to_str().unwrap());
-        std::env::set_var("OK_CONFIG_DIR", temp_dir.path().join("config").to_str().unwrap());
+        std::env::set_var(
+            "OK_CONFIG_DIR",
+            temp_dir.path().join("config").to_str().unwrap(),
+        );
 
         // This should create the database
         let result = super::ensure_initialized();
-        assert!(result.is_ok(), "ensure_initialized should succeed: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "ensure_initialized should succeed: {:?}",
+            result
+        );
 
         // Cleanup
         std::env::remove_var("OK_DATA_DIR");

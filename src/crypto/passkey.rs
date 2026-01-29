@@ -1,6 +1,6 @@
 // src/crypto/passkey.rs
 use anyhow::{anyhow, Result};
-use bip39::{Mnemonic, Language};
+use bip39::{Language, Mnemonic};
 use zeroize::ZeroizeOnDrop;
 
 /// Passkey: 24-word BIP39 mnemonic as root key
@@ -33,8 +33,7 @@ impl Passkey {
         }
 
         let phrase = words.join(" ");
-        let mnemonic = Mnemonic::parse(&phrase)
-            .map_err(|e| anyhow!("Invalid Passkey: {}", e))?;
+        let mnemonic = Mnemonic::parse(&phrase).map_err(|e| anyhow!("Invalid Passkey: {}", e))?;
 
         Ok(Self { mnemonic })
     }

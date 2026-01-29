@@ -26,7 +26,10 @@ fn test_passkey_from_words() {
     let words = original.to_words();
 
     let restored = Passkey::from_words(&words).unwrap();
-    assert_eq!(original.to_seed(None).unwrap().0, restored.to_seed(None).unwrap().0);
+    assert_eq!(
+        original.to_seed(None).unwrap().0,
+        restored.to_seed(None).unwrap().0
+    );
 }
 
 #[test]

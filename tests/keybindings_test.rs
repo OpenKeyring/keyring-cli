@@ -106,7 +106,6 @@ shortcuts:
 
 #[test]
 fn test_all_default_actions_have_bindings() {
-
     let manager = KeyBindingManager::new();
 
     // All actions should have bindings
