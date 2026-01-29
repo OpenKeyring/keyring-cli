@@ -4,6 +4,7 @@
 
 use crate::error::{KeyringError, Result};
 use crate::tui::keybindings::{Action, KeyBindingManager};
+use crate::tui::screens::{HelpScreen, ProviderSelectScreen, SettingsScreen};
 use chrono::{DateTime, Utc};
 use ratatui::{
     backend::CrosstermBackend,
@@ -41,6 +42,34 @@ impl std::error::Error for TuiError {}
 
 /// TUI result type
 pub type TuiResult<T> = std::result::Result<T, TuiError>;
+
+/// Current active screen in the TUI
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Screen {
+    /// Main command screen
+    Main,
+    /// Settings screen (F2)
+    Settings,
+    /// Provider selection screen
+    ProviderSelect,
+    /// Provider configuration screen
+    ProviderConfig,
+    /// Help screen (? or F1)
+    Help,
+}
+
+impl Screen {
+    /// Get the display name for this screen
+    pub fn name(&self) -> &str {
+        match self {
+            Screen::Main => "Main",
+            Screen::Settings => "Settings",
+            Screen::ProviderSelect => "Provider Select",
+            Screen::ProviderConfig => "Provider Config",
+            Screen::Help => "Help",
+        }
+    }
+}
 
 /// Sync status for the statusline
 #[derive(Debug, Clone)]
@@ -107,6 +136,14 @@ pub struct TuiApp {
     sync_status: SyncStatus,
     /// Version string
     version: String,
+    /// Current active screen
+    current_screen: Screen,
+    /// Settings screen instance
+    settings_screen: SettingsScreen,
+    /// Help screen instance
+    help_screen: HelpScreen,
+    /// Provider select screen instance
+    provider_select_screen: ProviderSelectScreen,
 }
 
 impl Default for TuiApp {
@@ -133,11 +170,66 @@ impl TuiApp {
             record_count: 0,
             sync_status: SyncStatus::Unsynced,
             version: env!("CARGO_PKG_VERSION").to_string(),
+            current_screen: Screen::Main,
+            settings_screen: SettingsScreen::new(),
+            help_screen: HelpScreen::new(),
+            provider_select_screen: ProviderSelectScreen::new(),
         }
+    }
+
+    /// Get the current screen
+    pub fn current_screen(&self) -> Screen {
+        self.current_screen
+    }
+
+    /// Navigate to a different screen
+    pub fn navigate_to(&mut self, screen: Screen) {
+        self.current_screen = screen;
+        self.output_lines
+            .push(format!("Navigated to: {}", screen.name()));
+    }
+
+    /// Return to the main screen
+    pub fn return_to_main(&mut self) {
+        self.current_screen = Screen::Main;
+        self.output_lines.push("Returned to main screen".to_string());
     }
 
     /// Handle keyboard shortcut events
     pub fn handle_key_event(&mut self, event: crossterm::event::KeyEvent) {
+        use crossterm::event::KeyCode;
+
+        // Handle screen navigation keys first
+        match event.code {
+            KeyCode::F(2) => {
+                // F2 - Settings
+                self.navigate_to(Screen::Settings);
+                return;
+            }
+            KeyCode::F(5) => {
+                // F5 - Sync (for now, show sync output)
+                self.output_lines.push("Sync: Triggered (TODO: implement sync screen)".to_string());
+                return;
+            }
+            KeyCode::Char('?') => {
+                // ? - Help
+                self.navigate_to(Screen::Help);
+                self.show_help();
+                return;
+            }
+            KeyCode::Esc => {
+                // Esc - Return to main or quit
+                if self.current_screen != Screen::Main {
+                    self.return_to_main();
+                } else {
+                    self.quit();
+                }
+                return;
+            }
+            _ => {}
+        }
+
+        // Handle keyboard shortcuts via keybinding manager
         if let Some(action) = self.keybinding_manager.get_action(&event) {
             self.execute_action(action);
         }

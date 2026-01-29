@@ -11,7 +11,7 @@ pub mod screens;
 mod utils;
 mod widgets;
 
-pub use app::{run_tui, TuiApp, TuiError};
+pub use app::{run_tui, Screen, TuiApp, TuiError};
 pub use handler::{AppAction, TuiEventHandler};
 
 /// TUI result type
