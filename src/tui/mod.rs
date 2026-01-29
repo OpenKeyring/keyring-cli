@@ -5,11 +5,13 @@
 
 mod app;
 pub mod commands;
+pub mod handler;
 pub mod keybindings;
 mod utils;
 mod widgets;
 
 pub use app::{run_tui, TuiApp, TuiError};
+pub use handler::{AppAction, TuiEventHandler};
 
 /// TUI result type
 pub type TuiResult<T> = std::result::Result<T, TuiError>;
