@@ -5,6 +5,11 @@ use std::fs;
 
 #[test]
 fn test_passkey_initialization_flow() {
+    // Cleanup before test
+    let home = dirs::home_dir().expect("Failed to get home directory");
+    let wrapped_passkey_path = home.join(".local/share/open-keyring/wrapped_passkey");
+    let _ = std::fs::remove_file(&wrapped_passkey_path);
+
     // Generate a new Passkey (24-word BIP39 mnemonic)
     let passkey = Passkey::generate(24).expect("Failed to generate passkey");
     let words = passkey.to_words();
@@ -42,8 +47,6 @@ fn test_passkey_initialization_flow() {
     assert_eq!(device_key.unwrap().len(), 32, "Device key should be 32 bytes");
 
     // Verify wrapped Passkey file was created in default location
-    let home = dirs::home_dir().expect("Failed to get home directory");
-    let wrapped_passkey_path = home.join(".local/share/open-keyring/wrapped_passkey");
     assert!(wrapped_passkey_path.exists(), "Wrapped Passkey file should be created");
 
     // Verify the wrapped Passkey can be read and decrypted
@@ -60,6 +63,11 @@ fn test_passkey_initialization_flow() {
 #[test]
 fn test_device_key_derivation_and_use() {
     // Test that device keys are deterministic but unique per device
+
+    // Cleanup before test
+    let home = dirs::home_dir().expect("Failed to get home directory");
+    let wrapped_passkey_path = home.join(".local/share/open-keyring/wrapped_passkey");
+    let _ = std::fs::remove_file(&wrapped_passkey_path);
 
     // Same root master key
     let root_master_key = [1u8; 32];
@@ -129,8 +137,7 @@ fn test_device_key_derivation_and_use() {
     );
 
     // Cleanup
-    let home = dirs::home_dir().expect("Failed to get home directory");
-    let _ = std::fs::remove_file(home.join(".local/share/open-keyring/wrapped_passkey"));
+    let _ = std::fs::remove_file(&wrapped_passkey_path);
 }
 
 #[test]
@@ -147,6 +154,11 @@ fn test_get_keyring_dir() {
     // Test that get_keyring_dir returns the correct path
     // This will be a private helper function, so we test it indirectly
     // through initialize_with_passkey
+
+    // Cleanup before test
+    let home = dirs::home_dir().expect("Failed to get home directory");
+    let wrapped_passkey_path = home.join(".local/share/open-keyring/wrapped_passkey");
+    let _ = std::fs::remove_file(&wrapped_passkey_path);
 
     let passkey = Passkey::generate(24).expect("Failed to generate passkey");
     let root_master_key = [1u8; 32];
@@ -169,21 +181,24 @@ fn test_get_keyring_dir() {
 
     // Verify the wrapped_passkey file exists in the default location
     // The default location should be ~/.local/share/open-keyring/wrapped_passkey
-    let home = dirs::home_dir().expect("Failed to get home directory");
-    let default_keyring_dir = home.join(".local/share/open-keyring");
-    let _wrapped_passkey_path = default_keyring_dir.join("wrapped_passkey");
+    assert!(wrapped_passkey_path.exists(), "Wrapped Passkey file should exist");
 
     // Note: This might fail if the directory doesn't exist or permissions are wrong
     // In a real test, we'd need to set up the environment properly
     // For now, we'll just check that the initialization succeeded
 
     // Cleanup
-    let _ = std::fs::remove_file(home.join(".local/share/open-keyring/wrapped_passkey"));
+    let _ = std::fs::remove_file(&wrapped_passkey_path);
 }
 
 #[test]
 fn test_passkey_seed_wrapping_and_storage() {
     // Test that the Passkey seed is properly wrapped and stored
+
+    // Cleanup before test
+    let home = dirs::home_dir().expect("Failed to get home directory");
+    let wrapped_passkey_path = home.join(".local/share/open-keyring/wrapped_passkey");
+    let _ = std::fs::remove_file(&wrapped_passkey_path);
 
     let passkey = Passkey::generate(24).expect("Failed to generate passkey");
     let root_master_key = [1u8; 32];
@@ -203,8 +218,6 @@ fn test_passkey_seed_wrapping_and_storage() {
         .expect("Initialization should succeed");
 
     // Read the wrapped Passkey file from default location
-    let home = dirs::home_dir().expect("Failed to get home directory");
-    let wrapped_passkey_path = home.join(".local/share/open-keyring/wrapped_passkey");
     let wrapped_content = fs::read_to_string(&wrapped_passkey_path)
         .expect("Failed to read wrapped Passkey");
 
