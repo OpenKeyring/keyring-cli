@@ -7,6 +7,48 @@ use clap::Parser;
 use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
+#[command(name = "sync")]
+#[command(about = "Sync passwords to cloud storage", long_about = None)]
+pub struct SyncCommand {
+    /// Show sync status instead of syncing
+    #[arg(long, short)]
+    pub status: bool,
+
+    /// Configure cloud storage provider
+    #[arg(long, short)]
+    pub config: bool,
+
+    /// Cloud storage provider (for use with --config)
+    #[arg(long)]
+    pub provider: Option<String>,
+
+    /// Direction: up, down, or both
+    #[arg(short, long, default_value = "both")]
+    pub direction: String,
+
+    /// Dry run without making changes
+    #[arg(long)]
+    pub dry_run: bool,
+}
+
+impl SyncCommand {
+    pub fn execute(&self) -> Result<()> {
+        if self.status {
+            println!("Sync status:");
+            return Ok(());
+        }
+
+        if self.config {
+            println!("Configuring provider: {:?}", self.provider);
+            return Ok(());
+        }
+
+        println!("Syncing {} (dry run: {})", self.direction, self.dry_run);
+        Ok(())
+    }
+}
+
+#[derive(Parser, Debug)]
 pub struct SyncArgs {
     #[clap(long, short)]
     pub dry_run: bool,
