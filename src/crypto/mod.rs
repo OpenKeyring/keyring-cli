@@ -5,6 +5,7 @@ pub mod argon2id;
 pub mod bip39;
 pub mod keystore;
 pub mod keywrap;
+pub mod passkey;
 pub mod record;
 
 use crate::error::KeyringError;
