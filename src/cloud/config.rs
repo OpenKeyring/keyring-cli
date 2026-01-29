@@ -6,10 +6,11 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 /// Supported cloud storage providers
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum CloudProvider {
     /// iCloud Drive (macOS/iOS)
+    #[default]
     ICloud,
     /// Dropbox
     Dropbox,
@@ -25,12 +26,6 @@ pub enum CloudProvider {
     AliyunDrive,
     /// Aliyun OSS (阿里云对象存储)
     AliyunOSS,
-}
-
-impl Default for CloudProvider {
-    fn default() -> Self {
-        Self::ICloud
-    }
 }
 
 /// Cloud storage configuration
