@@ -5,6 +5,7 @@
 pub mod cli;
 pub mod cloud;
 pub mod clipboard;
+pub mod config;
 pub mod crypto;
 pub mod db;
 pub mod device;
