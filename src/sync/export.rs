@@ -73,4 +73,12 @@ impl JsonSyncExporter {
         // In a real implementation, this would read from device config
         Ok("unknown-device".to_string())
     }
+
+    /// Get metadata as a JSON string for security auditing
+    ///
+    /// This method is used to verify that metadata doesn't contain
+    /// sensitive information like passkey, DEK, or master key.
+    pub fn get_metadata_json(&self, metadata: &RecordMetadata) -> String {
+        serde_json::to_string(metadata).unwrap_or_else(|_| "{}".to_string())
+    }
 }
