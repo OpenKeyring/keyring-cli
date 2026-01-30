@@ -196,7 +196,12 @@ fn prompt_input(prompt: &str) -> Result<String> {
     io::stdout().flush()?;
 
     let mut input = String::new();
-    io::stdin().read_line(&mut input)?;
+    let bytes_read = io::stdin().read_line(&mut input)?;
+
+    // Handle EOF (stdin closed or no input available)
+    if bytes_read == 0 {
+        return Err(anyhow!("No input available (EOF)").into());
+    }
 
     Ok(input.trim().to_string())
 }
