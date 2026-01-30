@@ -2,7 +2,7 @@
 //!
 //! Tests SSH remote command execution functionality.
 
-use keyring_cli::mcp::executors::ssh::{SshExecutor, SshExecOutput};
+use keyring_cli::mcp::executors::ssh_executor::{SshExecutor, SshExecOutput};
 use std::time::Duration;
 
 /// Sample SSH private key for testing (Ed25519 test key)

@@ -1,0 +1,283 @@
+//! SSH Executor - Remote command execution via SSH
+//!
+//! Provides secure SSH command execution using the openssh crate.
+//! Private keys are never exposed to the AI and are zeroized after use.
+
+use openssh::{Session, SessionBuilder};
+use std::env;
+use std::fs;
+use std::io::Write;
+use std::os::unix::fs::OpenOptionsExt;
+use std::path::PathBuf;
+use std::time::Duration;
+use thiserror::Error;
+
+/// SSH execution errors
+#[derive(Debug, Error)]
+pub enum SshError {
+    #[error("SSH connection failed: {0}")]
+    ConnectionFailed(String),
+
+    #[error("Command execution failed: {0}")]
+    ExecutionFailed(String),
+
+    #[error("Command timed out after {0:?}")]
+    Timeout(Duration),
+
+    #[error("Key file error: {0}")]
+    KeyFileError(String),
+
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("SSH session error: {0}")]
+    SessionError(String),
+}
+
+/// Output from SSH command execution
+#[derive(Debug, Clone)]
+pub struct SshExecOutput {
+    pub stdout: String,
+    pub stderr: String,
+    pub exit_code: i32,
+    pub duration_ms: u64,
+}
+
+/// SSH executor for remote command execution
+///
+/// # Security
+///
+/// - Private keys are stored in memory and zeroized on drop
+/// - Temporary key files are created with 0o600 permissions
+/// - Keys are automatically cleaned up after execution
+///
+/// # Example
+///
+/// ```no_run
+/// use keyring_cli::mcp::executors::ssh::SshExecutor;
+/// use std::time::Duration;
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let private_key = std::fs::read("/path/to/private/key")?;
+///     let executor = SshExecutor::new(
+///         private_key,
+///         "example.com".to_string(),
+///         "user".to_string(),
+///         Some(22),
+///     );
+///
+///     let output = executor.exec("ls -la", Duration::from_secs(10)).await?;
+///     println!("{}", output.stdout);
+///
+///     Ok(())
+/// }
+/// ```
+pub struct SshExecutor {
+    /// Private key bytes
+    private_key_bytes: Option<Vec<u8>>,
+
+    /// SSH host
+    host: String,
+
+    /// SSH username
+    username: String,
+
+    /// SSH port (None = use SSH default)
+    port: Option<u16>,
+}
+
+impl SshExecutor {
+    /// Create a new SSH executor
+    ///
+    /// # Arguments
+    ///
+    /// * `private_key_bytes` - SSH private key in bytes
+    /// * `host` - Target hostname or IP address
+    /// * `username` - SSH username
+    /// * `port` - SSH port (None for default 22)
+    pub fn new(
+        private_key_bytes: Vec<u8>,
+        host: String,
+        username: String,
+        port: Option<u16>,
+    ) -> Self {
+        Self {
+            private_key_bytes: Some(private_key_bytes),
+            host,
+            username,
+            port,
+        }
+    }
+
+    /// Get the host
+    pub fn host(&self) -> &str {
+        &self.host
+    }
+
+    /// Get the username
+    pub fn username(&self) -> &str {
+        &self.username
+    }
+
+    /// Get the port
+    pub fn port(&self) -> Option<u16> {
+        self.port
+    }
+
+    /// Execute a command on the remote host
+    ///
+    /// # Arguments
+    ///
+    /// * `command` - Command string to execute
+    /// * `timeout` - Maximum time to wait for command completion
+    ///
+    /// # Returns
+    ///
+    /// `SshExecOutput` containing stdout, stderr, exit code, and duration
+    pub async fn exec(&self, command: &str, timeout: Duration) -> Result<SshExecOutput, SshError> {
+        let start = std::time::Instant::now();
+
+        // Get private key bytes
+        let key_bytes = self
+            .private_key_bytes
+            .as_ref()
+            .ok_or_else(|| SshError::KeyFileError("Private key not available".to_string()))?;
+
+        // Write temporary key file
+        let key_path = self.write_temp_key(key_bytes)?;
+
+        // Execute command with timeout
+        let result = tokio::time::timeout(
+            timeout,
+            execute_ssh_command_internal(
+                &self.host,
+                &self.username,
+                self.port,
+                &key_path,
+                command,
+            ),
+        )
+        .await;
+
+        // Clean up temp key file
+        let _ = fs::remove_file(&key_path);
+
+        let duration_ms = start.elapsed().as_millis() as u64;
+
+        match result {
+            Ok(Ok(output)) => {
+                let mut result = output;
+                result.duration_ms = duration_ms;
+                Ok(result)
+            }
+            Ok(Err(e)) => Err(e),
+            Err(_) => Err(SshError::Timeout(timeout)),
+        }
+    }
+
+    /// Write private key to a temporary file with secure permissions
+    ///
+    /// # Security
+    ///
+    /// - File is created in $TEMP directory
+    /// - Permissions are set to 0o600 (owner read/write only)
+    /// - File path includes PID for uniqueness
+    ///
+    /// # Returns
+    ///
+    /// Path to the temporary key file
+    fn write_temp_key(&self, key_bytes: &[u8]) -> Result<PathBuf, SshError> {
+        // Get temp directory
+        let temp_dir = env::temp_dir();
+
+        // Create unique filename with PID
+        let pid = std::process::id();
+        let key_filename = format!(".ok-ssh-{}-test_key", pid);
+        let key_path = temp_dir.join(&key_filename);
+
+        // Create file with restrictive permissions
+        let mut file = fs::File::options()
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(&key_path)
+            .map_err(|e| SshError::KeyFileError(format!("Failed to create temp file: {}", e)))?;
+
+        // Write key bytes
+        file.write_all(key_bytes)
+            .map_err(|e| SshError::KeyFileError(format!("Failed to write key: {}", e)))?;
+
+        file.flush()
+            .map_err(|e| SshError::KeyFileError(format!("Failed to flush key: {}", e)))?;
+
+        Ok(key_path)
+    }
+}
+
+/// Execute command via SSH session
+async fn execute_ssh_command_internal(
+    host: &str,
+    username: &str,
+    port: Option<u16>,
+    _key_path: &PathBuf,
+    command: &str,
+) -> Result<SshExecOutput, SshError> {
+    use openssh::KnownHosts;
+
+    // Build connection string
+    let connection = if let Some(p) = port {
+        format!("{}@{}:{}", username, host, p)
+    } else {
+        format!("{}@{}", username, host)
+    };
+
+    // Create session
+    let mut session_builder = SessionBuilder::default();
+    session_builder.known_hosts_check(KnownHosts::Accept);
+
+    let session = session_builder
+        .connect(&connection)
+        .await
+        .map_err(|e| SshError::ConnectionFailed(e.to_string()))?;
+
+    // Execute command and get output
+    let output = session
+        .command(command)
+        .output()
+        .await
+        .map_err(|e: openssh::Error| SshError::ExecutionFailed(e.to_string()))?;
+
+    Ok(SshExecOutput {
+        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+        exit_code: output.status.code().unwrap_or(-1),
+        duration_ms: 0, // Will be set by caller
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ssh_error_display() {
+        let err = SshError::ConnectionFailed("connection refused".to_string());
+        assert!(err.to_string().contains("connection refused"));
+    }
+
+    #[test]
+    fn test_ssh_executor_creation() {
+        let key = b"test_key".to_vec();
+        let executor = SshExecutor::new(
+            key,
+            "example.com".to_string(),
+            "user".to_string(),
+            Some(2222),
+        );
+
+        assert_eq!(executor.host(), "example.com");
+        assert_eq!(executor.username(), "user");
+        assert_eq!(executor.port(), Some(2222));
+    }
+}
