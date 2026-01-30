@@ -131,7 +131,7 @@ impl SyncService {
         // Process resolved conflicts and new records
         let mut processed_ids = std::collections::HashSet::new();
 
-        // Apply resolved conflicts (use newer record)
+        // Apply resolved conflicts (use higher version record)
         for conflict in &resolved_conflicts {
             if let Some(resolution) = &conflict.resolution {
                 let record_to_use = match resolution {
@@ -139,7 +139,8 @@ impl SyncService {
                         if let (Some(local), Some(remote)) =
                             (&conflict.local_record, &conflict.remote_record)
                         {
-                            if local.updated_at >= remote.updated_at {
+                            // Use version-based comparison for conflict resolution
+                            if local.version >= remote.version {
                                 local.clone()
                             } else {
                                 remote.clone()

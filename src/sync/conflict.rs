@@ -99,17 +99,19 @@ impl ConflictResolver for DefaultConflictResolver {
 
 impl DefaultConflictResolver {
     fn has_changes(&self, local: &SyncRecord, remote: &SyncRecord) -> bool {
-        // Compare updated timestamps to determine if there are changes
-        local.updated_at != remote.updated_at
+        // Compare version numbers to determine if there are changes
+        // If versions differ, there's a conflict
+        local.version != remote.version
     }
 
+    /// Get the record with the higher version number
     #[allow(dead_code)]
     fn get_newer_record<'a>(
         &self,
         local: &'a SyncRecord,
         remote: &'a SyncRecord,
     ) -> &'a SyncRecord {
-        match local.updated_at.cmp(&remote.updated_at) {
+        match local.version.cmp(&remote.version) {
             Ordering::Greater | Ordering::Equal => local,
             Ordering::Less => remote,
         }
