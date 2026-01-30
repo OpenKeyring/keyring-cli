@@ -71,7 +71,20 @@ async-trait = "0.1"
 notify = "6.0"
 
 # Cloud storage abstraction
-opendal = { version = "0.50", features = ["services-fs", "services-webdav", "services-sftp"] }
+opendal = { version = "0.50", features = [
+    "services-fs",
+    "services-webdav",
+    "services-sftp",
+    "services-dropbox",
+    "services-gdrive",
+    "services-onedrive",
+    "services-aliyun-drive",
+    "services-oss",
+    "services-cos",
+    "services-obs",
+    "services-upyun",
+    "services-http",
+] }
 
 # HTTP client for HIBP API
 # Use native-tls-vendored for static OpenSSL linking to avoid cross-compilation issues

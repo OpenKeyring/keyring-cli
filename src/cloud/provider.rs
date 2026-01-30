@@ -35,10 +35,10 @@ pub fn create_operator(config: &CloudConfig) -> Result<Operator> {
         CloudProvider::ICloud => create_icloud_operator(config),
         CloudProvider::WebDAV => create_webdav_operator(config),
         CloudProvider::SFTP => create_sftp_operator(config),
-        CloudProvider::Dropbox
-        | CloudProvider::GDrive
-        | CloudProvider::OneDrive
-        | CloudProvider::AliyunDrive
+        CloudProvider::Dropbox => create_dropbox_operator(config),
+        CloudProvider::GDrive => create_gdrive_operator(config),
+        CloudProvider::OneDrive => create_onedrive_operator(config),
+        CloudProvider::AliyunDrive
         | CloudProvider::AliyunOSS
         | CloudProvider::TencentCOS
         | CloudProvider::HuaweiOBS
@@ -127,6 +127,60 @@ fn create_sftp_operator(config: &CloudConfig) -> Result<Operator> {
 
     let operator = Operator::new(builder)
         .context("Failed to build SFTP operator")?
+        .finish();
+
+    Ok(operator)
+}
+
+/// Creates an operator for Dropbox
+fn create_dropbox_operator(config: &CloudConfig) -> Result<Operator> {
+    let token = config
+        .dropbox_token
+        .as_ref()
+        .context("dropbox_token is required for Dropbox provider")?;
+
+    let builder = opendal::services::Dropbox::default()
+        .access_token(token)
+        .root("/");
+
+    let operator = Operator::new(builder)
+        .context("Failed to build Dropbox operator")?
+        .finish();
+
+    Ok(operator)
+}
+
+/// Creates an operator for Google Drive
+fn create_gdrive_operator(config: &CloudConfig) -> Result<Operator> {
+    let token = config
+        .gdrive_token
+        .as_ref()
+        .context("gdrive_token is required for Google Drive provider")?;
+
+    let builder = opendal::services::Gdrive::default()
+        .access_token(token)
+        .root("/");
+
+    let operator = Operator::new(builder)
+        .context("Failed to build Google Drive operator")?
+        .finish();
+
+    Ok(operator)
+}
+
+/// Creates an operator for OneDrive
+fn create_onedrive_operator(config: &CloudConfig) -> Result<Operator> {
+    let token = config
+        .onedrive_token
+        .as_ref()
+        .context("onedrive_token is required for OneDrive provider")?;
+
+    let builder = opendal::services::Onedrive::default()
+        .access_token(token)
+        .root("/");
+
+    let operator = Operator::new(builder)
+        .context("Failed to build OneDrive operator")?
         .finish();
 
     Ok(operator)
