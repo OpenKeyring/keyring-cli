@@ -2,6 +2,8 @@
 
 use crate::crypto::aes256gcm;
 use anyhow::Result;
+use std::fs;
+use std::path::Path;
 
 /// Wrap a key using AES-256-GCM
 /// Returns: (encrypted_key, nonce)
@@ -40,42 +42,116 @@ pub struct KeyHierarchy {
     pub dek: DataEncryptionKey,
     pub recovery_key: RecoveryKey,
     pub device_key: DeviceKey,
+    /// Salt used for key derivation (stored for consistency)
+    salt: [u8; 16],
 }
 
 impl KeyHierarchy {
     /// Setup new key hierarchy (first-time initialization)
     pub fn setup(master_password: &str) -> Result<Self> {
+        use super::argon2id;
+
+        // Generate salt for key derivation
+        let salt = argon2id::generate_salt();
+
         // Generate random keys
         let dek = Self::generate_dek()?;
         let recovery_key = Self::generate_recovery_key()?;
         let device_key = Self::generate_device_key()?;
 
-        // Derive master key from password
-        let master_key = Self::derive_master_key(master_password)?;
-
-        // Wrap keys with master key (TODO: implement wrapping)
+        // Derive master key from password with salt
+        let key_bytes = argon2id::derive_key(master_password, &salt)?;
+        let mut master_key_array = [0u8; 32];
+        master_key_array.copy_from_slice(&key_bytes);
+        let master_key = MasterKey(master_key_array);
 
         Ok(Self {
             master_key,
             dek,
             recovery_key,
             device_key,
+            salt,
         })
     }
 
     /// Unlock existing key hierarchy
-    pub fn unlock(_master_password: &str, _wrapped_keys_path: &std::path::Path) -> Result<Self> {
-        // TODO: Implement unlocking from wrapped keys
-        anyhow::bail!("KeyHierarchy::unlock not yet implemented")
+    pub fn unlock(wrapped_keys_path: &Path, master_password: &str) -> Result<Self> {
+        use super::argon2id;
+
+        // Load salt from file
+        let salt_bytes = fs::read(wrapped_keys_path.join("salt"))?;
+        let mut salt = [0u8; 16];
+        salt.copy_from_slice(&salt_bytes[..16]);
+
+        // Derive master key from password with stored salt
+        let key_bytes = argon2id::derive_key(master_password, &salt)?;
+        let mut master_key_array = [0u8; 32];
+        master_key_array.copy_from_slice(&key_bytes);
+        let master_key = MasterKey(master_key_array);
+
+        // Load wrapped DEK
+        let wrapped_dek = fs::read(wrapped_keys_path.join("wrapped_dek"))?;
+        let nonce_dek: [u8; 12] = wrapped_dek[0..12].try_into().unwrap();
+        let dek_bytes = &wrapped_dek[12..];
+        let dek = Self::unwrap_key(dek_bytes, &nonce_dek, &master_key.0)?;
+
+        // Load wrapped RecoveryKey
+        let wrapped_rec = fs::read(wrapped_keys_path.join("wrapped_recovery"))?;
+        let nonce_rec: [u8; 12] = wrapped_rec[0..12].try_into().unwrap();
+        let rec_bytes = &wrapped_rec[12..];
+        let recovery_key = Self::unwrap_key(rec_bytes, &nonce_rec, &master_key.0)?;
+
+        // Load wrapped DeviceKey
+        let wrapped_dev = fs::read(wrapped_keys_path.join("wrapped_device"))?;
+        let nonce_dev: [u8; 12] = wrapped_dev[0..12].try_into().unwrap();
+        let dev_bytes = &wrapped_dev[12..];
+        let device_key = Self::unwrap_key(dev_bytes, &nonce_dev, &master_key.0)?;
+
+        Ok(Self {
+            master_key,
+            dek: DataEncryptionKey(dek),
+            recovery_key: RecoveryKey(recovery_key),
+            device_key: DeviceKey(device_key),
+            salt,
+        })
     }
 
-    fn derive_master_key(password: &str) -> Result<MasterKey> {
-        use super::argon2id;
-        let salt = super::argon2id::generate_salt();
-        let key_bytes = argon2id::derive_key(password, &salt)?;
-        let mut key = [0u8; 32];
-        key.copy_from_slice(&key_bytes);
-        Ok(MasterKey(key))
+    /// Save wrapped keys to directory
+    pub fn save(&self, dir: &Path) -> Result<()> {
+        fs::create_dir_all(dir)?;
+
+        // Save salt
+        fs::write(dir.join("salt"), &self.salt)?;
+
+        // Wrap and save DEK
+        let (wrapped_dek_bytes, nonce_dek) = self.wrap_key(&self.dek.0, &self.master_key.0)?;
+        let mut dek_file = nonce_dek.to_vec();
+        dek_file.extend_from_slice(&wrapped_dek_bytes);
+        fs::write(dir.join("wrapped_dek"), dek_file)?;
+
+        // Wrap and save RecoveryKey
+        let (wrapped_rec_bytes, nonce_rec) = self.wrap_key(&self.recovery_key.0, &self.master_key.0)?;
+        let mut rec_file = nonce_rec.to_vec();
+        rec_file.extend_from_slice(&wrapped_rec_bytes);
+        fs::write(dir.join("wrapped_recovery"), rec_file)?;
+
+        // Wrap and save DeviceKey
+        let (wrapped_dev_bytes, nonce_dev) = self.wrap_key(&self.device_key.0, &self.master_key.0)?;
+        let mut dev_file = nonce_dev.to_vec();
+        dev_file.extend_from_slice(&wrapped_dev_bytes);
+        fs::write(dir.join("wrapped_device"), dev_file)?;
+
+        Ok(())
+    }
+
+    /// Wrap a key using the master key
+    fn wrap_key(&self, key: &[u8; 32], wrapping_key: &[u8; 32]) -> Result<(Vec<u8>, [u8; 12])> {
+        super::wrap_key(key, wrapping_key)
+    }
+
+    /// Unwrap a key using the master key
+    fn unwrap_key(wrapped: &[u8], nonce: &[u8; 12], wrapping_key: &[u8; 32]) -> Result<[u8; 32]> {
+        super::unwrap_key(wrapped, nonce, wrapping_key)
     }
 
     fn generate_dek() -> Result<DataEncryptionKey> {
