@@ -68,21 +68,59 @@ impl PolicyEngine {
         let env_tags = Self::extract_env_tags(tags);
         let risk_tags = Self::extract_risk_tags(tags);
 
-        // Handle contradictory tags
-        if Self::has_contradictory_tags(&env_tags, &risk_tags) {
+        // Default behavior when no tags present
+        if env_tags.is_empty() && risk_tags.is_empty() {
+            return AuthDecision::SessionApprove;
+        }
+
+        // Check for strict contradiction: ONLY dev env with high risk
+        // (if there are other env tags besides dev, we can use those instead)
+        if env_tags.contains(&EnvTag::Dev)
+            && risk_tags.contains(&RiskTag::High)
+            && env_tags.len() == 1
+        {
             return AuthDecision::Deny;
         }
 
-        // Get the most restrictive env and risk tags
-        let env_tag = Self::get_most_restrictive_env(&env_tags);
-        let risk_tag = Self::get_most_restrictive_risk(&risk_tags);
+        // If we have tags, evaluate all combinations and pick the most restrictive
+        let envs_to_eval = if env_tags.is_empty() {
+            vec![EnvTag::Dev]
+        } else {
+            env_tags.clone()
+        };
 
-        // Default behavior when no tags present
-        let env_tag = env_tag.unwrap_or(EnvTag::Dev);
-        let risk_tag = risk_tag.unwrap_or(RiskTag::Medium);
+        let risks_to_eval = if risk_tags.is_empty() {
+            vec![RiskTag::Medium]
+        } else {
+            risk_tags.clone()
+        };
 
-        // Apply policy rules
-        Self::apply_policy_rules(env_tag, risk_tag, operation_type)
+        // Evaluate all valid combinations and return the most restrictive decision
+        // Skip contradictory combinations (dev+high)
+        let mut decisions = Vec::new();
+
+        for env in &envs_to_eval {
+            for risk in &risks_to_eval {
+                // Skip contradictory combinations
+                if *env == EnvTag::Dev && *risk == RiskTag::High {
+                    continue;
+                }
+
+                let decision = Self::apply_policy_rules(*env, *risk, operation_type);
+                decisions.push(decision);
+            }
+        }
+
+        // If no valid decisions found (all were contradictions), deny
+        if decisions.is_empty() {
+            return AuthDecision::Deny;
+        }
+
+        // Return the most restrictive decision
+        decisions
+            .into_iter()
+            .reduce(|a, b| Self::most_restrictive_decision(a, b))
+            .unwrap_or(AuthDecision::SessionApprove)
     }
 
     /// Apply the core policy rules based on env, risk, and operation type
@@ -156,66 +194,19 @@ impl PolicyEngine {
             .collect()
     }
 
-    /// Get the most restrictive environment tag
-    /// Order: Prod > Staging > Test > Dev
-    fn get_most_restrictive_env(env_tags: &[EnvTag]) -> Option<EnvTag> {
-        if env_tags.is_empty() {
-            return None;
+    /// Get the most restrictive of two authorization decisions
+    /// Order: Deny > AlwaysConfirm > SessionApprove > AutoApprove
+    fn most_restrictive_decision(a: AuthDecision, b: AuthDecision) -> AuthDecision {
+        match (a, b) {
+            (AuthDecision::Deny, _) | (_, AuthDecision::Deny) => AuthDecision::Deny,
+            (AuthDecision::AlwaysConfirm, _) | (_, AuthDecision::AlwaysConfirm) => {
+                AuthDecision::AlwaysConfirm
+            }
+            (AuthDecision::SessionApprove, _) | (_, AuthDecision::SessionApprove) => {
+                AuthDecision::SessionApprove
+            }
+            (AuthDecision::AutoApprove, AuthDecision::AutoApprove) => AuthDecision::AutoApprove,
         }
-
-        // Check for prod first
-        if env_tags.contains(&EnvTag::Prod) {
-            return Some(EnvTag::Prod);
-        }
-
-        // Then staging
-        if env_tags.contains(&EnvTag::Staging) {
-            return Some(EnvTag::Staging);
-        }
-
-        // Then test
-        if env_tags.contains(&EnvTag::Test) {
-            return Some(EnvTag::Test);
-        }
-
-        // Finally dev
-        if env_tags.contains(&EnvTag::Dev) {
-            return Some(EnvTag::Dev);
-        }
-
-        None
-    }
-
-    /// Get the most restrictive risk tag
-    /// Order: High > Medium > Low
-    fn get_most_restrictive_risk(risk_tags: &[RiskTag]) -> Option<RiskTag> {
-        if risk_tags.is_empty() {
-            return None;
-        }
-
-        // Check for high first
-        if risk_tags.contains(&RiskTag::High) {
-            return Some(RiskTag::High);
-        }
-
-        // Then medium
-        if risk_tags.contains(&RiskTag::Medium) {
-            return Some(RiskTag::Medium);
-        }
-
-        // Then low
-        if risk_tags.contains(&RiskTag::Low) {
-            return Some(RiskTag::Low);
-        }
-
-        None
-    }
-
-    /// Check for contradictory tags
-    /// Current contradiction: env:dev + risk:high
-    fn has_contradictory_tags(env_tags: &[EnvTag], risk_tags: &[RiskTag]) -> bool {
-        // dev environment with high risk is contradictory
-        env_tags.contains(&EnvTag::Dev) && risk_tags.contains(&RiskTag::High)
     }
 }
 
