@@ -39,11 +39,12 @@ fn test_sftp_config_fields() {
     let screen = ProviderConfigScreen::new(CloudProvider::SFTP);
     let fields = screen.get_fields();
 
-    assert_eq!(fields.len(), 4);
+    assert_eq!(fields.len(), 5);
     assert_eq!(fields[0].label, "主机");
     assert_eq!(fields[1].label, "端口");
     assert_eq!(fields[2].label, "用户名");
     assert_eq!(fields[3].label, "密码");
+    assert_eq!(fields[4].label, "根路径 (Root)");
 }
 
 #[test]
@@ -126,5 +127,79 @@ fn test_empty_field_value() {
     // Empty field should return empty string, not None
     assert_eq!(screen.get_field_value(0), Some("".to_string()));
     assert_eq!(screen.get_field_value(99), None); // Invalid index returns None
+}
+
+// Tests for all 11 cloud providers
+
+#[test]
+fn test_icloud_config_fields() {
+    let screen = ProviderConfigScreen::new(CloudProvider::ICloud);
+    let fields = screen.get_fields();
+    assert_eq!(fields.len(), 1);
+}
+
+#[test]
+fn test_dropbox_config_fields() {
+    let screen = ProviderConfigScreen::new(CloudProvider::Dropbox);
+    let fields = screen.get_fields();
+    assert_eq!(fields.len(), 1);
+    assert_eq!(fields[0].label, "Access Token");
+    assert!(fields[0].is_password);
+}
+
+#[test]
+fn test_gdrive_config_fields() {
+    let screen = ProviderConfigScreen::new(CloudProvider::GDrive);
+    let fields = screen.get_fields();
+    assert_eq!(fields.len(), 1);
+    assert!(fields[0].is_password);
+}
+
+#[test]
+fn test_onedrive_config_fields() {
+    let screen = ProviderConfigScreen::new(CloudProvider::OneDrive);
+    let fields = screen.get_fields();
+    assert_eq!(fields.len(), 1);
+    assert!(fields[0].is_password);
+}
+
+#[test]
+fn test_aliyundrive_config_fields() {
+    let screen = ProviderConfigScreen::new(CloudProvider::AliyunDrive);
+    let fields = screen.get_fields();
+    assert_eq!(fields.len(), 1);
+    assert!(fields[0].is_password);
+}
+
+#[test]
+fn test_aliyunoss_config_fields() {
+    let screen = ProviderConfigScreen::new(CloudProvider::AliyunOSS);
+    let fields = screen.get_fields();
+    assert_eq!(fields.len(), 4);
+    assert!(fields[3].is_password); // Secret is password
+}
+
+#[test]
+fn test_tencentcos_config_fields() {
+    let screen = ProviderConfigScreen::new(CloudProvider::TencentCOS);
+    let fields = screen.get_fields();
+    assert_eq!(fields.len(), 4);
+    assert!(fields[1].is_password); // Secret Key is password
+}
+
+#[test]
+fn test_huaweiobs_config_fields() {
+    let screen = ProviderConfigScreen::new(CloudProvider::HuaweiOBS);
+    let fields = screen.get_fields();
+    assert_eq!(fields.len(), 4);
+    assert!(fields[3].is_password); // Secret is password
+}
+
+#[test]
+fn test_upyun_config_fields() {
+    let screen = ProviderConfigScreen::new(CloudProvider::UpYun);
+    let fields = screen.get_fields();
+    assert_eq!(fields.len(), 3);
+    assert!(fields[2].is_password); // Password is password
 }
 
