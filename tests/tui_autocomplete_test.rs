@@ -63,12 +63,25 @@ fn test_command_autocomplete_with_partial_space() {
     let mut app = TuiApp::new();
     app.input_buffer = "/show g".to_string();
 
-    // For now, just test it doesn't crash
-    // Record name autocomplete would require database access
+    // For command autocomplete, use handle_autocomplete()
+    // For record name autocomplete, use handle_autocomplete_with_db() with vault
     app.handle_autocomplete();
 
     // Should at least contain the original prefix
     assert!(app.input_buffer.starts_with("/show"));
+}
+
+#[tokio::test]
+async fn test_record_autocomplete() {
+    let mut app = TuiApp::new();
+
+    // For now, test that the method exists and doesn't crash
+    // Real record autocomplete would require a vault with records
+    app.input_buffer = "git".to_string();
+    let result = app.handle_autocomplete_with_db(None).await;
+
+    // Should succeed (no vault = no crash)
+    assert!(result.is_ok());
 }
 
 #[test]

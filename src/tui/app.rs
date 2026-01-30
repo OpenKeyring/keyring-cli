@@ -10,6 +10,7 @@ use crate::tui::screens::{
     MasterPasswordScreen, PasskeyConfirmScreen, PasskeyGenerateScreen,
     PasskeyImportScreen, SyncScreen, WelcomeScreen,
 };
+use crate::db::vault::Vault;
 use chrono::{DateTime, Utc};
 use ratatui::{
     backend::CrosstermBackend,
@@ -667,8 +668,7 @@ impl TuiApp {
             }
         } else if self.input_buffer.contains(' ') {
             // Has space - might be completing record name
-            // For now, just don't modify (record completion requires database access)
-            // TODO: Implement record name completion with database lookup
+            // Use handle_autocomplete_with_db() with vault for record name completion
             self.autocomplete_matches.clear();
         }
     }
@@ -680,6 +680,45 @@ impl TuiApp {
             .take_while(|(ca, cb)| ca == cb)
             .map(|(c, _)| c)
             .collect()
+    }
+
+    /// Handle autocomplete with database for record name completion
+    ///
+    /// This method extends autocomplete to support completing record names from the vault.
+    /// When the input contains a space (e.g., "/show "), it attempts to complete the record name.
+    ///
+    /// # Stub Implementation
+    /// Currently returns empty matches since record completion requires:
+    /// - Vault access
+    /// - CryptoManager for decryption
+    /// - Integration into the TUI command flow
+    ///
+    /// TODO: Full integration requires:
+    /// 1. Pass CryptoManager to TuiApp or this method
+    /// 2. Decrypt records to get names
+    /// 3. Cache record names for performance
+    pub async fn handle_autocomplete_with_db(&mut self, vault: Option<&Vault>) -> Result<()> {
+        if self.input_buffer.starts_with('/') {
+            // Command autocomplete - use existing logic
+            self.handle_autocomplete();
+        } else if let Some(_vault) = vault {
+            // Record name autocomplete
+            let prefix = self.input_buffer.as_str();
+
+            // TODO: Query vault for record names matching prefix
+            // Stub implementation - requires CryptoManager for decryption
+            // For now, return empty matches
+            let _matches: Vec<String> = vec![];
+
+            if _matches.is_empty() {
+                self.autocomplete_matches.clear();
+            }
+        } else {
+            // No vault available, use command autocomplete
+            self.handle_autocomplete();
+        }
+
+        Ok(())
     }
 
     /// Submit the current command
