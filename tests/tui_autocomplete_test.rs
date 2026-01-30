@@ -70,3 +70,20 @@ fn test_command_autocomplete_with_partial_space() {
     // Should at least contain the original prefix
     assert!(app.input_buffer.starts_with("/show"));
 }
+
+#[test]
+fn test_autocomplete_shows_matches() {
+    let mut app = TuiApp::new();
+
+    app.input_buffer = "/s".to_string();
+    app.handle_autocomplete();
+
+    // Should have output line showing matches
+    assert!(app.output_lines.iter().any(|line| line.contains("Matching commands")));
+
+    // The output should show the matching commands (/search, /show, /sync)
+    let matches_line = app.output_lines.iter()
+        .find(|line| line.contains("Matching commands"))
+        .unwrap();
+    assert!(matches_line.contains("/search") || matches_line.contains("/show") || matches_line.contains("/sync"));
+}

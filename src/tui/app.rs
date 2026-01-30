@@ -134,6 +134,8 @@ pub struct TuiApp {
     running: bool,
     /// Current input buffer
     pub input_buffer: String,
+    /// Autocomplete matches (for display)
+    autocomplete_matches: Vec<String>,
     /// Command history
     history: Vec<String>,
     /// History cursor position
@@ -180,6 +182,7 @@ impl TuiApp {
         Self {
             running: true,
             input_buffer: String::new(),
+            autocomplete_matches: Vec::new(),
             history: Vec::new(),
             history_index: 0,
             output_lines: vec![
@@ -631,13 +634,18 @@ impl TuiApp {
                 .copied()
                 .collect();
 
+            // Store matches for potential display
+            self.autocomplete_matches = matches.iter().map(|s| s.to_string()).collect();
+
             match matches.as_slice() {
                 [] => {
                     // No match - keep original
+                    self.autocomplete_matches.clear();
                 }
                 [single] => {
                     // Single match - complete and add space
                     self.input_buffer = format!("{} ", single);
+                    self.autocomplete_matches.clear();
                 }
                 [first, second] => {
                     // Two matches - complete to common prefix
@@ -648,10 +656,12 @@ impl TuiApp {
                         // No common extension, show first match
                         self.input_buffer = format!("{} ", first);
                     }
+                    // Keep matches for display
                 }
                 _ => {
-                    // Multiple matches - use first match for now
-                    // TODO: Could show all matches to user
+                    // Multiple matches - show them to user
+                    self.output_lines.push(format!("Matching commands: {}", matches.join(", ")));
+                    // Use first match for now
                     self.input_buffer = format!("{} ", matches[0]);
                 }
             }
@@ -659,6 +669,7 @@ impl TuiApp {
             // Has space - might be completing record name
             // For now, just don't modify (record completion requires database access)
             // TODO: Implement record name completion with database lookup
+            self.autocomplete_matches.clear();
         }
     }
 
