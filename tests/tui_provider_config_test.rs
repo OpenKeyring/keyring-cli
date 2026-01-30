@@ -203,3 +203,58 @@ fn test_upyun_config_fields() {
     assert!(fields[2].is_password); // Password is password
 }
 
+// Tests for CloudConfig conversion
+
+#[test]
+fn test_webdav_config_conversion() {
+    let mut screen = ProviderConfigScreen::new(CloudProvider::WebDAV);
+    // Use handle_char to input values
+    for c in "https://dav.example.com".chars() { screen.handle_char(c); }
+    screen.handle_tab();
+    for c in "user".chars() { screen.handle_char(c); }
+    screen.handle_tab();
+    for c in "pass".chars() { screen.handle_char(c); }
+
+    let config = screen.to_cloud_config();
+    assert_eq!(config.provider, CloudProvider::WebDAV);
+    assert_eq!(config.webdav_endpoint, Some("https://dav.example.com".to_string()));
+    assert_eq!(config.webdav_username, Some("user".to_string()));
+    assert_eq!(config.webdav_password, Some("pass".to_string()));
+}
+
+#[test]
+fn test_sftp_config_conversion_with_port() {
+    let mut screen = ProviderConfigScreen::new(CloudProvider::SFTP);
+    for c in "example.com".chars() { screen.handle_char(c); }
+    screen.handle_tab();
+    for c in "2222".chars() { screen.handle_char(c); }
+    screen.handle_tab();
+    for c in "user".chars() { screen.handle_char(c); }
+    screen.handle_tab();
+    for c in "pass".chars() { screen.handle_char(c); }
+    screen.handle_tab();
+    for c in "/root".chars() { screen.handle_char(c); }
+
+    let config = screen.to_cloud_config();
+    assert_eq!(config.sftp_port, Some(2222));
+    assert_eq!(config.sftp_root, Some("/root".to_string()));
+}
+
+#[test]
+fn test_form_validate_rejects_empty_fields() {
+    let screen = ProviderConfigScreen::new(CloudProvider::WebDAV);
+    // Fields are empty by default
+    assert!(screen.validate().is_err());
+}
+
+#[test]
+fn test_form_validate_accepts_password_field_empty() {
+    let mut screen = ProviderConfigScreen::new(CloudProvider::WebDAV);
+    for c in "https://example.com".chars() { screen.handle_char(c); }
+    screen.handle_tab();
+    for c in "user".chars() { screen.handle_char(c); }
+    // Password is empty (not filled)
+    // Should validate ok since only non-password fields must be non-empty
+    assert!(screen.validate().is_ok());
+}
+

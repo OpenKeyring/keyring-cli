@@ -289,6 +289,17 @@ impl ProviderConfigScreen {
         config
     }
 
+    /// Validate current form input
+    pub fn validate(&self) -> Result<(), String> {
+        // Check that non-password fields are not empty
+        for (i, field) in self.fields.iter().enumerate() {
+            if !field.is_password && field.value.is_empty() {
+                return Err(format!("{} cannot be empty", field.label));
+            }
+        }
+        Ok(())
+    }
+
     /// Renders the configuration screen
     pub fn render(&self, frame: &mut Frame, area: Rect) {
         // Title
