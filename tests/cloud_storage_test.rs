@@ -2,7 +2,7 @@
 use keyring_cli::cloud::{CloudStorage, config::{CloudConfig, CloudProvider}};
 use keyring_cli::cloud::metadata::CloudMetadata;
 use tempfile::TempDir;
-use std::path::PathBuf;
+use base64::prelude::*;
 
 #[tokio::test]
 async fn test_upload_download_metadata() {
@@ -36,7 +36,7 @@ async fn test_upload_download_record() {
     let record = serde_json::json!({
         "id": "test-id",
         "version": 1,
-        "encrypted_payload": base64::encode(b"test-data"),
+        "encrypted_payload": BASE64_STANDARD.encode(b"test-data"),
     });
 
     storage.upload_record("test-id", "device-1", &record).await.unwrap();

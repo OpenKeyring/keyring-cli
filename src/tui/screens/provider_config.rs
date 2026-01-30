@@ -95,7 +95,7 @@ impl ProviderConfigScreen {
             _ => vec![],
         };
 
-        let focused_index = if fields.is_empty() { 0 } else { 0 };
+        let focused_index = 0;
 
         Self {
             provider,

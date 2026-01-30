@@ -5,6 +5,7 @@
 use anyhow::Result;
 use crate::cloud::{CloudStorage, CloudConfig, metadata::{CloudMetadata, DeviceInfo}};
 use std::collections::HashMap;
+use base64::prelude::*;
 
 /// Cloud sync service for cross-device synchronization
 pub struct CloudSyncService {
@@ -81,7 +82,7 @@ impl CloudSyncService {
 
         let metadata = CloudMetadata {
             format_version: "1.0".to_string(),
-            kdf_nonce: base64::encode(self.kdf_nonce),
+            kdf_nonce: BASE64_STANDARD.encode(self.kdf_nonce),
             created_at: chrono::Utc::now(),
             updated_at: Some(chrono::Utc::now()),
             metadata_version: 1,

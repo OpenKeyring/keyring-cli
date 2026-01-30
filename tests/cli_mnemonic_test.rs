@@ -1,7 +1,5 @@
 // tests/cli/mnemonic_test.rs
-use keyring_cli::cli::commands::mnemonic::{handle_mnemonic, MnemonicArgs};
-use tempfile::TempDir;
-use std::fs;
+use keyring_cli::cli::commands::mnemonic::MnemonicArgs;
 
 #[test]
 fn test_mnemonic_generate_with_name_requires_db() {

@@ -2,7 +2,7 @@
 //!
 //! TDD tests for the help screen implementation.
 
-use keyring_cli::tui::screens::help::{HelpSection, HelpScreen};
+use keyring_cli::tui::screens::help::HelpScreen;
 
 #[test]
 fn test_help_screen_new() {

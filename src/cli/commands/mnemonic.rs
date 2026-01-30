@@ -1,12 +1,11 @@
 use crate::cli::ConfigManager;
-use crate::clipboard::ClipboardConfig;
 use crate::crypto::bip39;
 use crate::crypto::{
     keystore::KeyStore,
     record::{encrypt_payload, RecordPayload},
     CryptoManager,
 };
-use crate::db::models::{DecryptedRecord, RecordType, StoredRecord};
+use crate::db::models::{RecordType, StoredRecord};
 use crate::db::vault::Vault;
 use crate::error::Result;
 use crate::onboarding::is_initialized;

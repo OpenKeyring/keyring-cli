@@ -5,6 +5,7 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
+use base64::prelude::*;
 
 /// Cloud metadata for synchronization
 ///
@@ -35,7 +36,7 @@ impl Default for CloudMetadata {
     fn default() -> Self {
         Self {
             format_version: "1.0".to_string(),
-            kdf_nonce: base64::encode([0u8; 32]),
+            kdf_nonce: BASE64_STANDARD.encode([0u8; 32]),
             created_at: Utc::now(),
             updated_at: None,
             metadata_version: 1,

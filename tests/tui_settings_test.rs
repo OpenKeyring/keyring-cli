@@ -2,7 +2,7 @@
 //!
 //! TDD tests for the settings screen implementation.
 
-use keyring_cli::tui::screens::settings::{SettingsItem, SettingsSection, SettingsScreen};
+use keyring_cli::tui::screens::settings::SettingsScreen;
 
 #[test]
 fn test_settings_screen_new() {

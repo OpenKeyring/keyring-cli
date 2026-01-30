@@ -1,6 +1,6 @@
 // tests/tui/provider_select_test.rs
 use keyring_cli::cloud::CloudProvider;
-use keyring_cli::tui::screens::provider_select::{Provider, ProviderSelectScreen};
+use keyring_cli::tui::screens::provider_select::ProviderSelectScreen;
 
 #[test]
 fn test_provider_list() {

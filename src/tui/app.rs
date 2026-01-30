@@ -4,7 +4,6 @@
 
 use crate::error::{KeyringError, Result};
 use crate::tui::keybindings::{Action, KeyBindingManager};
-use crate::tui::screens::{HelpScreen, ProviderSelectScreen, SettingsScreen};
 use chrono::{DateTime, Utc};
 use ratatui::{
     backend::CrosstermBackend,
@@ -138,12 +137,6 @@ pub struct TuiApp {
     version: String,
     /// Current active screen
     current_screen: Screen,
-    /// Settings screen instance
-    settings_screen: SettingsScreen,
-    /// Help screen instance
-    help_screen: HelpScreen,
-    /// Provider select screen instance
-    provider_select_screen: ProviderSelectScreen,
 }
 
 impl Default for TuiApp {
@@ -171,9 +164,6 @@ impl TuiApp {
             sync_status: SyncStatus::Unsynced,
             version: env!("CARGO_PKG_VERSION").to_string(),
             current_screen: Screen::Main,
-            settings_screen: SettingsScreen::new(),
-            help_screen: HelpScreen::new(),
-            provider_select_screen: ProviderSelectScreen::new(),
         }
     }
 

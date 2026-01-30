@@ -121,7 +121,7 @@ impl KeyHierarchy {
         fs::create_dir_all(dir)?;
 
         // Save salt
-        fs::write(dir.join("salt"), &self.salt)?;
+        fs::write(dir.join("salt"), self.salt)?;
 
         // Wrap and save DEK
         let (wrapped_dek_bytes, nonce_dek) = self.wrap_key(&self.dek.0, &self.master_key.0)?;

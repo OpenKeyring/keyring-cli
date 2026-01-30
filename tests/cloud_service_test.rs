@@ -34,7 +34,7 @@ async fn test_sync_upload() {
     let service = CloudSyncService::new(&config, &[1u8; 32]).unwrap();
     service.initialize_metadata().await.unwrap();
 
-    let stats = service.sync(SyncDirection::Upload).await.unwrap();
+    let _stats = service.sync(SyncDirection::Upload).await.unwrap();
     // Should not error
 }
 
@@ -50,7 +50,7 @@ async fn test_sync_download() {
     let service = CloudSyncService::new(&config, &[1u8; 32]).unwrap();
     service.initialize_metadata().await.unwrap();
 
-    let stats = service.sync(SyncDirection::Download).await.unwrap();
+    let _stats = service.sync(SyncDirection::Download).await.unwrap();
     // Should not error
 }
 
@@ -66,6 +66,6 @@ async fn test_sync_both() {
     let service = CloudSyncService::new(&config, &[1u8; 32]).unwrap();
     service.initialize_metadata().await.unwrap();
 
-    let stats = service.sync(SyncDirection::Both).await.unwrap();
+    let _stats = service.sync(SyncDirection::Both).await.unwrap();
     // Should not error
 }

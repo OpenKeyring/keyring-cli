@@ -10,7 +10,6 @@
 //! 7. Verify data integrity
 
 use std::fs;
-use std::path::PathBuf;
 use tempfile::TempDir;
 use uuid::Uuid;
 

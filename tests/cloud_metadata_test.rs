@@ -2,6 +2,7 @@
 use keyring_cli::cloud::metadata::{CloudMetadata, DeviceInfo, RecordMetadata};
 use chrono::Utc;
 use std::collections::HashMap;
+use base64::prelude::*;
 
 #[test]
 fn test_metadata_serialization() {
@@ -15,7 +16,7 @@ fn test_metadata_serialization() {
 
     let metadata = CloudMetadata {
         format_version: "1.0".to_string(),
-        kdf_nonce: base64::encode([1u8; 32]),
+        kdf_nonce: BASE64_STANDARD.encode([1u8; 32]),
         created_at: Utc::now(),
         updated_at: Some(Utc::now()),
         metadata_version: 1,

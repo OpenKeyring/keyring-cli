@@ -92,10 +92,10 @@ pub async fn execute(args: RecoverArgs) -> Result<()> {
     let mut vault = Vault::open(&db_path, "")?;
 
     // Store salt as base64 for persistence
-    let salt_b64 = base64::engine::general_purpose::STANDARD.encode(&salt);
+    let salt_b64 = base64::engine::general_purpose::STANDARD.encode(salt);
     vault.set_metadata("recovery_salt", &salt_b64)?;
 
-    let nonce_b64 = base64::engine::general_purpose::STANDARD.encode(&kdf_nonce);
+    let nonce_b64 = base64::engine::general_purpose::STANDARD.encode(kdf_nonce);
     vault.set_metadata("recovery_kdf_nonce", &nonce_b64)?;
 
     println!("✓ Recovery metadata saved");

@@ -98,18 +98,6 @@ pub async fn sync_records(args: SyncArgs) -> Result<()> {
     perform_sync(&mut vault, &sync_dir, conflict_resolution).await
 }
 
-async fn show_sync_status(vault: &Vault) -> Result<()> {
-    let stats = vault.get_sync_stats()?;
-
-    println!("📊 Sync Status:");
-    println!("   Total records: {}", stats.total);
-    println!("   Pending: {}", stats.pending);
-    println!("   Conflicts: {}", stats.conflicts);
-    println!("   Synced: {}", stats.synced);
-
-    Ok(())
-}
-
 async fn perform_dry_run(vault: &Vault, sync_dir: &Path) -> Result<()> {
     let pending = vault.get_pending_records()?;
 
@@ -170,7 +158,7 @@ fn configure_provider(_config: &ConfigManager, provider: &str) -> Result<()> {
     if !valid_providers.contains(&provider) {
         return Err(crate::error::KeyringError::InvalidInput {
             context: format!("Invalid provider. Valid options: {}", valid_providers.join(", ")),
-        }.into());
+        });
     }
 
     println!("✓ Provider set to: {}", provider);

@@ -1,7 +1,7 @@
 //! Provider Configuration Screen Tests
 
 use keyring_cli::cloud::CloudProvider;
-use keyring_cli::tui::screens::provider_config::{ProviderConfig, ProviderConfigScreen};
+use keyring_cli::tui::screens::provider_config::ProviderConfigScreen;
 
 #[test]
 fn test_webdav_config_fields() {
