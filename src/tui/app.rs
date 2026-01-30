@@ -119,7 +119,7 @@ pub struct TuiApp {
     /// Running state
     running: bool,
     /// Current input buffer
-    input_buffer: String,
+    pub input_buffer: String,
     /// Command history
     history: Vec<String>,
     /// History cursor position
@@ -419,8 +419,8 @@ impl TuiApp {
                 self.submit_command();
             }
             '\t' => {
-                // Tab key - trigger autocomplete (placeholder for now)
-                // TODO: Implement autocomplete
+                // Tab key - trigger autocomplete
+                self.handle_autocomplete();
             }
             c if c.is_ascii_control() => {
                 // Ignore other control characters
@@ -435,6 +435,71 @@ impl TuiApp {
     /// Handle backspace
     pub fn handle_backspace(&mut self) {
         self.input_buffer.pop();
+    }
+
+    /// Handle tab autocomplete for commands
+    pub fn handle_autocomplete(&mut self) {
+        if self.input_buffer.is_empty() {
+            // Empty buffer - nothing to complete
+            return;
+        }
+
+        // Check if input starts with "/" (command)
+        if self.input_buffer.starts_with('/') {
+            let commands = [
+                "/new", "/list", "/search", "/show", "/update", "/delete",
+                "/config", "/help", "/quit", "/exit", "/clear",
+                "/sync", "/generate", "/recover",
+            ];
+
+            // Find the current word/prefix to complete
+            let prefix = self.input_buffer.as_str();
+
+            // Find matching commands
+            let matches: Vec<&str> = commands
+                .iter()
+                .filter(|cmd| cmd.starts_with(prefix))
+                .copied()
+                .collect();
+
+            match matches.as_slice() {
+                [] => {
+                    // No match - keep original
+                }
+                [single] => {
+                    // Single match - complete and add space
+                    self.input_buffer = format!("{} ", single);
+                }
+                [first, second] => {
+                    // Two matches - complete to common prefix
+                    let common = Self::common_prefix(first, second);
+                    if common.len() > prefix.len() {
+                        self.input_buffer = common;
+                    } else {
+                        // No common extension, show first match
+                        self.input_buffer = format!("{} ", first);
+                    }
+                }
+                _ => {
+                    // Multiple matches - use first match for now
+                    // TODO: Could show all matches to user
+                    self.input_buffer = format!("{} ", matches[0]);
+                }
+            }
+        } else if self.input_buffer.contains(' ') {
+            // Has space - might be completing record name
+            // For now, just don't modify (record completion requires database access)
+            // TODO: Implement record name completion with database lookup
+        }
+    }
+
+    /// Find common prefix of two strings
+    fn common_prefix(a: &str, b: &str) -> String {
+        a.chars()
+            .zip(b.chars())
+            .take_while(|(ca, cb)| ca == cb)
+            .map(|(c, _)| c)
+            .collect()
     }
 
     /// Submit the current command
