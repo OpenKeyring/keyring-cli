@@ -38,16 +38,11 @@ pub fn create_operator(config: &CloudConfig) -> Result<Operator> {
         CloudProvider::Dropbox => create_dropbox_operator(config),
         CloudProvider::GDrive => create_gdrive_operator(config),
         CloudProvider::OneDrive => create_onedrive_operator(config),
-        CloudProvider::AliyunDrive
-        | CloudProvider::AliyunOSS
-        | CloudProvider::TencentCOS
-        | CloudProvider::HuaweiOBS
-        | CloudProvider::UpYun => {
-            anyhow::bail!(
-                "Cloud provider {:?} is not implemented yet",
-                config.provider
-            )
-        }
+        CloudProvider::AliyunDrive => create_aliyun_drive_operator(config),
+        CloudProvider::AliyunOSS => create_aliyun_oss_operator(config),
+        CloudProvider::TencentCOS => create_tencent_cos_operator(config),
+        CloudProvider::HuaweiOBS => create_huawei_obs_operator(config),
+        CloudProvider::UpYun => create_upyun_operator(config),
     }
 }
 
@@ -181,6 +176,152 @@ fn create_onedrive_operator(config: &CloudConfig) -> Result<Operator> {
 
     let operator = Operator::new(builder)
         .context("Failed to build OneDrive operator")?
+        .finish();
+
+    Ok(operator)
+}
+
+/// Creates an operator for Aliyun Drive
+fn create_aliyun_drive_operator(config: &CloudConfig) -> Result<Operator> {
+    let token = config
+        .aliyun_drive_token
+        .as_ref()
+        .context("aliyun_drive_token is required for Aliyun Drive provider")?;
+
+    let builder = opendal::services::AliyunDrive::default()
+        .refresh_token(token)
+        .root("/");
+
+    let operator = Operator::new(builder)
+        .context("Failed to build Aliyun Drive operator")?
+        .finish();
+
+    Ok(operator)
+}
+
+/// Creates an operator for Aliyun OSS
+fn create_aliyun_oss_operator(config: &CloudConfig) -> Result<Operator> {
+    let endpoint = config
+        .aliyun_oss_endpoint
+        .as_ref()
+        .context("aliyun_oss_endpoint is required for Aliyun OSS provider")?;
+    let bucket = config
+        .aliyun_oss_bucket
+        .as_ref()
+        .context("aliyun_oss_bucket is required for Aliyun OSS provider")?;
+    let access_key = config
+        .aliyun_oss_access_key
+        .as_ref()
+        .context("aliyun_oss_access_key is required for Aliyun OSS provider")?;
+    let secret_key = config
+        .aliyun_oss_secret_key
+        .as_ref()
+        .context("aliyun_oss_secret_key is required for Aliyun OSS provider")?;
+
+    let builder = opendal::services::Oss::default()
+        .endpoint(endpoint)
+        .bucket(bucket)
+        .access_key_id(access_key)
+        .access_key_secret(secret_key)
+        .root("/");
+
+    let operator = Operator::new(builder)
+        .context("Failed to build Aliyun OSS operator")?
+        .finish();
+
+    Ok(operator)
+}
+
+/// Creates an operator for Tencent COS
+fn create_tencent_cos_operator(config: &CloudConfig) -> Result<Operator> {
+    let secret_id = config
+        .tencent_cos_secret_id
+        .as_ref()
+        .context("tencent_cos_secret_id is required for Tencent COS provider")?;
+    let secret_key = config
+        .tencent_cos_secret_key
+        .as_ref()
+        .context("tencent_cos_secret_key is required for Tencent COS provider")?;
+    let region = config
+        .tencent_cos_region
+        .as_ref()
+        .context("tencent_cos_region is required for Tencent COS provider")?;
+    let bucket = config
+        .tencent_cos_bucket
+        .as_ref()
+        .context("tencent_cos_bucket is required for Tencent COS provider")?;
+
+    let endpoint = format!("https://{}.cos.{}.myqcloud.com", bucket, region);
+    let builder = opendal::services::Cos::default()
+        .endpoint(&endpoint)
+        .secret_id(secret_id)
+        .secret_key(secret_key)
+        .bucket(bucket)
+        .root("/");
+
+    let operator = Operator::new(builder)
+        .context("Failed to build Tencent COS operator")?
+        .finish();
+
+    Ok(operator)
+}
+
+/// Creates an operator for Huawei OBS
+fn create_huawei_obs_operator(config: &CloudConfig) -> Result<Operator> {
+    let access_key = config
+        .huawei_obs_access_key
+        .as_ref()
+        .context("huawei_obs_access_key is required for Huawei OBS provider")?;
+    let secret_key = config
+        .huawei_obs_secret_key
+        .as_ref()
+        .context("huawei_obs_secret_key is required for Huawei OBS provider")?;
+    let endpoint = config
+        .huawei_obs_endpoint
+        .as_ref()
+        .context("huawei_obs_endpoint is required for Huawei OBS provider")?;
+    let bucket = config
+        .huawei_obs_bucket
+        .as_ref()
+        .context("huawei_obs_bucket is required for Huawei OBS provider")?;
+
+    let builder = opendal::services::Obs::default()
+        .endpoint(endpoint)
+        .access_key_id(access_key)
+        .secret_access_key(secret_key)
+        .bucket(bucket)
+        .root("/");
+
+    let operator = Operator::new(builder)
+        .context("Failed to build Huawei OBS operator")?
+        .finish();
+
+    Ok(operator)
+}
+
+/// Creates an operator for UpYun
+fn create_upyun_operator(config: &CloudConfig) -> Result<Operator> {
+    let bucket = config
+        .upyun_bucket
+        .as_ref()
+        .context("upyun_bucket is required for UpYun provider")?;
+    let operator_name = config
+        .upyun_operator
+        .as_ref()
+        .context("upyun_operator is required for UpYun provider")?;
+    let password = config
+        .upyun_password
+        .as_ref()
+        .context("upyun_password is required for UpYun provider")?;
+
+    let builder = opendal::services::Upyun::default()
+        .bucket(bucket)
+        .operator(operator_name)
+        .password(password)
+        .root("/");
+
+    let operator = Operator::new(builder)
+        .context("Failed to build UpYun operator")?
         .finish();
 
     Ok(operator)
