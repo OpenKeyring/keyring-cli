@@ -250,7 +250,7 @@ enum Commands {
     /// Manage MCP (Model Context Protocol) server
     Mcp {
         #[command(subcommand)]
-        command: mcp_commands::MCPCommands,
+        command: mcp::MCPCommands,
     },
 
     /// Manage trusted devices
@@ -536,10 +536,6 @@ async fn main() -> Result<()> {
                 provider: None,
             };
             commands::sync::sync_records(args).await?
-        }
-
-        Commands::Mcp { command } => {
-            commands::mcp::handle_mcp_command(command).await?
         }
 
         Commands::Devices { device_command } => {

@@ -8,6 +8,7 @@ pub mod lock;
 pub mod server;
 pub mod tools;
 
+// Re-export public types
 pub use audit::{AuditEvent, AuditLogger};
 pub use auth::{AuthDecision, ConfirmationToken, EnvTag, OperationType, PolicyEngine, RiskTag, SessionCache, UsedTokenCache};
 pub use authorization::{AuthManager, AuthToken};
@@ -15,7 +16,7 @@ pub use config::McpConfig;
 pub use executors::ExecutionResult;
 pub use handlers::{handle_ssh_exec, HandlerError};
 pub use lock::{is_locked, McpLock};
-pub use server::{McpServer, ServerConfig};
+pub use server::{McpServer, McpError};
 pub use tools::{McpToolRegistry, ToolDefinition};
 
 pub const MCP_PROTOCOL_VERSION: &str = "2024-11-05";

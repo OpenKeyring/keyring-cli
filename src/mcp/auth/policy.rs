@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fmt;
 
 /// Authorization decision based on credential tags and operation type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,6 +38,70 @@ pub enum RiskTag {
     Low,
     Medium,
     High,
+}
+
+impl EnvTag {
+    /// Get the display name of this environment tag
+    pub fn name(&self) -> &str {
+        match self {
+            EnvTag::Dev => "dev",
+            EnvTag::Test => "test",
+            EnvTag::Staging => "staging",
+            EnvTag::Prod => "prod",
+        }
+    }
+
+    /// Get the description of this environment tag
+    pub fn description(&self) -> &str {
+        match self {
+            EnvTag::Dev => "开发环境 - 开发和测试",
+            EnvTag::Test => "测试环境 - 集成测试",
+            EnvTag::Staging => "预发布环境 - 生产前验证",
+            EnvTag::Prod => "生产环境 - 线上环境",
+        }
+    }
+
+    /// Get the tag string format
+    pub fn tag_str(&self) -> String {
+        format!("env:{}", self.name())
+    }
+}
+
+impl fmt::Display for EnvTag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "env:{}", self.name())
+    }
+}
+
+impl RiskTag {
+    /// Get the display name of this risk tag
+    pub fn name(&self) -> &str {
+        match self {
+            RiskTag::Low => "low",
+            RiskTag::Medium => "medium",
+            RiskTag::High => "high",
+        }
+    }
+
+    /// Get the description of this risk tag
+    pub fn description(&self) -> &str {
+        match self {
+            RiskTag::Low => "低风险 - 开发/测试数据",
+            RiskTag::Medium => "中风险 - 非关键生产数据",
+            RiskTag::High => "高风险 - 关键生产数据",
+        }
+    }
+
+    /// Get the tag string format
+    pub fn tag_str(&self) -> String {
+        format!("risk:{}", self.name())
+    }
+}
+
+impl fmt::Display for RiskTag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "risk:{}", self.name())
+    }
 }
 
 /// Policy engine for making authorization decisions
@@ -207,6 +272,40 @@ impl PolicyEngine {
             }
             (AuthDecision::AutoApprove, AuthDecision::AutoApprove) => AuthDecision::AutoApprove,
         }
+    }
+}
+
+impl PolicyEngine {
+    /// Make an authorization decision directly from env and risk tags
+    ///
+    /// This is a convenience method for the tag configuration dialog to preview
+    /// what policy will be applied based on the selected tags.
+    ///
+    /// # Arguments
+    /// * `env` - Optional environment tag
+    /// * `risk` - Optional risk tag
+    /// * `operation` - Type of operation (Read or Write)
+    ///
+    /// # Returns
+    /// * `AuthDecision` - The authorization decision
+    pub fn decide_from_config(
+        env: Option<EnvTag>,
+        risk: Option<RiskTag>,
+        operation: OperationType,
+    ) -> AuthDecision {
+        // Convert env/risk to tag strings
+        let mut tags = HashSet::new();
+
+        if let Some(env) = env {
+            tags.insert(env.to_string());
+        }
+
+        if let Some(risk) = risk {
+            tags.insert(risk.to_string());
+        }
+
+        let engine = Self::new();
+        engine.decide(&tags, operation, "tool")
     }
 }
 
