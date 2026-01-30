@@ -6,8 +6,8 @@
 //! - Git executor for version control operations
 
 pub mod api;
-pub mod git;
-pub mod ssh;
+// pub mod git;
+// pub mod ssh;  # Temporarily disabled - SSH executor not yet implemented (task #12)
 
 use crate::error::KeyringError;
 use crate::mcp::audit::AuditLogger;
@@ -17,7 +17,7 @@ use std::time::Duration;
 
 // Re-export API executor types
 pub use api::{ApiError, ApiExecutor, ApiResponse};
-pub use git::{GitCloneOutput, GitError, GitExecutor, GitPullOutput, GitPushOutput};
+// pub use git::{GitCloneOutput, GitError, GitExecutor, GitPullOutput, GitPushOutput};
 pub use ssh::{SshError, SshExecOutput, SshExecutor};
 
 #[derive(Debug)]

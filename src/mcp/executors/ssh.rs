@@ -1,283 +1,442 @@
-//! SSH Executor - Remote command execution via SSH
+//! SSH MCP Tool Definitions
 //!
-//! Provides secure SSH command execution using the openssh crate.
-//! Private keys are never exposed to the AI and are zeroized after use.
+//! This module defines input/output structures for SSH-related MCP tools.
+//! All structures implement JsonSchema for MCP protocol compliance.
 
-use openssh::{Session, SessionBuilder};
-use std::env;
-use std::fs;
-use std::io::Write;
-use std::os::unix::fs::OpenOptionsExt;
-use std::path::PathBuf;
-use std::time::Duration;
-use thiserror::Error;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
-/// SSH execution errors
-#[derive(Debug, Error)]
-pub enum SshError {
-    #[error("SSH connection failed: {0}")]
-    ConnectionFailed(String),
-
-    #[error("Command execution failed: {0}")]
-    ExecutionFailed(String),
-
-    #[error("Command timed out after {0:?}")]
-    Timeout(Duration),
-
-    #[error("Key file error: {0}")]
-    KeyFileError(String),
-
-    #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
-
-    #[error("SSH session error: {0}")]
-    SessionError(String),
+/// Default timeout value (30 seconds)
+fn default_timeout() -> u64 {
+    30
 }
 
-/// Output from SSH command execution
-#[derive(Debug, Clone)]
+// ============================================================================
+// Tool 1: ssh_exec (by tag - first/always confirm)
+// ============================================================================
+
+/// Input for ssh_exec tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshExecInput {
+    /// Name of the SSH credential to use
+    pub credential_name: String,
+    /// Command to execute on the remote host
+    pub command: String,
+    /// Timeout in seconds (default: 30)
+    #[serde(default = "default_timeout")]
+    pub timeout: u64,
+    /// Confirmation ID for authorization flow
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confirmation_id: Option<String>,
+    /// User decision (approve/deny)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_decision: Option<String>,
+}
+
+/// Output for ssh_exec tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
 pub struct SshExecOutput {
+    /// Standard output from the command
     pub stdout: String,
+    /// Standard error from the command
     pub stderr: String,
+    /// Exit code of the command
     pub exit_code: i32,
+    /// Execution duration in milliseconds
     pub duration_ms: u64,
 }
 
-/// SSH executor for remote command execution
-///
-/// # Security
-///
-/// - Private keys are stored in memory and zeroized on drop
-/// - Temporary key files are created with 0o600 permissions
-/// - Keys are automatically cleaned up after execution
-///
-/// # Example
-///
-/// ```no_run
-/// use keyring_cli::mcp::executors::ssh::SshExecutor;
-/// use std::time::Duration;
-///
-/// #[tokio::main]
-/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-///     let private_key = std::fs::read("/path/to/private/key")?;
-///     let executor = SshExecutor::new(
-///         private_key,
-///         "example.com".to_string(),
-///         "user".to_string(),
-///         Some(22),
-///     );
-///
-///     let output = executor.exec("ls -la", Duration::from_secs(10)).await?;
-///     println!("{}", output.stdout);
-///
-///     Ok(())
-/// }
-/// ```
-pub struct SshExecutor {
-    /// Private key bytes
-    private_key_bytes: Option<Vec<u8>>,
+// ============================================================================
+// Tool 2: ssh_exec_interactive (by tag)
+// ============================================================================
 
-    /// SSH host
-    host: String,
+/// Input for ssh_exec_interactive tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshExecInteractiveInput {
+    /// Name of the SSH credential to use
+    pub credential_name: String,
+    /// List of commands to execute sequentially
+    pub commands: Vec<String>,
+    /// Timeout in seconds per command (default: 30)
+    #[serde(default = "default_timeout")]
+    pub timeout: u64,
+    /// Confirmation ID for authorization flow
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confirmation_id: Option<String>,
+    /// User decision (approve/deny)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_decision: Option<String>,
+}
 
+/// Result of a single command execution
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct CommandResult {
+    /// The command that was executed
+    pub command: String,
+    /// Standard output from the command
+    pub stdout: String,
+    /// Standard error from the command
+    pub stderr: String,
+    /// Exit code of the command
+    pub exit_code: i32,
+}
+
+/// Output for ssh_exec_interactive tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshExecInteractiveOutput {
+    /// Results for each command executed
+    pub results: Vec<CommandResult>,
+    /// Total execution duration in milliseconds
+    pub total_duration_ms: u64,
+}
+
+// ============================================================================
+// Tool 3: ssh_list_hosts (low risk - no confirmation)
+// ============================================================================
+
+/// Input for ssh_list_hosts tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshListHostsInput {
+    /// Optional filter by tags
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub filter_tags: Option<Vec<String>>,
+}
+
+/// Information about a single SSH host
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshHostInfo {
+    /// Name identifier for the host
+    pub name: String,
+    /// Host address (hostname or IP)
+    pub host: String,
     /// SSH username
-    username: String,
-
-    /// SSH port (None = use SSH default)
-    port: Option<u16>,
+    pub username: String,
+    /// SSH port (default: 22)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<u16>,
+    /// Tags associated with this host
+    pub tags: Vec<String>,
 }
 
-impl SshExecutor {
-    /// Create a new SSH executor
-    ///
-    /// # Arguments
-    ///
-    /// * `private_key_bytes` - SSH private key in bytes
-    /// * `host` - Target hostname or IP address
-    /// * `username` - SSH username
-    /// * `port` - SSH port (None for default 22)
-    pub fn new(
-        private_key_bytes: Vec<u8>,
-        host: String,
-        username: String,
-        port: Option<u16>,
-    ) -> Self {
-        Self {
-            private_key_bytes: Some(private_key_bytes),
-            host,
-            username,
-            port,
-        }
-    }
-
-    /// Get the host
-    pub fn host(&self) -> &str {
-        &self.host
-    }
-
-    /// Get the username
-    pub fn username(&self) -> &str {
-        &self.username
-    }
-
-    /// Get the port
-    pub fn port(&self) -> Option<u16> {
-        self.port
-    }
-
-    /// Execute a command on the remote host
-    ///
-    /// # Arguments
-    ///
-    /// * `command` - Command string to execute
-    /// * `timeout` - Maximum time to wait for command completion
-    ///
-    /// # Returns
-    ///
-    /// `SshExecOutput` containing stdout, stderr, exit code, and duration
-    pub async fn exec(&self, command: &str, timeout: Duration) -> Result<SshExecOutput, SshError> {
-        let start = std::time::Instant::now();
-
-        // Get private key bytes
-        let key_bytes = self
-            .private_key_bytes
-            .as_ref()
-            .ok_or_else(|| SshError::KeyFileError("Private key not available".to_string()))?;
-
-        // Write temporary key file
-        let key_path = self.write_temp_key(key_bytes)?;
-
-        // Execute command with timeout
-        let result = tokio::time::timeout(
-            timeout,
-            execute_ssh_command_internal(
-                &self.host,
-                &self.username,
-                self.port,
-                &key_path,
-                command,
-            ),
-        )
-        .await;
-
-        // Clean up temp key file
-        let _ = fs::remove_file(&key_path);
-
-        let duration_ms = start.elapsed().as_millis() as u64;
-
-        match result {
-            Ok(Ok(output)) => {
-                let mut result = output;
-                result.duration_ms = duration_ms;
-                Ok(result)
-            }
-            Ok(Err(e)) => Err(e),
-            Err(_) => Err(SshError::Timeout(timeout)),
-        }
-    }
-
-    /// Write private key to a temporary file with secure permissions
-    ///
-    /// # Security
-    ///
-    /// - File is created in $TEMP directory
-    /// - Permissions are set to 0o600 (owner read/write only)
-    /// - File path includes PID for uniqueness
-    ///
-    /// # Returns
-    ///
-    /// Path to the temporary key file
-    fn write_temp_key(&self, key_bytes: &[u8]) -> Result<PathBuf, SshError> {
-        // Get temp directory
-        let temp_dir = env::temp_dir();
-
-        // Create unique filename with PID
-        let pid = std::process::id();
-        let key_filename = format!(".ok-ssh-{}-test_key", pid);
-        let key_path = temp_dir.join(&key_filename);
-
-        // Create file with restrictive permissions
-        let mut file = fs::File::options()
-            .write(true)
-            .create_new(true)
-            .mode(0o600)
-            .open(&key_path)
-            .map_err(|e| SshError::KeyFileError(format!("Failed to create temp file: {}", e)))?;
-
-        // Write key bytes
-        file.write_all(key_bytes)
-            .map_err(|e| SshError::KeyFileError(format!("Failed to write key: {}", e)))?;
-
-        file.flush()
-            .map_err(|e| SshError::KeyFileError(format!("Failed to flush key: {}", e)))?;
-
-        Ok(key_path)
-    }
+/// Output for ssh_list_hosts tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshListHostsOutput {
+    /// List of SSH hosts
+    pub hosts: Vec<SshHostInfo>,
 }
 
-/// Execute command via SSH session
-async fn execute_ssh_command_internal(
-    host: &str,
-    username: &str,
-    port: Option<u16>,
-    _key_path: &PathBuf,
-    command: &str,
-) -> Result<SshExecOutput, SshError> {
-    use openssh::KnownHosts;
+// ============================================================================
+// Tool 4: ssh_upload_file (by tag)
+// ============================================================================
 
-    // Build connection string
-    let connection = if let Some(p) = port {
-        format!("{}@{}:{}", username, host, p)
-    } else {
-        format!("{}@{}", username, host)
-    };
-
-    // Create session
-    let mut session_builder = SessionBuilder::default();
-    session_builder.known_hosts_check(KnownHosts::Accept);
-
-    let session = session_builder
-        .connect(&connection)
-        .await
-        .map_err(|e| SshError::ConnectionFailed(e.to_string()))?;
-
-    // Execute command and get output
-    let output = session
-        .command(command)
-        .output()
-        .await
-        .map_err(|e: openssh::Error| SshError::ExecutionFailed(e.to_string()))?;
-
-    Ok(SshExecOutput {
-        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-        exit_code: output.status.code().unwrap_or(-1),
-        duration_ms: 0, // Will be set by caller
-    })
+/// Input for ssh_upload_file tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshUploadFileInput {
+    /// Name of the SSH credential to use
+    pub credential_name: String,
+    /// Local file path to upload
+    pub local_path: String,
+    /// Remote destination path
+    pub remote_path: String,
+    /// Confirmation ID for authorization flow
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confirmation_id: Option<String>,
+    /// User decision (approve/deny)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_decision: Option<String>,
 }
+
+/// Output for ssh_upload_file tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshUploadFileOutput {
+    /// Whether the upload succeeded
+    pub success: bool,
+    /// Number of bytes uploaded
+    pub bytes_uploaded: u64,
+    /// Upload duration in milliseconds
+    pub duration_ms: u64,
+}
+
+// ============================================================================
+// Tool 5: ssh_download_file (by tag)
+// ============================================================================
+
+/// Input for ssh_download_file tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshDownloadFileInput {
+    /// Name of the SSH credential to use
+    pub credential_name: String,
+    /// Remote file path to download
+    pub remote_path: String,
+    /// Local destination path
+    pub local_path: String,
+    /// Confirmation ID for authorization flow
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confirmation_id: Option<String>,
+    /// User decision (approve/deny)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_decision: Option<String>,
+}
+
+/// Output for ssh_download_file tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshDownloadFileOutput {
+    /// Whether the download succeeded
+    pub success: bool,
+    /// Number of bytes downloaded
+    pub bytes_downloaded: u64,
+    /// Download duration in milliseconds
+    pub duration_ms: u64,
+}
+
+// ============================================================================
+// Tool 6: ssh_check_connection (low risk - no confirmation)
+// ============================================================================
+
+/// Input for ssh_check_connection tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshCheckConnectionInput {
+    /// Name of the SSH credential to check
+    pub credential_name: String,
+}
+
+/// Output for ssh_check_connection tool
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct SshCheckConnectionOutput {
+    /// Whether the connection succeeded
+    pub connected: bool,
+    /// Connection latency in milliseconds
+    pub latency_ms: u64,
+    /// Error message if connection failed
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+// ============================================================================
+// Tests
+// ============================================================================
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_ssh_error_display() {
-        let err = SshError::ConnectionFailed("connection refused".to_string());
-        assert!(err.to_string().contains("connection refused"));
+    fn test_ssh_exec_input_serialization() {
+        let input = SshExecInput {
+            credential_name: "my-server".to_string(),
+            command: "ls -la".to_string(),
+            timeout: 30,
+            confirmation_id: None,
+            user_decision: None,
+        };
+
+        let json = serde_json::to_string(&input).unwrap();
+        assert!(json.contains("my-server"));
+        assert!(json.contains("ls -la"));
+
+        // Test deserialization
+        let deserialized: SshExecInput = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.credential_name, "my-server");
+        assert_eq!(deserialized.command, "ls -la");
+        assert_eq!(deserialized.timeout, 30);
     }
 
     #[test]
-    fn test_ssh_executor_creation() {
-        let key = b"test_key".to_vec();
-        let executor = SshExecutor::new(
-            key,
-            "example.com".to_string(),
-            "user".to_string(),
-            Some(2222),
-        );
+    fn test_ssh_exec_input_with_confirmation() {
+        let input = SshExecInput {
+            credential_name: "my-server".to_string(),
+            command: "cat /etc/hosts".to_string(),
+            timeout: 60,
+            confirmation_id: Some("confirm-123".to_string()),
+            user_decision: Some("approve".to_string()),
+        };
 
-        assert_eq!(executor.host(), "example.com");
-        assert_eq!(executor.username(), "user");
-        assert_eq!(executor.port(), Some(2222));
+        let json = serde_json::to_string(&input).unwrap();
+        assert!(json.contains("confirm-123"));
+        assert!(json.contains("approve"));
+
+        let deserialized: SshExecInput = serde_json::from_str(&json).unwrap();
+        assert_eq!(
+            deserialized.confirmation_id,
+            Some("confirm-123".to_string())
+        );
+        assert_eq!(deserialized.user_decision, Some("approve".to_string()));
+    }
+
+    #[test]
+    fn test_ssh_exec_output_serialization() {
+        let output = SshExecOutput {
+            stdout: "file1.txt\nfile2.txt\n".to_string(),
+            stderr: "".to_string(),
+            exit_code: 0,
+            duration_ms: 245,
+        };
+
+        let json = serde_json::to_string(&output).unwrap();
+        let deserialized: SshExecOutput = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.stdout, "file1.txt\nfile2.txt\n");
+        assert_eq!(deserialized.exit_code, 0);
+        assert_eq!(deserialized.duration_ms, 245);
+    }
+
+    #[test]
+    fn test_ssh_exec_interactive_serialization() {
+        let input = SshExecInteractiveInput {
+            credential_name: "db-server".to_string(),
+            commands: vec![
+                "cd /var/log".to_string(),
+                "tail -100 syslog".to_string(),
+                "exit".to_string(),
+            ],
+            timeout: 45,
+            confirmation_id: None,
+            user_decision: None,
+        };
+
+        let json = serde_json::to_string(&input).unwrap();
+        let deserialized: SshExecInteractiveInput = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.commands.len(), 3);
+        assert_eq!(deserialized.commands[0], "cd /var/log");
+        assert_eq!(deserialized.timeout, 45);
+    }
+
+    #[test]
+    fn test_command_result_serialization() {
+        let result = CommandResult {
+            command: "pwd".to_string(),
+            stdout: "/home/user\n".to_string(),
+            stderr: "".to_string(),
+            exit_code: 0,
+        };
+
+        let json = serde_json::to_string(&result).unwrap();
+        let deserialized: CommandResult = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.command, "pwd");
+        assert_eq!(deserialized.stdout, "/home/user\n");
+    }
+
+    #[test]
+    fn test_ssh_list_hosts_input() {
+        let input = SshListHostsInput {
+            filter_tags: Some(vec!["production".to_string(), "web".to_string()]),
+        };
+
+        let json = serde_json::to_string(&input).unwrap();
+        let deserialized: SshListHostsInput = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.filter_tags.unwrap().len(), 2);
+    }
+
+    #[test]
+    fn test_ssh_host_info_serialization() {
+        let host = SshHostInfo {
+            name: "web-server-1".to_string(),
+            host: "192.168.1.100".to_string(),
+            username: "admin".to_string(),
+            port: Some(2222),
+            tags: vec!["production".to_string(), "web".to_string()],
+        };
+
+        let json = serde_json::to_string(&host).unwrap();
+        let deserialized: SshHostInfo = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.name, "web-server-1");
+        assert_eq!(deserialized.host, "192.168.1.100");
+        assert_eq!(deserialized.port, Some(2222));
+        assert_eq!(deserialized.tags.len(), 2);
+    }
+
+    #[test]
+    fn test_ssh_upload_file_serialization() {
+        let input = SshUploadFileInput {
+            credential_name: "backup-server".to_string(),
+            local_path: "/tmp/backup.tar.gz".to_string(),
+            remote_path: "/backups/daily.tar.gz".to_string(),
+            confirmation_id: None,
+            user_decision: None,
+        };
+
+        let json = serde_json::to_string(&input).unwrap();
+        let deserialized: SshUploadFileInput = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.local_path, "/tmp/backup.tar.gz");
+        assert_eq!(deserialized.remote_path, "/backups/daily.tar.gz");
+    }
+
+    #[test]
+    fn test_ssh_download_file_serialization() {
+        let input = SshDownloadFileInput {
+            credential_name: "log-server".to_string(),
+            remote_path: "/var/log/app.log".to_string(),
+            local_path: "./app.log".to_string(),
+            confirmation_id: None,
+            user_decision: None,
+        };
+
+        let json = serde_json::to_string(&input).unwrap();
+        let deserialized: SshDownloadFileInput = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.remote_path, "/var/log/app.log");
+        assert_eq!(deserialized.local_path, "./app.log");
+    }
+
+    #[test]
+    fn test_ssh_check_connection_serialization() {
+        let input = SshCheckConnectionInput {
+            credential_name: "test-server".to_string(),
+        };
+
+        let json = serde_json::to_string(&input).unwrap();
+        let deserialized: SshCheckConnectionInput = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.credential_name, "test-server");
+    }
+
+    #[test]
+    fn test_ssh_check_connection_output() {
+        let output = SshCheckConnectionOutput {
+            connected: true,
+            latency_ms: 42,
+            error: None,
+        };
+
+        let json = serde_json::to_string(&output).unwrap();
+        let deserialized: SshCheckConnectionOutput = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.connected, true);
+        assert_eq!(deserialized.latency_ms, 42);
+        assert!(deserialized.error.is_none());
+    }
+
+    #[test]
+    fn test_default_timeout() {
+        let json = r#"{"credential_name":"test","command":"ls"}"#;
+        let input: SshExecInput = serde_json::from_str(json).unwrap();
+
+        assert_eq!(input.timeout, 30);
+    }
+
+    #[test]
+    fn test_json_schema_generation() {
+        // Test that JsonSchema can be generated for all structs
+        use schemars::schema_for;
+
+        let _schema = schema_for!(SshExecInput);
+        let _schema = schema_for!(SshExecOutput);
+        let _schema = schema_for!(SshExecInteractiveInput);
+        let _schema = schema_for!(CommandResult);
+        let _schema = schema_for!(SshExecInteractiveOutput);
+        let _schema = schema_for!(SshListHostsInput);
+        let _schema = schema_for!(SshHostInfo);
+        let _schema = schema_for!(SshListHostsOutput);
+        let _schema = schema_for!(SshUploadFileInput);
+        let _schema = schema_for!(SshUploadFileOutput);
+        let _schema = schema_for!(SshDownloadFileInput);
+        let _schema = schema_for!(SshDownloadFileOutput);
+        let _schema = schema_for!(SshCheckConnectionInput);
+        let _schema = schema_for!(SshCheckConnectionOutput);
     }
 }

@@ -3,6 +3,10 @@ use crate::mcp::AuditLogger;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+pub mod api;
+pub mod git;
+pub mod ssh;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolDefinition {
     pub name: String,
