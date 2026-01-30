@@ -39,7 +39,10 @@ pub fn create_operator(config: &CloudConfig) -> Result<Operator> {
         | CloudProvider::GDrive
         | CloudProvider::OneDrive
         | CloudProvider::AliyunDrive
-        | CloudProvider::AliyunOSS => {
+        | CloudProvider::AliyunOSS
+        | CloudProvider::TencentCOS
+        | CloudProvider::HuaweiOBS
+        | CloudProvider::UpYun => {
             anyhow::bail!(
                 "Cloud provider {:?} is not implemented yet",
                 config.provider

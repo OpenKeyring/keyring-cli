@@ -26,6 +26,12 @@ pub enum CloudProvider {
     AliyunDrive,
     /// Aliyun OSS (阿里云对象存储)
     AliyunOSS,
+    /// Tencent COS (腾讯云对象存储)
+    TencentCOS,
+    /// Huawei OBS (华为云对象存储)
+    HuaweiOBS,
+    /// UpYun (又拍云)
+    UpYun,
 }
 
 /// Cloud storage configuration
@@ -76,6 +82,31 @@ pub struct CloudConfig {
     pub aliyun_oss_access_key: Option<String>,
     /// Aliyun OSS secret key
     pub aliyun_oss_secret_key: Option<String>,
+
+    /// Tencent COS secret ID
+    pub tencent_cos_secret_id: Option<String>,
+    /// Tencent COS secret key
+    pub tencent_cos_secret_key: Option<String>,
+    /// Tencent COS region (e.g., ap-guangzhou)
+    pub tencent_cos_region: Option<String>,
+    /// Tencent COS bucket name
+    pub tencent_cos_bucket: Option<String>,
+
+    /// Huawei OBS access key
+    pub huawei_obs_access_key: Option<String>,
+    /// Huawei OBS secret key
+    pub huawei_obs_secret_key: Option<String>,
+    /// Huawei OBS endpoint
+    pub huawei_obs_endpoint: Option<String>,
+    /// Huawei OBS bucket name
+    pub huawei_obs_bucket: Option<String>,
+
+    /// UpYun bucket name
+    pub upyun_bucket: Option<String>,
+    /// UpYun operator name
+    pub upyun_operator: Option<String>,
+    /// UpYun password
+    pub upyun_password: Option<String>,
 }
 
 impl Default for CloudConfig {
@@ -99,6 +130,17 @@ impl Default for CloudConfig {
             aliyun_oss_bucket: None,
             aliyun_oss_access_key: None,
             aliyun_oss_secret_key: None,
+            tencent_cos_secret_id: None,
+            tencent_cos_secret_key: None,
+            tencent_cos_region: None,
+            tencent_cos_bucket: None,
+            huawei_obs_access_key: None,
+            huawei_obs_secret_key: None,
+            huawei_obs_endpoint: None,
+            huawei_obs_bucket: None,
+            upyun_bucket: None,
+            upyun_operator: None,
+            upyun_password: None,
         }
     }
 }
