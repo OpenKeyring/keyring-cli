@@ -30,7 +30,7 @@ async fn test_full_sync_flow_with_passkey() {
 
     // Step 2: Convert Passkey to seed
     let seed = passkey.to_seed(None).unwrap();
-    assert_eq!(seed.0.len(), 64);
+    assert_eq!(seed.get().len(), 64);
 
     // Step 3: Derive root master key from Passkey seed
     let salt = [1u8; 16]; // In production, this would be a random salt

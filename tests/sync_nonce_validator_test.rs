@@ -30,20 +30,26 @@ fn test_recovery_strategy_mismatch_nonce() {
 #[test]
 fn test_prompt_user_resolution_returns_strategy() {
     let validator = NonceValidator::new();
-    let result = validator.prompt_user_resolution("test-record");
+    let local_nonce = [1u8; 12];
+    let remote_nonce = [2u8; 12];
+    let result = validator.prompt_user_resolution(&local_nonce, &remote_nonce);
 
-    // Should return Some strategy (currently defaults to UseLocal)
-    assert!(result.is_some());
+    // Should return Ok strategy (currently defaults to UseLocal)
+    assert!(result.is_ok());
     assert_eq!(result.unwrap(), RecoveryStrategy::UseLocal);
 }
 
 #[test]
 fn test_prompt_user_resolution_different_record_names() {
     let validator = NonceValidator::new();
+    let local_nonce = [1u8; 12];
+    let remote_nonce = [2u8; 12];
 
-    // Test with different record names
-    for name in &["github", "gitlab", "aws", "database"] {
-        let result = validator.prompt_user_resolution(name);
-        assert!(result.is_some(), "Should return strategy for record: {}", name);
+    // Test with different nonces
+    for i in 0..4 {
+        let local = [i; 12];
+        let remote = [i + 1; 12];
+        let result = validator.prompt_user_resolution(&local, &remote);
+        assert!(result.is_ok(), "Should return strategy for nonces");
     }
 }

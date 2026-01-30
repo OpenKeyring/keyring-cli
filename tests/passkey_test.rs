@@ -17,7 +17,7 @@ fn test_generate_passkey_24_words() {
 fn test_passkey_to_seed() {
     let passkey = Passkey::generate(24).unwrap();
     let seed = passkey.to_seed(None).unwrap();
-    assert_eq!(seed.0.len(), 64); // BIP39 seed is 64 bytes
+    assert_eq!(seed.get().len(), 64); // BIP39 seed is 64 bytes
 }
 
 #[test]
@@ -27,8 +27,8 @@ fn test_passkey_from_words() {
 
     let restored = Passkey::from_words(&words).unwrap();
     assert_eq!(
-        original.to_seed(None).unwrap().0,
-        restored.to_seed(None).unwrap().0
+        original.to_seed(None).unwrap().get(),
+        restored.to_seed(None).unwrap().get()
     );
 }
 
@@ -39,5 +39,5 @@ fn test_passkey_with_optional_passphrase() {
     let seed_with_passphrase = passkey.to_seed(Some("test-passphrase")).unwrap();
 
     // Different passphrases should produce different seeds
-    assert_ne!(seed_no_passphrase.0, seed_with_passphrase.0);
+    assert_ne!(seed_no_passphrase.get(), seed_with_passphrase.get());
 }

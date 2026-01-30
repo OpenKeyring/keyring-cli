@@ -7,6 +7,8 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #1012 | 6:43 PM | 🔵 | Found PasskeySeed type definition | ~57 |
+| #1011 | " | 🔵 | Found Passkey::to_seed() method returning SensitiveString | ~54 |
 | #458 | 2:01 PM | 🟣 | KeyHierarchy save/unlock implementation committed with complete key wrapping | ~202 |
 | #455 | 2:00 PM | 🔄 | KeyHierarchy unlock method signature reordered to match test expectations | ~159 |
 | #453 | " | 🔄 | Dangling derive_master_key code removed from KeyHierarchy implementation | ~113 |
