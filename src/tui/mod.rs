@@ -8,6 +8,7 @@ pub mod commands;
 pub mod handler;
 pub mod keybindings;
 pub mod screens;
+pub mod tags;
 mod utils;
 mod widgets;
 
