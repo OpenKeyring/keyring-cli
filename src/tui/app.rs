@@ -8,7 +8,7 @@ use crate::tui::keybindings::{Action, KeyBindingManager};
 use crate::tui::screens::wizard::{WizardState, WizardStep};
 use crate::tui::screens::{
     MasterPasswordScreen, PasskeyConfirmScreen, PasskeyGenerateScreen,
-    PasskeyImportScreen, WelcomeScreen,
+    PasskeyImportScreen, SyncScreen, WelcomeScreen,
 };
 use chrono::{DateTime, Utc};
 use ratatui::{
@@ -164,6 +164,8 @@ pub struct TuiApp {
     pub passkey_confirm_screen: Option<PasskeyConfirmScreen>,
     /// Master password screen (wizard step 4)
     pub master_password_screen: MasterPasswordScreen,
+    /// Sync screen
+    sync_screen: Option<SyncScreen>,
 }
 
 impl Default for TuiApp {
@@ -197,6 +199,7 @@ impl TuiApp {
             passkey_import_screen: PasskeyImportScreen::new(),
             passkey_confirm_screen: None,
             master_password_screen: MasterPasswordScreen::new(),
+            sync_screen: Some(SyncScreen::new()),
         }
     }
 
@@ -373,8 +376,8 @@ impl TuiApp {
                 return;
             }
             KeyCode::F(5) => {
-                // F5 - Sync (for now, show sync output)
-                self.output_lines.push("Sync: Triggered (TODO: implement sync screen)".to_string());
+                // F5 - Sync
+                self.navigate_to(Screen::Sync);
                 return;
             }
             KeyCode::Char('?') => {
@@ -758,6 +761,14 @@ impl TuiApp {
         if self.current_screen == Screen::Wizard {
             if let Some(state) = &self.wizard_state {
                 self.render_wizard(frame, size, state);
+                return;
+            }
+        }
+
+        // Handle sync screen
+        if self.current_screen == Screen::Sync {
+            if let Some(screen) = &self.sync_screen {
+                screen.render(frame, size);
                 return;
             }
         }
