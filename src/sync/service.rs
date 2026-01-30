@@ -222,6 +222,61 @@ impl SyncService {
         Ok(stats)
     }
 
+    /// Detect conflicts without resolving them
+    ///
+    /// Returns a list of conflicts between local and remote records.
+    /// This can be used to display conflicts to the user for manual resolution.
+    pub fn detect_conflicts(
+        &self,
+        vault: &Vault,
+        sync_dir: &Path,
+    ) -> Result<Vec<crate::sync::conflict::Conflict>> {
+        if !sync_dir.exists() {
+            return Ok(Vec::new());
+        }
+
+        // Load all local records
+        let local_records = vault.list_records()?;
+        let local_sync_records: Vec<SyncRecord> = local_records
+            .iter()
+            .filter_map(|r| self.exporter.export_record(r).ok())
+            .collect();
+
+        // Load all remote records from directory
+        let mut remote_records = Vec::new();
+        for entry in fs::read_dir(sync_dir).map_err(|e| {
+            KeyringError::IoError(format!("Failed to read sync directory: {}", e))
+        })? {
+            let entry = entry.map_err(|e| {
+                KeyringError::IoError(format!("Failed to read directory entry: {}", e))
+            })?;
+            let path = entry.path();
+
+            // Only process JSON files
+            if path.extension().and_then(|s| s.to_str()) != Some("json") {
+                continue;
+            }
+
+            // Skip metadata file
+            if path.file_name().and_then(|s| s.to_str()) == Some("metadata.json") {
+                continue;
+            }
+
+            let json = fs::read_to_string(&path).map_err(|e| {
+                KeyringError::IoError(format!("Failed to read sync file: {}", e))
+            })?;
+
+            if let Ok(sync_record) = self.importer.import_from_json(&json) {
+                remote_records.push(sync_record);
+            }
+        }
+
+        // Detect conflicts using version-based comparison
+        Ok(self
+            .conflict_resolver
+            .detect_conflicts(&local_sync_records, &remote_records))
+    }
+
     /// Get sync status statistics
     pub fn get_sync_status(&self, vault: &Vault) -> Result<SyncStatusInfo> {
         let all_records = vault.list_records()?;
