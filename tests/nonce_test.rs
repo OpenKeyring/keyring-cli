@@ -157,12 +157,14 @@ fn create_test_record_with_nonce(nonce: [u8; 12]) -> StoredRecord {
         tags: vec!["test".to_string()],
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        version: 1,
     }
 }
 
 fn create_sync_record_with_nonce(nonce: [u8; 12]) -> SyncRecord {
     SyncRecord {
         id: Uuid::new_v4().to_string(),
+        version: 1,
         record_type: RecordType::Password,
         encrypted_data: STANDARD.encode(b"test-data"),
         nonce: STANDARD.encode(nonce),

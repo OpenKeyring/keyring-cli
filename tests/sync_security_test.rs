@@ -24,6 +24,7 @@ fn test_metadata_no_sensitive_keys() {
         nonce: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         tags: vec!["test".to_string()],
         created_at: Utc::now(),
+        version: 1,
         updated_at: Utc::now(),
     };
 
@@ -60,6 +61,7 @@ fn test_encrypted_data_is_base64() {
         nonce: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         tags: vec!["test".to_string()],
         created_at: Utc::now(),
+        version: 1,
         updated_at: Utc::now(),
     };
 
@@ -82,6 +84,7 @@ fn test_nonce_is_base64() {
         nonce: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         tags: vec!["test".to_string()],
         created_at: Utc::now(),
+        version: 1,
         updated_at: Utc::now(),
     };
 
@@ -110,6 +113,7 @@ fn test_full_sync_record_no_sensitive_data() {
         nonce: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         tags: vec!["test".to_string()],
         created_at: Utc::now(),
+        version: 1,
         updated_at: Utc::now(),
     };
 
@@ -175,6 +179,7 @@ fn test_zero_knowledge_metadata_only() {
         nonce: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         tags: vec!["crypto".to_string(), "wallet".to_string()],
         created_at: Utc::now(),
+        version: 1,
         updated_at: Utc::now(),
     };
 

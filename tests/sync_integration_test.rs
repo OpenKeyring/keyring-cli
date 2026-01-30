@@ -69,6 +69,7 @@ async fn test_full_sync_flow_with_passkey() {
         tags: vec!["test".to_string(), "integration".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     // Add record to vault
@@ -240,6 +241,7 @@ async fn test_sync_roundtrip_with_encrypted_data() {
             tags: vec![name.to_string()],
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
+            version: 1,
         };
         vault.add_record(&record).unwrap();
     }

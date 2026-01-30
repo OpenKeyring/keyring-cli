@@ -26,6 +26,7 @@ fn sync_export_import_roundtrip() {
         tags: vec!["test".to_string()],
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        version: 1,
     };
 
     // 添加记录到 vault

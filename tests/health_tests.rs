@@ -42,6 +42,7 @@ mod tests {
             tags: vec![],
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            version: 1,
         };
 
         // Run health check - should detect weak password
@@ -102,6 +103,7 @@ mod tests {
             tags: vec![],
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            version: 1,
         }
     }
 }

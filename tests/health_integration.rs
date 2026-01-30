@@ -171,5 +171,6 @@ fn create_record(name: &str, password: &str, crypto: &CryptoManager) -> StoredRe
         tags: vec![],
         created_at: Utc::now(),
         updated_at: Utc::now(),
+        version: 1,
     }
 }

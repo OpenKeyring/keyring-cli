@@ -17,6 +17,7 @@ fn test_add_record() {
         tags: vec!["work".to_string(), "important".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     assert!(vault.add_record(&record).is_ok());
@@ -59,6 +60,7 @@ fn test_add_record_with_tags() {
         tags: vec!["work".to_string(), "important".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
     assert!(vault.add_record(&record1).is_ok());
 
@@ -71,6 +73,7 @@ fn test_add_record_with_tags() {
         tags: vec!["work".to_string(), "personal".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
     assert!(vault.add_record(&record2).is_ok());
 
@@ -115,6 +118,7 @@ fn test_add_record_with_duplicate_tags() {
         ],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     // Should not fail even with duplicate tag names
@@ -149,6 +153,7 @@ fn test_get_record() {
         tags: vec!["work".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     vault.add_record(&record).unwrap();
@@ -173,6 +178,7 @@ fn test_list_records() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     let record2 = StoredRecord {
@@ -183,6 +189,7 @@ fn test_list_records() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     vault.add_record(&record1).unwrap();
@@ -206,6 +213,7 @@ fn test_list_records_with_tags() {
         tags: vec!["work".to_string(), "important".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     vault.add_record(&record1).unwrap();
@@ -243,6 +251,7 @@ fn test_update_record() {
         tags: vec!["tag1".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     vault.add_record(&record).unwrap();
@@ -298,6 +307,7 @@ fn test_soft_delete_record() {
         tags: vec!["test-tag".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     vault.add_record(&record).unwrap();
@@ -386,6 +396,7 @@ fn test_find_record_by_name_success() {
         tags: vec!["test-tag".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     vault.add_record(&record).unwrap();
@@ -433,6 +444,7 @@ fn test_get_sync_stats_with_records() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     let record2 = StoredRecord {
@@ -443,6 +455,7 @@ fn test_get_sync_stats_with_records() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     let record3 = StoredRecord {
@@ -453,6 +466,7 @@ fn test_get_sync_stats_with_records() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     vault.add_record(&record1).unwrap();
@@ -510,6 +524,7 @@ fn test_get_pending_records_with_pending() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     let record2 = StoredRecord {
@@ -520,6 +535,7 @@ fn test_get_pending_records_with_pending() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
     };
 
     vault.add_record(&record1).unwrap();
