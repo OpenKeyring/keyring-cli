@@ -370,7 +370,8 @@ pub async fn execute(args: NewArgs) -> Result<()> {
         keystore
     };
     let mut crypto = CryptoManager::new();
-    crypto.initialize_with_key(keystore.dek);
+    let dek_array: [u8; 32] = keystore.get_dek().try_into().expect("DEK must be 32 bytes");
+    crypto.initialize_with_key(dek_array);
 
     // Generate password based on type
     let password_type = args.get_password_type()?;

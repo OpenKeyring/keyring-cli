@@ -4,8 +4,9 @@ use anyhow::Result;
 use rusqlite::Connection;
 use std::path::Path;
 use uuid::Uuid;
+use crate::types::SensitiveString;
 
-use super::models::{RecordType, StoredRecord, SyncState, SyncStatus};
+use super::models::{DecryptedRecord, RecordType, StoredRecord, SyncState, SyncStatus};
 
 /// Vault for managing encrypted password records
 pub struct Vault {
@@ -76,7 +77,7 @@ impl Vault {
     /// List all non-deleted records with tags
     ///
     /// Uses a single query with LEFT JOIN and GROUP_CONCAT to avoid N+1 query pattern.
-    /// TODO: Decode encrypted data fields when crypto module is integrated
+    /// Note: Returns encrypted records. Use get_record_decrypted() for decrypted records.
     pub fn list_records(&self) -> Result<Vec<StoredRecord>> {
         let mut stmt = self.conn.prepare(
             "SELECT r.id, r.record_type, r.encrypted_data, r.nonce, r.created_at, r.updated_at, r.version,
@@ -203,6 +204,90 @@ impl Vault {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(StoredRecord { tags, ..record })
+    }
+
+    /// Decrypt the password field from a stored record
+    ///
+    /// This method decrypts the encrypted_data field of a record using the provided DEK
+    /// and returns the password wrapped in a SensitiveString for automatic zeroization.
+    ///
+    /// # Arguments
+    /// * `record` - The stored record containing encrypted data
+    /// * `dek` - The Data Encryption Key (32 bytes)
+    ///
+    /// # Returns
+    /// The decrypted password wrapped in SensitiveString
+    ///
+    /// # Security Note
+    /// The returned SensitiveString will automatically zeroize its contents when dropped,
+    /// preventing sensitive password data from remaining in memory.
+    pub fn decrypt_password(&self, record: &StoredRecord, dek: &[u8]) -> Result<SensitiveString<String>> {
+        // Convert DEK slice to array
+        let dek_array: [u8; 32] = dek.try_into()
+            .map_err(|_| anyhow::anyhow!("Invalid DEK length: expected 32 bytes"))?;
+
+        // Decrypt using the crypto module (ciphertext, nonce, key)
+        let decrypted = crate::crypto::aes256gcm::decrypt(&record.encrypted_data, &record.nonce, &dek_array)?;
+
+        // Parse the decrypted JSON to extract the password field
+        let json_str = String::from_utf8(decrypted)?;
+        let payload: serde_json::Value = serde_json::from_str(&json_str)?;
+
+        // Extract the password field
+        let password = payload.get("password")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow::anyhow!("No password field in decrypted payload"))?;
+
+        Ok(SensitiveString::new(password.to_string()))
+    }
+
+    /// Get a decrypted record by ID
+    ///
+    /// This method retrieves a stored record, decrypts it using the provided DEK,
+    /// and returns a DecryptedRecord with the password field wrapped in SensitiveString.
+    ///
+    /// # Arguments
+    /// * `id` - The UUID of the record to decrypt
+    /// * `dek` - The Data Encryption Key (32 bytes)
+    ///
+    /// # Returns
+    /// A DecryptedRecord with decrypted data, password wrapped in SensitiveString
+    pub fn get_record_decrypted(&self, id: &str, dek: &[u8]) -> Result<DecryptedRecord> {
+        // Get the stored record
+        let stored = self.get_record(id)?;
+
+        // Convert DEK slice to array
+        let dek_array: [u8; 32] = dek.try_into()
+            .map_err(|_| anyhow::anyhow!("Invalid DEK length: expected 32 bytes"))?;
+
+        // Decrypt the record data
+        let decrypted = crate::crypto::aes256gcm::decrypt(&stored.encrypted_data, &stored.nonce, &dek_array)?;
+        let json_str = String::from_utf8(decrypted)?;
+
+        // Parse the record payload
+        #[derive(serde::Deserialize)]
+        struct RecordPayload {
+            name: String,
+            username: Option<String>,
+            password: String,
+            url: Option<String>,
+            notes: Option<String>,
+        }
+
+        let payload: RecordPayload = serde_json::from_str(&json_str)?;
+
+        Ok(DecryptedRecord {
+            id: stored.id,
+            name: payload.name,
+            record_type: stored.record_type,
+            username: payload.username,
+            password: SensitiveString::new(payload.password),  // Wrapped in SensitiveString
+            url: payload.url,
+            notes: payload.notes,
+            tags: stored.tags,
+            created_at: stored.created_at,
+            updated_at: stored.updated_at,
+        })
     }
 
     /// Add a new record with tag support

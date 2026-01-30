@@ -11,6 +11,7 @@
 //! See `docs/plans/2026-01-27-m1-security-and-tui-design.md` for details.
 
 use zeroize::Zeroize;
+use serde::{Deserialize, Serialize, Serializer, Deserializer};
 
 /// Wrapper for sensitive data that auto-zeroizes on drop
 ///
@@ -99,6 +100,27 @@ impl<T: Zeroize> std::fmt::Debug for SensitiveString<T> {
 impl<T: Zeroize> std::fmt::Display for SensitiveString<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "***REDACTED***")
+    }
+}
+
+// Implement Serialize for types that support it
+impl<T: Zeroize + Serialize> Serialize for SensitiveString<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.inner.serialize(serializer)
+    }
+}
+
+// Implement Deserialize for types that support it
+// SECURITY NOTE: Only use Deserialize with trusted data sources
+impl<'de, T: Zeroize + Deserialize<'de>> Deserialize<'de> for SensitiveString<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        T::deserialize(deserializer).map(Self::new)
     }
 }
 

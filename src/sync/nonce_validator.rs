@@ -13,6 +13,7 @@ use crate::db::models::StoredRecord;
 use crate::error::KeyringError;
 use crate::sync::export::SyncRecord;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
+use std::io::{self, Write};
 
 /// Status of nonce validation
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -127,40 +128,62 @@ impl NonceValidator {
 
     /// Prompt user for resolution of nonce mismatch
     ///
-    /// This is a placeholder for interactive user prompt.
-    /// In production, this would:
-    /// - Display warning about nonce mismatch
-    /// - Show options: keep local, use remote, skip
-    /// - Return user's choice
+    /// This method displays an interactive prompt to the user asking them
+    /// to choose how to resolve a nonce mismatch between local and remote records.
     ///
     /// # Arguments
-    /// * `record_name` - Name of the record with mismatch
+    /// * `local_nonce` - The local nonce (12 bytes)
+    /// * `remote_nonce` - The remote nonce (12 bytes)
     ///
     /// # Returns
-    /// * `Some(RecoveryStrategy)` - User's choice
-    /// * `None` - User cancelled or invalid input
-    pub fn prompt_user_resolution(&self, record_name: &str) -> Option<RecoveryStrategy> {
-        // In production, this would be an interactive prompt
-        // For now, return None to indicate not implemented
+    /// * `Ok(RecoveryStrategy)` - User's choice
+    /// * `Err(KeyringError)` - User cancelled or input error
+    pub fn prompt_user_resolution(
+        &self,
+        local_nonce: &[u8; 12],
+        remote_nonce: &[u8; 12],
+    ) -> Result<RecoveryStrategy, KeyringError> {
         #[allow(clippy::print_stdout)]
         {
             println!();
-            println!("⚠️  Warning: Nonce mismatch detected for record '{}'", record_name);
-            println!("This may indicate:");
-            println!("  - Legitimate re-encryption with updated data");
-            println!("  - Potential tampering or corruption");
+            println!("⚠️  Nonce mismatch detected!");
+            println!("Local nonce:  {}", STANDARD.encode(local_nonce));
+            println!("Remote nonce: {}", STANDARD.encode(remote_nonce));
             println!();
-            println!("Choose resolution strategy:");
-            println!("  1. Keep local version");
-            println!("  2. Use remote version");
-            println!("  3. Skip this record");
+            println!("This usually means the cloud data belongs to a different vault.");
             println!();
-            println!("TODO: Implement interactive prompt");
-            println!("For now, defaulting to: Keep local version");
+            println!("Possible causes:");
+            println!("  • Cloud is from a different vault (Passkey differs)");
+            println!("  • Cloud data is corrupted");
+            println!("  • Local file was modified");
+            println!();
+            println!("How to handle?");
+            println!("  [1] Use local nonce (overwrite cloud)");
+            println!("  [2] Use remote nonce (overwrite local)");
+            println!("  [3] Cancel");
         }
 
-        // Default to keeping local version for safety
-        Some(RecoveryStrategy::UseLocal)
+        // Flush stdout to ensure the prompt is displayed
+        io::stdout().flush().map_err(|e| KeyringError::IoError(e.to_string()))?;
+
+        // Read user input
+        let mut input = String::new();
+        io::stdin()
+            .read_line(&mut input)
+            .map_err(|e| KeyringError::IoError(e.to_string()))?;
+
+        let choice = input.trim();
+
+        Ok(match choice {
+            "1" => RecoveryStrategy::UseLocal,
+            "2" => RecoveryStrategy::UseRemote,
+            "3" => return Err(KeyringError::AuthenticationFailed {
+                reason: "Sync cancelled by user".to_string(),
+            }),
+            _ => return Err(KeyringError::InvalidInput {
+                context: format!("Invalid choice: {}", choice),
+            }),
+        })
     }
 }
 

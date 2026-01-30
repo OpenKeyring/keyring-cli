@@ -2,6 +2,7 @@
 
 use crate::crypto::{argon2id, bip39, keywrap};
 use crate::error::{KeyringError, Result};
+use crate::types::SensitiveString;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
@@ -26,12 +27,17 @@ struct KeyStoreFile {
 
 #[derive(Debug)]
 pub struct KeyStore {
-    pub dek: [u8; 32],
+    pub dek: SensitiveString<Vec<u8>>,
     pub device_key: [u8; 32],
     pub recovery_key: Option<String>,
 }
 
 impl KeyStore {
+    /// Get a reference to the DEK as a byte slice
+    pub fn get_dek(&self) -> &[u8] {
+        self.dek.get().as_slice()
+    }
+
     pub fn initialize(path: &Path, master_password: &str) -> Result<Self> {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
@@ -69,7 +75,7 @@ impl KeyStore {
         fs::write(path, content)?;
 
         Ok(Self {
-            dek,
+            dek: SensitiveString::new(dek.to_vec()),
             device_key,
             recovery_key: Some(recovery_key),
         })
@@ -115,7 +121,7 @@ impl KeyStore {
             keywrap::unwrap_key(&wrapped_device_key, &wrapped_device_key_nonce, &master_key)?;
 
         Ok(Self {
-            dek,
+            dek: SensitiveString::new(dek.to_vec()),
             device_key,
             recovery_key: None,
         })

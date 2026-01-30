@@ -335,7 +335,8 @@ impl CryptoManager {
         // 1. The keywrap::wrap_key function only supports 32-byte keys
         // 2. The first 32 bytes of the BIP39 seed provide sufficient entropy
         // 3. The full 64-byte seed can be derived from these 32 bytes when needed
-        let seed_bytes: [u8; 32] = seed.0[0..32].try_into().map_err(|_| KeyringError::Crypto {
+        let seed_vec = seed.get();
+        let seed_bytes: [u8; 32] = seed_vec[0..32].try_into().map_err(|_| KeyringError::Crypto {
             context: "Failed to extract first 32 bytes of seed".to_string(),
         })?;
         let (wrapped_seed, nonce) = crate::crypto::keywrap::wrap_key(&seed_bytes, &wrapping_key)

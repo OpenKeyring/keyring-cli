@@ -11,6 +11,12 @@ use base64::prelude::*;
 ///
 /// Contains format version, KDF nonce, device list, and record metadata.
 /// Stored as `.metadata.json` in the cloud storage root.
+///
+/// # Security Audit
+/// This struct contains NO sensitive data:
+/// - ✅ No passwords, keys, or encrypted data
+/// - ✅ Only metadata: versions, timestamps, device IDs, checksums
+/// - ✅ The `kdf_nonce` is a public nonce for key derivation, not a secret
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CloudMetadata {
     /// Format version for compatibility checks
@@ -55,6 +61,11 @@ impl CloudMetadata {
 }
 
 /// Device information for tracking synchronized devices
+///
+/// # Security Audit
+/// This struct contains NO sensitive data:
+/// - ✅ Only public device identifiers and metadata
+/// - ✅ No passwords, keys, or credentials
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeviceInfo {
     /// Unique device identifier (platform-name-fingerprint)
@@ -70,6 +81,11 @@ pub struct DeviceInfo {
 }
 
 /// Record metadata for version tracking and conflict resolution
+///
+/// # Security Audit
+/// This struct contains NO sensitive data:
+/// - ✅ Only version, timestamps, device ID, type, and checksum
+/// - ✅ No passwords, keys, or encrypted data
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecordMetadata {
     /// Record ID (matches local database)

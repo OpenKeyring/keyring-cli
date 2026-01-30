@@ -2,6 +2,7 @@ use anyhow::Result;
 use argon2::{Algorithm, Argon2, Params, Version};
 use rand::Rng;
 use sysinfo;
+use crate::types::SensitiveString;
 // use zeroize::ZeroizeOnDrop;  // Unused
 
 /// Device capability level for Argon2id parameter selection
@@ -72,6 +73,32 @@ pub fn detect_device_capability() -> DeviceCapability {
     }
 }
 
+/// Derive a 256-bit key from password using Argon2id (with SensitiveString)
+///
+/// # Arguments
+/// * `password` - The password to derive from (wrapped in SensitiveString)
+/// * `salt` - 16-byte salt value
+///
+/// # Returns
+/// 32-byte derived key
+pub fn derive_key_sensitive(password: &SensitiveString<String>, salt: &[u8; 16]) -> Result<Vec<u8>> {
+    let params = Argon2Params::default();
+
+    let argon2 = Argon2::new(
+        Algorithm::Argon2id,
+        Version::V0x13,
+        Params::new(params.memory * 1024, params.time, params.parallelism, None)
+            .map_err(|e| anyhow::anyhow!("Invalid Argon2 params: {}", e))?,
+    );
+
+    let mut key = [0u8; 32];
+    argon2
+        .hash_password_into(password.get().as_bytes(), salt, &mut key)
+        .map_err(|e| anyhow::anyhow!("Argon2 hashing failed: {}", e))?;
+
+    Ok(key.to_vec())
+}
+
 /// Derive a 256-bit key from password using Argon2id
 ///
 /// # Arguments
@@ -93,6 +120,27 @@ pub fn derive_key(password: &str, salt: &[u8; 16]) -> Result<Vec<u8>> {
     let mut key = [0u8; 32];
     argon2
         .hash_password_into(password.as_bytes(), salt, &mut key)
+        .map_err(|e| anyhow::anyhow!("Argon2 hashing failed: {}", e))?;
+
+    Ok(key.to_vec())
+}
+
+/// Derive a 256-bit key using custom Argon2id parameters (with SensitiveString)
+pub fn derive_key_with_params_sensitive(
+    password: &SensitiveString<String>,
+    salt: &[u8; 16],
+    params: Argon2Params,
+) -> Result<Vec<u8>> {
+    let argon2 = Argon2::new(
+        Algorithm::Argon2id,
+        Version::V0x13,
+        Params::new(params.memory * 1024, params.time, params.parallelism, None)
+            .map_err(|e| anyhow::anyhow!("Invalid Argon2 params: {}", e))?,
+    );
+
+    let mut key = [0u8; 32];
+    argon2
+        .hash_password_into(password.get().as_bytes(), salt, &mut key)
         .map_err(|e| anyhow::anyhow!("Argon2 hashing failed: {}", e))?;
 
     Ok(key.to_vec())
@@ -132,6 +180,15 @@ pub struct PasswordHash {
     pub params: Argon2Params,
 }
 
+/// Hash a password and return the complete hash structure (with SensitiveString)
+pub fn hash_password_sensitive(password: &SensitiveString<String>) -> Result<PasswordHash> {
+    let salt = generate_salt();
+    let params = Argon2Params::default();
+    let key = derive_key_with_params_sensitive(password, &salt, params)?;
+
+    Ok(PasswordHash { salt, key, params })
+}
+
 /// Hash a password and return the complete hash structure
 pub fn hash_password(password: &str) -> Result<PasswordHash> {
     let salt = generate_salt();
@@ -139,6 +196,12 @@ pub fn hash_password(password: &str) -> Result<PasswordHash> {
     let key = derive_key_with_params(password, &salt, params)?;
 
     Ok(PasswordHash { salt, key, params })
+}
+
+/// Verify a password against a stored hash (with SensitiveString)
+pub fn verify_password_sensitive(password: &SensitiveString<String>, hash: &PasswordHash) -> Result<bool> {
+    let key = derive_key_with_params_sensitive(password, &hash.salt, hash.params)?;
+    Ok(key == hash.key)
 }
 
 /// Verify a password against a stored hash

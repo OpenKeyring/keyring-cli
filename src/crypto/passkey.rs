@@ -3,7 +3,7 @@ use anyhow::{anyhow, Result};
 use bip39::{Language, Mnemonic};
 use pbkdf2::pbkdf2_hmac;
 use sha2::Sha256;
-use zeroize::ZeroizeOnDrop;
+use crate::types::SensitiveString;
 
 /// Passkey: 24-word BIP39 mnemonic as root key
 #[derive(Clone, Debug)]
@@ -11,9 +11,23 @@ pub struct Passkey {
     mnemonic: Mnemonic,
 }
 
-/// Passkey-derived seed (64 bytes)
-#[derive(ZeroizeOnDrop)]
-pub struct PasskeySeed(pub [u8; 64]);
+/// Passkey-derived seed (64 bytes) - wrapped in SensitiveString for auto-zeroization
+pub type PasskeySeed = SensitiveString<Vec<u8>>;
+
+/// Wrapped passkey with encrypted seed for storage
+#[derive(Clone, Debug)]
+pub struct WrappedPasskey {
+    pub wrapped_seed: Vec<u8>,
+    pub nonce: Vec<u8>,
+}
+
+impl Drop for WrappedPasskey {
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        self.wrapped_seed.zeroize();
+        self.nonce.zeroize();
+    }
+}
 
 impl Passkey {
     /// Generate a new Passkey with specified word count (12, 15, 18, 21, or 24)
@@ -48,7 +62,7 @@ impl Passkey {
     /// Convert to seed (64 bytes) with optional passphrase
     pub fn to_seed(&self, passphrase: Option<&str>) -> Result<PasskeySeed> {
         let seed = self.mnemonic.to_seed_normalized(passphrase.unwrap_or(""));
-        Ok(PasskeySeed(seed))
+        Ok(SensitiveString::new(seed.to_vec()))
     }
 
     /// Validate a single BIP39 word
@@ -58,6 +72,7 @@ impl Passkey {
     }
 }
 
+/// Methods for PasskeySeed (SensitiveString<Vec<u8>>)
 impl PasskeySeed {
     /// Derive root master key from Passkey seed using PBKDF2-SHA256
     ///
@@ -74,11 +89,16 @@ impl PasskeySeed {
     /// PBKDF2 with 600,000 iterations provides cross-device compatibility and
     /// is recommended by OWASP for password-based key derivation (2023).
     pub fn derive_root_master_key(&self, salt: &[u8; 16]) -> Result<[u8; 32]> {
+        let seed_bytes = self.get();
+        if seed_bytes.len() != 64 {
+            return Err(anyhow!("Passkey seed must be 64 bytes, got {}", seed_bytes.len()));
+        }
+
         let mut root_mk = [0u8; 32];
 
         // Use PBKDF2-HMAC-SHA256 with 600,000 iterations (OWASP 2023 recommendation)
         pbkdf2_hmac::<Sha256>(
-            &self.0,  // Use the full 64-byte seed as the input
+            seed_bytes,  // Use the full 64-byte seed as the input
             salt,
             600_000,  // OWASP 2023 recommendation for PBKDF2
             &mut root_mk,

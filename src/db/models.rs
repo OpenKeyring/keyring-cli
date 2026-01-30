@@ -1,3 +1,4 @@
+use crate::types::SensitiveString;
 use serde::{Deserialize, Serialize};
 
 /// Record type enumeration
@@ -56,7 +57,7 @@ pub struct DecryptedRecord {
     pub record_type: RecordType,
     pub name: String,
     pub username: Option<String>,
-    pub password: String,
+    pub password: SensitiveString<String>,  // Wrapped in SensitiveString for auto-zeroization
     pub url: Option<String>,
     pub notes: Option<String>,
     pub tags: Vec<String>,

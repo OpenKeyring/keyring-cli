@@ -1,5 +1,6 @@
 use crate::db::models::{RecordType, StoredRecord};
 use crate::error::KeyringError;
+use crate::types::SensitiveString;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -24,6 +25,21 @@ pub struct RecordMetadata {
     pub tags: Vec<String>,
     pub platform: String,
     pub device_id: String,
+}
+
+/// Decrypted sync record with sensitive data wrapped in SensitiveString
+///
+/// This struct is used when handling decrypted data in sync operations.
+/// The password field is wrapped in SensitiveString for automatic zeroization.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SyncDecryptedRecord {
+    pub id: String,
+    pub name: String,
+    pub record_type: String,
+    pub username: Option<String>,
+    pub password: SensitiveString<String>,  // Wrapped for auto-zeroization
+    pub url: Option<String>,
+    pub notes: Option<String>,
 }
 
 pub trait SyncExporter {

@@ -66,7 +66,8 @@ async fn generate_mnemonic(word_count: u8, name: Option<String>) -> Result<()> {
 
         // Initialize crypto manager
         let mut crypto = CryptoManager::new();
-        crypto.initialize_with_key(keystore.dek);
+        let dek_array: [u8; 32] = keystore.get_dek().try_into().expect("DEK must be 32 bytes");
+        crypto.initialize_with_key(dek_array);
 
         // Encrypt the mnemonic
         let (encrypted_data, nonce) = encrypt_payload(&crypto, &payload)?;

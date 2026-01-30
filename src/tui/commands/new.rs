@@ -51,7 +51,8 @@ pub fn create_record(
     let keystore_path = config.get_keystore_path();
     let keystore = KeyStore::unlock(&keystore_path, &master_password)?;
     let mut crypto = CryptoManager::new();
-    crypto.initialize_with_key(keystore.dek);
+    let dek_array: [u8; 32] = keystore.get_dek().try_into().expect("DEK must be 32 bytes");
+    crypto.initialize_with_key(dek_array);
 
     // Generate password
     let password = match password_type {
