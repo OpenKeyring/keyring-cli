@@ -60,6 +60,12 @@ pub struct SettingsScreen {
     selected_section: usize,
     /// Currently selected item index within the section
     selected_item: usize,
+    /// Actual device count (for sync section)
+    device_count: usize,
+    /// Actual sync status
+    sync_status: String,
+    /// Actual provider name
+    provider_name: String,
 }
 
 impl SettingsScreen {
@@ -132,6 +138,43 @@ impl SettingsScreen {
             sections,
             selected_section: 0,
             selected_item: 0,
+            device_count: 1,
+            sync_status: "Unsynced".to_string(),
+            provider_name: "None".to_string(),
+        }
+    }
+
+    /// Creates a new settings screen with actual data
+    pub fn with_data(
+        device_count: usize,
+        sync_status: &str,
+        provider_name: &str,
+    ) -> Self {
+        let mut screen = Self::new();
+        screen.device_count = device_count;
+        screen.sync_status = sync_status.to_string();
+        screen.provider_name = provider_name.to_string();
+        screen.update_sync_section();
+        screen
+    }
+
+    /// Update the sync section with actual data
+    fn update_sync_section(&mut self) {
+        // Find and update the Sync section
+        for section in &mut self.sections {
+            if section.title == "Sync" {
+                for item in &mut section.items {
+                    if item.label == "Devices" {
+                        item.value = format!("{} device{}", self.device_count,
+                            if self.device_count == 1 { "" } else { "s" });
+                    } else if item.label == "Status" {
+                        item.value = self.sync_status.clone();
+                    } else if item.label == "Provider" {
+                        item.value = self.provider_name.clone();
+                    }
+                }
+                break;
+            }
         }
     }
 
@@ -364,5 +407,18 @@ mod tests {
     fn test_settings_default() {
         let screen = SettingsScreen::default();
         assert_eq!(screen.get_sections().len(), 3);
+    }
+
+    #[test]
+    fn test_settings_with_data() {
+        let screen = SettingsScreen::with_data(3, "Synced", "WebDAV");
+        let sections = screen.get_sections();
+
+        let sync_section = &sections[1]; // Sync is section 1
+        assert_eq!(sync_section.title, "Sync");
+
+        let devices_item = &sync_section.items[2];
+        assert_eq!(devices_item.label, "Devices");
+        assert_eq!(devices_item.value, "3 devices");
     }
 }
