@@ -1,8 +1,24 @@
+//! MCP Tool Executors
+//!
+//! This module contains executors for different types of MCP tools:
+//! - API executor for HTTP requests
+//! - SSH executor for remote command execution
+//! - Git executor for version control operations
+
+pub mod api;
+pub mod git;
+pub mod ssh;
+
 use crate::error::KeyringError;
 use crate::mcp::audit::AuditLogger;
 use crate::mcp::tools::McpToolRegistry;
 use serde_json::Value;
 use std::time::Duration;
+
+// Re-export API executor types
+pub use api::{ApiError, ApiExecutor, ApiResponse};
+pub use git::{GitCloneOutput, GitError, GitExecutor, GitPullOutput, GitPushOutput};
+pub use ssh::{SshError, SshExecOutput, SshExecutor};
 
 #[derive(Debug)]
 pub struct ExecutionResult {
