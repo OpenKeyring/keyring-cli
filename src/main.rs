@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use keyring_cli::cli::commands;
+use keyring_cli::cli::{self, mcp};
 
 /// OpenKeyring CLI - A privacy-first password manager
 #[derive(Parser, Debug)]
@@ -247,6 +247,12 @@ enum Commands {
     #[command(alias = "status")]
     SyncStatus,
 
+    /// Manage MCP (Model Context Protocol) server
+    Mcp {
+        #[command(subcommand)]
+        command: mcp_commands::MCPCommands,
+    },
+
     /// Manage trusted devices
     Devices {
         #[command(subcommand)]
@@ -317,6 +323,13 @@ enum Commands {
     /// Run onboarding wizard for first-time setup
     #[command(alias = "init")]
     Wizard,
+
+    /// MCP server management
+    #[command(subcommand)]
+    Mcp {
+        #[command(subcommand)]
+        command: keyring_cli::cli::mcp::MCPCommands,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -525,6 +538,10 @@ async fn main() -> Result<()> {
             commands::sync::sync_records(args).await?
         }
 
+        Commands::Mcp { command } => {
+            commands::mcp::handle_mcp_command(command).await?
+        }
+
         Commands::Devices { device_command } => {
             use commands::devices::DevicesArgs;
             let args = match device_command {
@@ -602,9 +619,13 @@ async fn main() -> Result<()> {
         }
 
         Commands::Wizard => {
-            use commands::wizard::WizardArgs;
+            use keyring_cli::cli::commands::wizard::WizardArgs;
             let args = WizardArgs {};
-            commands::wizard::run_wizard(args).await?
+            keyring_cli::cli::commands::wizard::run_wizard(args).await?
+        }
+
+        Commands::Mcp { command } => {
+            mcp::handle_mcp_command(command).await?
         }
     }
 

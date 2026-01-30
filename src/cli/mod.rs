@@ -4,9 +4,11 @@
 
 pub mod commands;
 pub mod config;
+pub mod mcp;
 pub mod onboarding;
 pub mod utils;
 
 pub use commands::{delete, generate, health, list, search, show, sync, update};
 pub use config::ConfigManager;
+pub use mcp::{handle_mcp_command, MCPCommands};
 pub use utils::PrettyPrinter;
