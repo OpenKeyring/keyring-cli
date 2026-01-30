@@ -4,7 +4,7 @@
 //! will be applied based on their tag configuration.
 
 use crate::mcp::auth::policy::{AuthDecision, EnvTag, PolicyEngine, RiskTag, OperationType};
-use crate::Error;
+use crate::error::Error;
 
 /// Policy preview dialog for tag configuration
 pub struct PolicyPreviewDialog {
