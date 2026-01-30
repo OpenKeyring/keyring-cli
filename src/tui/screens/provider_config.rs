@@ -81,6 +81,18 @@ impl ProviderConfigScreen {
     /// Creates a new provider configuration screen
     pub fn new(provider: CloudProvider) -> Self {
         let fields = match provider {
+            CloudProvider::ICloud => vec![
+                ConfigField::new("iCloud 路径 (Path)", false),
+            ],
+            CloudProvider::Dropbox => vec![
+                ConfigField::new("Access Token", true),
+            ],
+            CloudProvider::GDrive => vec![
+                ConfigField::new("Access Token", true),
+            ],
+            CloudProvider::OneDrive => vec![
+                ConfigField::new("Access Token", true),
+            ],
             CloudProvider::WebDAV => vec![
                 ConfigField::new("WebDAV URL", false),
                 ConfigField::new("用户名", false),
@@ -91,8 +103,34 @@ impl ProviderConfigScreen {
                 ConfigField::new("端口", false),
                 ConfigField::new("用户名", false),
                 ConfigField::new("密码", true),
+                ConfigField::new("根路径 (Root)", false),
             ],
-            _ => vec![],
+            CloudProvider::AliyunDrive => vec![
+                ConfigField::new("Access Token / Refresh Token", true),
+            ],
+            CloudProvider::AliyunOSS => vec![
+                ConfigField::new("Endpoint", false),
+                ConfigField::new("Bucket", false),
+                ConfigField::new("Access Key ID", false),
+                ConfigField::new("Access Key Secret", true),
+            ],
+            CloudProvider::TencentCOS => vec![
+                ConfigField::new("Secret ID", false),
+                ConfigField::new("Secret Key", true),
+                ConfigField::new("区域 (Region)", false),
+                ConfigField::new("Bucket", false),
+            ],
+            CloudProvider::HuaweiOBS => vec![
+                ConfigField::new("Endpoint", false),
+                ConfigField::new("Bucket", false),
+                ConfigField::new("Access Key ID", false),
+                ConfigField::new("Secret Access Key", true),
+            ],
+            CloudProvider::UpYun => vec![
+                ConfigField::new("Bucket", false),
+                ConfigField::new("Operator", false),
+                ConfigField::new("密码", true),
+            ],
         };
 
         let focused_index = 0;
@@ -166,9 +204,17 @@ impl ProviderConfigScreen {
     pub fn render(&self, frame: &mut Frame, area: Rect) {
         // Title
         let provider_name = match self.provider {
+            CloudProvider::ICloud => "iCloud Drive",
+            CloudProvider::Dropbox => "Dropbox",
+            CloudProvider::GDrive => "Google Drive",
+            CloudProvider::OneDrive => "OneDrive",
             CloudProvider::WebDAV => "WebDAV",
             CloudProvider::SFTP => "SFTP",
-            _ => "云存储",
+            CloudProvider::AliyunDrive => "阿里云盘",
+            CloudProvider::AliyunOSS => "阿里云 OSS",
+            CloudProvider::TencentCOS => "腾讯云 COS",
+            CloudProvider::HuaweiOBS => "华为云 OBS",
+            CloudProvider::UpYun => "又拍云",
         };
 
         let title = Paragraph::new(Text::from(vec![
