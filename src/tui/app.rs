@@ -63,6 +63,8 @@ pub enum Screen {
     Help,
     /// Conflict resolution screen
     ConflictResolution,
+    /// Sync screen
+    Sync,
     /// Onboarding wizard screen
     Wizard,
 }
@@ -77,6 +79,7 @@ impl Screen {
             Screen::ProviderConfig => "Provider Config",
             Screen::Help => "Help",
             Screen::ConflictResolution => "Conflict Resolution",
+            Screen::Sync => "Sync",
             Screen::Wizard => "Onboarding Wizard",
         }
     }

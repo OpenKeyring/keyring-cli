@@ -11,6 +11,7 @@ pub mod passkey_import;
 pub mod provider_config;
 pub mod provider_select;
 pub mod settings;
+pub mod sync;
 pub mod welcome;
 pub mod wizard;
 
@@ -23,5 +24,6 @@ pub use passkey_import::PasskeyImportScreen;
 pub use provider_config::{ConfigField, ProviderConfig, ProviderConfigScreen};
 pub use provider_select::{Provider, ProviderSelectScreen};
 pub use settings::{SettingsAction, SettingsItem, SettingsScreen, SettingsSection};
+pub use sync::{SyncScreen, SyncStatus};
 pub use welcome::{WelcomeChoice, WelcomeScreen};
 pub use wizard::{WizardState, WizardStep};
