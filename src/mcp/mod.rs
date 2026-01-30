@@ -3,6 +3,7 @@ pub mod auth;
 pub mod authorization;
 pub mod config;
 pub mod executors;
+pub mod handlers;
 pub mod lock;
 pub mod server;
 pub mod tools;
@@ -12,6 +13,7 @@ pub use auth::{AuthDecision, ConfirmationToken, EnvTag, OperationType, PolicyEng
 pub use authorization::{AuthManager, AuthToken};
 pub use config::McpConfig;
 pub use executors::ExecutionResult;
+pub use handlers::{handle_ssh_exec, HandlerError};
 pub use lock::{is_locked, McpLock};
 pub use server::{McpServer, ServerConfig};
 pub use tools::{McpToolRegistry, ToolDefinition};
