@@ -313,6 +313,10 @@ enum Commands {
         #[arg(long, short)]
         passkey: Option<String>,
     },
+
+    /// Run onboarding wizard for first-time setup
+    #[command(alias = "init")]
+    Wizard,
 }
 
 #[derive(Subcommand, Debug)]
@@ -595,6 +599,12 @@ async fn main() -> Result<()> {
             use commands::recover::RecoverArgs;
             let args = RecoverArgs { passkey };
             commands::recover::execute(args).await?
+        }
+
+        Commands::Wizard => {
+            use commands::wizard::WizardArgs;
+            let args = WizardArgs {};
+            commands::wizard::run_wizard(args).await?
         }
     }
 

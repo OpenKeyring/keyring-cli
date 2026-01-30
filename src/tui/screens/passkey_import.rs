@@ -1,0 +1,275 @@
+//! Passkey Import Screen
+//!
+//! Allows users to import an existing Passkey by entering their mnemonic words.
+
+use anyhow::{anyhow, Result};
+use ratatui::{
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
+    widgets::{Block, Borders, Paragraph, Wrap},
+    Frame,
+};
+
+/// Passkey import screen
+#[derive(Debug, Clone)]
+pub struct PasskeyImportScreen {
+    /// User input buffer
+    input: String,
+    /// Whether the input has been validated
+    validated: bool,
+    /// Validation error message
+    validation_error: Option<String>,
+    /// The validated words (if successful)
+    words: Option<Vec<String>>,
+}
+
+impl PasskeyImportScreen {
+    /// Create a new passkey import screen
+    pub fn new() -> Self {
+        Self {
+            input: String::new(),
+            validated: false,
+            validation_error: None,
+            words: None,
+        }
+    }
+
+    /// Get current input
+    pub fn input(&self) -> &str {
+        &self.input
+    }
+
+    /// Check if input has been validated
+    pub fn is_validated(&self) -> bool {
+        self.validated
+    }
+
+    /// Get validation error
+    pub fn validation_error(&self) -> Option<&str> {
+        self.validation_error.as_deref()
+    }
+
+    /// Get the validated words
+    pub fn words(&self) -> Option<&[String]> {
+        self.words.as_deref()
+    }
+
+    /// Handle character input
+    pub fn handle_char(&mut self, c: char) {
+        if !self.validated && !c.is_control() {
+            self.input.push(c);
+            self.validation_error = None;
+        }
+    }
+
+    /// Handle backspace
+    pub fn handle_backspace(&mut self) {
+        if !self.validated {
+            self.input.pop();
+            self.validation_error = None;
+        }
+    }
+
+    /// Clear input
+    pub fn clear(&mut self) {
+        self.input.clear();
+        self.validated = false;
+        self.validation_error = None;
+        self.words = None;
+    }
+
+    /// Validate the input as a BIP39 mnemonic
+    pub fn validate(&mut self) -> Result<()> {
+        use crate::crypto::passkey::Passkey;
+
+        // Split into words
+        let words: Vec<String> = self.input.split_whitespace().map(String::from).collect();
+
+        // Check word count
+        if words.len() != 12 && words.len() != 24 {
+            self.validation_error = Some(format!("Passkey 必须是 12 或 24 词（当前：{} 词）", words.len()));
+            return Err(anyhow!("{}", self.validation_error.as_ref().unwrap()));
+        }
+
+        // Validate BIP39 checksum
+        Passkey::from_words(&words).map_err(|e| {
+            self.validation_error = Some(format!("无效的 Passkey: {}", e));
+            anyhow!("{}", self.validation_error.as_ref().unwrap())
+        })?;
+
+        // Success
+        self.validated = true;
+        self.words = Some(words);
+        self.validation_error = None;
+        Ok(())
+    }
+
+    /// Check if can proceed to next step
+    pub fn can_proceed(&self) -> bool {
+        self.validated && self.words.is_some()
+    }
+
+    /// Render the passkey import screen
+    pub fn render(&self, frame: &mut Frame, area: Rect) {
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(1)
+            .constraints(
+                [
+                    Constraint::Length(3),  // Title
+                    Constraint::Length(2),  // Spacer
+                    Constraint::Length(2),  // Instructions
+                    Constraint::Length(5),  // Input area
+                    Constraint::Length(2),  // Error/status
+                    Constraint::Min(0),     // Spacer
+                    Constraint::Length(3),  // Footer
+                ]
+                .as_ref(),
+            )
+            .split(area);
+
+        // Title
+        let title = Paragraph::new(vec![
+            Line::from(Span::styled(
+                "导入已有 Passkey",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )),
+        ])
+        .alignment(Alignment::Center)
+        .block(Block::default().borders(Borders::ALL));
+
+        frame.render_widget(title, chunks[0]);
+
+        // Instructions
+        let instructions = Paragraph::new(vec![
+            Line::from(Span::styled(
+                "请输入您的 12 或 24 词 Passkey（用空格分隔）:",
+                Style::default().fg(Color::White),
+            )),
+        ])
+        .alignment(Alignment::Left);
+
+        frame.render_widget(instructions, chunks[2]);
+
+        // Input area
+        let input_paragraph = Paragraph::new(vec![
+            Line::from(vec![
+                Span::styled("> ", Style::default().fg(Color::Gray)),
+                Span::styled(
+                    if self.input.is_empty() {
+                        "在此输入 Passkey..."
+                    } else {
+                        &self.input
+                    },
+                    Style::default().fg(Color::White),
+                ),
+            ]),
+            Line::from(""),
+            Line::from(Span::styled(
+                "提示: 输入完成后按 Enter 验证",
+                Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+            )),
+        ])
+        .block(Block::default().borders(Borders::ALL).title(" 输入 / Input "))
+        .wrap(Wrap { trim: true });
+
+        frame.render_widget(input_paragraph, chunks[3]);
+
+        // Status/Error area
+        let status_paragraph = if let Some(error) = &self.validation_error {
+            Paragraph::new(Line::from(vec![
+                Span::styled("✗ ", Style::default().fg(Color::Red)),
+                Span::styled(error, Style::default().fg(Color::Red)),
+            ]))
+        } else if self.validated {
+            Paragraph::new(Line::from(vec![
+                Span::styled("✓ ", Style::default().fg(Color::Green)),
+                Span::styled(
+                    "Passkey 验证成功",
+                    Style::default().fg(Color::Green),
+                ),
+            ]))
+        } else {
+            Paragraph::new(Line::from(""))
+        };
+
+        frame.render_widget(status_paragraph, chunks[4]);
+
+        // Footer
+        let footer_spans = vec![
+            Span::styled("Enter", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::raw(if self.can_proceed() {
+                ": 下一步    "
+            } else {
+                ": 验证    "
+            }),
+            Span::styled("Esc", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::raw(": 返回"),
+        ];
+
+        let footer = Paragraph::new(Line::from(footer_spans))
+            .alignment(Alignment::Center)
+            .block(Block::default().borders(Borders::ALL));
+
+        frame.render_widget(footer, chunks[6]);
+    }
+}
+
+impl Default for PasskeyImportScreen {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_passkey_import_new() {
+        let screen = PasskeyImportScreen::new();
+        assert_eq!(screen.input(), "");
+        assert!(!screen.is_validated());
+    }
+
+    #[test]
+    fn test_passkey_import_handle_char() {
+        let mut screen = PasskeyImportScreen::new();
+        screen.handle_char('a');
+        screen.handle_char('b');
+        screen.handle_char('c');
+        assert_eq!(screen.input(), "abc");
+    }
+
+    #[test]
+    fn test_passkey_import_handle_backspace() {
+        let mut screen = PasskeyImportScreen::new();
+        screen.handle_char('a');
+        screen.handle_char('b');
+        screen.handle_backspace();
+        assert_eq!(screen.input(), "a");
+    }
+
+    #[test]
+    fn test_passkey_import_clear() {
+        let mut screen = PasskeyImportScreen::new();
+        screen.handle_char('a');
+        screen.handle_char('b');
+        screen.clear();
+        assert_eq!(screen.input(), "");
+        assert!(!screen.is_validated());
+    }
+
+    #[test]
+    fn test_passkey_import_validate_wrong_count() {
+        let mut screen = PasskeyImportScreen::new();
+        screen.input = "one two three".to_string();
+
+        let result = screen.validate();
+        assert!(result.is_err());
+        assert!(screen.validation_error().unwrap().contains("12 或 24 词"));
+    }
+}

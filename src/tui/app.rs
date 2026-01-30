@@ -3,11 +3,17 @@
 //! Core TUI application handling alternate screen mode, rendering, and event loop.
 
 use crate::error::{KeyringError, Result};
+use crate::onboarding::{is_initialized, initialize_keystore};
 use crate::tui::keybindings::{Action, KeyBindingManager};
+use crate::tui::screens::wizard::{WizardState, WizardStep};
+use crate::tui::screens::{
+    MasterPasswordScreen, PasskeyConfirmScreen, PasskeyGenerateScreen,
+    PasskeyImportScreen, WelcomeScreen,
+};
 use chrono::{DateTime, Utc};
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Paragraph, Wrap},
@@ -57,6 +63,8 @@ pub enum Screen {
     Help,
     /// Conflict resolution screen
     ConflictResolution,
+    /// Onboarding wizard screen
+    Wizard,
 }
 
 impl Screen {
@@ -69,6 +77,7 @@ impl Screen {
             Screen::ProviderConfig => "Provider Config",
             Screen::Help => "Help",
             Screen::ConflictResolution => "Conflict Resolution",
+            Screen::Wizard => "Onboarding Wizard",
         }
     }
 }
@@ -140,6 +149,18 @@ pub struct TuiApp {
     version: String,
     /// Current active screen
     current_screen: Screen,
+    /// Wizard state (if in onboarding wizard)
+    pub wizard_state: Option<WizardState>,
+    /// Welcome screen (wizard step 1)
+    pub welcome_screen: WelcomeScreen,
+    /// Passkey generation screen (wizard step 2)
+    pub passkey_generate_screen: PasskeyGenerateScreen,
+    /// Passkey import screen (wizard step 2 alt)
+    pub passkey_import_screen: PasskeyImportScreen,
+    /// Passkey confirmation screen (wizard step 3)
+    pub passkey_confirm_screen: Option<PasskeyConfirmScreen>,
+    /// Master password screen (wizard step 4)
+    pub master_password_screen: MasterPasswordScreen,
 }
 
 impl Default for TuiApp {
@@ -167,6 +188,12 @@ impl TuiApp {
             sync_status: SyncStatus::Unsynced,
             version: env!("CARGO_PKG_VERSION").to_string(),
             current_screen: Screen::Main,
+            wizard_state: None,
+            welcome_screen: WelcomeScreen::new(),
+            passkey_generate_screen: PasskeyGenerateScreen::new(),
+            passkey_import_screen: PasskeyImportScreen::new(),
+            passkey_confirm_screen: None,
+            master_password_screen: MasterPasswordScreen::new(),
         }
     }
 
@@ -186,6 +213,149 @@ impl TuiApp {
     pub fn return_to_main(&mut self) {
         self.current_screen = Screen::Main;
         self.output_lines.push("Returned to main screen".to_string());
+    }
+
+    // ========== Wizard Methods ==========
+
+    /// Check if onboarding is needed, and if so, start the wizard
+    pub async fn check_onboarding(&mut self, keystore_path: &std::path::Path) -> Result<bool> {
+        if !is_initialized(keystore_path) {
+            // Show wizard
+            self.wizard_state = Some(WizardState::new().with_keystore_path(keystore_path.to_path_buf()));
+            self.current_screen = Screen::Wizard;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    /// Complete the wizard and initialize the keystore
+    pub async fn complete_wizard(&mut self) -> Result<()> {
+        if let Some(state) = &self.wizard_state {
+            if !state.is_complete() {
+                return Err(KeyringError::InvalidInput { context: "Wizard not complete".to_string() }.into());
+            }
+
+            let keystore_path = state.require_keystore_path();
+            let password = state.require_master_password();
+
+            // Initialize keystore
+            let _keystore = initialize_keystore(keystore_path, password)
+                .map_err(|e| KeyringError::Internal { context: e.to_string() })?;
+
+            // TODO: Store Passkey seed wrapped with master password
+
+            // Clear wizard state
+            self.wizard_state = None;
+            self.passkey_confirm_screen = None;
+            self.current_screen = Screen::Main;
+
+            self.output_lines.push("✓ 初始化完成".to_string());
+            Ok(())
+        } else {
+            Err(KeyringError::InvalidInput { context: "No wizard state".to_string() }.into())
+        }
+    }
+
+    /// Handle wizard screen interactions
+    pub fn handle_wizard_key_event(&mut self, event: crossterm::event::KeyEvent) {
+        use crossterm::event::KeyCode;
+
+        if self.wizard_state.is_none() {
+            return;
+        }
+
+        let state = self.wizard_state.as_mut().unwrap();
+
+        match event.code {
+            KeyCode::Esc => {
+                // Go back or exit
+                if state.can_go_back() {
+                    state.back();
+                } else {
+                    // Exit wizard
+                    self.wizard_state = None;
+                    self.current_screen = Screen::Main;
+                }
+            }
+            KeyCode::Enter => {
+                // Try to proceed
+                if state.can_proceed() {
+                    state.next();
+
+                    // Handle special cases
+                    if state.step == WizardStep::PasskeyConfirm && state.passkey_words.is_some() {
+                        let words = state.passkey_words.as_ref().unwrap().clone();
+                        self.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(words));
+                    }
+
+                    // Check if wizard complete
+                    if state.is_complete() {
+                        // Note: complete_wizard needs to be called separately in async context
+                        self.output_lines.push("Wizard complete! Type /wizard-complete to finish.".to_string());
+                    }
+                }
+            }
+            KeyCode::Char(' ') => {
+                // Space to toggle confirmation
+                if state.step == WizardStep::PasskeyConfirm {
+                    state.toggle_confirmed();
+                    if let Some(screen) = &mut self.passkey_confirm_screen {
+                        screen.toggle();
+                    }
+                }
+            }
+            KeyCode::Up | KeyCode::Down => {
+                // Toggle choice on welcome screen
+                if state.step == WizardStep::Welcome {
+                    self.welcome_screen.toggle();
+                    state.set_passkey_choice(self.welcome_screen.selected());
+                }
+            }
+            KeyCode::Tab => {
+                // Switch between password fields
+                if state.step == WizardStep::MasterPassword {
+                    if self.master_password_screen.is_showing_first() {
+                        self.master_password_screen.next();
+                    } else {
+                        self.master_password_screen.back();
+                    }
+                }
+            }
+            KeyCode::Char(c) => {
+                // Character input
+                match state.step {
+                    WizardStep::PasskeyImport => {
+                        self.passkey_import_screen.handle_char(c);
+                        if self.passkey_import_screen.is_validated() {
+                            if let Some(words) = self.passkey_import_screen.words() {
+                                state.set_passkey_words(words.to_vec());
+                            }
+                        }
+                    }
+                    WizardStep::MasterPassword => {
+                        self.master_password_screen.handle_char(c);
+                        if let Some(pwd) = self.master_password_screen.get_password() {
+                            state.set_master_password(pwd);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            KeyCode::Backspace | KeyCode::Delete => {
+                // Backspace
+                match state.step {
+                    WizardStep::PasskeyImport => {
+                        self.passkey_import_screen.handle_backspace();
+                    }
+                    WizardStep::MasterPassword => {
+                        self.master_password_screen.handle_backspace();
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
     }
 
     /// Handle keyboard shortcut events
@@ -581,6 +751,14 @@ impl TuiApp {
     pub fn render(&self, frame: &mut Frame) {
         let size = frame.area();
 
+        // Handle wizard screens differently
+        if self.current_screen == Screen::Wizard {
+            if let Some(state) = &self.wizard_state {
+                self.render_wizard(frame, size, state);
+                return;
+            }
+        }
+
         // Split screen into output area, input area, and statusline
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -602,6 +780,52 @@ impl TuiApp {
 
         // Render statusline
         self.render_statusline_widget(frame, chunks[2]);
+    }
+
+    /// Render the wizard screen
+    fn render_wizard(&self, frame: &mut Frame, area: Rect, state: &WizardState) {
+        match state.step {
+            WizardStep::Welcome => {
+                self.welcome_screen.render(frame, area);
+            }
+            WizardStep::PasskeyGenerate => {
+                self.passkey_generate_screen.render(frame, area);
+            }
+            WizardStep::PasskeyImport => {
+                self.passkey_import_screen.render(frame, area);
+            }
+            WizardStep::PasskeyConfirm => {
+                if let Some(screen) = &self.passkey_confirm_screen {
+                    screen.render(frame, area);
+                }
+            }
+            WizardStep::MasterPassword => {
+                self.master_password_screen.render(frame, area);
+            }
+            WizardStep::Complete => {
+                // Show completion message
+                let paragraph = Paragraph::new(vec![
+                    Line::from(vec![
+                        Span::styled("✓ ", Style::default().fg(Color::Green)),
+                        Span::styled(
+                            "初始化完成！",
+                            Style::default()
+                                .fg(Color::Green)
+                                .add_modifier(Modifier::BOLD),
+                        ),
+                    ]),
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        "按任意键返回主界面...",
+                        Style::default().fg(Color::Gray),
+                    )),
+                ])
+                .alignment(Alignment::Center)
+                .block(Block::default().borders(Borders::ALL));
+
+                frame.render_widget(paragraph, area);
+            }
+        }
     }
 
     /// Render the statusline widget
@@ -739,21 +963,26 @@ pub fn run_tui() -> Result<()> {
                 event::Event::Key(key) => {
                     use crossterm::event::KeyCode;
 
-                    // Check for keyboard shortcuts first (Ctrl keys)
-                    if key.modifiers.contains(event::KeyModifiers::CONTROL) {
-                        app.handle_key_event(key);
+                    // Route wizard events
+                    if app.current_screen == Screen::Wizard {
+                        app.handle_wizard_key_event(key);
                     } else {
-                        // Regular input handling
-                        match key.code {
-                            KeyCode::Char(c) => app.handle_char(c),
-                            KeyCode::Backspace | KeyCode::Delete => app.handle_backspace(),
-                            KeyCode::Enter => app.handle_char('\n'),
-                            KeyCode::Esc
-                                if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                            {
-                                app.quit();
+                        // Check for keyboard shortcuts first (Ctrl keys)
+                        if key.modifiers.contains(event::KeyModifiers::CONTROL) {
+                            app.handle_key_event(key);
+                        } else {
+                            // Regular input handling
+                            match key.code {
+                                KeyCode::Char(c) => app.handle_char(c),
+                                KeyCode::Backspace | KeyCode::Delete => app.handle_backspace(),
+                                KeyCode::Enter => app.handle_char('\n'),
+                                KeyCode::Esc
+                                    if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
+                                {
+                                    app.quit();
+                                }
+                                _ => {}
                             }
-                            _ => {}
                         }
                     }
                 }

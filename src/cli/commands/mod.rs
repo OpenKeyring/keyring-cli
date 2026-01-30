@@ -16,6 +16,7 @@ pub mod search;
 pub mod show;
 pub mod sync;
 pub mod update;
+pub mod wizard;
 
 pub use config::*;
 pub use delete::*;
@@ -30,3 +31,4 @@ pub use search::*;
 pub use show::*;
 pub use sync::*;
 pub use update::*;
+pub use wizard::*;
