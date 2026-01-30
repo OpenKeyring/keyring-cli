@@ -327,6 +327,65 @@ fn create_upyun_operator(config: &CloudConfig) -> Result<Operator> {
     Ok(operator)
 }
 
+/// Tests the connection to a cloud provider
+///
+/// # Arguments
+///
+/// * `config` - Cloud provider configuration
+///
+/// # Returns
+///
+/// Returns `Ok(())` if connection test succeeds, or an error otherwise
+///
+/// # Example
+///
+/// ```no_run
+/// use keyring_cli::cloud::{config::CloudConfig, provider::test_connection};
+///
+/// # async fn test() -> anyhow::Result<()> {
+/// let config = CloudConfig { /* ... */ };
+/// test_connection(&config).await?;
+/// # Ok(())
+/// # }
+/// ```
+pub async fn test_connection(config: &CloudConfig) -> Result<()> {
+    let operator = create_operator(config)?;
+
+    // Use a test filename with timestamp to avoid conflicts
+    let test_filename = format!(
+        ".openkeyring-connection-test-{}",
+        chrono::Utc::now().timestamp()
+    );
+    let test_content = format!("openkeyring-test-{}", chrono::Utc::now().to_rfc3339());
+
+    // Write test content
+    operator
+        .write(&test_filename, test_content.clone().into_bytes())
+        .await
+        .context("Failed to write test file to cloud storage")?;
+
+    // Read back the test content to verify
+    let read_result = operator
+        .read(&test_filename)
+        .await
+        .context("Failed to read test file from cloud storage")?;
+
+    let read_content = String::from_utf8(read_result.to_vec())
+        .context("Failed to parse test file content")?;
+
+    if read_content != test_content {
+        anyhow::bail!("Connection test failed: content mismatch");
+    }
+
+    // Clean up test file
+    operator
+        .delete(&test_filename)
+        .await
+        .context("Failed to delete test file from cloud storage")?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
