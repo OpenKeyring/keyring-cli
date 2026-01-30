@@ -1,3 +1,4 @@
+pub mod cloud_service;
 pub mod conflict;
 pub mod export;
 pub mod import;
@@ -5,6 +6,7 @@ pub mod nonce_validator;
 pub mod service;
 pub mod watcher;
 
+pub use cloud_service::{CloudSyncService, SyncDirection};
 pub use conflict::{ConflictResolution, ConflictResolver};
 pub use export::SyncExporter;
 pub use import::SyncImporter;
