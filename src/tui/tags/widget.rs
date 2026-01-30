@@ -10,7 +10,7 @@ use ratatui::{
     Frame,
 };
 
-use super::config::{EnvTag, RiskTag, TagConfig};
+use crate::tui::tags::config::{EnvTag, RiskTag, TagConfig};
 
 /// Focus area for the tag configuration widget
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -28,19 +28,19 @@ pub enum TagFocus {
 /// Tag configuration widget for TUI
 pub struct TagConfigWidget {
     /// Credential name being configured
-    credential_name: String,
+    pub credential_name: String,
     /// Tag configuration state
     config: TagConfig,
     /// Selected environment tag index (0=dev, 1=test, 2=staging, 3=prod)
-    selected_env: Option<usize>,
+    pub selected_env: Option<usize>,
     /// Selected risk tag index (0=low, 1=medium, 2=high)
-    selected_risk: Option<usize>,
+    pub selected_risk: Option<usize>,
     /// Whether to show advanced options
-    show_advanced: bool,
+    pub show_advanced: bool,
     /// Current focus area
     focus: TagFocus,
     /// Selected custom tag index (for advanced section)
-    selected_custom: Option<usize>,
+    pub selected_custom: Option<usize>,
 }
 
 impl TagConfigWidget {
@@ -171,7 +171,7 @@ impl TagConfigWidget {
         let items: Vec<ListItem> = env_options
             .iter()
             .enumerate()
-            .map(|(i, (env, label))| {
+            .map(|(i, (_env, label))| {
                 let selected = self.selected_env == Some(i);
                 let focused = self.focus == TagFocus::Env;
 
@@ -224,7 +224,7 @@ impl TagConfigWidget {
         let items: Vec<ListItem> = risk_options
             .iter()
             .enumerate()
-            .map(|(i, (risk, label))| {
+            .map(|(i, (_risk, label))| {
                 let selected = self.selected_risk == Some(i);
                 let focused = self.focus == TagFocus::Risk;
 
