@@ -55,6 +55,8 @@ pub enum Screen {
     ProviderConfig,
     /// Help screen (? or F1)
     Help,
+    /// Conflict resolution screen
+    ConflictResolution,
 }
 
 impl Screen {
@@ -66,6 +68,7 @@ impl Screen {
             Screen::ProviderSelect => "Provider Select",
             Screen::ProviderConfig => "Provider Config",
             Screen::Help => "Help",
+            Screen::ConflictResolution => "Conflict Resolution",
         }
     }
 }
