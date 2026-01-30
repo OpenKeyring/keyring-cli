@@ -292,12 +292,22 @@ impl ProviderConfigScreen {
     /// Validate current form input
     pub fn validate(&self) -> Result<(), String> {
         // Check that non-password fields are not empty
-        for (i, field) in self.fields.iter().enumerate() {
+        for field in self.fields.iter() {
             if !field.is_password && field.value.is_empty() {
                 return Err(format!("{} cannot be empty", field.label));
             }
         }
         Ok(())
+    }
+
+    /// Test the current configuration
+    pub async fn test_connection(&self) -> Result<String, String> {
+        let config = self.to_cloud_config();
+
+        crate::cloud::test_connection(&config)
+            .await
+            .map(|_| "Connection successful".to_string())
+            .map_err(|e| format!("Connection failed: {}", e))
     }
 
     /// Renders the configuration screen
