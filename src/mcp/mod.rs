@@ -1,4 +1,5 @@
 pub mod audit;
+pub mod auth;
 pub mod authorization;
 pub mod config;
 pub mod executors;
@@ -7,6 +8,7 @@ pub mod server;
 pub mod tools;
 
 pub use audit::{AuditEvent, AuditLogger};
+pub use auth::{AuthDecision, ConfirmationToken, EnvTag, OperationType, PolicyEngine, RiskTag, SessionCache, UsedTokenCache};
 pub use authorization::{AuthManager, AuthToken};
 pub use config::McpConfig;
 pub use executors::ExecutionResult;

@@ -81,6 +81,9 @@ pub enum Error {
 
     #[error("IO error: {0}")]
     IoError(String),
+
+    #[error("Token already used: {0}")]
+    TokenAlreadyUsed(String),
 }
 
 // Convert from uuid::Error for compatibility
