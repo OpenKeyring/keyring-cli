@@ -366,44 +366,54 @@ fn test_mcp_protocol_compliance() {
     // Verify all structures can be serialized to valid JSON
     // This is a requirement for MCP protocol compliance
 
-    let inputs: Vec<Box<dyn serde::Serialize>> = vec![
-        Box::new(SshExecInput {
-            credential_name: "test".to_string(),
-            command: "test".to_string(),
-            timeout: 30,
-            confirmation_id: None,
-            user_decision: None,
-        }),
-        Box::new(SshExecInteractiveInput {
-            credential_name: "test".to_string(),
-            commands: vec!["ls".to_string()],
-            timeout: 30,
-            confirmation_id: None,
-            user_decision: None,
-        }),
-        Box::new(SshListHostsInput { filter_tags: None }),
-        Box::new(SshUploadFileInput {
-            credential_name: "test".to_string(),
-            local_path: "/tmp/file".to_string(),
-            remote_path: "/remote/file".to_string(),
-            confirmation_id: None,
-            user_decision: None,
-        }),
-        Box::new(SshDownloadFileInput {
-            credential_name: "test".to_string(),
-            remote_path: "/remote/file".to_string(),
-            local_path: "/local/file".to_string(),
-            confirmation_id: None,
-            user_decision: None,
-        }),
-        Box::new(SshCheckConnectionInput {
-            credential_name: "test".to_string(),
-        }),
-    ];
+    // Test each input type separately
+    let input1 = SshExecInput {
+        credential_name: "test".to_string(),
+        command: "test".to_string(),
+        timeout: 30,
+        confirmation_id: None,
+        user_decision: None,
+    };
+    let json = serde_json::to_string(&input1).unwrap();
+    let _: serde_json::Value = serde_json::from_str(&json).unwrap();
 
-    for input in inputs {
-        let json = serde_json::to_string(&input).unwrap();
-        // Verify it's valid JSON
-        let _: serde_json::Value = serde_json::from_str(&json).unwrap();
-    }
+    let input2 = SshExecInteractiveInput {
+        credential_name: "test".to_string(),
+        commands: vec!["ls".to_string()],
+        timeout: 30,
+        confirmation_id: None,
+        user_decision: None,
+    };
+    let json = serde_json::to_string(&input2).unwrap();
+    let _: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+    let input3 = SshListHostsInput { filter_tags: None };
+    let json = serde_json::to_string(&input3).unwrap();
+    let _: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+    let input4 = SshUploadFileInput {
+        credential_name: "test".to_string(),
+        local_path: "/tmp/file".to_string(),
+        remote_path: "/remote/file".to_string(),
+        confirmation_id: None,
+        user_decision: None,
+    };
+    let json = serde_json::to_string(&input4).unwrap();
+    let _: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+    let input5 = SshDownloadFileInput {
+        credential_name: "test".to_string(),
+        remote_path: "/remote/file".to_string(),
+        local_path: "/local/file".to_string(),
+        confirmation_id: None,
+        user_decision: None,
+    };
+    let json = serde_json::to_string(&input5).unwrap();
+    let _: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+    let input6 = SshCheckConnectionInput {
+        credential_name: "test".to_string(),
+    };
+    let json = serde_json::to_string(&input6).unwrap();
+    let _: serde_json::Value = serde_json::from_str(&json).unwrap();
 }
