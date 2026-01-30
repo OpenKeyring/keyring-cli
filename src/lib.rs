@@ -13,6 +13,7 @@ pub mod error;
 pub mod health;
 pub mod mcp;
 pub mod onboarding;
+pub mod platform;
 pub mod sync;
 pub mod tui;
 pub mod types;
