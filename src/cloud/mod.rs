@@ -5,6 +5,8 @@
 
 pub mod config;
 pub mod provider;
+pub mod metadata;
 
 pub use config::{CloudConfig, CloudProvider};
 pub use provider::create_operator;
+pub use metadata::{CloudMetadata, DeviceInfo, RecordMetadata};
