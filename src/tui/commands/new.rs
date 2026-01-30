@@ -81,6 +81,7 @@ pub fn create_record(
         tags,
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1, // New records start at version 1
     };
 
     // Save

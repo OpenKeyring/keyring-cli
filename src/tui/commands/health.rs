@@ -105,7 +105,7 @@ pub fn handle_health(args: Vec<&str>) -> Result<Vec<String>> {
 
     // Get all records from database
     let mut stmt = conn.prepare(
-        "SELECT id, record_type, encrypted_data, nonce, tags, created_at, updated_at
+        "SELECT id, record_type, encrypted_data, nonce, tags, created_at, updated_at, version
          FROM records WHERE deleted = 0",
     )?;
 
@@ -152,6 +152,10 @@ pub fn handle_health(args: Vec<&str>) -> Result<Vec<String>> {
             updated_at: {
                 let ts: i64 = row.get(6)?;
                 DateTime::from_timestamp(ts, 0).unwrap_or_default()
+            },
+            version: {
+                let v: i64 = row.get(7)?;
+                v as u64
             },
         })
     })?;

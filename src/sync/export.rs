@@ -8,6 +8,8 @@ use std::path::Path;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SyncRecord {
     pub id: String,
+    /// Version number for conflict detection (incremented on each update)
+    pub version: u64,
     pub record_type: RecordType,
     pub encrypted_data: String,
     pub nonce: String,
@@ -36,6 +38,7 @@ impl SyncExporter for JsonSyncExporter {
     fn export_record(&self, record: &StoredRecord) -> Result<SyncRecord, KeyringError> {
         let sync_record = SyncRecord {
             id: record.id.to_string(),
+            version: record.version,
             record_type: record.record_type,
             encrypted_data: STANDARD.encode(&record.encrypted_data),
             nonce: STANDARD.encode(record.nonce),

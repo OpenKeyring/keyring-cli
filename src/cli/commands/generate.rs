@@ -402,6 +402,7 @@ pub async fn execute(args: NewArgs) -> Result<()> {
         tags: args.tags.clone(),
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1, // New records start at version 1
     };
 
     // Get database path

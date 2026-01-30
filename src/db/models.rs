@@ -45,6 +45,8 @@ pub struct StoredRecord {
     pub tags: Vec<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    /// Version number for conflict detection (incremented on each update)
+    pub version: u64,
 }
 
 /// Decrypted record model

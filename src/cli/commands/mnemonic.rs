@@ -80,6 +80,7 @@ async fn generate_mnemonic(word_count: u8, name: Option<String>) -> Result<()> {
             tags: vec!["crypto".to_string(), "wallet".to_string(), "mnemonic".to_string()],
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
+            version: 1, // New records start at version 1
         };
 
         // Get database path and save

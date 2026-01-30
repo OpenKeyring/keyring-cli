@@ -79,7 +79,7 @@ impl Vault {
     /// TODO: Decode encrypted data fields when crypto module is integrated
     pub fn list_records(&self) -> Result<Vec<StoredRecord>> {
         let mut stmt = self.conn.prepare(
-            "SELECT r.id, r.record_type, r.encrypted_data, r.nonce, r.created_at, r.updated_at,
+            "SELECT r.id, r.record_type, r.encrypted_data, r.nonce, r.created_at, r.updated_at, r.version,
                 GROUP_CONCAT(t.name, ',') as tag_names
          FROM records r
          LEFT JOIN record_tags rt ON r.id = rt.record_id
@@ -96,7 +96,8 @@ impl Vault {
             let nonce_bytes: Vec<u8> = row.get(3)?;
             let created_ts: i64 = row.get(4)?;
             let updated_ts: i64 = row.get(5)?;
-            let tags_csv: Option<String> = row.get(6)?;
+            let version: i64 = row.get(6)?;
+            let tags_csv: Option<String> = row.get(7)?;
 
             let uuid = Uuid::parse_str(&id_str)
                 .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
@@ -124,13 +125,14 @@ impl Vault {
                 nonce,
                 created_ts,
                 updated_ts,
+                version as u64,
                 tags,
             ))
         })?;
 
         let mut records = Vec::new();
         for record in record_iter {
-            let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, tags) =
+            let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
                 record?;
 
             records.push(StoredRecord {
@@ -143,6 +145,7 @@ impl Vault {
                     .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
                 updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
                     .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
+                version,
             });
         }
 
@@ -155,9 +158,9 @@ impl Vault {
         let uuid =
             Uuid::parse_str(id).map_err(|e| anyhow::anyhow!("Invalid UUID format: {}", e))?;
 
-        let (_id_str, record_type_str, encrypted_data, nonce_bytes, created_ts, updated_ts) =
+        let (_id_str, record_type_str, encrypted_data, nonce_bytes, created_ts, updated_ts, version) =
             self.conn.query_row(
-                "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at
+                "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at, version
          FROM records WHERE id = ?1 AND deleted = 0",
                 [id],
                 |row| {
@@ -168,6 +171,7 @@ impl Vault {
                         row.get::<_, Vec<u8>>(3)?,
                         row.get::<_, i64>(4)?,
                         row.get::<_, i64>(5)?,
+                        row.get::<_, i64>(6)?,
                     ))
                 },
             )?;
@@ -184,6 +188,7 @@ impl Vault {
                 .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
             updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
                 .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
+            version: version as u64,
         };
 
         // Load tags
@@ -489,7 +494,7 @@ impl Vault {
         let pattern = format!("%{}%", query);
 
         let mut stmt = self.conn.prepare(
-            "SELECT r.id, r.record_type, r.encrypted_data, r.nonce, r.created_at, r.updated_at,
+            "SELECT r.id, r.record_type, r.encrypted_data, r.nonce, r.created_at, r.updated_at, r.version,
                 GROUP_CONCAT(t.name, ',') as tag_names
          FROM records r
          LEFT JOIN record_tags rt ON r.id = rt.record_id
@@ -506,7 +511,8 @@ impl Vault {
             let nonce_bytes: Vec<u8> = row.get(3)?;
             let created_ts: i64 = row.get(4)?;
             let updated_ts: i64 = row.get(5)?;
-            let tags_csv: Option<String> = row.get(6)?;
+            let version: i64 = row.get(6)?;
+            let tags_csv: Option<String> = row.get(7)?;
 
             let uuid = Uuid::parse_str(&id_str)
                 .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
@@ -534,13 +540,14 @@ impl Vault {
                 nonce,
                 created_ts,
                 updated_ts,
+                version as u64,
                 tags,
             ))
         })?;
 
         let mut records = Vec::new();
         for record in record_iter {
-            let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, tags) =
+            let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
                 record?;
 
             records.push(StoredRecord {
@@ -553,6 +560,7 @@ impl Vault {
                     .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
                 updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
                     .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
+                version,
             });
         }
 
@@ -643,7 +651,7 @@ impl Vault {
     /// Returns records that have sync_status = Pending (0).
     pub fn get_pending_records(&self) -> Result<Vec<StoredRecord>> {
         let mut stmt = self.conn.prepare(
-            "SELECT r.id, r.record_type, r.encrypted_data, r.nonce, r.created_at, r.updated_at,
+            "SELECT r.id, r.record_type, r.encrypted_data, r.nonce, r.created_at, r.updated_at, r.version,
                 GROUP_CONCAT(t.name, ',') as tag_names
          FROM records r
          LEFT JOIN record_tags rt ON r.id = rt.record_id
@@ -661,7 +669,8 @@ impl Vault {
             let nonce_bytes: Vec<u8> = row.get(3)?;
             let created_ts: i64 = row.get(4)?;
             let updated_ts: i64 = row.get(5)?;
-            let tags_csv: Option<String> = row.get(6)?;
+            let version: i64 = row.get(6)?;
+            let tags_csv: Option<String> = row.get(7)?;
 
             let uuid = Uuid::parse_str(&id_str)
                 .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
@@ -689,13 +698,14 @@ impl Vault {
                 nonce,
                 created_ts,
                 updated_ts,
+                version as u64,
                 tags,
             ))
         })?;
 
         let mut records = Vec::new();
         for record in record_iter {
-            let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, tags) =
+            let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
                 record?;
 
             records.push(StoredRecord {
@@ -708,6 +718,7 @@ impl Vault {
                     .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
                 updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
                     .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
+                version,
             });
         }
 
