@@ -112,3 +112,12 @@ impl From<std::string::FromUtf8Error> for Error {
         }
     }
 }
+
+// Convert from mcp::key_cache::KeyCacheError
+impl From<crate::mcp::key_cache::KeyCacheError> for Error {
+    fn from(err: crate::mcp::key_cache::KeyCacheError) -> Self {
+        Error::Mcp {
+            context: err.to_string(),
+        }
+    }
+}

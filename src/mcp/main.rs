@@ -4,6 +4,7 @@
 //! It communicates via stdio transport following the Model Context Protocol (MCP).
 
 use keyring_cli::mcp::config::McpConfig;
+use keyring_cli::mcp::key_cache::{KeyCacheError, McpKeyCache};
 use keyring_cli::mcp::server::McpServer;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -18,10 +19,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = McpConfig::load_or_default(&config_path)
         .map_err(|e| format!("Failed to load MCP config: {}", e))?;
 
-    // Create database and key cache placeholders
+    // Prompt for master password
+    let master_password = dialoguer::Password::new()
+        .with_prompt("Enter master password to unlock key cache")
+        .interact()?;
+
+    // Initialize key cache
+    let key_cache = Arc::new(McpKeyCache::from_master_password(&master_password)?);
+
+    // Create database placeholder
     // TODO: Initialize actual database connection
     let db = Arc::new(RwLock::new(()));
-    let key_cache = Arc::new(RwLock::new(()));
 
     // Create the MCP server
     let server = McpServer::new(db, key_cache, config);

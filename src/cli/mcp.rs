@@ -7,11 +7,13 @@ use crate::cli::ConfigManager;
 use crate::error::{Error, Result};
 use crate::mcp::audit::AuditLogger;
 use crate::mcp::config::McpConfig;
+use crate::mcp::key_cache::McpKeyCache;
 use crate::mcp::lock::{is_locked, McpLock};
 use chrono::{DateTime, Utc};
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::sync::Arc;
 
 /// MCP CLI commands
 #[derive(Subcommand, Debug)]
@@ -117,8 +119,8 @@ async fn handle_start_command(verbose: bool) -> Result<()> {
     let db_config = config_manager.get_database_config()?;
     let db_path = std::path::PathBuf::from(db_config.path);
 
-    // TODO: Initialize key cache (McpKeyCache doesn't exist yet, so we'll skip this for now)
-    // The actual MCP server implementation will need to be completed separately
+    // Initialize key cache
+    let key_cache = Arc::new(McpKeyCache::from_master_password(&master_password)?);
 
     // Load config
     let mcp_config = McpConfig::load_or_default(&McpConfig::config_path())?;
