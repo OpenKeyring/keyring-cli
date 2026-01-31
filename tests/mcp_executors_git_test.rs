@@ -48,7 +48,7 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
             private_key,
             None,
             None,
-        );
+        ).unwrap();
 
         assert_eq!(executor.credential_name(), "github");
     }
@@ -65,7 +65,7 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
             private_key,
             None,
             passphrase,
-        );
+        ).unwrap();
 
         assert_eq!(executor.credential_name(), "github");
     }
@@ -99,7 +99,7 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
         );
 
         let private_key = b"test_key".to_vec();
-        executor.set_ssh_key(private_key, None, None);
+        executor.set_ssh_key(private_key, None, None).unwrap();
 
         assert_eq!(executor.credential_name(), "github");
     }
@@ -253,7 +253,7 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
 
         // Switch to SSH key
         let private_key = b"ssh_key".to_vec();
-        executor.set_ssh_key(private_key, None, None);
+        executor.set_ssh_key(private_key, None, None).unwrap();
 
         // Switch back to username/password
         executor.set_credentials(

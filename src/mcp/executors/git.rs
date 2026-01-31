@@ -3,6 +3,7 @@
 //! Provides Git operations (clone, push, pull) using the git2 crate.
 
 use crate::error::{Error, Result};
+use crate::mcp::secure_memory::{SecureBuffer, SecureMemoryError};
 use git2::{
     Cred, ObjectType, Oid, PushOptions, RemoteCallbacks, Repository, ResetType,
     Signature,
@@ -35,6 +36,9 @@ pub enum GitError {
 
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
+
+    #[error("Memory protection failed: {0}")]
+    MemoryProtectionFailed(String),
 }
 
 impl From<GitError> for Error {
@@ -49,6 +53,12 @@ impl From<GitError> for Error {
                 context: err.to_string(),
             },
         }
+    }
+}
+
+impl From<SecureMemoryError> for GitError {
+    fn from(err: SecureMemoryError) -> Self {
+        GitError::MemoryProtectionFailed(err.to_string())
     }
 }
 
@@ -81,7 +91,7 @@ pub struct GitExecutor {
     credential_name: String,
     username: Option<String>,
     password: Option<String>,
-    private_key: Option<Vec<u8>>,
+    private_key: Option<SecureBuffer>,
     public_key: Option<Vec<u8>>,
     passphrase: Option<String>,
 }
@@ -110,15 +120,18 @@ impl GitExecutor {
         private_key: Vec<u8>,
         public_key: Option<Vec<u8>>,
         passphrase: Option<String>,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, GitError> {
+        // Protect the private key in memory
+        let secure_key = SecureBuffer::new(private_key)?;
+
+        Ok(Self {
             credential_name,
             username,
             password: None,
-            private_key: Some(private_key),
+            private_key: Some(secure_key),
             public_key,
             passphrase,
-        }
+        })
     }
 
     /// Clone a repository to a local directory
@@ -214,10 +227,11 @@ impl GitExecutor {
                     .or_else(|| username_from_url)
                     .unwrap_or("git");
 
+                let key_slice = key.as_slice();
                 let result = if let Some(ref passphrase) = passphrase_clone {
-                    Cred::ssh_key_from_memory(username, None, key, passphrase)
+                    Cred::ssh_key_from_memory(username, None, key_slice, passphrase)
                 } else {
-                    Cred::ssh_key_from_memory(username, None, key, None)
+                    Cred::ssh_key_from_memory(username, None, key_slice, None)
                 };
 
                 return result.map_err(|e| {
@@ -401,10 +415,11 @@ impl GitExecutor {
                     .or_else(|| username_from_url)
                     .unwrap_or("git");
 
+                let key_slice = key.as_slice();
                 let result = if let Some(ref passphrase) = passphrase_clone {
-                    Cred::ssh_key_from_memory(username, None, key, passphrase)
+                    Cred::ssh_key_from_memory(username, None, key_slice, passphrase)
                 } else {
-                    Cred::ssh_key_from_memory(username, None, key, None)
+                    Cred::ssh_key_from_memory(username, None, key_slice, None)
                 };
 
                 return result.map_err(|e| {
@@ -469,12 +484,15 @@ impl GitExecutor {
         private_key: Vec<u8>,
         public_key: Option<Vec<u8>>,
         passphrase: Option<String>,
-    ) {
-        self.private_key = Some(private_key);
+    ) -> Result<(), GitError> {
+        // Protect the private key in memory
+        let secure_key = SecureBuffer::new(private_key)?;
+        self.private_key = Some(secure_key);
         self.public_key = public_key;
         self.passphrase = passphrase;
         // Clear username/password when setting SSH key
         self.password = None;
+        Ok(())
     }
 }
 
@@ -503,7 +521,7 @@ mod tests {
             private_key.clone(),
             None,
             None,
-        );
+        ).unwrap();
 
         assert_eq!(executor.credential_name(), "test_credential");
     }

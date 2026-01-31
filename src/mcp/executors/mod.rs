@@ -3,10 +3,10 @@
 //! This module contains executors for different types of MCP tools:
 //! - API executor for HTTP requests
 //! - SSH executor for remote command execution
-//! - Git executor for version control operations
+//! - Git executor for version control operations (TODO: update for git2 API compatibility)
 
 pub mod api;
-// pub mod git;  // Temporarily disabled - Git executor incomplete
+// pub mod git;  // TODO: Temporarily disabled - needs git2 API updates
 pub mod ssh;  // SSH tool definitions (input/output structs)
 pub mod ssh_executor;  // SSH executor implementation
 
