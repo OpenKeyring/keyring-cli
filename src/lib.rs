@@ -2,7 +2,6 @@
 //!
 //! A privacy-first password manager with local-first architecture.
 
-pub mod audit;
 pub mod cli;
 pub mod cloud;
 pub mod clipboard;

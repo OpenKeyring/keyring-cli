@@ -1,6 +1,6 @@
 //! Integration tests for Audit Logging module
 
-use keyring_cli::audit::{AuditEntry, AuditLogger, AuditQuery};
+use keyring_cli::mcp::audit::{AuditEntry, AuditLogger, AuditQuery};
 use tempfile::TempDir;
 
 fn create_test_entry(tool: &str, status: &str) -> AuditEntry {
