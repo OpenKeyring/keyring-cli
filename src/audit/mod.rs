@@ -209,7 +209,7 @@ impl AuditLogger {
 
             let name_str = name.to_string_lossy();
             if name_str.starts_with("mcp-audit-") && name_str.ends_with(".log") {
-                let modified = entry.metadata()?.modified()?;
+                let modified = entry.metadata().await?.modified()?;
                 let modified_chrono: DateTime<Utc> = modified.into();
                 if modified_chrono < cutoff {
                     let _ = tokio::fs::remove_file(entry.path()).await;
@@ -348,7 +348,7 @@ mod tests {
     async fn test_rotation() {
         let temp_dir = TempDir::new().unwrap();
         let log_path = temp_dir.path().join("audit.log");
-        let logger = AuditLogger::with_path(log_path).unwrap();
+        let logger = AuditLogger::with_path(log_path.clone()).unwrap();
 
         // Create a log file larger than 10MB
         let large_content = "x".repeat(11 * 1024 * 1024);

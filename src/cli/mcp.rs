@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 
 /// MCP CLI commands
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 pub enum MCPCommands {
     /// 启动 MCP 服务器（stdio 模式）
     Start {
@@ -113,8 +113,9 @@ async fn handle_start_command(verbose: bool) -> Result<()> {
         })?;
 
     // Get database path from config
-    let config_manager = ConfigManager::load_or_default();
-    let db_path = config_manager.get_db_path();
+    let config_manager = ConfigManager::new()?;
+    let db_config = config_manager.get_database_config()?;
+    let db_path = std::path::PathBuf::from(db_config.path);
 
     // TODO: Initialize key cache (McpKeyCache doesn't exist yet, so we'll skip this for now)
     // The actual MCP server implementation will need to be completed separately
@@ -425,7 +426,7 @@ mod tests {
         }
 
         // Test start command
-        let cli = TestCli::parse_from(["test", "mcp", "start", "--verbose"]);
+        let cli = TestCli::parse_from(["test", "start", "--verbose"]);
         match cli.mcp {
             MCPCommands::Start { verbose } => {
                 assert!(verbose);
@@ -434,7 +435,7 @@ mod tests {
         }
 
         // Test logs command
-        let cli = TestCli::parse_from(["test", "mcp", "logs", "--today", "--limit", "10"]);
+        let cli = TestCli::parse_from(["test", "logs", "--today", "--limit", "10"]);
         match cli.mcp {
             MCPCommands::Logs { today, tool, status, credential, limit } => {
                 assert!(today);

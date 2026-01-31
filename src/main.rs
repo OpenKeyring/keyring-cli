@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use keyring_cli::cli::{self, mcp};
+use keyring_cli::cli::{self, commands, mcp};
 
 /// OpenKeyring CLI - A privacy-first password manager
 #[derive(Parser, Debug)]
@@ -323,13 +323,6 @@ enum Commands {
     /// Run onboarding wizard for first-time setup
     #[command(alias = "init")]
     Wizard,
-
-    /// MCP server management
-    #[command(subcommand)]
-    Mcp {
-        #[command(subcommand)]
-        command: keyring_cli::cli::mcp::MCPCommands,
-    },
 }
 
 #[derive(Subcommand, Debug)]

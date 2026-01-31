@@ -703,6 +703,7 @@ mod tests {
     #[test]
     fn test_on_key_down_risk() {
         let mut widget = TagConfigWidget::new("test".to_string());
+        widget.focus = TagFocus::Risk;
         widget.selected_risk = Some(0);
 
         widget.on_key_down();

@@ -18,10 +18,10 @@ use tokio::sync::RwLock;
 
 /// Type alias for the database - using a placeholder until proper integration
 /// In a real implementation, this would be the Vault or Database type
-pub type Database = Arc<RwLock<()>>;
+pub type Database = RwLock<()>;
 
 /// Type alias for key cache - using a placeholder until proper integration
-pub type McpKeyCache = Arc<RwLock<()>>;
+pub type McpKeyCache = RwLock<()>;
 
 /// MCP Server errors
 #[derive(Debug, thiserror::Error)]
