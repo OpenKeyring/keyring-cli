@@ -20,12 +20,12 @@ const LOCK_FILE_NAME: &str = "open-keyring-mcp.lock";
 /// - Linux/macOS: `/tmp/open-keyring-mcp.lock`
 /// - Windows: `C:\Temp\open-keyring-mcp.lock`
 #[cfg(unix)]
-fn lock_file_path() -> PathBuf {
+pub fn lock_file_path() -> PathBuf {
     PathBuf::from("/tmp").join(LOCK_FILE_NAME)
 }
 
 #[cfg(windows)]
-fn lock_file_path() -> PathBuf {
+pub fn lock_file_path() -> PathBuf {
     PathBuf::from("C:\\Temp").join(LOCK_FILE_NAME)
 }
 

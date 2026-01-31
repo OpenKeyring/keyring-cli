@@ -8,7 +8,7 @@ use crate::error::{Error, Result};
 use crate::mcp::audit::AuditLogger;
 use crate::mcp::config::McpConfig;
 use crate::mcp::key_cache::McpKeyCache;
-use crate::mcp::lock::{is_locked, McpLock};
+use crate::mcp::lock::{is_locked, lock_file_path, McpLock};
 use chrono::{DateTime, Utc};
 use clap::Subcommand;
 use serde::{Deserialize, Serialize};
@@ -175,7 +175,8 @@ fn handle_stop_command() -> Result<()> {
         eprintln!("请按 Ctrl+C 停止服务器");
         eprintln!();
         eprintln!("或者在另一个终端运行:");
-        eprintln!("  kill $(cat /tmp/open-keyring-mcp.lock)");
+        let lock_path = lock_file_path();
+        eprintln!("  kill $(cat {})", lock_path.display());
         Ok(())
     } else {
         eprintln!("MCP 服务器未运行");
