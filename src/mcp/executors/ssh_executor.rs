@@ -3,6 +3,7 @@
 //! Provides secure SSH command execution using the openssh crate.
 //! Private keys are never exposed to the AI and are zeroized after use.
 
+use crate::mcp::secure_memory::{SecureBuffer, SecureMemoryError};
 use openssh::{Session, SessionBuilder};
 use std::env;
 use std::fs;
@@ -32,6 +33,15 @@ pub enum SshError {
 
     #[error("SSH session error: {0}")]
     SessionError(String),
+
+    #[error("Memory protection failed: {0}")]
+    MemoryProtectionFailed(String),
+}
+
+impl From<SecureMemoryError> for SshError {
+    fn from(err: SecureMemoryError) -> Self {
+        SshError::MemoryProtectionFailed(err.to_string())
+    }
 }
 
 /// Output from SSH command execution
@@ -47,7 +57,8 @@ pub struct SshExecOutput {
 ///
 /// # Security
 ///
-/// - Private keys are stored in memory and zeroized on drop
+/// - Private keys are stored in protected memory (mlock on Unix, CryptProtectMemory on Windows)
+/// - Keys are automatically zeroized and unprotected on drop
 /// - Temporary key files are created with 0o600 permissions
 /// - Keys are automatically cleaned up after execution
 ///
@@ -65,7 +76,7 @@ pub struct SshExecOutput {
 ///         "example.com".to_string(),
 ///         "user".to_string(),
 ///         Some(22),
-///     );
+///     )?;
 ///
 ///     let output = executor.exec("ls -la", Duration::from_secs(10)).await?;
 ///     println!("{}", output.stdout);
@@ -74,8 +85,8 @@ pub struct SshExecOutput {
 /// }
 /// ```
 pub struct SshExecutor {
-    /// Private key bytes
-    private_key_bytes: Option<Vec<u8>>,
+    /// Private key bytes (protected in memory)
+    private_key: Option<SecureBuffer>,
 
     /// SSH host
     host: String,
@@ -101,13 +112,16 @@ impl SshExecutor {
         host: String,
         username: String,
         port: Option<u16>,
-    ) -> Self {
-        Self {
-            private_key_bytes: Some(private_key_bytes),
+    ) -> Result<Self, SshError> {
+        // Protect the private key in memory
+        let secure_key = SecureBuffer::new(private_key_bytes)?;
+
+        Ok(Self {
+            private_key: Some(secure_key),
             host,
             username,
             port,
-        }
+        })
     }
 
     /// Get the host
@@ -138,14 +152,14 @@ impl SshExecutor {
     pub async fn exec(&self, command: &str, timeout: Duration) -> Result<SshExecOutput, SshError> {
         let start = std::time::Instant::now();
 
-        // Get private key bytes
-        let key_bytes = self
-            .private_key_bytes
+        // Get private key bytes from protected memory
+        let secure_key = self
+            .private_key
             .as_ref()
             .ok_or_else(|| SshError::KeyFileError("Private key not available".to_string()))?;
 
         // Write temporary key file
-        let key_path = self.write_temp_key(key_bytes)?;
+        let key_path = self.write_temp_key(secure_key.as_slice())?;
 
         // Execute command with timeout
         let result = tokio::time::timeout(
@@ -276,6 +290,8 @@ mod tests {
             Some(2222),
         );
 
+        assert!(executor.is_ok());
+        let executor = executor.unwrap();
         assert_eq!(executor.host(), "example.com");
         assert_eq!(executor.username(), "user");
         assert_eq!(executor.port(), Some(2222));

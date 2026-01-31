@@ -6,6 +6,7 @@ pub mod executors;
 pub mod handlers;
 pub mod key_cache;
 pub mod lock;
+pub mod secure_memory;
 pub mod server;
 pub mod tools;
 
@@ -18,6 +19,7 @@ pub use executors::ExecutionResult;
 pub use handlers::{handle_ssh_exec, HandlerError};
 pub use key_cache::{KeyCacheError, McpKeyCache};
 pub use lock::{is_locked, McpLock};
+pub use secure_memory::{SecureBuffer, SecureMemoryError};
 pub use server::{McpServer, McpError};
 pub use tools::{McpToolRegistry, ToolDefinition};
 
