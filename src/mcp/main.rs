@@ -4,7 +4,7 @@
 //! It communicates via stdio transport following the Model Context Protocol (MCP).
 
 use keyring_cli::mcp::config::McpConfig;
-use keyring_cli::mcp::key_cache::{KeyCacheError, McpKeyCache};
+use keyring_cli::mcp::key_cache::McpKeyCache;
 use keyring_cli::mcp::server::McpServer;
 use std::sync::Arc;
 use tokio::sync::RwLock;

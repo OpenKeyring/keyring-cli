@@ -119,8 +119,8 @@ async fn handle_start_command(verbose: bool) -> Result<()> {
     let db_config = config_manager.get_database_config()?;
     let db_path = std::path::PathBuf::from(db_config.path);
 
-    // Initialize key cache
-    let key_cache = Arc::new(McpKeyCache::from_master_password(&master_password)?);
+    // Initialize key cache (reserved for future MCP server implementation)
+    let _key_cache = Arc::new(McpKeyCache::from_master_password(&master_password)?);
 
     // Load config
     let mcp_config = McpConfig::load_or_default(&McpConfig::config_path())?;
@@ -232,7 +232,7 @@ async fn handle_logs_command(
 
 /// Parse audit logs from file
 fn parse_audit_logs(
-    logger: &AuditLogger,
+    _logger: &AuditLogger,
     today: bool,
     tool_filter: Option<String>,
     status_filter: Option<String>,

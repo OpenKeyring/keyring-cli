@@ -703,7 +703,7 @@ impl TuiApp {
             self.handle_autocomplete();
         } else if let Some(_vault) = vault {
             // Record name autocomplete
-            let prefix = self.input_buffer.as_str();
+            let _prefix = self.input_buffer.as_str();
 
             // TODO: Query vault for record names matching prefix
             // Stub implementation - requires CryptoManager for decryption

@@ -128,6 +128,8 @@ impl AuditLogger {
 
         file.write_all(log_entry.as_bytes())
             .map_err(|e| KeyringError::IoError(e.to_string()))?;
+        file.flush()
+            .map_err(|e| KeyringError::IoError(e.to_string()))?;
 
         Ok(())
     }

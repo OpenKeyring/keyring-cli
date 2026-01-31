@@ -4,7 +4,7 @@
 //! Private keys are never exposed to the AI and are zeroized after use.
 
 use crate::mcp::secure_memory::{SecureBuffer, SecureMemoryError};
-use openssh::{Session, SessionBuilder};
+use openssh::SessionBuilder;
 use std::env;
 use std::fs;
 use std::io::Write;

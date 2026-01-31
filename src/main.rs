@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use keyring_cli::cli::{self, commands, mcp};
+use keyring_cli::cli::{commands, mcp};
 
 /// OpenKeyring CLI - A privacy-first password manager
 #[derive(Parser, Debug)]

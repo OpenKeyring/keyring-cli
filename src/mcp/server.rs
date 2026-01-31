@@ -167,6 +167,7 @@ impl McpServer {
 ///
 /// This struct contains all the state and implements the tool methods.
 #[derive(Clone)]
+#[allow(dead_code)]  // Fields reserved for full MCP implementation
 pub struct OpenKeyringHandler {
     db: Arc<Database>,
     key_cache: Arc<McpKeyCache>,
@@ -192,6 +193,7 @@ impl OpenKeyringHandler {
     }
 
     /// Execute SSH command on remote host
+    #[allow(dead_code)]  // Reserved for full MCP implementation
     async fn ssh_exec_impl(&self, input: SshExecInput) -> String {
         // Log the tool execution
         let _ = self.audit_logger.log_event(
@@ -220,6 +222,7 @@ impl OpenKeyringHandler {
     }
 
     /// List SSH hosts
+    #[allow(dead_code)]  // Reserved for full MCP implementation
     async fn ssh_list_hosts_impl(&self, _input: SshListHostsInput) -> String {
         // Log the tool execution
         let _ = self.audit_logger.log_event("ssh_list_hosts_called", "");
@@ -232,6 +235,7 @@ impl OpenKeyringHandler {
     }
 
     /// Check SSH connection
+    #[allow(dead_code)]  // Reserved for full MCP implementation
     async fn ssh_check_connection_impl(&self, input: SshCheckConnectionInput) -> String {
         // Log the tool execution
         let _ = self.audit_logger.log_event(
