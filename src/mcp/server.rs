@@ -5,7 +5,7 @@
 
 use crate::error::Error;
 use crate::mcp::audit::AuditLogger;
-use crate::mcp::auth::{SessionCache, UsedTokenCache};
+use crate::mcp::policy::{SessionCache, UsedTokenCache};
 use crate::mcp::config::McpConfig;
 use crate::mcp::key_cache::McpKeyCache;
 // use crate::mcp::handlers::handle_ssh_exec; // TODO: Re-enable when handler is ready

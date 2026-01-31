@@ -1,4 +1,4 @@
-use keyring_cli::mcp::auth::token::ConfirmationToken;
+use keyring_cli::mcp::policy::token::ConfirmationToken;
 use keyring_cli::error::KeyringError;
 
 #[test]

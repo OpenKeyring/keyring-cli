@@ -1,24 +1,24 @@
 pub mod audit;
-pub mod auth;
 pub mod authorization;
 pub mod config;
 pub mod executors;
 pub mod handlers;
 pub mod key_cache;
 pub mod lock;
+pub mod policy;
 pub mod secure_memory;
 pub mod server;
 pub mod tools;
 
 // Re-export public types
 pub use audit::{AuditEvent, AuditLogger};
-pub use auth::{AuthDecision, ConfirmationToken, EnvTag, OperationType, PolicyEngine, RiskTag, SessionCache, UsedTokenCache};
 pub use authorization::{AuthManager, AuthToken};
 pub use config::McpConfig;
 pub use executors::ExecutionResult;
 pub use handlers::{handle_ssh_exec, HandlerError};
 pub use key_cache::{KeyCacheError, McpKeyCache};
 pub use lock::{is_locked, McpLock};
+pub use policy::{AuthDecision, ConfirmationToken, EnvTag, OperationType, PolicyEngine, RiskTag, SessionCache, UsedTokenCache};
 pub use secure_memory::{SecureBuffer, SecureMemoryError};
 pub use server::{McpServer, McpError};
 pub use tools::{McpToolRegistry, ToolDefinition};

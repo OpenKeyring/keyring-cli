@@ -6,7 +6,7 @@
 use crate::db::models::RecordType;
 use crate::db::vault::Vault;
 use crate::error::KeyringError;
-use crate::mcp::auth::{ConfirmationToken, OperationType, PolicyEngine, SessionCache, UsedTokenCache};
+use crate::mcp::policy::{ConfirmationToken, OperationType, PolicyEngine, SessionCache, UsedTokenCache};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -198,12 +198,12 @@ pub async fn handle_ssh_exec(
 
     // 4. Handle based on decision
     match decision {
-        crate::mcp::auth::AuthDecision::AutoApprove => {
+        crate::mcp::policy::AuthDecision::AutoApprove => {
             // Execute immediately without confirmation
             log::debug!("AutoApprove: executing SSH command immediately");
             return execute_ssh(input, ssh_credential).await;
         }
-        crate::mcp::auth::AuthDecision::SessionApprove => {
+        crate::mcp::policy::AuthDecision::SessionApprove => {
             // Check session cache
             if session_cache.is_authorized(&input.credential_name) {
                 log::debug!("SessionApprove: credential authorized in session cache");
@@ -211,10 +211,10 @@ pub async fn handle_ssh_exec(
             }
             log::debug!("SessionApprove: credential not in session cache, requiring confirmation");
         }
-        crate::mcp::auth::AuthDecision::AlwaysConfirm => {
+        crate::mcp::policy::AuthDecision::AlwaysConfirm => {
             log::debug!("AlwaysConfirm: requiring user confirmation");
         }
-        crate::mcp::auth::AuthDecision::Deny => {
+        crate::mcp::policy::AuthDecision::Deny => {
             return Err(HandlerError::DeniedByPolicy);
         }
     }

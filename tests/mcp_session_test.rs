@@ -3,7 +3,7 @@
 //! Comprehensive tests for the SessionCache including TTL logic, eviction,
 //! and cleanup functionality.
 
-use keyring_cli::mcp::auth::session::SessionCache;
+use keyring_cli::mcp::policy::session::SessionCache;
 use std::thread;
 use std::time::Duration;
 

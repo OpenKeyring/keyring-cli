@@ -3,7 +3,7 @@
 //! This module provides a dialog that shows users what authorization policy
 //! will be applied based on their tag configuration.
 
-use crate::mcp::auth::policy::{AuthDecision, EnvTag, PolicyEngine, RiskTag, OperationType};
+use crate::mcp::policy::policy::{AuthDecision, EnvTag, PolicyEngine, RiskTag, OperationType};
 use crate::error::Error;
 
 /// Policy preview dialog for tag configuration

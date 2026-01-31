@@ -7,7 +7,7 @@
 //! # Example
 //!
 //! ```rust
-//! use keyring_cli::mcp::auth::session::SessionCache;
+//! use keyring_cli::mcp::policy::session::SessionCache;
 //!
 //! let mut cache = SessionCache::new(100, 3600); // max 100 entries, 1 hour TTL
 //!
