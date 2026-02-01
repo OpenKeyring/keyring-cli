@@ -75,8 +75,8 @@ tokio = { version = "1.38", features = ["full"] }
 async-trait = "0.1"
 futures-util = "0.3"
 
-# SSH execution
-openssh = "0.11"
+# SSH execution - using system ssh command (no C dependency)
+# openssh = "0.11"
 
 # Git operations
 git2 = "0.19"
