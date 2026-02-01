@@ -70,17 +70,17 @@ impl TagConfigWidget {
     /// * `credential_name` - Name of the credential being configured
     /// * `config` - Existing tag configuration to load
     pub fn with_config(credential_name: String, config: TagConfig) -> Self {
-        let selected_env = config.env.and_then(|env| match env {
-            EnvTag::Dev => Some(0),
-            EnvTag::Test => Some(1),
-            EnvTag::Staging => Some(2),
-            EnvTag::Prod => Some(3),
+        let selected_env = config.env.map(|env| match env {
+            EnvTag::Dev => 0,
+            EnvTag::Test => 1,
+            EnvTag::Staging => 2,
+            EnvTag::Prod => 3,
         });
 
-        let selected_risk = config.risk.and_then(|risk| match risk {
-            RiskTag::Low => Some(0),
-            RiskTag::Medium => Some(1),
-            RiskTag::High => Some(2),
+        let selected_risk = config.risk.map(|risk| match risk {
+            RiskTag::Low => 0,
+            RiskTag::Medium => 1,
+            RiskTag::High => 2,
         });
 
         Self {

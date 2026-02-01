@@ -119,7 +119,7 @@ impl PasskeyConfirmScreen {
             Style::default().fg(Color::Gray),
         )));
         let mut first_line = Vec::new();
-        for (_i, word) in self.passkey_words.iter().take(display_count).enumerate() {
+        for word in self.passkey_words.iter().take(display_count) {
             first_line.push(Span::styled(
                 format!("{} ", word),
                 Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
@@ -131,7 +131,7 @@ impl PasskeyConfirmScreen {
 
         // Last 4 words
         summary_lines.push(Line::from(Span::styled(
-            format!("后 4 词:"),
+            "后 4 词:".to_string(),
             Style::default().fg(Color::Gray),
         )));
         let mut last_line = Vec::new();

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TagConfig {
@@ -31,17 +32,18 @@ pub enum TagError {
     InvalidFormat { tag: String, expected: String },
 }
 
-impl EnvTag {
-    pub fn to_string(&self) -> String {
+impl fmt::Display for EnvTag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Dev => "env:dev",
-            Self::Test => "env:test",
-            Self::Staging => "env:staging",
-            Self::Prod => "env:prod",
+            Self::Dev => write!(f, "env:dev"),
+            Self::Test => write!(f, "env:test"),
+            Self::Staging => write!(f, "env:staging"),
+            Self::Prod => write!(f, "env:prod"),
         }
-        .to_string()
     }
+}
 
+impl EnvTag {
     pub fn display_name(&self) -> &'static str {
         match self {
             Self::Dev => "dev (开发环境)",
@@ -61,16 +63,17 @@ impl EnvTag {
     }
 }
 
-impl RiskTag {
-    pub fn to_string(&self) -> String {
+impl fmt::Display for RiskTag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Low => "risk:low",
-            Self::Medium => "risk:medium",
-            Self::High => "risk:high",
+            Self::Low => write!(f, "risk:low"),
+            Self::Medium => write!(f, "risk:medium"),
+            Self::High => write!(f, "risk:high"),
         }
-        .to_string()
     }
+}
 
+impl RiskTag {
     pub fn display_name(&self) -> &'static str {
         match self {
             Self::Low => "low (低风险)",
