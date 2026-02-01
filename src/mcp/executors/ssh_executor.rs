@@ -66,7 +66,7 @@ pub struct SshExecOutput {
 /// # Example
 ///
 /// ```no_run
-/// use keyring_cli::mcp::executors::ssh::SshExecutor;
+/// use keyring_cli::mcp::executors::ssh_executor::SshExecutor;
 ///
 /// fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///     let private_key = std::fs::read("/path/to/private/key")?;

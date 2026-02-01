@@ -39,6 +39,7 @@ pub fn lock_file_path() -> PathBuf {
 /// ```no_run
 /// use keyring_cli::mcp::lock::McpLock;
 ///
+/// # fn try_main() -> Result<(), Box<dyn std::error::Error>> {
 /// // Acquire lock (will fail if another instance is running)
 /// let lock = McpLock::acquire()?;
 ///
@@ -46,7 +47,8 @@ pub fn lock_file_path() -> PathBuf {
 ///
 /// // Explicitly release (optional, happens automatically on drop)
 /// lock.release()?;
-/// # Ok::<(), keyring_cli::Error>(())
+/// # Ok(())
+/// # }
 /// ```
 pub struct McpLock {
     file: Option<File>,

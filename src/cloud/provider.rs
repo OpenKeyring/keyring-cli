@@ -350,7 +350,7 @@ fn create_upyun_operator(config: &CloudConfig) -> Result<Operator> {
 /// use keyring_cli::cloud::{config::CloudConfig, provider::test_connection};
 ///
 /// # async fn test() -> anyhow::Result<()> {
-/// let config = CloudConfig { /* ... */ };
+/// let config = CloudConfig::default();
 /// test_connection(&config).await?;
 /// # Ok(())
 /// # }
