@@ -63,11 +63,13 @@ cargo windows-x64
 
 ## 目标平台
 
-| 目标三元组 | 平台 | 输出文件名 |
-|-----------|------|-----------|
-| `x86_64-unknown-linux-gnu` | Linux x86_64 | `ok-linux-x64` |
-| `aarch64-unknown-linux-gnu` | Linux ARM64 | `ok-linux-arm64` |
-| `x86_64-pc-windows-msvc` | Windows x86_64 | `ok-windows-x64.exe` |
+| 目标三元组 | 平台 | 输出文件名 | 状态 |
+|-----------|------|-----------|------|
+| `x86_64-unknown-linux-gnu` | Linux x86_64 | `ok-linux-x64` | ✅ 支持 |
+| `aarch64-unknown-linux-gnu` | Linux ARM64 | `ok-linux-arm64` | ✅ 支持 |
+| `x86_64-pc-windows-msvc` | Windows x86_64 | `ok-windows-x64.exe` | ⚠️ 使用 CI/CD |
+
+**注意**: Windows 跨平台编译在 macOS 上有已知问题（cross 工具限制）。请使用 GitHub Actions CI/CD 或 Windows 机器进行 Windows 构建。
 
 ## 常见问题
 

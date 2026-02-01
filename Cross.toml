@@ -13,5 +13,7 @@ image = "ghcr.io/cross/x86_64-unknown-linux-gnu:main"
 image = "ghcr.io/cross/aarch64-unknown-linux-gnu:main"
 
 # Windows x86_64 target
-[x86_64-pc-windows-msvc]
-image = "ghcr.io/cross/x86_64-pc-windows-msvc:main"
+# NOTE: Windows cross-compilation from macOS has known issues with cross.
+# Use GitHub Actions or a Windows machine for Windows builds.
+# [x86_64-pc-windows-msvc]
+# image = "ghcr.io/cross/x86_64-pc-windows-msvc:main"

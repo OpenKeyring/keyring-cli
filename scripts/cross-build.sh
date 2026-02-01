@@ -1,6 +1,6 @@
 #!/bin/bash
 # Cross-build script for keyring-cli
-# Builds release binaries for all supported platforms
+# Builds release binaries for all supported Linux platforms
 
 set -e
 
@@ -10,11 +10,10 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Targets to build
+# Targets to build (Linux only - Windows has issues with cross on macOS)
 TARGETS=(
     "x86_64-unknown-linux-gnu"
     "aarch64-unknown-linux-gnu"
-    "x86_64-pc-windows-msvc"
 )
 
 # Build type (debug or release)
@@ -50,10 +49,6 @@ for target in "${TARGETS[@]}"; do
 
         # Copy binary to output directory with appropriate name
         case "$target" in
-            *windows*)
-                BINARY_NAME="ok-windows-x64.exe"
-                SRC="target/$target/$BUILD_TYPE/ok.exe"
-                ;;
             *linux*)
                 if [[ "$target" == *"aarch64"* ]]; then
                     BINARY_NAME="ok-linux-arm64"
