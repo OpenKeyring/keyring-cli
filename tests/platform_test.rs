@@ -198,7 +198,7 @@ fn test_windows_length_validation() {
 
     let result = protect_memory(data.as_mut_ptr(), data.len());
     assert!(
-        matches!(result, Err(keyring_cli::Error::Internal { .. })),
+        matches!(result, Err(PlatformError::Internal { .. })),
         "protect_memory should fail with invalid length on Windows"
     );
 }
