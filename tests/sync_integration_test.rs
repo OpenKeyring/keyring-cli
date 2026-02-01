@@ -113,7 +113,12 @@ async fn test_full_sync_flow_with_passkey() {
     assert_eq!(imported_record.record_type, test_record.record_type);
     assert_eq!(imported_record.encrypted_data, test_record.encrypted_data);
     assert_eq!(imported_record.nonce, test_record.nonce);
-    assert_eq!(imported_record.tags, test_record.tags);
+    // Tags may be in different order - sort before comparing
+    let mut imported_tags = imported_record.tags.clone();
+    let mut original_tags = test_record.tags.clone();
+    imported_tags.sort();
+    original_tags.sort();
+    assert_eq!(imported_tags, original_tags);
 
     // Step 9: Decrypt on device 2 to verify data integrity
     // In production, device 2 would derive its own device-specific key
