@@ -1,15 +1,15 @@
 //! SSH Executor - Remote command execution via SSH
 //!
-//! Provides secure SSH command execution using the openssh crate.
+//! Provides secure SSH command execution using system ssh command.
 //! Private keys are never exposed to the AI and are zeroized after use.
 
 use crate::mcp::secure_memory::{SecureBuffer, SecureMemoryError};
-use openssh::SessionBuilder;
 use std::env;
 use std::fs;
 use std::io::Write;
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
+use std::process::Command;
 use std::time::Duration;
 use thiserror::Error;
 
@@ -66,10 +66,8 @@ pub struct SshExecOutput {
 ///
 /// ```no_run
 /// use keyring_cli::mcp::executors::ssh::SshExecutor;
-/// use std::time::Duration;
 ///
-/// #[tokio::main]
-/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///     let private_key = std::fs::read("/path/to/private/key")?;
 ///     let executor = SshExecutor::new(
 ///         private_key,
@@ -78,7 +76,7 @@ pub struct SshExecOutput {
 ///         Some(22),
 ///     )?;
 ///
-///     let output = executor.exec("ls -la", Duration::from_secs(10)).await?;
+///     let output = executor.exec("ls -la")?;
 ///     println!("{}", output.stdout);
 ///
 ///     Ok(())
@@ -144,12 +142,11 @@ impl SshExecutor {
     /// # Arguments
     ///
     /// * `command` - Command string to execute
-    /// * `timeout` - Maximum time to wait for command completion
     ///
     /// # Returns
     ///
     /// `SshExecOutput` containing stdout, stderr, exit code, and duration
-    pub async fn exec(&self, command: &str, timeout: Duration) -> Result<SshExecOutput, SshError> {
+    pub fn exec(&self, command: &str) -> Result<SshExecOutput, SshError> {
         let start = std::time::Instant::now();
 
         // Get private key bytes from protected memory
@@ -161,33 +158,35 @@ impl SshExecutor {
         // Write temporary key file
         let key_path = self.write_temp_key(secure_key.as_slice())?;
 
-        // Execute command with timeout
-        let result = tokio::time::timeout(
-            timeout,
-            execute_ssh_command_internal(
-                &self.host,
-                &self.username,
-                self.port,
-                &key_path,
-                command,
-            ),
-        )
-        .await;
+        // Build ssh command
+        let mut cmd = Command::new("ssh");
+        cmd.arg("-i").arg(&key_path);
+        cmd.arg("-o").arg("StrictHostKeyChecking=no");
+        cmd.arg("-o").arg("UserKnownHostsFile=/dev/null");
+
+        if let Some(port) = self.port {
+            cmd.arg("-p").arg(port.to_string());
+        }
+
+        cmd.arg(format!("{}@{}", self.username, self.host));
+        cmd.arg(command);
+
+        // Execute
+        let output = cmd
+            .output()
+            .map_err(|e| SshError::ExecutionFailed(e.to_string()))?;
 
         // Clean up temp key file
         let _ = fs::remove_file(&key_path);
 
         let duration_ms = start.elapsed().as_millis() as u64;
 
-        match result {
-            Ok(Ok(output)) => {
-                let mut result = output;
-                result.duration_ms = duration_ms;
-                Ok(result)
-            }
-            Ok(Err(e)) => Err(e),
-            Err(_) => Err(SshError::Timeout(timeout)),
-        }
+        Ok(SshExecOutput {
+            stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+            exit_code: output.status.code().unwrap_or(-1),
+            duration_ms,
+        })
     }
 
     /// Write private key to a temporary file with secure permissions
@@ -227,49 +226,6 @@ impl SshExecutor {
 
         Ok(key_path)
     }
-}
-
-/// Execute command via SSH session
-async fn execute_ssh_command_internal(
-    host: &str,
-    username: &str,
-    port: Option<u16>,
-    _key_path: &PathBuf,
-    command: &str,
-) -> Result<SshExecOutput, SshError> {
-    use openssh::KnownHosts;
-
-    // Build connection string
-    let connection = if let Some(p) = port {
-        format!("{}@{}:{}", username, host, p)
-    } else {
-        format!("{}@{}", username, host)
-    };
-
-    // Create session
-    let mut session_builder = SessionBuilder::default();
-    // Use Add to verify and add new hosts to known_hosts (more secure than Accept)
-    // This prevents MITM attacks while allowing first-time connections
-    session_builder.known_hosts_check(KnownHosts::Add);
-
-    let session = session_builder
-        .connect(&connection)
-        .await
-        .map_err(|e| SshError::ConnectionFailed(e.to_string()))?;
-
-    // Execute command and get output
-    let output = session
-        .command(command)
-        .output()
-        .await
-        .map_err(|e: openssh::Error| SshError::ExecutionFailed(e.to_string()))?;
-
-    Ok(SshExecOutput {
-        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-        exit_code: output.status.code().unwrap_or(-1),
-        duration_ms: 0, // Will be set by caller
-    })
 }
 
 #[cfg(test)]
