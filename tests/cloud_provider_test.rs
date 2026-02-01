@@ -77,15 +77,17 @@ fn test_sftp_operator_creation() {
 
 #[test]
 fn test_unimplemented_provider_returns_error() {
-    // Test Dropbox (not implemented yet)
+    // Test Dropbox without required token
     let config = CloudConfig {
         provider: keyring_cli::cloud::config::CloudProvider::Dropbox,
+        dropbox_token: None, // Missing token
         ..Default::default()
     };
 
     let result = create_operator(&config);
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("not implemented"));
+    // Should return error about missing token, not "not implemented"
+    assert!(result.unwrap_err().to_string().contains("dropbox_token"));
 }
 
 #[test]
