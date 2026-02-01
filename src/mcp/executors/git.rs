@@ -360,6 +360,7 @@ impl GitExecutor {
     }
 
     /// Check if executor has credentials configured
+    #[allow(dead_code)]
     fn has_credentials(&self) -> bool {
         self.username.is_some()
             || self.password.is_some()
