@@ -3,9 +3,11 @@
 //! Tests the basic implemented workflow: init -> gen -> list -> show
 
 use std::env;
+use serial_test::serial;
 use std::process::Command;
 use tempfile::TempDir;
 
+#[serial]
 #[test]
 fn cli_smoke_flow() {
     let temp_dir = TempDir::new().unwrap();

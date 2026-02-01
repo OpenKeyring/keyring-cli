@@ -1,8 +1,10 @@
 use std::env;
+use serial_test::serial;
 use std::io::Write;
 use std::process::Command;
 use tempfile::TempDir;
 
+#[serial]
 #[test]
 fn cli_generate_then_show_decrypts() {
     let temp_dir = TempDir::new().unwrap();

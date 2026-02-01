@@ -8,10 +8,12 @@ use keyring_cli::cli::commands::delete::{delete_record, DeleteArgs};
 use keyring_cli::db::models::{RecordType, StoredRecord};
 use keyring_cli::db::vault::Vault;
 use keyring_cli::error::Error;
+use serial_test::serial;
 use std::env;
 use tempfile::TempDir;
 use uuid::Uuid;
 
+#[serial]
 #[test]
 fn test_delete_record_without_confirm_returns_early() {
     // Test: Delete without --confirm should return early without error
@@ -81,6 +83,7 @@ fn test_delete_record_without_confirm_returns_early() {
     );
 }
 
+#[serial]
 #[test]
 fn test_delete_record_successfully_marks_as_deleted() {
     // Test: Delete a record and verify it's marked as deleted (deleted=1)
@@ -123,6 +126,9 @@ fn test_delete_record_successfully_marks_as_deleted() {
     let mut vault = Vault::open(&db_path, "").unwrap();
     vault.add_record(&record).unwrap();
 
+    // Force WAL checkpoint to ensure record is persisted
+    let _ = vault.conn.pragma_update(None, "wal_checkpoint", "TRUNCATE");
+
     // Close the vault by dropping it before delete_record tries to open it
     drop(vault);
 
@@ -152,6 +158,7 @@ fn test_delete_record_successfully_marks_as_deleted() {
     );
 }
 
+#[serial]
 #[test]
 fn test_delete_nonexistent_record_returns_error() {
     // Test: Delete non-existent record should return RecordNotFound error
@@ -198,6 +205,7 @@ fn test_delete_nonexistent_record_returns_error() {
     }
 }
 
+#[serial]
 #[test]
 fn test_delete_record_with_sync_calls_sync_deletion() {
     // Test: Delete with --sync flag should call sync_deletion

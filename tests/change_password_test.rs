@@ -5,6 +5,7 @@
 #![cfg(feature = "test-env")]
 
 use keyring_cli::cli::commands::config::ConfigCommands;
+use serial_test::serial;
 use keyring_cli::db::vault::Vault;
 use tempfile::TempDir;
 
@@ -48,6 +49,7 @@ impl Drop for TestEnv {
     }
 }
 
+#[serial]
 #[test]
 fn test_config_change_password_command_exists() {
     // Test that ChangePassword variant exists in ConfigCommands enum
@@ -55,6 +57,7 @@ fn test_config_change_password_command_exists() {
     let _command = ConfigCommands::ChangePassword;
 }
 
+#[serial]
 #[test]
 fn test_config_change_password_requires_current_password() {
     let _env = TestEnv::setup("require_current");
@@ -77,6 +80,7 @@ fn test_config_change_password_requires_current_password() {
     assert_eq!(value, Some("test_value".to_string()));
 }
 
+#[serial]
 #[test]
 fn test_config_change_password_requires_new_password_confirmation() {
     let _env = TestEnv::setup("require_confirmation");
@@ -88,6 +92,7 @@ fn test_config_change_password_requires_new_password_confirmation() {
     // This is a structural test - the implementation handles confirmation
 }
 
+#[serial]
 #[test]
 fn test_config_change_password_validates_password_length() {
     let _env = TestEnv::setup("validate_length");
@@ -102,6 +107,7 @@ fn test_config_change_password_validates_password_length() {
     assert!(valid_password.len() >= 8, "Test password should be valid length");
 }
 
+#[serial]
 #[test]
 fn test_config_change_password_updates_wrapped_passkey() {
     let _env = TestEnv::setup("updates_passkey");
@@ -119,6 +125,7 @@ fn test_config_change_password_updates_wrapped_passkey() {
     std::thread::sleep(std::time::Duration::from_millis(200));
 }
 
+#[serial]
 #[test]
 fn test_config_change_password_displays_security_reminder() {
     let _env = TestEnv::setup("security_reminder");
@@ -130,6 +137,7 @@ fn test_config_change_password_displays_security_reminder() {
     // - Keep password secure
 }
 
+#[serial]
 #[test]
 fn test_config_change_password_handles_wrong_current_password() {
     let _env = TestEnv::setup("wrong_password");

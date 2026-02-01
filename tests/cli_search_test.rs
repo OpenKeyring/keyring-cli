@@ -5,11 +5,13 @@
 #![cfg(feature = "test-env")]
 
 use keyring_cli::cli::commands::search::{search_records, SearchArgs};
+use serial_test::serial;
 use keyring_cli::db::models::{RecordType, StoredRecord};
 use keyring_cli::db::Vault;
 use tempfile::TempDir;
 use uuid::Uuid;
 
+#[serial]
 #[test]
 fn test_search_filters_by_type() {
     // Test: Search results can be filtered by record type
@@ -69,6 +71,7 @@ fn test_search_filters_by_type() {
     assert!(results.len() >= 1, "Should have at least one result");
 }
 
+#[serial]
 #[test]
 fn test_search_filters_by_tags() {
     // Test: Search results can be filtered by tags
@@ -124,6 +127,7 @@ fn test_search_filters_by_tags() {
         .unwrap();
 }
 
+#[serial]
 #[test]
 fn test_search_respects_limit() {
     // Test: Search results respect the limit parameter

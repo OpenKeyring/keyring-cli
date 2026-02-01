@@ -5,6 +5,7 @@
 #![cfg(feature = "test-env")]
 
 use keyring_cli::cli::commands::devices::{DevicesArgs, manage_devices};
+use serial_test::serial;
 use keyring_cli::db::vault::Vault;
 use serde_json;
 use tempfile::TempDir;
@@ -49,6 +50,7 @@ impl Drop for TestEnv {
     }
 }
 
+#[serial]
 #[test]
 fn test_devices_command_list_with_no_devices() {
     let env = TestEnv::setup("list_no_devices");
@@ -71,6 +73,7 @@ fn test_devices_command_list_with_no_devices() {
     assert!(result.is_ok(), "List should succeed: {:?}", result.err());
 }
 
+#[serial]
 #[test]
 fn test_devices_command_list_with_trusted_devices() {
     let env = TestEnv::setup("list_with_trusted");
@@ -111,6 +114,7 @@ fn test_devices_command_list_with_trusted_devices() {
     assert!(result.is_ok(), "List should succeed: {:?}", result.err());
 }
 
+#[serial]
 #[test]
 fn test_devices_command_list_with_revoked_devices() {
     let env = TestEnv::setup("list_with_revoked");
@@ -156,6 +160,7 @@ fn test_devices_command_list_with_revoked_devices() {
     assert!(result.is_ok(), "List should succeed: {:?}", result.err());
 }
 
+#[serial]
 #[test]
 fn test_devices_command_remove_device() {
     let env = TestEnv::setup("remove_device");
@@ -218,6 +223,7 @@ fn test_devices_command_remove_device() {
     );
 }
 
+#[serial]
 #[test]
 fn test_devices_command_remove_already_revoked() {
     let env = TestEnv::setup("remove_already_revoked");
@@ -259,6 +265,7 @@ fn test_devices_command_remove_already_revoked() {
     assert!(result.is_err(), "Should fail to remove already revoked device: {:?}", result);
 }
 
+#[serial]
 #[test]
 fn test_devices_command_parse_args() {
     // Test creating DevicesArgs

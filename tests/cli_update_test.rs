@@ -5,12 +5,14 @@
 #![cfg(feature = "test-env")]
 
 use keyring_cli::cli::commands::update::{update_record, UpdateArgs};
+use serial_test::serial;
 use keyring_cli::db::models::{RecordType, StoredRecord};
 use keyring_cli::db::vault::Vault;
 use keyring_cli::error::Error;
 use tempfile::TempDir;
 use uuid::Uuid;
 
+#[serial]
 #[test]
 fn test_update_username_field() {
     // Test: Update the username field of a record
@@ -75,6 +77,7 @@ fn test_update_username_field() {
     assert_eq!(updated_payload["username"], "new@example.com");
 }
 
+#[serial]
 #[test]
 fn test_update_url_field() {
     // Test: Update the URL field of a record
@@ -142,6 +145,7 @@ fn test_update_url_field() {
     assert_eq!(updated_payload["url"], "https://new.example.com");
 }
 
+#[serial]
 #[test]
 fn test_update_notes_field() {
     // Test: Update the notes field of a record
@@ -209,6 +213,7 @@ fn test_update_notes_field() {
     assert_eq!(updated_payload["notes"], "New updated notes");
 }
 
+#[serial]
 #[test]
 fn test_update_tags_replace() {
     // Test: Update tags (should replace existing tags)
@@ -294,6 +299,7 @@ fn test_update_tags_replace() {
     assert_eq!(sorted_db_tags, expected_tags);
 }
 
+#[serial]
 #[test]
 fn test_update_nonexistent_record_returns_error() {
     // Test: Update non-existent record should return RecordNotFound error
@@ -338,6 +344,7 @@ fn test_update_nonexistent_record_returns_error() {
     }
 }
 
+#[serial]
 #[test]
 fn test_update_password_with_encryption() {
     // Test: Update password field with encryption

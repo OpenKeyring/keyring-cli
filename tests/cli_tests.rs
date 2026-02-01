@@ -9,6 +9,7 @@
 use keyring_cli::cli::commands::generate::{
     generate_memorable, generate_password, generate_pin, generate_random, NewArgs,
 };
+use serial_test::serial;
 use tempfile::TempDir;
 
 #[cfg(feature = "test-env")]
@@ -106,6 +107,7 @@ async fn test_generate_pin() {
     assert!(result.is_ok(), "PIN generation should succeed");
 }
 
+#[serial]
 #[test]
 fn test_generate_random_password_contains_numbers() {
     // When numbers=true, password should contain at least one digit
@@ -117,6 +119,7 @@ fn test_generate_random_password_contains_numbers() {
     );
 }
 
+#[serial]
 #[test]
 fn test_generate_random_password_contains_symbols() {
     // When symbols=true, password should contain at least one symbol
@@ -130,6 +133,7 @@ fn test_generate_random_password_contains_symbols() {
     );
 }
 
+#[serial]
 #[test]
 fn test_generate_random_password_contains_both() {
     // When both numbers and symbols are true, password should contain both
@@ -147,6 +151,7 @@ fn test_generate_random_password_contains_both() {
     );
 }
 
+#[serial]
 #[test]
 fn test_generate_memorable_password_format() {
     let password = generate_memorable(4).unwrap();
@@ -162,6 +167,7 @@ fn test_generate_memorable_password_format() {
     }
 }
 
+#[serial]
 #[test]
 fn test_generate_pin_format() {
     let pin = generate_pin(8).unwrap();

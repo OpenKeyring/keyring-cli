@@ -5,6 +5,7 @@
 #![cfg(feature = "test-env")]
 
 use keyring_cli::cli::commands::recover::RecoverArgs;
+use serial_test::serial;
 use keyring_cli::crypto::{passkey::Passkey, CryptoManager};
 use tempfile::TempDir;
 
@@ -56,6 +57,7 @@ impl Drop for TestEnv {
     }
 }
 
+#[serial]
 #[test]
 fn test_recover_command_accepts_passkey_argument() {
     let env = TestEnv::setup("passkey_arg");
@@ -71,6 +73,7 @@ fn test_recover_command_accepts_passkey_argument() {
     assert_eq!(args.passkey.unwrap(), env.passkey_words.join(" "));
 }
 
+#[serial]
 #[test]
 fn test_recover_command_accepts_empty_passkey() {
     // Create args without passkey (interactive mode)
@@ -80,6 +83,7 @@ fn test_recover_command_accepts_empty_passkey() {
     assert!(args.passkey.is_none());
 }
 
+#[serial]
 #[test]
 fn test_recover_validates_passkey_word_count() {
     let _env = TestEnv::setup("validate_word_count");
@@ -107,6 +111,7 @@ fn test_recover_validates_passkey_word_count() {
     assert!(result.is_err(), "20 identical words should fail checksum");
 }
 
+#[serial]
 #[test]
 fn test_recover_validates_passkey_checksum() {
     let _env = TestEnv::setup("validate_checksum");
@@ -119,6 +124,7 @@ fn test_recover_validates_passkey_checksum() {
     assert!(result.is_err(), "Invalid checksum should be rejected");
 }
 
+#[serial]
 #[test]
 fn test_recover_generates_new_salt() {
     let env = TestEnv::setup("new_salt");
@@ -147,6 +153,7 @@ fn test_recover_generates_new_salt() {
     assert!(crypto.is_initialized());
 }
 
+#[serial]
 #[test]
 fn test_recover_reencrypts_wrapped_passkey() {
     let env = TestEnv::setup("reencrypt");
@@ -180,6 +187,7 @@ fn test_recover_reencrypts_wrapped_passkey() {
     // The actual re-encryption logic will be tested in integration tests
 }
 
+#[serial]
 #[test]
 fn test_recover_requires_password_confirmation() {
     let env = TestEnv::setup("password_confirm");
@@ -197,6 +205,7 @@ fn test_recover_requires_password_confirmation() {
     assert!(args.passkey.is_some());
 }
 
+#[serial]
 #[test]
 fn test_recover_handles_invalid_current_password() {
     let _env = TestEnv::setup("invalid_password");

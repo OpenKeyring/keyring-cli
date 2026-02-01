@@ -5,6 +5,7 @@
 #![cfg(feature = "test-env")]
 
 use clap::Parser;
+use serial_test::serial;
 use keyring_cli::cli::commands::sync::SyncCommand;
 use tempfile::TempDir;
 
@@ -42,6 +43,7 @@ impl Drop for TestEnv {
     }
 }
 
+#[serial]
 #[test]
 fn test_sync_command_parsing() {
     let args = vec!["sync".to_string()];
@@ -52,6 +54,7 @@ fn test_sync_command_parsing() {
     assert_eq!(command.config, false);
 }
 
+#[serial]
 #[test]
 fn test_sync_command_with_direction() {
     let args = vec![
@@ -64,6 +67,7 @@ fn test_sync_command_with_direction() {
     assert_eq!(command.dry_run, false);
 }
 
+#[serial]
 #[test]
 fn test_sync_command_with_dry_run() {
     let args = vec!["sync".to_string(), "--dry-run".to_string()];
@@ -72,6 +76,7 @@ fn test_sync_command_with_dry_run() {
     assert_eq!(command.dry_run, true);
 }
 
+#[serial]
 #[test]
 fn test_sync_status_command() {
     let args = vec!["sync".to_string(), "--status".to_string()];
@@ -79,6 +84,7 @@ fn test_sync_status_command() {
     assert_eq!(command.status, true);
 }
 
+#[serial]
 #[test]
 fn test_sync_config_command() {
     let args = vec![
@@ -92,6 +98,7 @@ fn test_sync_config_command() {
     assert_eq!(command.provider, Some("dropbox".to_string()));
 }
 
+#[serial]
 #[test]
 fn test_sync_config_without_provider() {
     let args = vec!["sync".to_string(), "--config".to_string()];
@@ -100,6 +107,7 @@ fn test_sync_config_without_provider() {
     assert_eq!(command.provider, None);
 }
 
+#[serial]
 #[test]
 fn test_sync_direction_validation() {
     // Test valid directions
@@ -114,6 +122,7 @@ fn test_sync_direction_validation() {
     }
 }
 
+#[serial]
 #[test]
 fn test_sync_execute_sync() {
     let _env = TestEnv::setup("execute_sync");
@@ -130,6 +139,7 @@ fn test_sync_execute_sync() {
     assert!(result.is_ok(), "Sync execution should succeed");
 }
 
+#[serial]
 #[test]
 fn test_sync_execute_status() {
     let _env = TestEnv::setup("execute_status");
@@ -146,6 +156,7 @@ fn test_sync_execute_status() {
     assert!(result.is_ok(), "Status execution should succeed");
 }
 
+#[serial]
 #[test]
 fn test_sync_execute_config() {
     let _env = TestEnv::setup("execute_config");
