@@ -43,6 +43,7 @@ fn test_update_username_field() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();
@@ -106,6 +107,7 @@ fn test_update_url_field() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();
@@ -172,6 +174,7 @@ fn test_update_notes_field() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();
@@ -238,6 +241,7 @@ fn test_update_tags_replace() {
         tags: vec!["old-tag".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();
@@ -369,6 +373,7 @@ fn test_update_password_with_encryption() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();

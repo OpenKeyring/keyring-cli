@@ -34,6 +34,7 @@ fn test_search_filters_by_type() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
     vault.add_record(&password_record).unwrap();
 
@@ -46,6 +47,7 @@ fn test_search_filters_by_type() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
     vault.add_record(&ssh_record).unwrap();
 
@@ -91,6 +93,7 @@ fn test_search_filters_by_tags() {
         tags: vec!["work".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
     vault.add_record(&work_record).unwrap();
 
@@ -103,6 +106,7 @@ fn test_search_filters_by_tags() {
         tags: vec!["personal".to_string()],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
     vault.add_record(&personal_record).unwrap();
 
@@ -145,6 +149,7 @@ fn test_search_respects_limit() {
             tags: vec![],
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
+        version: 0,
         };
         vault.add_record(&record).unwrap();
     }
