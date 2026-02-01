@@ -79,10 +79,10 @@ futures-util = "0.3"
 # openssh = "0.11"
 
 # Git operations - pure Rust implementation
-gix = { version = "0.70", default-features = false, features = [
+gix = { version = "0.73", default-features = false, features = [
     "max-performance-safe",
-    "blocking-network-client",
-    "blocking-http-transport-reqwest"
+    "blocking-http-transport-reqwest",
+    "blocking-http-transport-reqwest-rust-tls"
 ] }
 
 # File system watcher

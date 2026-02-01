@@ -5,7 +5,6 @@ use keyring_cli::mcp::executors::git::{
 };
 use tempfile::TempDir;
 use std::path::PathBuf;
-use std::fs;
 
 #[cfg(test)]
 mod integration_tests {
@@ -327,7 +326,7 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
     fn test_git_error_display() {
         let err = GitError::InvalidUrl("test://bad-url".to_string());
         let display_str = format!("{}", err);
-        assert!(display_str.contains("Invalid URL"));
+        assert!(display_str.contains("Invalid repository URL"));
         assert!(display_str.contains("test://bad-url"));
     }
 
@@ -342,14 +341,20 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
     /// Test creating local repository for status check
     #[test]
     fn test_local_repository_status() {
-        use git2::Repository;
+        use std::process::Command;
 
         let executor = GitExecutor::new("test".to_string(), None, None);
         let temp_dir = TempDir::new().unwrap();
         let repo_path = temp_dir.path().join("test_repo");
 
-        // Initialize a git repository
-        let _repo = Repository::init(&repo_path).unwrap();
+        // Initialize a git repository using system git
+        let output = Command::new("git")
+            .arg("init")
+            .arg(&repo_path)
+            .output()
+            .unwrap();
+
+        assert!(output.status.success(), "Failed to initialize git repository");
 
         // Check status (should be empty for new repo)
         let result = executor.status(&repo_path);
@@ -381,7 +386,8 @@ mod error_tests {
     fn test_git_error_from_secure_memory_error() {
         // Test that SecureMemoryError converts properly
         // This is a basic test since SecureMemoryError is an enum
-        let mem_err = crate::mcp::secure_memory::SecureMemoryError::Locked;
+        use keyring_cli::mcp::secure_memory::SecureMemoryError;
+        let mem_err = SecureMemoryError::NotProtected;
         let git_error = GitError::from(mem_err);
         assert!(matches!(git_error, GitError::MemoryProtectionFailed(_)));
     }

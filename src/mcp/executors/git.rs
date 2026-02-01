@@ -6,7 +6,7 @@
 //!
 //! The gix crate is used for repository inspection and validation.
 
-use crate::error::{Error, Result};
+use crate::error::Error;
 use crate::mcp::secure_memory::{SecureBuffer, SecureMemoryError};
 use std::path::Path;
 use std::process::Command;
