@@ -297,7 +297,8 @@ fn test_risk_tag_selection() {
 fn test_risk_tag_navigation() {
     let mut widget = TagConfigWidget::new("test".to_string());
 
-    // Set initial selection
+    // Set focus to Risk and initial selection
+    widget.set_focus(TagFocus::Risk);
     widget.selected_risk = Some(0);
 
     // Navigate down: 0 -> 1 -> 2 -> 0 (wrap)
