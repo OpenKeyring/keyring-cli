@@ -247,7 +247,8 @@ async fn test_audit_log_rotation() {
         .expect("Failed to read directory entry")
     {
         let name = entry.file_name().to_string_lossy().to_string();
-        if name.starts_with("test-audit-") && name.ends_with(".log") {
+        // Archive files are named with hardcoded "mcp-audit-" prefix
+        if name.starts_with("mcp-audit-") && name.ends_with(".log") {
             found_archive = true;
         }
         if name == "test-audit.log" {
