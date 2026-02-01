@@ -169,7 +169,7 @@ fn test_widget_with_existing_config() {
 
     assert_eq!(widget.config().env, Some(EnvTag::Dev));
     assert_eq!(widget.config().risk, Some(RiskTag::Low));
-    assert_eq!(widget.config().custom.len(), 1);
+    assert_eq!(widget.config.custom.len(), 1);
     assert!(widget.can_save());
 }
 
@@ -342,16 +342,16 @@ fn test_custom_tag_addition() {
     widget.show_advanced = true;
 
     widget.add_custom_tag("category:database".to_string());
-    assert_eq!(widget.config().custom.len(), 1);
+    assert_eq!(widget.config.custom.len(), 1);
     assert_eq!(widget.selected_custom, Some(0));
 
     widget.add_custom_tag("owner:team-a".to_string());
-    assert_eq!(widget.config().custom.len(), 2);
+    assert_eq!(widget.config.custom.len(), 2);
     assert_eq!(widget.selected_custom, Some(1));
 
     // Try to add duplicate
     widget.add_custom_tag("category:database".to_string());
-    assert_eq!(widget.config().custom.len(), 2); // No change
+    assert_eq!(widget.config.custom.len(), 2); // No change
 }
 
 #[test]
@@ -435,7 +435,7 @@ fn test_widget_complete_workflow() {
     // Enable advanced and add custom tag
     widget.toggle_advanced();
     widget.add_custom_tag("region:us-east".to_string());
-    assert_eq!(widget.config().custom.len(), 1);
+    assert_eq!(widget.config.custom.len(), 1);
 
     // Verify can save
     assert!(widget.can_save());

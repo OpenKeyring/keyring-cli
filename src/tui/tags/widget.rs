@@ -30,7 +30,7 @@ pub struct TagConfigWidget {
     /// Credential name being configured
     pub credential_name: String,
     /// Tag configuration state
-    config: TagConfig,
+    pub config: TagConfig,
     /// Selected environment tag index (0=dev, 1=test, 2=staging, 3=prod)
     pub selected_env: Option<usize>,
     /// Selected risk tag index (0=low, 1=medium, 2=high)
@@ -605,7 +605,7 @@ impl TagConfigWidget {
     }
 
     /// Update the internal config from selections
-    fn update_config(&mut self) {
+    pub fn update_config(&mut self) {
         self.config.env = self.selected_env.and_then(|idx| match idx {
             0 => Some(EnvTag::Dev),
             1 => Some(EnvTag::Test),
