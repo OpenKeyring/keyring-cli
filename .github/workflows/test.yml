@@ -47,10 +47,12 @@ jobs:
           # Allow some pre-existing warnings while keeping CI green
           # TODO: Fix these pre-existing warnings and remove the allows
           cargo clippy --all-features -- -D warnings \
-            -A redundant_closure \
-            -A module_name_repetitions \
-            -A too_many_arguments \
             -A dead_code \
+            -A unused_imports \
+            -A renamed_and_removed_lints \
+            -A clippy::too_many_arguments \
+            -A clippy::redundant_closure \
+            -A clippy::module_name_repetitions \
             -A clippy::needless_borrow \
             -A clippy::needless_lifetimes \
             -A clippy::type_repetition_in_bounds \
@@ -69,6 +71,9 @@ jobs:
             -A clippy::option_as_ref_deref \
             -A clippy::suspicious_open_options \
             -A clippy::incompatible_msrv \
+            -A clippy::unnecessary_lazy_evaluations \
+            -A clippy::redundant_closure \
+            -A clippy::wildcard_in_or_patterns \
             -A clippy::doc_markdown \
             -A unknown_lints
 

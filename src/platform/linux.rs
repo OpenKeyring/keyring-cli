@@ -4,7 +4,6 @@
 
 use crate::error::Result;
 use crate::platform::PlatformError;
-use std::ptr;
 
 /// Protect memory from being swapped to disk using mlock
 ///
