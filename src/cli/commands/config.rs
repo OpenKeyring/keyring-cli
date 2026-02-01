@@ -73,9 +73,17 @@ async fn execute_set(key: String, value: String) -> Result<()> {
     let config = ConfigManager::new()?;
     let db_config = config.get_database_config()?;
     let db_path = PathBuf::from(db_config.path);
+
+    // Ensure parent directory exists
+    if let Some(parent) = db_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
     let mut vault = Vault::open(&db_path, "")?;
 
     vault.set_metadata(&key, &value)?;
+    // Force WAL checkpoint to ensure data is persisted for subsequent reads
+    let _ = vault.conn.pragma_update(None, "wal_checkpoint", "TRUNCATE");
     println!("✓ Configuration saved successfully");
 
     Ok(())
@@ -224,6 +232,9 @@ async fn execute_reset(force: bool) -> Result<()> {
     for key in &custom_keys {
         vault.delete_metadata(key)?;
     }
+
+    // Force WAL checkpoint to ensure deletes are persisted
+    let _ = vault.conn.pragma_update(None, "wal_checkpoint", "TRUNCATE");
 
     if !custom_keys.is_empty() {
         println!(
