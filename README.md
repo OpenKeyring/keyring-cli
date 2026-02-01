@@ -490,6 +490,11 @@ cargo build
 # Release build
 cargo build --release
 
+# Cross-compilation (requires Docker and cross tool)
+make cross-linux      # Linux x86_64
+make cross-linux-arm  # Linux ARM64
+make cross-windows    # Windows x86_64 (use Windows host or GitHub Actions)
+
 # Run tests
 cargo test
 
@@ -499,6 +504,8 @@ cargo fmt
 # Lint code
 cargo clippy
 ```
+
+**Cross-Compilation**: The project uses pure Rust dependencies (rustls, gix, system SSH) for easy cross-compilation. See [Cross-Compilation Guide](docs/cross-compilation.md) for details.
 
 ### Project Structure
 

@@ -1,118 +1,220 @@
-# Cross 编译使用指南
+# Cross-Compilation Guide
 
-本文档说明如何使用 `cross` 工具为 keyring-cli 进行跨平台编译。
+This document explains how to use `cross` for cross-platform compilation of keyring-cli.
 
-## 前置要求
+## Overview
 
-1. **Docker**: 需要安装 Docker 或 OrbStack
-   - macOS: 推荐 OrbStack (更快) 或 Docker Desktop
-   - 验证: `docker ps`
+keyring-cli uses **pure Rust dependencies** to enable seamless cross-compilation without C library requirements. This approach eliminates the need for platform-specific C toolchains and simplifies the build process.
 
-2. **cross 工具**:
+### Pure Rust Architecture
+
+The project has been migrated from mixed C/Rust dependencies to pure Rust:
+
+| Old Dependency (C) | New Dependency (Pure Rust) | Purpose |
+|-------------------|---------------------------|---------|
+| OpenSSL (via reqwest `native-tls-vendored`) | `rustls-tls` + `rustls-tls-native-roots` | TLS/HTTPS |
+| libgit2 (via git2 crate) | `gix` (gitoxide) | Git operations |
+| libssh2 (via openssh crate) | System SSH calls (`std::process::Command`) | SSH execution |
+
+**Benefits**:
+- No C compilation required during cross-compilation
+- Faster build times
+- Simpler CI/CD pipelines
+- Better cross-platform support
+
+## Prerequisites
+
+1. **Docker**: Docker Desktop or OrbStack required
+   - macOS: OrbStack recommended (faster) or Docker Desktop
+   - Verify: `docker ps`
+
+2. **cross tool**:
    ```bash
    cargo install cross --git https://github.com/cross-rs/cross
    ```
-   - 安装后验证: `cross --version`
+   - Verify installation: `cross --version`
 
-## 快速开始
+## Quick Start
 
-### 使用 Makefile (推荐)
+### Using Makefile (Recommended)
 
 ```bash
-# 构建 Linux x86_64
+# Build Linux x86_64
 make cross-linux
 
-# 构建 Linux ARM64
+# Build Linux ARM64
 make cross-linux-arm
 
-# 构建 Windows x86_64
+# Build Windows x86_64 (requires Windows host or GitHub Actions)
 make cross-windows
 
-# 构建所有目标平台
+# Build all target platforms
 make cross-all
 
-# 运行交叉编译测试
+# Run cross-compilation tests
 make cross-test
 ```
 
-### 使用 cross 命令
+### Using cross Directly
 
 ```bash
-# 直接使用 cross
+# Build specific targets
 cross build --target x86_64-unknown-linux-gnu --release
 cross build --target aarch64-unknown-linux-gnu --release
 cross build --target x86_64-pc-windows-msvc --release
-
-# 使用 cargo 别名 (在 .cargo/config.toml 中定义)
-cargo linux-x64
-cargo linux-arm
-cargo windows-x64
 ```
 
-### 使用构建脚本
+### Using Build Scripts
 
 ```bash
-# Debug 构建
+# Debug build
 ./scripts/cross-build.sh debug
 
-# Release 构建 (默认)
+# Release build (default)
 ./scripts/cross-build.sh release
 ```
 
-输出位置: `dist/debug/` 或 `dist/release/`
+Output location: `dist/debug/` or `dist/release/`
 
-## 目标平台
+## Supported Targets
 
-| 目标三元组 | 平台 | 输出文件名 | 状态 |
-|-----------|------|-----------|------|
-| `x86_64-unknown-linux-gnu` | Linux x86_64 | `ok-linux-x64` | ✅ 支持 |
-| `aarch64-unknown-linux-gnu` | Linux ARM64 | `ok-linux-arm64` | ✅ 支持 |
-| `x86_64-pc-windows-msvc` | Windows x86_64 | `ok-windows-x64.exe` | ⚠️ 使用 CI/CD |
+| Target Triple | Platform | Output Filename | Status |
+|--------------|----------|----------------|--------|
+| `x86_64-unknown-linux-gnu` | Linux x86_64 | `ok` | ✅ Supported |
+| `aarch64-unknown-linux-gnu` | Linux ARM64 | `ok` | ✅ Supported |
+| `x86_64-pc-windows-msvc` | Windows x86_64 | `ok.exe` | ✅ Supported* |
 
-**注意**: Windows 跨平台编译在 macOS 上有已知问题（cross 工具限制）。请使用 GitHub Actions CI/CD 或 Windows 机器进行 Windows 构建。
+**Windows Note**: Windows cross-compilation from macOS has known limitations with the `cross` tool. Recommended approaches:
+1. Use GitHub Actions with Windows runners (preferred for production)
+2. Build natively on Windows
+3. The code is pure Rust and WILL compile on Windows - it's a tooling limitation, not a code limitation
 
-## 常见问题
+### Build Commands by Target
 
-### Docker 权限问题
+**Linux x86_64**:
+```bash
+cross build --target x86_64-unknown-linux-gnu --release
+# Output: target/x86_64-unknown-linux-gnu/release/ok
+```
+
+**Linux ARM64**:
+```bash
+cross build --target aarch64-unknown-linux-gnu --release
+# Output: target/aarch64-unknown-linux-gnu/release/ok
+```
+
+**Windows x86_64**:
+```bash
+# Option 1: Using cross (may have issues from macOS)
+cross build --target x86_64-pc-windows-msvc --release
+
+# Option 2: Native build on Windows
+cargo build --target x86_64-pc-windows-msvc --release
+
+# Option 3: GitHub Actions (recommended for production)
+# Push to trigger CI/CD pipeline
+```
+
+## Architecture Details
+
+### Dependency Migration
+
+The project migrated from C-dependent libraries to pure Rust equivalents:
+
+**Phase 1: reqwest → rustls**
+- Before: `reqwest = { features = ["native-tls-vendored"] }` (requires OpenSSL)
+- After: `reqwest = { features = ["rustls-tls", "rustls-tls-native-roots"] }`
+- Result: No OpenSSL dependency, pure Rust TLS
+
+**Phase 2: openssh → System Calls**
+- Before: `openssh` crate (requires libssh2)
+- After: `std::process::Command` invoking system `ssh` binary
+- Result: Leverages user's SSH configuration, no C dependency
+
+**Phase 3: git2 → gix**
+- Before: `git2` crate (requires libgit2)
+- After: `gix` (gitoxide) pure Rust Git implementation
+- Result: Pure Rust Git operations, full API compatibility
+
+### Verification
+
+To verify pure Rust dependencies:
 
 ```bash
-# macOS: 确保 OrbStack 正在运行
+# Check for OpenSSL (should return nothing)
+cargo tree | grep -i openssl
+
+# Check for git2 (should return nothing)
+cargo tree | grep git2
+
+# Check our code doesn't use openssh
+grep -r "use openssh" src/
+```
+
+## Troubleshooting
+
+### Docker Issues
+
+```bash
+# macOS: Ensure OrbStack is running
 orb
 
-# 验证 Docker 可用
+# Verify Docker is available
 docker ps
 ```
 
-### 镜像拉取失败
+### Image Pull Failures
 
-首次运行会自动拉取 Docker 镜像 (约 500MB-1GB)，需要较长时间。
+First run automatically pulls Docker images (~500MB-1GB), which takes time.
 
-如遇网络问题，可手动预拉取：
+Manual pre-pull if needed:
 ```bash
 docker pull ghcr.io/cross/x86_64-unknown-linux-gnu:main
 docker pull ghcr.io/cross/aarch64-unknown-linux-gnu:main
 docker pull ghcr.io/cross/x86_64-pc-windows-msvc:main
 ```
 
-### 编译错误
+## Verifying Builds
 
-如果遇到链接错误，请检查 `Cargo.toml` 中的依赖是否使用了静态链接特性。本项目已使用 `native-tls-vendored`，应该不会有 OpenSSL 链接问题。
-
-## 验证构建
-
-构建完成后，可以在对应平台上运行二进制文件验证：
+After building, verify binaries on target platforms:
 
 ```bash
-# 在 Docker 中验证 Linux 构建
-docker run --rm -v "$(pwd)/dist/release:/mnt" ubuntu:latest /mnt/ok-linux-x64 --version
+# Check binary type
+file target/x86_64-unknown-linux-gnu/release/ok
+# Expected: ELF 64-bit LSB pie executable, x86-64
 
-# 在 Windows 上直接运行
-ok-windows-x64.exe --version
+file target/aarch64-unknown-linux-gnu/release/ok
+# Expected: ELF 64-bit LSB pie executable, ARM aarch64
+
+file target/x86_64-pc-windows-msvc/release/ok.exe
+# Expected: PE32+ executable (console) x86-64, for MS Windows
+
+# Test in Docker (Linux)
+docker run --rm -v "$(pwd)/target/x86_64-unknown-linux-gnu/release:/mnt" ubuntu:latest /mnt/ok --version
 ```
 
-## 与 CI/CD 的关系
+## CI/CD Integration
 
-- **本地开发**: 使用 cross 进行跨平台编译验证
-- **CI/CD**: GitHub Actions 继续使用原生构建 (更快)
+- **Local Development**: Use `cross` for cross-platform compilation verification
+- **Production Builds**: GitHub Actions uses native builds on each platform (faster and more reliable)
 
-两者互不影响，cross 主要用于本地快速验证。
+Both approaches work independently. Use `cross` for quick local testing.
+
+## Migration Notes
+
+For developers upgrading from the old C-dependent version:
+
+**What Changed**:
+1. `reqwest` now uses `rustls-tls` instead of `native-tls-vendored`
+2. Git operations use `gix` instead of `git2`
+3. SSH executor uses system calls instead of `openssh` crate
+
+**API Compatibility**:
+- All public APIs remain unchanged
+- No code changes required in consuming applications
+- Behavior is identical from user perspective
+
+**Build System**:
+- Same Cargo commands work
+- Cross-compilation now works without C toolchains
+- Windows builds improved (pure Rust)
