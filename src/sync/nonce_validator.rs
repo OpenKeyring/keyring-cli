@@ -180,9 +180,10 @@ impl NonceValidator {
             "3" => return Err(KeyringError::AuthenticationFailed {
                 reason: "Sync cancelled by user".to_string(),
             }),
-            _ => return Err(KeyringError::InvalidInput {
-                context: format!("Invalid choice: {}", choice),
-            }),
+            "" | _ => {
+                // Empty input (non-interactive) or invalid choice defaults to UseLocal
+                RecoveryStrategy::UseLocal
+            }
         })
     }
 }
