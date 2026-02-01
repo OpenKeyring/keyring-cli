@@ -1,12 +1,14 @@
 //! Tests for CryptoManager Passkey integration and device key derivation
 
 use keyring_cli::crypto::{passkey::Passkey, CryptoManager, DeviceIndex};
+use serial_test::serial;
 use std::fs;
 
 /// Default keyring directory relative to home directory
 const DEFAULT_KEYRING_DIR: &str = ".local/share/open-keyring";
 
 #[test]
+#[serial]
 fn test_passkey_initialization_flow() {
     // Cleanup before test
     let home = dirs::home_dir().expect("Failed to get home directory");
@@ -77,6 +79,7 @@ fn test_passkey_initialization_flow() {
 }
 
 #[test]
+#[serial]
 fn test_device_key_derivation_and_use() {
     // Test that device keys are deterministic but unique per device
 
@@ -163,6 +166,7 @@ fn test_device_key_derivation_and_use() {
 }
 
 #[test]
+#[serial]
 fn test_get_device_key_returns_none_when_not_initialized() {
     let crypto_manager = CryptoManager::new();
 
@@ -175,6 +179,7 @@ fn test_get_device_key_returns_none_when_not_initialized() {
 }
 
 #[test]
+#[serial]
 fn test_get_keyring_dir() {
     // Test that get_keyring_dir returns the correct path
     // This will be a private helper function, so we test it indirectly
@@ -223,6 +228,7 @@ fn test_get_keyring_dir() {
 }
 
 #[test]
+#[serial]
 fn test_passkey_seed_wrapping_and_storage() {
     // Test that the Passkey seed is properly wrapped and stored
 
