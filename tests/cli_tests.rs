@@ -81,6 +81,7 @@ async fn test_generate_memorable_password() {
 }
 
 #[cfg(feature = "test-env")]
+#[serial]
 #[tokio::test]
 async fn test_generate_pin() {
     let temp_dir = TempDir::new().unwrap();
