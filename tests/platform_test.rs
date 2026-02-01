@@ -204,14 +204,14 @@ fn test_protect_large_allocation() {
 #[test]
 #[cfg(target_os = "windows")]
 fn test_windows_length_validation() {
-    use keyring_cli::platform::PlatformError;
+    use keyring_cli::error::Error;
 
     // Windows requires length to be a multiple of 16 bytes
     let mut data = vec![0u8; 15]; // Not a multiple of 16
 
     let result = protect_memory(data.as_mut_ptr(), data.len());
     assert!(
-        matches!(result, Err(PlatformError::MemoryProtectionFailed(_))),
+        matches!(result, Err(Error::Internal { .. })),
         "protect_memory should fail with invalid length on Windows"
     );
 }
