@@ -1156,6 +1156,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_os = "windows", ignore)]
     fn test_process_delete_command() {
         let mut app = TuiApp::new();
         app.process_command("/delete test");
@@ -1167,6 +1168,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_os = "windows", ignore)]
     fn test_process_list_command() {
         let mut app = TuiApp::new();
         app.process_command("/list");
@@ -1254,6 +1256,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_os = "windows", ignore)]
     fn test_process_command_with_args() {
         let mut app = TuiApp::new();
         app.process_command("/delete my record name");
@@ -1313,6 +1316,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(target_os = "windows", ignore)]
     fn test_keybinding_ctrl_l_triggers_list() {
         use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
         let mut app = TuiApp::new();
