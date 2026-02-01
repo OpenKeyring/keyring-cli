@@ -31,6 +31,8 @@ jobs:
           key: coverage-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run tests with coverage
+        env:
+          OK_MASTER_PASSWORD: test_password_123_for_ci_only
         run: |
           cargo install cargo-tarpaulin
           cargo tarpaulin --features test-env --out Html --out Json --output-dir coverage --timeout 300 --verbose
