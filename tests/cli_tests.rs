@@ -13,6 +13,7 @@ use serial_test::serial;
 use tempfile::TempDir;
 
 #[cfg(feature = "test-env")]
+#[serial]
 #[tokio::test]
 async fn test_generate_random_password() {
     let temp_dir = TempDir::new().unwrap();
