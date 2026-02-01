@@ -48,6 +48,7 @@ fn test_delete_record_without_confirm_returns_early() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();
@@ -116,6 +117,7 @@ fn test_delete_record_successfully_marks_as_deleted() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();
@@ -233,6 +235,7 @@ fn test_delete_record_with_sync_calls_sync_deletion() {
         tags: vec![],
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 0,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();
