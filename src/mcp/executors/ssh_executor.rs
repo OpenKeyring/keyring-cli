@@ -210,10 +210,19 @@ impl SshExecutor {
         let key_path = temp_dir.join(&key_filename);
 
         // Create file with restrictive permissions
+        // Note: .mode(0o600) is Unix-only; on Windows we skip it
+        #[cfg(unix)]
         let mut file = fs::File::options()
             .write(true)
             .create_new(true)
             .mode(0o600)
+            .open(&key_path)
+            .map_err(|e| SshError::KeyFileError(format!("Failed to create temp file: {}", e)))?;
+
+        #[cfg(windows)]
+        let mut file = fs::File::options()
+            .write(true)
+            .create_new(true)
             .open(&key_path)
             .map_err(|e| SshError::KeyFileError(format!("Failed to create temp file: {}", e)))?;
 

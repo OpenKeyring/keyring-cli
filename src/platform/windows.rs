@@ -4,8 +4,9 @@
 
 use crate::error::Result;
 use crate::platform::PlatformError;
-use std::ptr;
-use windows_sys::Win32::Security::Cryptography::*;
+use windows::Win32::Foundation::GetLastError;
+use windows::Win32::Security::Cryptography::{CRYPTPROTECTMEMORY_SAME_PROCESS, CryptProtectMemory, CryptUnprotectMemory};
+use windows::Win32::System::SystemInformation::{GetSystemInfo, SYSTEM_INFO};
 
 /// Protect memory in the current process
 ///
@@ -45,14 +46,14 @@ pub fn protect_memory(addr: *mut u8, len: usize) -> Result<()> {
     }
 
     // Call CryptProtectMemory
-    // dwFlags: 0 = CRYPTPROTECTMEMORY_SAME_PROCESS (only accessible in same process)
-    let result = unsafe { CryptProtectMemory(addr as *mut u8, len, 0) };
+    // CRYPTPROTECTMEMORY_SAME_PROCESS: only accessible in same process
+    let result = unsafe { CryptProtectMemory(addr, len, CRYPTPROTECTMEMORY_SAME_PROCESS) };
 
-    if result == 0 {
+    if !result.as_bool() {
         let error_code = unsafe { GetLastError() };
         return Err(PlatformError::MemoryProtectionFailed(format!(
             "CryptProtectMemory failed with error code: {}",
-            error_code
+            error_code.0
         ))
         .into());
     }
@@ -92,13 +93,13 @@ pub fn unprotect_memory(addr: *mut u8, len: usize) -> Result<()> {
     }
 
     // Call CryptUnprotectMemory
-    let result = unsafe { CryptUnprotectMemory(addr as *mut u8, len, 0) };
+    let result = unsafe { CryptUnprotectMemory(addr, len, CRYPTPROTECTMEMORY_SAME_PROCESS) };
 
-    if result == 0 {
+    if !result.as_bool() {
         let error_code = unsafe { GetLastError() };
         return Err(PlatformError::MemoryProtectionFailed(format!(
             "CryptUnprotectMemory failed with error code: {}",
-            error_code
+            error_code.0
         ))
         .into());
     }

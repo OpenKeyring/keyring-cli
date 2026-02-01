@@ -74,7 +74,7 @@ impl ConfirmationToken {
     /// Generate a random nonce for token uniqueness.
     fn generate_nonce() -> String {
         let mut rng = rand::rng();
-        let nonce_bytes: Vec<u8> = (0..Self::NONCE_SIZE).map(|_| rng.random()).collect();
+        let nonce_bytes: Vec<u8> = (0..Self::NONCE_SIZE).map(|_| rng.random::<u8>()).collect();
         hex::encode(nonce_bytes)
     }
 

@@ -34,6 +34,7 @@ pub fn create_operator(config: &CloudConfig) -> Result<Operator> {
     match config.provider {
         CloudProvider::ICloud => create_icloud_operator(config),
         CloudProvider::WebDAV => create_webdav_operator(config),
+        #[cfg(unix)]
         CloudProvider::SFTP => create_sftp_operator(config),
         CloudProvider::Dropbox => create_dropbox_operator(config),
         CloudProvider::GDrive => create_gdrive_operator(config),
@@ -43,6 +44,11 @@ pub fn create_operator(config: &CloudConfig) -> Result<Operator> {
         CloudProvider::TencentCOS => create_tencent_cos_operator(config),
         CloudProvider::HuaweiOBS => create_huawei_obs_operator(config),
         CloudProvider::UpYun => create_upyun_operator(config),
+        #[cfg(not(unix))]
+        CloudProvider::SFTP => {
+            // SFTP is only supported on Unix platforms
+            Err(anyhow::anyhow!("SFTP provider is not supported on this platform"))
+        }
     }
 }
 
@@ -94,6 +100,7 @@ fn create_webdav_operator(config: &CloudConfig) -> Result<Operator> {
 }
 
 /// Creates an operator for SFTP
+#[cfg(unix)]
 fn create_sftp_operator(config: &CloudConfig) -> Result<Operator> {
     let host = config
         .sftp_host
