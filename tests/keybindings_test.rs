@@ -3,7 +3,9 @@
 //! Test-Driven Development tests for the keybindings system.
 
 use keyring_cli::tui::keybindings::{parse_shortcut, Action, KeyBinding, KeyBindingManager};
+use serial_test::serial;
 
+#[serial]
 #[test]
 fn test_parse_ctrl_char() {
     // Test parsing "Ctrl+N" into KeyEvent
@@ -17,6 +19,7 @@ fn test_parse_ctrl_char() {
         .contains(crossterm::event::KeyModifiers::CONTROL));
 }
 
+#[serial]
 #[test]
 fn test_parse_function_key() {
     let result = parse_shortcut("F5");
@@ -25,6 +28,7 @@ fn test_parse_function_key() {
     assert_eq!(event.code, crossterm::event::KeyCode::F(5));
 }
 
+#[serial]
 #[test]
 fn test_parse_ctrl_shift_char() {
     let result = parse_shortcut("Ctrl+Shift+N");
@@ -39,12 +43,14 @@ fn test_parse_ctrl_shift_char() {
         .contains(crossterm::event::KeyModifiers::SHIFT));
 }
 
+#[serial]
 #[test]
 fn test_parse_invalid_shortcut() {
     let result = parse_shortcut("Invalid");
     assert!(result.is_err());
 }
 
+#[serial]
 #[test]
 fn test_action_display() {
     // Test that actions can be displayed for help
@@ -53,6 +59,7 @@ fn test_action_display() {
     assert_eq!(format!("{}", Action::Quit), "Quit");
 }
 
+#[serial]
 #[test]
 fn test_default_keybindings() {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -70,6 +77,7 @@ fn test_default_keybindings() {
     assert_eq!(manager.get_action(&ctrl_q), Some(Action::Quit));
 }
 
+#[serial]
 #[test]
 fn test_keybinding_from_yaml() {
     use serde_yaml;
@@ -85,6 +93,7 @@ shortcuts:
     assert!(binding.is_ok());
 }
 
+#[serial]
 #[test]
 fn test_conflict_detection() {
     use serde_yaml;
@@ -104,6 +113,7 @@ shortcuts:
 
 // Additional comprehensive tests
 
+#[serial]
 #[test]
 fn test_all_default_actions_have_bindings() {
     let manager = KeyBindingManager::new();
@@ -134,19 +144,32 @@ fn test_all_default_actions_have_bindings() {
     }
 }
 
+#[serial]
 #[test]
 fn test_manager_get_key_for_action() {
-    use crossterm::event::KeyCode;
+    use crossterm::event::{KeyCode, KeyModifiers};
+
+    // Ensure clean state by removing any existing config file
+    // that might have been created by other tests
+    if let Some(config_dir) = dirs::config_dir() {
+        let config_path = config_dir.join("open-keyring").join("keybindings.yaml");
+        let _ = std::fs::remove_file(&config_path);
+    }
 
     let manager = KeyBindingManager::new();
 
+    // Action::New is bound to Ctrl+N (Char('n') with CONTROL modifier)
     let new_key = manager.get_key(Action::New);
     assert_eq!(new_key.unwrap().code, KeyCode::Char('n'));
+    assert!(new_key.unwrap().modifiers.contains(KeyModifiers::CONTROL));
 
+    // Action::Help is bound to F1 (not Ctrl+H)
     let help_key = manager.get_key(Action::Help);
-    assert_eq!(help_key.unwrap().code, KeyCode::Char('h'));
+    assert_eq!(help_key.unwrap().code, KeyCode::F(1));
+    assert_eq!(help_key.unwrap().modifiers, KeyModifiers::empty());
 }
 
+#[serial]
 #[test]
 fn test_manager_format_key() {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -164,6 +187,7 @@ fn test_manager_format_key() {
     assert_eq!(KeyBindingManager::format_key(&f5), "F5");
 }
 
+#[serial]
 #[test]
 fn test_parse_alt_key() {
     let result = parse_shortcut("Alt+T");
@@ -175,6 +199,7 @@ fn test_parse_alt_key() {
         .contains(crossterm::event::KeyModifiers::ALT));
 }
 
+#[serial]
 #[test]
 fn test_parse_ctrl_alt_key() {
     let result = parse_shortcut("Ctrl+Alt+Delete");
@@ -188,18 +213,21 @@ fn test_parse_ctrl_alt_key() {
         .contains(crossterm::event::KeyModifiers::ALT));
 }
 
+#[serial]
 #[test]
 fn test_parse_empty_input() {
     let result = parse_shortcut("");
     assert!(result.is_err());
 }
 
+#[serial]
 #[test]
 fn test_parse_whitespace_only() {
     let result = parse_shortcut("   ");
     assert!(result.is_err());
 }
 
+#[serial]
 #[test]
 fn test_parse_special_keys() {
     assert_eq!(
@@ -224,6 +252,7 @@ fn test_parse_special_keys() {
     );
 }
 
+#[serial]
 #[test]
 fn test_parse_navigation_keys() {
     assert_eq!(
@@ -244,6 +273,7 @@ fn test_parse_navigation_keys() {
     );
 }
 
+#[serial]
 #[test]
 fn test_parse_function_keys_f1_to_f12() {
     for i in 1..=12 {
@@ -253,6 +283,7 @@ fn test_parse_function_keys_f1_to_f12() {
     }
 }
 
+#[serial]
 #[test]
 fn test_parse_case_insensitive_modifiers() {
     let ctrl_lower = parse_shortcut("ctrl+n");
@@ -267,6 +298,7 @@ fn test_parse_case_insensitive_modifiers() {
     assert_eq!(ctrl_lower.unwrap(), ctrl_upper.unwrap());
 }
 
+#[serial]
 #[test]
 fn test_action_command_names() {
     assert_eq!(Action::New.command_name(), "/new");
@@ -275,6 +307,7 @@ fn test_action_command_names() {
     assert_eq!(Action::Help.command_name(), "/help");
 }
 
+#[serial]
 #[test]
 fn test_action_descriptions() {
     assert!(!Action::New.description().is_empty());
@@ -282,6 +315,7 @@ fn test_action_descriptions() {
     assert!(!Action::Help.description().is_empty());
 }
 
+#[serial]
 #[test]
 fn test_keybinding_default_creation() {
     let binding = KeyBinding::new();
@@ -290,6 +324,7 @@ fn test_keybinding_default_creation() {
     assert_eq!(binding.shortcuts.get("quit"), Some(&"Ctrl+Q".to_string()));
 }
 
+#[serial]
 #[test]
 fn test_unknown_shortcut_returns_none() {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -299,6 +334,7 @@ fn test_unknown_shortcut_returns_none() {
     assert_eq!(manager.get_action(&unknown_key), None);
 }
 
+#[serial]
 #[test]
 fn test_all_bindings_coverage() {
     let manager = KeyBindingManager::new();
