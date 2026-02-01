@@ -26,6 +26,7 @@ use crate::platform::PlatformError;
 /// The maximum amount of memory that can be locked is limited by sysctl:
 /// - vm.max_map_count
 /// - kern.maxfileperproc
+///
 /// For larger allocations, consider using the encrypted keychain APIs instead.
 pub fn protect_memory(addr: *mut u8, len: usize) -> Result<()> {
     if addr.is_null() || len == 0 {

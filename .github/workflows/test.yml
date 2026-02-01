@@ -74,6 +74,7 @@ jobs:
             -A clippy::unnecessary_lazy_evaluations \
             -A clippy::redundant_closure \
             -A clippy::wildcard_in_or_patterns \
+            -A clippy::doc_lazy_continuation \
             -A clippy::doc_markdown \
             -A unknown_lints
 
