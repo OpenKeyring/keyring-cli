@@ -4,7 +4,6 @@
 
 use crate::error::Result;
 use crate::platform::PlatformError;
-use windows::Win32::Foundation::GetLastError;
 use windows::Win32::Security::Cryptography::{CRYPTPROTECTMEMORY_SAME_PROCESS, CryptProtectMemory, CryptUnprotectMemory};
 use windows::Win32::System::SystemInformation::{GetSystemInfo, SYSTEM_INFO};
 
@@ -47,16 +46,19 @@ pub fn protect_memory(addr: *mut u8, len: usize) -> Result<()> {
 
     // Call CryptProtectMemory
     // CRYPTPROTECTMEMORY_SAME_PROCESS: only accessible in same process
-    let result = unsafe { CryptProtectMemory(addr, len, CRYPTPROTECTMEMORY_SAME_PROCESS) };
-
-    if !result.as_bool() {
-        let error_code = unsafe { GetLastError() };
-        return Err(PlatformError::MemoryProtectionFailed(format!(
-            "CryptProtectMemory failed with error code: {}",
-            error_code.0
+    // Note: windows crate v0.58 returns Result<()>, not BOOL
+    unsafe {
+        CryptProtectMemory(
+            addr as *mut _,
+            len as u32,
+            CRYPTPROTECTMEMORY_SAME_PROCESS,
+        )
+    }.map_err(|e| {
+        PlatformError::MemoryProtectionFailed(format!(
+            "CryptProtectMemory failed: {}",
+            e
         ))
-        .into());
-    }
+    })?;
 
     Ok(())
 }
@@ -93,16 +95,19 @@ pub fn unprotect_memory(addr: *mut u8, len: usize) -> Result<()> {
     }
 
     // Call CryptUnprotectMemory
-    let result = unsafe { CryptUnprotectMemory(addr, len, CRYPTPROTECTMEMORY_SAME_PROCESS) };
-
-    if !result.as_bool() {
-        let error_code = unsafe { GetLastError() };
-        return Err(PlatformError::MemoryProtectionFailed(format!(
-            "CryptUnprotectMemory failed with error code: {}",
-            error_code.0
+    // Note: windows crate v0.58 returns Result<()>, not BOOL
+    unsafe {
+        CryptUnprotectMemory(
+            addr as *mut _,
+            len as u32,
+            CRYPTPROTECTMEMORY_SAME_PROCESS,
+        )
+    }.map_err(|e| {
+        PlatformError::MemoryProtectionFailed(format!(
+            "CryptUnprotectMemory failed: {}",
+            e
         ))
-        .into());
-    }
+    })?;
 
     Ok(())
 }

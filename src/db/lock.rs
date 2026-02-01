@@ -175,8 +175,9 @@ impl VaultLock {
         use windows::Win32::Storage::FileSystem::LOCKFILE_EXCLUSIVE_LOCK;
         use windows::Win32::Storage::FileSystem::LOCKFILE_FAIL_IMMEDIATELY;
 
-        // HANDLE is #[repr(transparent)] around isize, safe to transmute from raw handle
-        let handle = HANDLE(file.as_raw_handle() as isize);
+        // HANDLE in windows crate v0.58 is struct HANDLE(pub *mut c_void)
+        // as_raw_handle() returns isize, need to cast to pointer
+        let handle = HANDLE(file.as_raw_handle() as *mut _);
         unsafe {
             let mut overlapped = std::mem::zeroed();
             LockFileEx(
@@ -199,8 +200,9 @@ impl VaultLock {
         use windows::Win32::Storage::FileSystem::LockFileEx;
         use windows::Win32::Storage::FileSystem::LOCKFILE_FAIL_IMMEDIATELY;
 
-        // HANDLE is #[repr(transparent)] around isize, safe to transmute from raw handle
-        let handle = HANDLE(file.as_raw_handle() as isize);
+        // HANDLE in windows crate v0.58 is struct HANDLE(pub *mut c_void)
+        // as_raw_handle() returns isize, need to cast to pointer
+        let handle = HANDLE(file.as_raw_handle() as *mut _);
         unsafe {
             let mut overlapped = std::mem::zeroed();
             LockFileEx(
