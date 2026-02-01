@@ -7,6 +7,7 @@ use crate::mcp::secure_memory::{SecureBuffer, SecureMemoryError};
 use std::env;
 use std::fs;
 use std::io::Write;
+#[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
 use std::process::Command;
