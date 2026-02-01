@@ -9,8 +9,10 @@
 //! Run with: cargo test --test mcp_lock_test -- --test-threads=1
 
 use keyring_cli::mcp::lock::{is_locked, McpLock};
+use serial_test::serial;
 use std::thread;
 
+#[serial]
 #[test]
 fn test_lock_acquisition() {
     // First lock should succeed
@@ -29,6 +31,7 @@ fn test_lock_acquisition() {
     lock2.release().expect("Second release should succeed");
 }
 
+#[serial]
 #[test]
 fn test_try_acquire() {
     // No lock held initially
@@ -42,6 +45,7 @@ fn test_try_acquire() {
     lock1.release().expect("Release should succeed");
 }
 
+#[serial]
 #[test]
 fn test_pid_writing() {
     let lock = McpLock::acquire().expect("Lock should be acquired");
@@ -55,6 +59,7 @@ fn test_pid_writing() {
     lock.release().expect("Release should succeed");
 }
 
+#[serial]
 #[test]
 fn test_double_release() {
     let lock = McpLock::acquire().expect("Lock should be acquired");
@@ -66,6 +71,7 @@ fn test_double_release() {
     // The Drop trait has already been called during release
 }
 
+#[serial]
 #[test]
 fn test_drop_auto_release() {
     // Test that Drop trait automatically releases the lock
@@ -80,6 +86,7 @@ fn test_drop_auto_release() {
     lock2.release().expect("Release should succeed");
 }
 
+#[serial]
 #[test]
 fn test_concurrent_lock_attempts() {
     let lock1 = McpLock::acquire().expect("First lock should succeed");
@@ -96,6 +103,7 @@ fn test_concurrent_lock_attempts() {
     lock1.release().expect("Release should succeed");
 }
 
+#[serial]
 #[test]
 fn test_lock_file_path() {
     let lock = McpLock::acquire().expect("Lock should be acquired");
@@ -110,6 +118,7 @@ fn test_lock_file_path() {
     lock.release().expect("Release should succeed");
 }
 
+#[serial]
 #[test]
 fn test_is_locked() {
     // Initially no lock
