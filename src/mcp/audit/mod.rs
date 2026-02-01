@@ -18,18 +18,18 @@ pub struct AuditEvent {
 }
 
 #[derive(Debug)]
-pub struct AuditLogger {
+pub struct SimpleAuditLogger {
     log_file_path: String,
     enabled: bool,
 }
 
-impl Default for AuditLogger {
+impl Default for SimpleAuditLogger {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl AuditLogger {
+impl SimpleAuditLogger {
     pub fn new() -> Self {
         Self {
             log_file_path: std::env::var("OK_MCP_AUDIT_LOG")
@@ -157,3 +157,12 @@ impl AuditLogger {
         Ok(())
     }
 }
+
+// Re-export the async audit logger types for tests and external use
+pub mod audit;
+
+// Re-export the async logger types for tests
+pub use audit::{AuditEntry as AsyncAuditEntry, AuditLogger as AsyncAuditLogger, AuditQuery};
+
+// Export the simple logger as the default for internal use
+pub use SimpleAuditLogger as AuditLogger;
