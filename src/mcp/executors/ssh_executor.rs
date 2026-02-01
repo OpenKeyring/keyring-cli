@@ -248,7 +248,9 @@ async fn execute_ssh_command_internal(
 
     // Create session
     let mut session_builder = SessionBuilder::default();
-    session_builder.known_hosts_check(KnownHosts::Accept);
+    // Use Add to verify and add new hosts to known_hosts (more secure than Accept)
+    // This prevents MITM attacks while allowing first-time connections
+    session_builder.known_hosts_check(KnownHosts::Add);
 
     let session = session_builder
         .connect(&connection)

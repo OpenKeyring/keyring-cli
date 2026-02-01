@@ -427,7 +427,6 @@ fn load_ssh_credential(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashSet;
 
     #[test]
     fn test_ssh_exec_input_deserialize() {
