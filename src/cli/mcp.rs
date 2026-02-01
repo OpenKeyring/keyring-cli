@@ -249,7 +249,7 @@ fn parse_audit_logs(
     }
 
     let content = fs::read_to_string(&log_path)
-        .map_err(|e| Error::Io(e))?;
+        .map_err(Error::Io)?;
 
     let mut entries = Vec::new();
 

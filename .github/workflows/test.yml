@@ -62,6 +62,7 @@ jobs:
             -A clippy::borrow_deref_ref \
             -A clippy::useless_conversion \
             -A clippy::unwrap_used \
+            -A clippy::unnecessary_unwrap \
             -A clippy::doc_markdown \
             -A unknown_lints
 

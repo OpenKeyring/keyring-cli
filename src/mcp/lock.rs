@@ -78,7 +78,7 @@ impl McpLock {
         // Ensure parent directory exists
         if let Some(parent) = path.parent() {
             if !parent.exists() {
-                fs::create_dir_all(parent).map_err(|e| Error::Io(e))?;
+                fs::create_dir_all(parent).map_err(Error::Io)?;
             }
         }
 
@@ -88,7 +88,7 @@ impl McpLock {
             .write(true)
             .create(true)
             .open(&path)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(Error::Io)?;
 
         // Acquire exclusive lock (blocking)
         file.lock()
@@ -98,10 +98,10 @@ impl McpLock {
 
         // Write our PID to the lock file
         let pid = std::process::id();
-        writeln!(&file, "{}", pid).map_err(|e| Error::Io(e))?;
+        writeln!(&file, "{}", pid).map_err(Error::Io)?;
 
         // Sync to ensure PID is written to disk
-        file.sync_all().map_err(|e| Error::Io(e))?;
+        file.sync_all().map_err(Error::Io)?;
 
         Ok(Self {
             file: Some(file),
@@ -130,7 +130,7 @@ impl McpLock {
         // Ensure parent directory exists
         if let Some(parent) = path.parent() {
             if !parent.exists() {
-                fs::create_dir_all(parent).map_err(|e| Error::Io(e))?;
+                fs::create_dir_all(parent).map_err(Error::Io)?;
             }
         }
 
@@ -140,7 +140,7 @@ impl McpLock {
             .write(true)
             .create(true)
             .open(&path)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(Error::Io)?;
 
         // Try to acquire exclusive lock (non-blocking)
         file.try_lock()
@@ -150,10 +150,10 @@ impl McpLock {
 
         // Write our PID to the lock file
         let pid = std::process::id();
-        writeln!(&file, "{}", pid).map_err(|e| Error::Io(e))?;
+        writeln!(&file, "{}", pid).map_err(Error::Io)?;
 
         // Sync to ensure PID is written to disk
-        file.sync_all().map_err(|e| Error::Io(e))?;
+        file.sync_all().map_err(Error::Io)?;
 
         Ok(Self {
             file: Some(file),
