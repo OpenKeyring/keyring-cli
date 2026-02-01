@@ -50,17 +50,25 @@ impl From<McpError> for Error {
 /// # Example
 ///
 /// ```no_run
-/// use keyring_cli::mcp::server::McpServer;
+/// use keyring_cli::mcp::server::{McpServer, Database};
 /// use keyring_cli::mcp::config::McpConfig;
+/// use keyring_cli::mcp::key_cache::McpKeyCache;
 /// use std::sync::Arc;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-/// // The McpServer requires a Database, McpKeyCache, and McpConfig.
-/// // These are typically created from the application's main setup.
-/// // See the CLI entry point for a complete example.
+/// // Create the key cache from master password
+/// let key_cache = Arc::new(McpKeyCache::from_master_password("master-password")?);
+///
+/// // Create a placeholder database (currently using RwLock<()>)
+/// let db: Database = tokio::sync::RwLock::new(());
+/// let db = Arc::new(db);
+///
+/// // Create MCP config
 /// let config = McpConfig::default();
-/// // let server = McpServer::new(db, key_cache, config);
-/// // server.run_stdio().await?;
+///
+/// // Create and run the server
+/// let server = McpServer::new(db, key_cache, config);
+/// server.run_stdio().await?;
 /// # Ok(())
 /// # }
 /// ```
