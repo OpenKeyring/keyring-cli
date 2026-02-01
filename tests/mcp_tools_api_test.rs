@@ -259,7 +259,8 @@ fn test_api_list_credentials_input() {
     };
 
     let json_val = json!(input);
-    let roundtrip: keyring_cli::mcp::tools::api::ApiListCredentialsInput = from_value(json_val).unwrap();
+    let roundtrip: keyring_cli::mcp::tools::api::ApiListCredentialsInput =
+        from_value(json_val).unwrap();
 
     assert_eq!(
         roundtrip.filter_tags,
@@ -269,12 +270,11 @@ fn test_api_list_credentials_input() {
 
 #[test]
 fn test_api_list_credentials_input_empty() {
-    let input = keyring_cli::mcp::tools::api::ApiListCredentialsInput {
-        filter_tags: None,
-    };
+    let input = keyring_cli::mcp::tools::api::ApiListCredentialsInput { filter_tags: None };
 
     let json_val = json!(input);
-    let roundtrip: keyring_cli::mcp::tools::api::ApiListCredentialsInput = from_value(json_val).unwrap();
+    let roundtrip: keyring_cli::mcp::tools::api::ApiListCredentialsInput =
+        from_value(json_val).unwrap();
 
     assert_eq!(roundtrip.filter_tags, None);
 }
@@ -291,8 +291,14 @@ fn test_api_credential_info() {
     let roundtrip: keyring_cli::mcp::tools::api::ApiCredentialInfo = from_value(json_val).unwrap();
 
     assert_eq!(roundtrip.name, "github-api");
-    assert_eq!(roundtrip.endpoint, Some("https://api.github.com".to_string()));
-    assert_eq!(roundtrip.tags, vec!["env:prod".to_string(), "type:api".to_string()]);
+    assert_eq!(
+        roundtrip.endpoint,
+        Some("https://api.github.com".to_string())
+    );
+    assert_eq!(
+        roundtrip.tags,
+        vec!["env:prod".to_string(), "type:api".to_string()]
+    );
 }
 
 #[test]

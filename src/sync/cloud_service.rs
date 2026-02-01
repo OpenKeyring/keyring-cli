@@ -2,10 +2,13 @@
 //!
 //! Provides cloud synchronization using OpenDAL-based storage.
 
+use crate::cloud::{
+    metadata::{CloudMetadata, DeviceInfo},
+    CloudConfig, CloudStorage,
+};
 use anyhow::Result;
-use crate::cloud::{CloudStorage, CloudConfig, metadata::{CloudMetadata, DeviceInfo}};
-use std::collections::HashMap;
 use base64::prelude::*;
+use std::collections::HashMap;
 
 /// Cloud sync service for cross-device synchronization
 pub struct CloudSyncService {
@@ -178,7 +181,7 @@ impl CloudSyncService {
             if let Some(stripped) = filename.strip_suffix(".json") {
                 let parts: Vec<&str> = stripped.splitn(2, '-').collect();
                 if parts.len() >= 2 {
-                    let _record_id = parts[0];  // Will be used for version comparison
+                    let _record_id = parts[0]; // Will be used for version comparison
                     let device_id = parts[1];
 
                     // Check if this record is from our device or another
@@ -392,7 +395,12 @@ mod tests {
     fn test_get_platform() {
         let platform = CloudSyncService::get_platform();
         assert!(!platform.is_empty());
-        assert!(platform == "macos" || platform == "ios" || platform == "windows"
-            || platform == "linux" || platform == "cli");
+        assert!(
+            platform == "macos"
+                || platform == "ios"
+                || platform == "windows"
+                || platform == "linux"
+                || platform == "cli"
+        );
     }
 }

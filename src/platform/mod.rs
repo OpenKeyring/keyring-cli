@@ -60,7 +60,7 @@ pub fn which_ssh() -> Option<String> {
             "/usr/bin/ssh",
             "/usr/local/bin/ssh",
             "/bin/ssh",
-            "/opt/homebrew/bin/ssh", // macOS Apple Silicon
+            "/opt/homebrew/bin/ssh",          // macOS Apple Silicon
             "/usr/local/opt/openssh/bin/ssh", // macOS Intel Homebrew
         ];
 

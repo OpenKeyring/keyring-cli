@@ -22,10 +22,9 @@ use crate::platform::PlatformError;
 /// The caller must ensure that the memory region is valid and accessible.
 pub fn protect_memory(addr: *mut u8, len: usize) -> Result<()> {
     if addr.is_null() || len == 0 {
-        return Err(PlatformError::MemoryProtectionFailed(
-            "Invalid address or length".to_string(),
-        )
-        .into());
+        return Err(
+            PlatformError::MemoryProtectionFailed("Invalid address or length".to_string()).into(),
+        );
     }
 
     // Call mlock to lock memory pages
@@ -61,10 +60,9 @@ pub fn protect_memory(addr: *mut u8, len: usize) -> Result<()> {
 /// The caller must ensure that the memory region was previously locked.
 pub fn unprotect_memory(addr: *mut u8, len: usize) -> Result<()> {
     if addr.is_null() || len == 0 {
-        return Err(PlatformError::MemoryProtectionFailed(
-            "Invalid address or length".to_string(),
-        )
-        .into());
+        return Err(
+            PlatformError::MemoryProtectionFailed("Invalid address or length".to_string()).into(),
+        );
     }
 
     let result = unsafe { libc::munlock(addr as *const libc::c_void, len) };

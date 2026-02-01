@@ -262,7 +262,10 @@ fn test_time_remaining() {
 
     let remaining = cache.time_remaining("test-credential");
 
-    assert!(remaining.is_some(), "Should return Some for existing credential");
+    assert!(
+        remaining.is_some(),
+        "Should return Some for existing credential"
+    );
     assert!(remaining.unwrap() <= 60, "Should not exceed TTL");
     assert!(remaining.unwrap() > 50, "Should have most time remaining");
 }
@@ -278,10 +281,7 @@ fn test_time_remaining_decreases() {
 
     let remaining2 = cache.time_remaining("test-credential").unwrap();
 
-    assert!(
-        remaining2 < remaining1,
-        "Time remaining should decrease"
-    );
+    assert!(remaining2 < remaining1, "Time remaining should decrease");
 }
 
 #[test]
@@ -290,7 +290,10 @@ fn test_time_remaining_not_found() {
 
     let remaining = cache.time_remaining("non-existent");
 
-    assert!(remaining.is_none(), "Should return None for non-existent credential");
+    assert!(
+        remaining.is_none(),
+        "Should return None for non-existent credential"
+    );
 }
 
 #[test]
@@ -339,7 +342,10 @@ fn test_reauthorize_refreshes_timestamp() {
     let remaining = cache.time_remaining("test-credential").unwrap();
 
     // Should have close to full TTL remaining
-    assert!(remaining > 59, "Should have nearly full TTL after reauthorize");
+    assert!(
+        remaining > 59,
+        "Should have nearly full TTL after reauthorize"
+    );
 }
 
 #[test]

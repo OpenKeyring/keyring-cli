@@ -151,13 +151,22 @@ fn configure_provider(_config: &ConfigManager, provider: &str) -> Result<()> {
     println!("⚙️  Configuring cloud storage provider: {}", provider);
 
     let valid_providers = [
-        "icloud", "dropbox", "gdrive", "onedrive",
-        "webdav", "sftp", "aliyundrive", "oss",
+        "icloud",
+        "dropbox",
+        "gdrive",
+        "onedrive",
+        "webdav",
+        "sftp",
+        "aliyundrive",
+        "oss",
     ];
 
     if !valid_providers.contains(&provider) {
         return Err(crate::error::KeyringError::InvalidInput {
-            context: format!("Invalid provider. Valid options: {}", valid_providers.join(", ")),
+            context: format!(
+                "Invalid provider. Valid options: {}",
+                valid_providers.join(", ")
+            ),
         });
     }
 
@@ -175,7 +184,10 @@ fn show_sync_config(config: &ConfigManager) -> Result<()> {
     println!("   Enabled: {}", sync_config.enabled);
     println!("   Provider: {}", sync_config.provider);
     println!("   Remote Path: {}", sync_config.remote_path);
-    println!("   Conflict Resolution: {}", sync_config.conflict_resolution);
+    println!(
+        "   Conflict Resolution: {}",
+        sync_config.conflict_resolution
+    );
     println!("   Auto Sync: {}", sync_config.auto_sync);
 
     Ok(())

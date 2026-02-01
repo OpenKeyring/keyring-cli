@@ -83,54 +83,48 @@ impl WelcomeScreen {
             .margin(2)
             .constraints(
                 [
-                    Constraint::Length(3),  // Title
-                    Constraint::Length(2),  // Spacer
-                    Constraint::Length(2),  // Welcome message
-                    Constraint::Length(2),  // Spacer
-                    Constraint::Length(2),  // Prompt
-                    Constraint::Min(0),     // Choices
-                    Constraint::Length(3),  // Footer
+                    Constraint::Length(3), // Title
+                    Constraint::Length(2), // Spacer
+                    Constraint::Length(2), // Welcome message
+                    Constraint::Length(2), // Spacer
+                    Constraint::Length(2), // Prompt
+                    Constraint::Min(0),    // Choices
+                    Constraint::Length(3), // Footer
                 ]
                 .as_ref(),
             )
             .split(area);
 
         // Title
-        let title = Paragraph::new(vec![
-            Line::from(Span::styled(
-                "OpenKeyring 初始化向导",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            )),
-        ])
+        let title = Paragraph::new(vec![Line::from(Span::styled(
+            "OpenKeyring 初始化向导",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ))])
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));
 
         frame.render_widget(title, chunks[0]);
 
         // Welcome message
-        let welcome = Paragraph::new(vec![
-            Line::from(Span::styled(
-                "欢迎使用 OpenKeyring！",
-                Style::default()
-                    .fg(Color::White)
-                    .add_modifier(Modifier::BOLD),
-            )),
-        ])
+        let welcome = Paragraph::new(vec![Line::from(Span::styled(
+            "欢迎使用 OpenKeyring！",
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::BOLD),
+        ))])
         .alignment(Alignment::Center);
 
         frame.render_widget(welcome, chunks[2]);
 
         // Prompt
-        let prompt = Paragraph::new(vec![
-            Line::from(Span::styled(
-                "选择设置方式:",
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
-            )),
-        ])
+        let prompt = Paragraph::new(vec![Line::from(Span::styled(
+            "选择设置方式:",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ))])
         .alignment(Alignment::Left);
 
         frame.render_widget(prompt, chunks[4]);
@@ -145,7 +139,9 @@ impl WelcomeScreen {
                     } else {
                         "○"
                     },
-                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(Color::Green)
+                        .add_modifier(Modifier::BOLD),
                 ),
                 Span::raw(" "),
                 Span::styled(
@@ -175,7 +171,9 @@ impl WelcomeScreen {
                     } else {
                         "○"
                     },
-                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(Color::Green)
+                        .add_modifier(Modifier::BOLD),
                 ),
                 Span::raw(" "),
                 Span::styled(
@@ -197,22 +195,39 @@ impl WelcomeScreen {
                 ),
             ]),
         ])
-        .block(Block::default().borders(Borders::ALL).title(" 选项 / Options "))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" 选项 / Options "),
+        )
         .wrap(Wrap { trim: false });
 
         frame.render_widget(choices, chunks[5]);
 
         // Footer with keyboard hints
-        let footer = Paragraph::new(vec![
-            Line::from(vec![
-                Span::styled("Enter", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                Span::raw(": 下一步    "),
-                Span::styled("↑↓", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                Span::raw(": 选择    "),
-                Span::styled("Esc", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                Span::raw(": 退出"),
-            ]),
-        ])
+        let footer = Paragraph::new(vec![Line::from(vec![
+            Span::styled(
+                "Enter",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(": 下一步    "),
+            Span::styled(
+                "↑↓",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(": 选择    "),
+            Span::styled(
+                "Esc",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(": 退出"),
+        ])])
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));
 
@@ -232,8 +247,14 @@ mod tests {
 
     #[test]
     fn test_welcome_choice_toggle() {
-        assert_eq!(WelcomeChoice::GenerateNew.toggle(), WelcomeChoice::ImportExisting);
-        assert_eq!(WelcomeChoice::ImportExisting.toggle(), WelcomeChoice::GenerateNew);
+        assert_eq!(
+            WelcomeChoice::GenerateNew.toggle(),
+            WelcomeChoice::ImportExisting
+        );
+        assert_eq!(
+            WelcomeChoice::ImportExisting.toggle(),
+            WelcomeChoice::GenerateNew
+        );
     }
 
     #[test]

@@ -1,9 +1,9 @@
 // src/crypto/passkey.rs
+use crate::types::SensitiveString;
 use anyhow::{anyhow, Result};
 use bip39::{Language, Mnemonic};
 use pbkdf2::pbkdf2_hmac;
 use sha2::Sha256;
-use crate::types::SensitiveString;
 
 /// Passkey: 24-word BIP39 mnemonic as root key
 #[derive(Clone, Debug)]
@@ -91,16 +91,19 @@ impl PasskeySeed {
     pub fn derive_root_master_key(&self, salt: &[u8; 16]) -> Result<[u8; 32]> {
         let seed_bytes = self.get();
         if seed_bytes.len() != 64 {
-            return Err(anyhow!("Passkey seed must be 64 bytes, got {}", seed_bytes.len()));
+            return Err(anyhow!(
+                "Passkey seed must be 64 bytes, got {}",
+                seed_bytes.len()
+            ));
         }
 
         let mut root_mk = [0u8; 32];
 
         // Use PBKDF2-HMAC-SHA256 with 600,000 iterations (OWASP 2023 recommendation)
         pbkdf2_hmac::<Sha256>(
-            seed_bytes,  // Use the full 64-byte seed as the input
+            seed_bytes, // Use the full 64-byte seed as the input
             salt,
-            600_000,  // OWASP 2023 recommendation for PBKDF2
+            600_000, // OWASP 2023 recommendation for PBKDF2
             &mut root_mk,
         );
 

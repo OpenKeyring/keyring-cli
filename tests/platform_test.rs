@@ -106,7 +106,10 @@ fn test_protect_memory_null_pointer() {
 fn test_protect_memory_zero_length() {
     let mut data = vec![0u8; 100];
     let result = protect_memory(data.as_mut_ptr(), 0);
-    assert!(result.is_err(), "protect_memory should fail with zero length");
+    assert!(
+        result.is_err(),
+        "protect_memory should fail with zero length"
+    );
 }
 
 #[test]
@@ -123,14 +126,22 @@ fn test_protect_unprotect_cycle() {
 
     // Verify data is still accessible (on Unix)
     #[cfg(unix)]
-    assert_eq!(data, vec![42u8; 256], "Data should be unchanged after mlock");
+    assert_eq!(
+        data,
+        vec![42u8; 256],
+        "Data should be unchanged after mlock"
+    );
 
     // On Windows, data will be encrypted, so we can't verify it directly
 
     unprotect_memory(data.as_mut_ptr(), data.len()).expect("munlock should succeed");
 
     // After unprotecting, data should be restored
-    assert_eq!(data, vec![42u8; 256], "Data should be unchanged after unprotect");
+    assert_eq!(
+        data,
+        vec![42u8; 256],
+        "Data should be unchanged after unprotect"
+    );
 }
 
 #[test]
@@ -173,7 +184,9 @@ fn test_protect_large_allocation() {
     #[cfg(target_os = "macos")]
     {
         if result.is_err() {
-            println!("Warning: Large allocation protection failed on macOS (expected due to limits)");
+            println!(
+                "Warning: Large allocation protection failed on macOS (expected due to limits)"
+            );
             return;
         }
     }
@@ -211,7 +224,11 @@ fn test_macos_max_locked_memory() {
 
     let max = max_locked_memory();
     if max > 0 {
-        println!("macOS max locked memory: {} bytes ({} MB)", max, max / 1024 / 1024);
+        println!(
+            "macOS max locked memory: {} bytes ({} MB)",
+            max,
+            max / 1024 / 1024
+        );
         assert!(max > 0, "Max locked memory should be positive");
     }
 }

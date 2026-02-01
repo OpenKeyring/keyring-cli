@@ -9,7 +9,9 @@ use tempfile::TempDir;
 fn test_icloud_operator_creation() {
     // Create a temporary directory to simulate iCloud Drive
     let temp_dir = TempDir::new().expect("Failed to create temp dir");
-    let icloud_path = temp_dir.path().join("Library/Mobile Documents/com~apple~CloudDocs/OpenKeyring");
+    let icloud_path = temp_dir
+        .path()
+        .join("Library/Mobile Documents/com~apple~CloudDocs/OpenKeyring");
 
     // Create the config
     let config = CloudConfig {
@@ -22,7 +24,11 @@ fn test_icloud_operator_creation() {
     let result = create_operator(&config);
 
     // Verify the operator was created successfully
-    assert!(result.is_ok(), "Failed to create iCloud operator: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to create iCloud operator: {:?}",
+        result.err()
+    );
 
     let operator = result.unwrap();
     assert!(operator.info().full_capability().read);
@@ -45,7 +51,11 @@ fn test_webdav_operator_creation() {
     let result = create_operator(&config);
 
     // Verify the operator was created successfully
-    assert!(result.is_ok(), "Failed to create WebDAV operator: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to create WebDAV operator: {:?}",
+        result.err()
+    );
 
     let operator = result.unwrap();
     assert!(operator.info().full_capability().read);
@@ -68,7 +78,11 @@ fn test_sftp_operator_creation() {
     let result = create_operator(&config);
 
     // Verify the operator was created successfully
-    assert!(result.is_ok(), "Failed to create SFTP operator: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to create SFTP operator: {:?}",
+        result.err()
+    );
 
     let operator = result.unwrap();
     assert!(operator.info().full_capability().read);

@@ -1,5 +1,5 @@
-use keyring_cli::mcp::policy::token::ConfirmationToken;
 use keyring_cli::error::KeyringError;
+use keyring_cli::mcp::policy::token::ConfirmationToken;
 
 #[test]
 fn test_token_encoding_decoding() {

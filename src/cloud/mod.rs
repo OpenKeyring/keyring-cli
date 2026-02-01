@@ -4,11 +4,11 @@
 //! using OpenDAL as the underlying abstraction layer.
 
 pub mod config;
-pub mod provider;
 pub mod metadata;
+pub mod provider;
 pub mod storage;
 
 pub use config::{CloudConfig, CloudProvider};
-pub use provider::{create_operator, test_connection};
 pub use metadata::{CloudMetadata, DeviceInfo, RecordMetadata};
+pub use provider::{create_operator, test_connection};
 pub use storage::CloudStorage;

@@ -3,8 +3,8 @@
 //! A privacy-first password manager with local-first architecture.
 
 pub mod cli;
-pub mod cloud;
 pub mod clipboard;
+pub mod cloud;
 pub mod config;
 pub mod crypto;
 pub mod db;

@@ -209,15 +209,24 @@ fn test_upyun_config_fields() {
 fn test_webdav_config_conversion() {
     let mut screen = ProviderConfigScreen::new(CloudProvider::WebDAV);
     // Use handle_char to input values
-    for c in "https://dav.example.com".chars() { screen.handle_char(c); }
+    for c in "https://dav.example.com".chars() {
+        screen.handle_char(c);
+    }
     screen.handle_tab();
-    for c in "user".chars() { screen.handle_char(c); }
+    for c in "user".chars() {
+        screen.handle_char(c);
+    }
     screen.handle_tab();
-    for c in "pass".chars() { screen.handle_char(c); }
+    for c in "pass".chars() {
+        screen.handle_char(c);
+    }
 
     let config = screen.to_cloud_config();
     assert_eq!(config.provider, CloudProvider::WebDAV);
-    assert_eq!(config.webdav_endpoint, Some("https://dav.example.com".to_string()));
+    assert_eq!(
+        config.webdav_endpoint,
+        Some("https://dav.example.com".to_string())
+    );
     assert_eq!(config.webdav_username, Some("user".to_string()));
     assert_eq!(config.webdav_password, Some("pass".to_string()));
 }
@@ -225,15 +234,25 @@ fn test_webdav_config_conversion() {
 #[test]
 fn test_sftp_config_conversion_with_port() {
     let mut screen = ProviderConfigScreen::new(CloudProvider::SFTP);
-    for c in "example.com".chars() { screen.handle_char(c); }
+    for c in "example.com".chars() {
+        screen.handle_char(c);
+    }
     screen.handle_tab();
-    for c in "2222".chars() { screen.handle_char(c); }
+    for c in "2222".chars() {
+        screen.handle_char(c);
+    }
     screen.handle_tab();
-    for c in "user".chars() { screen.handle_char(c); }
+    for c in "user".chars() {
+        screen.handle_char(c);
+    }
     screen.handle_tab();
-    for c in "pass".chars() { screen.handle_char(c); }
+    for c in "pass".chars() {
+        screen.handle_char(c);
+    }
     screen.handle_tab();
-    for c in "/root".chars() { screen.handle_char(c); }
+    for c in "/root".chars() {
+        screen.handle_char(c);
+    }
 
     let config = screen.to_cloud_config();
     assert_eq!(config.sftp_port, Some(2222));
@@ -250,9 +269,13 @@ fn test_form_validate_rejects_empty_fields() {
 #[test]
 fn test_form_validate_accepts_password_field_empty() {
     let mut screen = ProviderConfigScreen::new(CloudProvider::WebDAV);
-    for c in "https://example.com".chars() { screen.handle_char(c); }
+    for c in "https://example.com".chars() {
+        screen.handle_char(c);
+    }
     screen.handle_tab();
-    for c in "user".chars() { screen.handle_char(c); }
+    for c in "user".chars() {
+        screen.handle_char(c);
+    }
     // Password is empty (not filled)
     // Should validate ok since only non-password fields must be non-empty
     assert!(screen.validate().is_ok());
@@ -268,7 +291,9 @@ async fn test_provider_config_test_connection_with_temp_dir() {
 
     // Create a valid iCloud config
     let mut screen = ProviderConfigScreen::new(CloudProvider::ICloud);
-    for c in temp_dir.path().to_string_lossy().chars() { screen.handle_char(c); }
+    for c in temp_dir.path().to_string_lossy().chars() {
+        screen.handle_char(c);
+    }
 
     let result = screen.test_connection().await;
     assert!(result.is_ok());
@@ -285,4 +310,3 @@ fn test_provider_config_test_connection_invalid_config() {
     // The method exists, that's what we're testing here
     let _ = screen;
 }
-

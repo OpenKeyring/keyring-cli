@@ -3,8 +3,8 @@
 use keyring_cli::mcp::executors::git::{
     GitCloneOutput, GitError, GitExecutor, GitPullOutput, GitPushOutput,
 };
-use tempfile::TempDir;
 use std::path::PathBuf;
+use tempfile::TempDir;
 
 #[cfg(test)]
 mod integration_tests {
@@ -25,11 +25,7 @@ mod integration_tests {
     /// Test creating a new Git executor without credentials
     #[test]
     fn test_git_executor_new_without_credentials() {
-        let executor = GitExecutor::new(
-            "github".to_string(),
-            None,
-            None,
-        );
+        let executor = GitExecutor::new("github".to_string(), None, None);
 
         assert_eq!(executor.credential_name(), "github");
     }
@@ -39,7 +35,8 @@ mod integration_tests {
     fn test_git_executor_with_ssh_key() {
         let private_key = b"-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
------END RSA PRIVATE KEY-----".to_vec();
+-----END RSA PRIVATE KEY-----"
+            .to_vec();
 
         let executor = GitExecutor::with_ssh_key(
             "github".to_string(),
@@ -47,7 +44,8 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
             private_key,
             None,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(executor.credential_name(), "github");
     }
@@ -64,7 +62,8 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
             private_key,
             None,
             passphrase,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(executor.credential_name(), "github");
     }
@@ -72,11 +71,7 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
     /// Test setting credentials on existing executor
     #[test]
     fn test_set_credentials() {
-        let mut executor = GitExecutor::new(
-            "github".to_string(),
-            None,
-            None,
-        );
+        let mut executor = GitExecutor::new("github".to_string(), None, None);
 
         executor.set_credentials(
             Some("new_user".to_string()),
@@ -91,11 +86,7 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
     /// Test setting SSH key on existing executor
     #[test]
     fn test_set_ssh_key() {
-        let mut executor = GitExecutor::new(
-            "github".to_string(),
-            None,
-            None,
-        );
+        let mut executor = GitExecutor::new("github".to_string(), None, None);
 
         let private_key = b"test_key".to_vec();
         executor.set_ssh_key(private_key, None, None).unwrap();
@@ -225,12 +216,7 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
     async fn test_invalid_url_formats() {
         let executor = GitExecutor::new("test".to_string(), None, None);
 
-        let invalid_urls = vec![
-            "",
-            "not-a-url",
-            "ftp://invalid.com",
-            "http://",
-        ];
+        let invalid_urls = vec!["", "not-a-url", "ftp://invalid.com", "http://"];
 
         for url in invalid_urls {
             let temp_dir = TempDir::new().unwrap();
@@ -255,10 +241,7 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
         executor.set_ssh_key(private_key, None, None).unwrap();
 
         // Switch back to username/password
-        executor.set_credentials(
-            Some("user2".to_string()),
-            Some("pass2".to_string()),
-        );
+        executor.set_credentials(Some("user2".to_string()), Some("pass2".to_string()));
 
         assert_eq!(executor.credential_name(), "github");
     }
@@ -270,7 +253,9 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
 
         // This will fail due to invalid URL, but tests the branch parameter
         let temp_dir = TempDir::new().unwrap();
-        let result = executor.clone("https://github.com/test/repo.git", temp_dir.path(), None).await;
+        let result = executor
+            .clone("https://github.com/test/repo.git", temp_dir.path(), None)
+            .await;
 
         // Should fail due to authentication/network, not due to branch handling
         assert!(result.is_err());
@@ -354,7 +339,10 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
             .output()
             .unwrap();
 
-        assert!(output.status.success(), "Failed to initialize git repository");
+        assert!(
+            output.status.success(),
+            "Failed to initialize git repository"
+        );
 
         // Check status (should be empty for new repo)
         let result = executor.status(&repo_path);
@@ -373,10 +361,7 @@ mod error_tests {
 
     #[test]
     fn test_git_error_from_io_error() {
-        let io_err = std::io::Error::new(
-            std::io::ErrorKind::NotFound,
-            "File not found"
-        );
+        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "File not found");
 
         let git_error = GitError::from(io_err);
         assert!(matches!(git_error, GitError::IoError(_)));

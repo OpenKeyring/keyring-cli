@@ -4,10 +4,10 @@
 
 #![cfg(feature = "test-env")]
 
-use keyring_cli::cli::commands::devices::{DevicesArgs, manage_devices};
-use serial_test::serial;
+use keyring_cli::cli::commands::devices::{manage_devices, DevicesArgs};
 use keyring_cli::db::vault::Vault;
 use serde_json;
+use serial_test::serial;
 use tempfile::TempDir;
 
 /// Helper to set up test environment
@@ -212,15 +212,16 @@ fn test_devices_command_remove_device() {
     // Verify device was revoked
     let vault = Vault::open(&env.db_path, "").unwrap();
     let revoked_json = vault.get_metadata("revoked_devices").unwrap();
-    assert!(revoked_json.is_some(), "Revoked devices metadata should exist: got {:?}", revoked_json);
+    assert!(
+        revoked_json.is_some(),
+        "Revoked devices metadata should exist: got {:?}",
+        revoked_json
+    );
 
     let revoked: serde_json::Value = serde_json::from_str(&revoked_json.unwrap()).unwrap();
 
     assert_eq!(revoked.as_array().unwrap().len(), 1);
-    assert_eq!(
-        revoked[0]["device_id"],
-        "test-device-remove-002"
-    );
+    assert_eq!(revoked[0]["device_id"], "test-device-remove-002");
 }
 
 #[serial]
@@ -251,7 +252,10 @@ fn test_devices_command_remove_already_revoked() {
     {
         let vault = Vault::open(&env.db_path, "").unwrap();
         let revoked_json = vault.get_metadata("revoked_devices").unwrap();
-        assert!(revoked_json.is_some(), "Revoked device should be saved before removal attempt");
+        assert!(
+            revoked_json.is_some(),
+            "Revoked device should be saved before removal attempt"
+        );
     }
 
     // Try to remove the same device again
@@ -262,7 +266,11 @@ fn test_devices_command_remove_already_revoked() {
     let rt = tokio::runtime::Runtime::new().unwrap();
     let result = rt.block_on(async { manage_devices(args).await });
 
-    assert!(result.is_err(), "Should fail to remove already revoked device: {:?}", result);
+    assert!(
+        result.is_err(),
+        "Should fail to remove already revoked device: {:?}",
+        result
+    );
 }
 
 #[serial]

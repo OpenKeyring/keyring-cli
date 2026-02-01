@@ -119,7 +119,10 @@ async fn list_devices(vault: &mut Vault) -> Result<()> {
             } else {
                 println!("{} {} ✅", emoji, device.device_id);
                 println!("   Status: Active - Can access vault");
-                println!("   Last seen: {} | Synced: {} times", last_seen, device.sync_count);
+                println!(
+                    "   Last seen: {} | Synced: {} times",
+                    last_seen, device.sync_count
+                );
             }
             println!();
         }

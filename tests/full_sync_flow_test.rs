@@ -72,7 +72,13 @@ fn test_full_sync_flow_with_local_storage() {
         read_sync_record["metadata"]["name"].as_str().unwrap(),
         "test-record"
     );
-    assert!(read_sync_record["metadata"]["tags"].as_array().unwrap().len() > 0);
+    assert!(
+        read_sync_record["metadata"]["tags"]
+            .as_array()
+            .unwrap()
+            .len()
+            > 0
+    );
 
     // Step 6: Verify multiple sync files can be created
     let record_id_2 = Uuid::new_v4();
@@ -169,7 +175,9 @@ fn test_sync_record_format_validation() {
         .is_ok());
 
     let nonce = test_sync_record["nonce"].as_str().unwrap();
-    assert!(base64::engine::general_purpose::STANDARD.decode(nonce).is_ok());
+    assert!(base64::engine::general_purpose::STANDARD
+        .decode(nonce)
+        .is_ok());
 }
 
 #[test]
@@ -296,5 +304,7 @@ fn test_sync_conflict_detection() {
     assert!(timestamp.len() > 0);
 
     let nonce = read_record["nonce"].as_str().unwrap();
-    assert!(base64::engine::general_purpose::STANDARD.decode(nonce).is_ok());
+    assert!(base64::engine::general_purpose::STANDARD
+        .decode(nonce)
+        .is_ok());
 }

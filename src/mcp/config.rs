@@ -137,11 +137,13 @@ impl McpConfig {
 
         // Ensure parent directory exists
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).map_err(|e| Error::IoError(format!(
-                "Failed to create config directory {}: {}",
-                parent.display(),
-                e
-            )))?;
+            fs::create_dir_all(parent).map_err(|e| {
+                Error::IoError(format!(
+                    "Failed to create config directory {}: {}",
+                    parent.display(),
+                    e
+                ))
+            })?;
         }
 
         // Save default config

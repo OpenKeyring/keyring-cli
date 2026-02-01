@@ -9,8 +9,8 @@
 use crate::cli::config::ConfigManager;
 use crate::crypto::hkdf;
 use crate::crypto::keystore::KeyStore;
-use zeroize::Zeroize;
 use std::path::PathBuf;
+use zeroize::Zeroize;
 
 use anyhow::Result;
 
@@ -188,6 +188,9 @@ mod tests {
         };
 
         assert!(matches!(cache.dek(), Err(KeyCacheError::NotInitialized)));
-        assert!(matches!(cache.signing_key(), Err(KeyCacheError::NotInitialized)));
+        assert!(matches!(
+            cache.signing_key(),
+            Err(KeyCacheError::NotInitialized)
+        ));
     }
 }

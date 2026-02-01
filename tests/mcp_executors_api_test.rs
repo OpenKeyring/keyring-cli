@@ -2,7 +2,7 @@
 //!
 //! This module tests the API executor which handles HTTP requests with response size limiting.
 
-use keyring_cli::mcp::executors::api::{ApiError, ApiResponse, ApiExecutor};
+use keyring_cli::mcp::executors::api::{ApiError, ApiExecutor, ApiResponse};
 use std::collections::HashMap;
 
 #[tokio::test]

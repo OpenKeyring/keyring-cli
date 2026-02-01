@@ -5,7 +5,7 @@
 use crate::cli::ConfigManager;
 use crate::crypto::passkey::Passkey;
 use crate::error::Result;
-use crate::onboarding::{is_initialized, initialize_keystore};
+use crate::onboarding::{initialize_keystore, is_initialized};
 use anyhow::anyhow;
 
 /// Wizard command arguments
@@ -75,7 +75,13 @@ pub async fn run_wizard(_args: WizardArgs) -> Result<()> {
     println!("✓ 初始化完成");
     println!("═══════════════════════════════════════════════════");
     println!("✓ Keystore: {}", keystore_path.display());
-    println!("✓ 恢复密钥: {}", keystore.recovery_key.as_ref().unwrap_or(&"(未生成)".to_string()));
+    println!(
+        "✓ 恢复密钥: {}",
+        keystore
+            .recovery_key
+            .as_ref()
+            .unwrap_or(&"(未生成)".to_string())
+    );
     println!();
     println!("您现在可以开始使用 OpenKeyring 了！");
 
@@ -129,8 +135,7 @@ fn import_passkey() -> Result<Vec<String>> {
     }
 
     // Validate BIP39 checksum
-    Passkey::from_words(&words)
-        .map_err(|e| anyhow!("无效的 Passkey: {}", e))?;
+    Passkey::from_words(&words).map_err(|e| anyhow!("无效的 Passkey: {}", e))?;
 
     println!("✓ Passkey 验证成功");
 
@@ -146,7 +151,8 @@ fn prompt_choice(prompt: &str, options: &[(&str, &str)]) -> Result<String> {
     println!();
 
     loop {
-        let input = prompt_input(&format!("请输入选择 [{}-{}]: ",
+        let input = prompt_input(&format!(
+            "请输入选择 [{}-{}]: ",
             options.first().map(|(k, _)| *k).unwrap_or("1"),
             options.last().map(|(k, _)| *k).unwrap_or("2")
         ))?;
@@ -164,8 +170,7 @@ fn prompt_yes_no(prompt: &str, default: bool) -> Result<bool> {
     let default_hint = if default { "[Y/n]" } else { "[y/N]" };
 
     loop {
-        let input = prompt_input(&format!("{} {} ", prompt, default_hint))?
-            .to_lowercase();
+        let input = prompt_input(&format!("{} {} ", prompt, default_hint))?.to_lowercase();
 
         match input.as_str() {
             "" => return Ok(default),

@@ -5,8 +5,8 @@
 #![cfg(feature = "test-env")]
 
 use keyring_cli::cli::commands::config::ConfigCommands;
-use serial_test::serial;
 use keyring_cli::db::vault::Vault;
+use serial_test::serial;
 use tempfile::TempDir;
 
 /// Helper to set up test environment
@@ -101,10 +101,16 @@ fn test_config_change_password_validates_password_length() {
     // Minimum: 8 characters
 
     let short_password = "short";
-    assert!(short_password.len() < 8, "Test password should be too short");
+    assert!(
+        short_password.len() < 8,
+        "Test password should be too short"
+    );
 
     let valid_password = "long-enough-password";
-    assert!(valid_password.len() >= 8, "Test password should be valid length");
+    assert!(
+        valid_password.len() >= 8,
+        "Test password should be valid length"
+    );
 }
 
 #[serial]

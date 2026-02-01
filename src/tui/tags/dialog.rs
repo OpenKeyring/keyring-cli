@@ -3,8 +3,8 @@
 //! This module provides a dialog that shows users what authorization policy
 //! will be applied based on their tag configuration.
 
-use crate::mcp::policy::policy::{AuthDecision, EnvTag, PolicyEngine, RiskTag, OperationType};
 use crate::error::Error;
+use crate::mcp::policy::policy::{AuthDecision, EnvTag, OperationType, PolicyEngine, RiskTag};
 
 /// Policy preview dialog for tag configuration
 pub struct PolicyPreviewDialog {
@@ -22,7 +22,11 @@ impl PolicyPreviewDialog {
     pub fn new(env: Option<EnvTag>, risk: Option<RiskTag>) -> Self {
         // Determine policy based on tags
         let decision = PolicyEngine::decide_from_config(env, risk, OperationType::Write);
-        Self { decision, env, risk }
+        Self {
+            decision,
+            env,
+            risk,
+        }
     }
 
     /// Show the policy preview dialog and get user confirmation
@@ -74,29 +78,25 @@ impl PolicyPreviewDialog {
     /// Format the authorization decision for display
     fn format_decision(&self) -> String {
         match self.decision {
-            AuthDecision::AutoApprove => {
-                "  ✓ 自动授权\n\
+            AuthDecision::AutoApprove => "  ✓ 自动授权\n\
                   \n\
-                  AI 调用此凭证时将自动执行操作，无需任何用户确认。".to_string()
-            }
-            AuthDecision::SessionApprove => {
-                "  ✓ 会话级授权\n\
+                  AI 调用此凭证时将自动执行操作，无需任何用户确认。"
+                .to_string(),
+            AuthDecision::SessionApprove => "  ✓ 会话级授权\n\
                   \n\
                   • 首次 AI 调用时需要用户确认\n\
                   • 确认后 1 小时内自动授权\n\
-                  • 1 小时后需要重新确认".to_string()
-            }
-            AuthDecision::AlwaysConfirm => {
-                "  ⚠ 每次确认\n\
+                  • 1 小时后需要重新确认"
+                .to_string(),
+            AuthDecision::AlwaysConfirm => "  ⚠ 每次确认\n\
                   \n\
                   • 每次 AI 调用都需要用户确认\n\
-                  • 适用于生产环境或高风险操作".to_string()
-            }
-            AuthDecision::Deny => {
-                "  ⊘ 拒绝执行\n\
+                  • 适用于生产环境或高风险操作"
+                .to_string(),
+            AuthDecision::Deny => "  ⊘ 拒绝执行\n\
                   \n\
-                  • AI 将无法使用此凭证执行任何操作".to_string()
-            }
+                  • AI 将无法使用此凭证执行任何操作"
+                .to_string(),
         }
     }
 }

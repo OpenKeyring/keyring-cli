@@ -65,10 +65,7 @@ impl ConfirmationToken {
         };
 
         let signature = token.sign(signing_key);
-        Self {
-            signature,
-            ..token
-        }
+        Self { signature, ..token }
     }
 
     /// Generate a random nonce for token uniqueness.
@@ -94,8 +91,7 @@ impl ConfirmationToken {
             "{}:{}:{}:{}",
             self.nonce, self.credential_name, self.tool, self.session_id
         );
-        let mut mac = HmacSha256::new_from_slice(key)
-            .expect("HMAC key should be valid length");
+        let mut mac = HmacSha256::new_from_slice(key).expect("HMAC key should be valid length");
         mac.update(message.as_bytes());
         hex::encode(mac.finalize().into_bytes())
     }
@@ -114,8 +110,7 @@ impl ConfirmationToken {
             signature: &self.signature,
         };
 
-        let json = serde_json::to_string(&token_data)
-            .expect("Token serialization should not fail");
+        let json = serde_json::to_string(&token_data).expect("Token serialization should not fail");
         STANDARD.encode(json)
     }
 
@@ -136,13 +131,12 @@ impl ConfirmationToken {
                 reason: "Invalid token encoding".to_string(),
             })?;
 
-        let json_str = String::from_utf8(json)
-            .map_err(|_| KeyringError::Unauthorized {
-                reason: "Invalid token encoding".to_string(),
-            })?;
+        let json_str = String::from_utf8(json).map_err(|_| KeyringError::Unauthorized {
+            reason: "Invalid token encoding".to_string(),
+        })?;
 
-        let data: TokenData = serde_json::from_str(&json_str)
-            .map_err(|_| KeyringError::Unauthorized {
+        let data: TokenData =
+            serde_json::from_str(&json_str).map_err(|_| KeyringError::Unauthorized {
                 reason: "Invalid token format".to_string(),
             })?;
 

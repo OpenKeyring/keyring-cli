@@ -18,9 +18,12 @@ pub use executors::ExecutionResult;
 pub use handlers::{handle_ssh_exec, HandlerError};
 pub use key_cache::{KeyCacheError, McpKeyCache};
 pub use lock::{is_locked, lock_file_path, McpLock};
-pub use policy::{AuthDecision, ConfirmationToken, EnvTag, OperationType, PolicyEngine, RiskTag, SessionCache, UsedTokenCache};
+pub use policy::{
+    AuthDecision, ConfirmationToken, EnvTag, OperationType, PolicyEngine, RiskTag, SessionCache,
+    UsedTokenCache,
+};
 pub use secure_memory::{SecureBuffer, SecureMemoryError};
-pub use server::{McpServer, McpError};
+pub use server::{McpError, McpServer};
 pub use tools::{McpToolRegistry, ToolDefinition};
 
 pub const MCP_PROTOCOL_VERSION: &str = "2024-11-05";

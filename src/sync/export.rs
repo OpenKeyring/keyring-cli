@@ -37,7 +37,7 @@ pub struct SyncDecryptedRecord {
     pub name: String,
     pub record_type: String,
     pub username: Option<String>,
-    pub password: SensitiveString<String>,  // Wrapped for auto-zeroization
+    pub password: SensitiveString<String>, // Wrapped for auto-zeroization
     pub url: Option<String>,
     pub notes: Option<String>,
 }

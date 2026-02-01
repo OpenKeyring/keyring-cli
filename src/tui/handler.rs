@@ -61,9 +61,15 @@ impl TuiEventHandler {
             KeyCode::F(5) => AppAction::SyncNow,
 
             // Character keys with modifiers
-            KeyCode::Char('r') if event.modifiers.contains(KeyModifiers::CONTROL) => AppAction::RefreshView,
-            KeyCode::Char('s') if event.modifiers.contains(KeyModifiers::CONTROL) => AppAction::SaveConfig,
-            KeyCode::Char('d') if event.modifiers.contains(KeyModifiers::CONTROL) => AppAction::DisableSync,
+            KeyCode::Char('r') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                AppAction::RefreshView
+            }
+            KeyCode::Char('s') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                AppAction::SaveConfig
+            }
+            KeyCode::Char('d') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                AppAction::DisableSync
+            }
 
             // Regular character keys
             KeyCode::Char('?') => AppAction::ShowHelp,

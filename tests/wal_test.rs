@@ -91,12 +91,11 @@ fn test_concurrent_read_access() {
 
             // Perform concurrent reads
             let mut stmt = conn.prepare("SELECT key, value FROM metadata").unwrap();
-            let rows = stmt.query_map([], |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?
-                ))
-            }).unwrap();
+            let rows = stmt
+                .query_map([], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                })
+                .unwrap();
 
             let mut count = 0;
             for row in rows {
@@ -196,6 +195,8 @@ fn test_concurrent_read_write_access() {
 
     // Verify final state
     let conn = schema::initialize_database(&db_path).unwrap();
-    let count: i64 = conn.query_row("SELECT COUNT(*) FROM metadata", [], |row| row.get(0)).unwrap();
+    let count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM metadata", [], |row| row.get(0))
+        .unwrap();
     assert_eq!(count, 15, "Should have all 15 rows after writes");
 }

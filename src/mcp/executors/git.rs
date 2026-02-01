@@ -45,11 +45,15 @@ pub enum GitError {
 impl Error {
     pub fn from_git_error(err: &GitError) -> Self {
         match err {
-            GitError::AuthenticationFailed(msg) => Error::AuthenticationFailed { reason: msg.clone() },
+            GitError::AuthenticationFailed(msg) => Error::AuthenticationFailed {
+                reason: msg.clone(),
+            },
             GitError::RepositoryNotFound(path) => Error::NotFound {
                 resource: format!("Git repository at {}", path),
             },
-            GitError::PermissionDenied(msg) => Error::Unauthorized { reason: msg.clone() },
+            GitError::PermissionDenied(msg) => Error::Unauthorized {
+                reason: msg.clone(),
+            },
             _ => Error::Mcp {
                 context: err.to_string(),
             },
@@ -215,7 +219,10 @@ impl GitExecutor {
 
         // Build git push command
         let mut cmd = Command::new("git");
-        cmd.arg("push").arg(remote_name).arg(branch).current_dir(repo_path);
+        cmd.arg("push")
+            .arg(remote_name)
+            .arg(branch)
+            .current_dir(repo_path);
 
         // Set up authentication if needed
         let envs = self.setup_git_auth_env();
@@ -262,7 +269,10 @@ impl GitExecutor {
 
         // Build git pull command
         let mut cmd = Command::new("git");
-        cmd.arg("pull").arg(remote_name).arg(branch_name).current_dir(repo_path);
+        cmd.arg("pull")
+            .arg(remote_name)
+            .arg(branch_name)
+            .current_dir(repo_path);
 
         // Set up authentication if needed
         let envs = self.setup_git_auth_env();
@@ -501,9 +511,7 @@ mod tests {
 
         // Set SSH key
         let private_key = b"test_key".to_vec();
-        executor
-            .set_ssh_key(private_key, None, None)
-            .unwrap();
+        executor.set_ssh_key(private_key, None, None).unwrap();
 
         // Set username/password should clear SSH
         executor.set_credentials(Some("user".to_string()), Some("pass".to_string()));

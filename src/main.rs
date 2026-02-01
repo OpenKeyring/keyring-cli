@@ -613,9 +613,7 @@ async fn main() -> Result<()> {
             keyring_cli::cli::commands::wizard::run_wizard(args).await?
         }
 
-        Commands::Mcp { command } => {
-            mcp::handle_mcp_command(command).await?
-        }
+        Commands::Mcp { command } => mcp::handle_mcp_command(command).await?,
     }
 
     Ok(())

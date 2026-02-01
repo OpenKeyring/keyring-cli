@@ -42,7 +42,7 @@ pub struct SessionCache {
 
 /// Individual cache entry
 #[derive(Debug, Clone)]
-#[allow(dead_code)]  // credential_name reserved for future debugging/auditing
+#[allow(dead_code)] // credential_name reserved for future debugging/auditing
 struct CacheEntry {
     /// When this credential was authorized
     authorized_at: Instant,

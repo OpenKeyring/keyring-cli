@@ -88,11 +88,12 @@ impl NonceValidator {
         remote: &SyncRecord,
     ) -> Result<NonceStatus, KeyringError> {
         // Decode remote nonce from base64
-        let remote_nonce_bytes = STANDARD
-            .decode(&remote.nonce)
-            .map_err(|e| KeyringError::Crypto {
-                context: format!("Invalid remote nonce encoding: {}", e),
-            })?;
+        let remote_nonce_bytes =
+            STANDARD
+                .decode(&remote.nonce)
+                .map_err(|e| KeyringError::Crypto {
+                    context: format!("Invalid remote nonce encoding: {}", e),
+                })?;
 
         // Check nonce length (should be 12 bytes for AES-GCM)
         if remote_nonce_bytes.len() != 12 {
@@ -164,7 +165,9 @@ impl NonceValidator {
         }
 
         // Flush stdout to ensure the prompt is displayed
-        io::stdout().flush().map_err(|e| KeyringError::IoError(e.to_string()))?;
+        io::stdout()
+            .flush()
+            .map_err(|e| KeyringError::IoError(e.to_string()))?;
 
         // Read user input
         let mut input = String::new();
@@ -177,9 +180,11 @@ impl NonceValidator {
         Ok(match choice {
             "1" => RecoveryStrategy::UseLocal,
             "2" => RecoveryStrategy::UseRemote,
-            "3" => return Err(KeyringError::AuthenticationFailed {
-                reason: "Sync cancelled by user".to_string(),
-            }),
+            "3" => {
+                return Err(KeyringError::AuthenticationFailed {
+                    reason: "Sync cancelled by user".to_string(),
+                })
+            }
             "" | _ => {
                 // Empty input (non-interactive) or invalid choice defaults to UseLocal
                 RecoveryStrategy::UseLocal

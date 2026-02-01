@@ -1,4 +1,4 @@
-use keyring_cli::tui::tags::config::{EnvTag, RiskTag, TagConfig, TagError, validate_tag_config};
+use keyring_cli::tui::tags::config::{validate_tag_config, EnvTag, RiskTag, TagConfig, TagError};
 use keyring_cli::tui::tags::widget::{TagConfigWidget, TagFocus};
 
 #[test]
@@ -359,17 +359,16 @@ fn test_custom_tag_addition() {
 fn test_custom_tag_removal() {
     let mut widget = TagConfigWidget::new("test".to_string());
     widget.show_advanced = true;
-    widget.config.custom = vec![
-        "tag1".to_string(),
-        "tag2".to_string(),
-        "tag3".to_string(),
-    ];
+    widget.config.custom = vec!["tag1".to_string(), "tag2".to_string(), "tag3".to_string()];
     widget.selected_custom = Some(1);
 
     // Remove middle tag
     widget.remove_selected_custom_tag();
     assert_eq!(widget.config.custom.len(), 2);
-    assert_eq!(widget.config.custom, vec!["tag1".to_string(), "tag3".to_string()]);
+    assert_eq!(
+        widget.config.custom,
+        vec!["tag1".to_string(), "tag3".to_string()]
+    );
     assert_eq!(widget.selected_custom, Some(1));
 
     // Remove last tag

@@ -118,7 +118,10 @@ impl KeyHierarchy {
     }
 
     /// Unlock existing key hierarchy with SensitiveString
-    pub fn unlock_sensitive(wrapped_keys_path: &Path, master_password: &SensitiveString<String>) -> Result<Self> {
+    pub fn unlock_sensitive(
+        wrapped_keys_path: &Path,
+        master_password: &SensitiveString<String>,
+    ) -> Result<Self> {
         use super::argon2id;
 
         // Load salt from file
@@ -215,13 +218,15 @@ impl KeyHierarchy {
         fs::write(dir.join("wrapped_dek"), dek_file)?;
 
         // Wrap and save RecoveryKey
-        let (wrapped_rec_bytes, nonce_rec) = self.wrap_key(&self.recovery_key.0, &self.master_key.0)?;
+        let (wrapped_rec_bytes, nonce_rec) =
+            self.wrap_key(&self.recovery_key.0, &self.master_key.0)?;
         let mut rec_file = nonce_rec.to_vec();
         rec_file.extend_from_slice(&wrapped_rec_bytes);
         fs::write(dir.join("wrapped_recovery"), rec_file)?;
 
         // Wrap and save DeviceKey
-        let (wrapped_dev_bytes, nonce_dev) = self.wrap_key(&self.device_key.0, &self.master_key.0)?;
+        let (wrapped_dev_bytes, nonce_dev) =
+            self.wrap_key(&self.device_key.0, &self.master_key.0)?;
         let mut dev_file = nonce_dev.to_vec();
         dev_file.extend_from_slice(&wrapped_dev_bytes);
         fs::write(dir.join("wrapped_device"), dev_file)?;
@@ -233,7 +238,10 @@ impl KeyHierarchy {
     pub fn wrap_key_sensitive(&self, key: &SensitiveString<Vec<u8>>) -> Result<WrappedKey> {
         let key_bytes = key.get();
         if key_bytes.len() != 32 {
-            return Err(anyhow::anyhow!("Key must be 32 bytes, got {}", key_bytes.len()));
+            return Err(anyhow::anyhow!(
+                "Key must be 32 bytes, got {}",
+                key_bytes.len()
+            ));
         }
 
         let mut key_array = [0u8; 32];
@@ -249,7 +257,10 @@ impl KeyHierarchy {
 
     /// Unwrap a key returning SensitiveString
     pub fn unwrap_key_sensitive(&self, wrapped: &WrappedKey) -> Result<SensitiveString<Vec<u8>>> {
-        let nonce_array: [u8; 12] = wrapped.nonce.clone().try_into()
+        let nonce_array: [u8; 12] = wrapped
+            .nonce
+            .clone()
+            .try_into()
             .map_err(|_| anyhow::anyhow!("Invalid nonce length"))?;
 
         let unwrapped = Self::unwrap_key(&wrapped.wrapped_data, &nonce_array, &self.master_key.0)?;

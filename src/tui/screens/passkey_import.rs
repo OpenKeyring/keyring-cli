@@ -88,7 +88,10 @@ impl PasskeyImportScreen {
 
         // Check word count
         if words.len() != 12 && words.len() != 24 {
-            self.validation_error = Some(format!("Passkey 必须是 12 或 24 词（当前：{} 词）", words.len()));
+            self.validation_error = Some(format!(
+                "Passkey 必须是 12 或 24 词（当前：{} 词）",
+                words.len()
+            ));
             return Err(anyhow!("{}", self.validation_error.as_ref().unwrap()));
         }
 
@@ -117,39 +120,35 @@ impl PasskeyImportScreen {
             .margin(1)
             .constraints(
                 [
-                    Constraint::Length(3),  // Title
-                    Constraint::Length(2),  // Spacer
-                    Constraint::Length(2),  // Instructions
-                    Constraint::Length(5),  // Input area
-                    Constraint::Length(2),  // Error/status
-                    Constraint::Min(0),     // Spacer
-                    Constraint::Length(3),  // Footer
+                    Constraint::Length(3), // Title
+                    Constraint::Length(2), // Spacer
+                    Constraint::Length(2), // Instructions
+                    Constraint::Length(5), // Input area
+                    Constraint::Length(2), // Error/status
+                    Constraint::Min(0),    // Spacer
+                    Constraint::Length(3), // Footer
                 ]
                 .as_ref(),
             )
             .split(area);
 
         // Title
-        let title = Paragraph::new(vec![
-            Line::from(Span::styled(
-                "导入已有 Passkey",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            )),
-        ])
+        let title = Paragraph::new(vec![Line::from(Span::styled(
+            "导入已有 Passkey",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ))])
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));
 
         frame.render_widget(title, chunks[0]);
 
         // Instructions
-        let instructions = Paragraph::new(vec![
-            Line::from(Span::styled(
-                "请输入您的 12 或 24 词 Passkey（用空格分隔）:",
-                Style::default().fg(Color::White),
-            )),
-        ])
+        let instructions = Paragraph::new(vec![Line::from(Span::styled(
+            "请输入您的 12 或 24 词 Passkey（用空格分隔）:",
+            Style::default().fg(Color::White),
+        ))])
         .alignment(Alignment::Left);
 
         frame.render_widget(instructions, chunks[2]);
@@ -170,10 +169,16 @@ impl PasskeyImportScreen {
             Line::from(""),
             Line::from(Span::styled(
                 "提示: 输入完成后按 Enter 验证",
-                Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+                Style::default()
+                    .fg(Color::DarkGray)
+                    .add_modifier(Modifier::ITALIC),
             )),
         ])
-        .block(Block::default().borders(Borders::ALL).title(" 输入 / Input "))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" 输入 / Input "),
+        )
         .wrap(Wrap { trim: true });
 
         frame.render_widget(input_paragraph, chunks[3]);
@@ -187,10 +192,7 @@ impl PasskeyImportScreen {
         } else if self.validated {
             Paragraph::new(Line::from(vec![
                 Span::styled("✓ ", Style::default().fg(Color::Green)),
-                Span::styled(
-                    "Passkey 验证成功",
-                    Style::default().fg(Color::Green),
-                ),
+                Span::styled("Passkey 验证成功", Style::default().fg(Color::Green)),
             ]))
         } else {
             Paragraph::new(Line::from(""))
@@ -200,13 +202,23 @@ impl PasskeyImportScreen {
 
         // Footer
         let footer_spans = vec![
-            Span::styled("Enter", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Enter",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(if self.can_proceed() {
                 ": 下一步    "
             } else {
                 ": 验证    "
             }),
-            Span::styled("Esc", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Esc",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(": 返回"),
         ];
 

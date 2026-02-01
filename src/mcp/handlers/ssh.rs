@@ -6,7 +6,9 @@
 use crate::db::models::RecordType;
 use crate::db::vault::Vault;
 use crate::error::KeyringError;
-use crate::mcp::policy::{ConfirmationToken, OperationType, PolicyEngine, SessionCache, UsedTokenCache};
+use crate::mcp::policy::{
+    ConfirmationToken, OperationType, PolicyEngine, SessionCache, UsedTokenCache,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -252,12 +254,14 @@ async fn handle_confirmed_exec(
     session_id: &str,
 ) -> Result<SshExecOutput, HandlerError> {
     // 1. Decode and verify token
-    let token = ConfirmationToken::decode(confirmation_id).map_err(|e| HandlerError::InvalidToken {
-        reason: e.to_string(),
-    })?;
+    let token =
+        ConfirmationToken::decode(confirmation_id).map_err(|e| HandlerError::InvalidToken {
+            reason: e.to_string(),
+        })?;
 
     // 2. Verify signature and session binding
-    token.verify_with_session(signing_key, session_id)
+    token
+        .verify_with_session(signing_key, session_id)
         .map_err(|e| HandlerError::InvalidToken {
             reason: e.to_string(),
         })?;
@@ -287,9 +291,11 @@ async fn handle_confirmed_exec(
     }
 
     // 5. Mark token as used
-    used_tokens.mark_used(&token.nonce).map_err(|e| HandlerError::InvalidToken {
-        reason: e.to_string(),
-    })?;
+    used_tokens
+        .mark_used(&token.nonce)
+        .map_err(|e| HandlerError::InvalidToken {
+            reason: e.to_string(),
+        })?;
 
     // 6. Authorize in session cache (for SessionApprove policy)
     let _ = session_cache.authorize(&input.credential_name);
@@ -322,7 +328,10 @@ async fn execute_ssh(
     // Placeholder response - in real implementation, this would call SshExecutor
     Ok(SshExecOutput {
         success: true,
-        stdout: format!("Command '{}' executed on {}", input.command, credential.host),
+        stdout: format!(
+            "Command '{}' executed on {}",
+            input.command, credential.host
+        ),
         stderr: String::new(),
         exit_code: 0,
         execution_time_ms: 100,
@@ -341,9 +350,11 @@ fn load_ssh_credential(
     // Find the record by name (returns encrypted record)
     let stored_record = vault
         .find_record_by_name(credential_name)
-        .map_err(|e| HandlerError::DatabaseError(KeyringError::Database {
-            context: format!("Failed to find credential: {}", e),
-        }))?
+        .map_err(|e| {
+            HandlerError::DatabaseError(KeyringError::Database {
+                context: format!("Failed to find credential: {}", e),
+            })
+        })?
         .ok_or_else(|| HandlerError::CredentialNotFound {
             name: credential_name.to_string(),
         })?;
@@ -359,16 +370,17 @@ fn load_ssh_credential(
     // Note: The data is encrypted, so we need to parse the encrypted JSON structure
     // This is a placeholder - in production, this would need proper decryption
     // For now, we'll try to parse the encrypted data as UTF-8 (this won't work with real encrypted data)
-    let credential_json = String::from_utf8(stored_record.encrypted_data.clone())
-        .map_err(|_| HandlerError::CredentialNotFound {
-            name: credential_name.to_string(),
+    let credential_json =
+        String::from_utf8(stored_record.encrypted_data.clone()).map_err(|_| {
+            HandlerError::CredentialNotFound {
+                name: credential_name.to_string(),
+            }
         })?;
 
-    let credential_data: serde_json::Value = serde_json::from_str(&credential_json).map_err(|_| {
-        HandlerError::CredentialNotFound {
+    let credential_data: serde_json::Value =
+        serde_json::from_str(&credential_json).map_err(|_| HandlerError::CredentialNotFound {
             name: credential_name.to_string(),
-        }
-    })?;
+        })?;
 
     // The actual SSH credential data should be in a "password" or "data" field
     let ssh_data_str = credential_data
@@ -380,11 +392,10 @@ fn load_ssh_credential(
         })?;
 
     // Parse the SSH credential JSON (which is stored as a string in the password field)
-    let ssh_data: serde_json::Value = serde_json::from_str(ssh_data_str).map_err(|_| {
-        HandlerError::CredentialNotFound {
+    let ssh_data: serde_json::Value =
+        serde_json::from_str(ssh_data_str).map_err(|_| HandlerError::CredentialNotFound {
             name: credential_name.to_string(),
-        }
-    })?;
+        })?;
 
     let host = ssh_data["host"]
         .as_str()

@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use notify::{EventKind, RecursiveMode, RecommendedWatcher, Watcher};
+use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::Path;
 use tokio::sync::broadcast;
 
@@ -44,10 +44,12 @@ impl SyncWatcher {
             if let Ok(event) = res {
                 let _ = tx.send(event);
             }
-        }).context("Failed to create file system watcher")?;
+        })
+        .context("Failed to create file system watcher")?;
 
         // Start watching the directory recursively
-        watcher.watch(watch_path, RecursiveMode::Recursive)
+        watcher
+            .watch(watch_path, RecursiveMode::Recursive)
             .context(format!("Failed to watch path: {}", watch_path.display()))?;
 
         // Spawn a task to bridge notify events to sync events

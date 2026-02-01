@@ -7,8 +7,8 @@
 //! - Screen-specific handlers are called correctly
 //! - Navigation between screens works properly
 
-use keyring_cli::tui::{Screen, TuiApp};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use keyring_cli::tui::{Screen, TuiApp};
 
 #[test]
 fn test_f2_navigates_to_settings_screen() {
@@ -20,7 +20,10 @@ fn test_f2_navigates_to_settings_screen() {
 
     // Verify we're on the settings screen
     assert_eq!(app.current_screen(), Screen::Settings);
-    assert!(app.output_lines.iter().any(|l: &String| l.contains("Settings")));
+    assert!(app
+        .output_lines
+        .iter()
+        .any(|l: &String| l.contains("Settings")));
 }
 
 #[test]
@@ -67,7 +70,10 @@ fn test_escape_returns_to_main_screen() {
 
     // Verify we're back to main screen
     assert_eq!(app.current_screen(), Screen::Main);
-    assert!(app.output_lines.iter().any(|l: &String| l.contains("Returned to main")));
+    assert!(app
+        .output_lines
+        .iter()
+        .any(|l: &String| l.contains("Returned to main")));
 }
 
 #[test]
@@ -96,7 +102,10 @@ fn test_ctrl_n_works_on_all_screens() {
     // Test Ctrl+N (New) works on main screen
     let ctrl_n = KeyEvent::new(KeyCode::Char('n'), KeyModifiers::CONTROL);
     app.handle_key_event(ctrl_n);
-    assert!(app.output_lines.iter().any(|l: &String| l.contains("> /new")));
+    assert!(app
+        .output_lines
+        .iter()
+        .any(|l: &String| l.contains("> /new")));
 
     // Navigate to settings and test Ctrl+N still works
     let f2 = KeyEvent::new(KeyCode::F(2), KeyModifiers::empty());
@@ -104,7 +113,10 @@ fn test_ctrl_n_works_on_all_screens() {
 
     app.handle_key_event(ctrl_n);
     // Should still trigger new command regardless of screen
-    assert!(app.output_lines.iter().any(|l: &String| l.contains("> /new")));
+    assert!(app
+        .output_lines
+        .iter()
+        .any(|l: &String| l.contains("> /new")));
 }
 
 #[test]
@@ -148,15 +160,15 @@ fn test_multiple_screen_transitions() {
 
     // Test rapid screen transitions (don't press Esc on Main as it quits)
     let transitions = vec![
-        (KeyCode::F(2), Screen::Settings),   // Settings
-        (KeyCode::Esc, Screen::Main),        // Return to Main
-        (KeyCode::F(5), Screen::Sync),       // Navigate to Sync
-        (KeyCode::Esc, Screen::Main),        // Return to Main
-        (KeyCode::Char('?'), Screen::Help),  // Help
-        (KeyCode::F(2), Screen::Settings),   // Settings (from Help)
-        (KeyCode::Esc, Screen::Main),        // Main (from Settings)
-        (KeyCode::F(5), Screen::Sync),       // Navigate to Sync
-        // Don't press Esc on Main as it would quit
+        (KeyCode::F(2), Screen::Settings),  // Settings
+        (KeyCode::Esc, Screen::Main),       // Return to Main
+        (KeyCode::F(5), Screen::Sync),      // Navigate to Sync
+        (KeyCode::Esc, Screen::Main),       // Return to Main
+        (KeyCode::Char('?'), Screen::Help), // Help
+        (KeyCode::F(2), Screen::Settings),  // Settings (from Help)
+        (KeyCode::Esc, Screen::Main),       // Main (from Settings)
+        (KeyCode::F(5), Screen::Sync),      // Navigate to Sync
+                                            // Don't press Esc on Main as it would quit
     ];
 
     for (key, expected_screen) in transitions {
@@ -177,13 +189,19 @@ fn test_screen_routing_delegates_to_correct_handler() {
     let f2 = KeyEvent::new(KeyCode::F(2), KeyModifiers::empty());
     app.handle_key_event(f2);
     assert_eq!(app.current_screen(), Screen::Settings);
-    assert!(app.output_lines.iter().any(|l: &String| l.contains("Settings")));
+    assert!(app
+        .output_lines
+        .iter()
+        .any(|l: &String| l.contains("Settings")));
 
     // Help screen (?)
     let question = KeyEvent::new(KeyCode::Char('?'), KeyModifiers::empty());
     app.handle_key_event(question);
     assert_eq!(app.current_screen(), Screen::Help);
-    assert!(app.output_lines.iter().any(|l: &String| l.contains("Keyboard Shortcuts")));
+    assert!(app
+        .output_lines
+        .iter()
+        .any(|l: &String| l.contains("Keyboard Shortcuts")));
 
     // Return to main first
     let esc = KeyEvent::new(KeyCode::Esc, KeyModifiers::empty());

@@ -30,8 +30,12 @@ impl TestEnv {
         let temp_dir = TempDir::new().unwrap();
         // Use UUID for unique database file name to avoid conflicts between tests
         let unique_id = uuid::Uuid::new_v4().to_string()[..8].to_string();
-        let config_dir = temp_dir.path().join(format!("config_{}_{}", test_name, unique_id));
-        let data_dir = temp_dir.path().join(format!("data_{}_{}", test_name, unique_id));
+        let config_dir = temp_dir
+            .path()
+            .join(format!("config_{}_{}", test_name, unique_id));
+        let data_dir = temp_dir
+            .path()
+            .join(format!("data_{}_{}", test_name, unique_id));
         std::env::set_var("OK_CONFIG_DIR", config_dir.to_str().unwrap());
         std::env::set_var("OK_DATA_DIR", data_dir.to_str().unwrap());
         std::env::set_var("OK_MASTER_PASSWORD", "test-password");
@@ -60,7 +64,6 @@ impl Drop for TestEnv {
 #[serial]
 fn test_config_set_persists_to_metadata() {
     let _env = TestEnv::setup("set_persists");
-
 
     // Set a config value
     let set_command = ConfigCommands::Set {
@@ -94,7 +97,6 @@ fn test_config_set_persists_to_metadata() {
 fn test_config_get_reads_from_metadata() {
     let _env = TestEnv::setup("get_reads");
 
-
     // Set a value in metadata
     {
         let mut vault = Vault::open(&_env.db_path, "").unwrap();
@@ -119,7 +121,6 @@ fn test_config_get_reads_from_metadata() {
 #[serial]
 fn test_config_reset_clears_custom_metadata() {
     let _env = TestEnv::setup("reset_clears");
-
 
     // Set custom values directly in metadata
     {
@@ -182,7 +183,6 @@ fn test_config_reset_clears_custom_metadata() {
 #[serial]
 fn test_config_set_validates_key() {
     let _env = TestEnv::setup("validates_key");
-
 
     // Try to set an invalid key (should be rejected)
     let set_command = ConfigCommands::Set {

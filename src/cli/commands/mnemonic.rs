@@ -44,8 +44,15 @@ async fn generate_mnemonic(word_count: u8, name: Option<String>) -> Result<()> {
             username: None,
             password: mnemonic.clone(),
             url: None,
-            notes: Some(format!("{}-word BIP39 mnemonic phrase for cryptocurrency wallet recovery", word_count)),
-            tags: vec!["crypto".to_string(), "wallet".to_string(), "mnemonic".to_string()],
+            notes: Some(format!(
+                "{}-word BIP39 mnemonic phrase for cryptocurrency wallet recovery",
+                word_count
+            )),
+            tags: vec![
+                "crypto".to_string(),
+                "wallet".to_string(),
+                "mnemonic".to_string(),
+            ],
         };
 
         // Get config
@@ -78,7 +85,11 @@ async fn generate_mnemonic(word_count: u8, name: Option<String>) -> Result<()> {
             record_type: RecordType::Mnemonic,
             encrypted_data,
             nonce,
-            tags: vec!["crypto".to_string(), "wallet".to_string(), "mnemonic".to_string()],
+            tags: vec![
+                "crypto".to_string(),
+                "wallet".to_string(),
+                "mnemonic".to_string(),
+            ],
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
             version: 1, // New records start at version 1

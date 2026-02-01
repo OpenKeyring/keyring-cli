@@ -25,19 +25,23 @@ mod mcp_audit_integration_tests {
         let _ = std::fs::remove_file(log_path);
     }
 
-    #[serial]    #[test]
+    #[serial]
+    #[test]
     fn test_audit_logger_creation() {
         let log_path = set_test_log_path("creation");
         let _logger = AuditLogger::new();
         cleanup_test_log(&log_path);
     }
 
-    #[serial]    #[test]
+    #[serial]
+    #[test]
     fn test_log_single_event() {
         let log_path = set_test_log_path("single");
         let logger = AuditLogger::new();
 
-        logger.log_event("ssh_exec", "test operation").expect("Should log event");
+        logger
+            .log_event("ssh_exec", "test operation")
+            .expect("Should log event");
 
         assert!(
             std::path::Path::new(&log_path).exists(),
@@ -51,7 +55,8 @@ mod mcp_audit_integration_tests {
         cleanup_test_log(&log_path);
     }
 
-    #[serial]    #[test]
+    #[serial]
+    #[test]
     fn test_log_multiple_events() {
         let log_path = set_test_log_path("multiple");
         let logger = AuditLogger::new();
@@ -73,12 +78,15 @@ mod mcp_audit_integration_tests {
         cleanup_test_log(&log_path);
     }
 
-    #[serial]    #[test]
+    #[serial]
+    #[test]
     fn test_log_contains_event_type() {
         let log_path = set_test_log_path("event_type");
         let logger = AuditLogger::new();
 
-        logger.log_event("api_get", "test details").expect("Should log event");
+        logger
+            .log_event("api_get", "test details")
+            .expect("Should log event");
 
         assert!(
             std::path::Path::new(&log_path).exists(),
@@ -91,12 +99,15 @@ mod mcp_audit_integration_tests {
         cleanup_test_log(&log_path);
     }
 
-    #[serial]    #[test]
+    #[serial]
+    #[test]
     fn test_log_contains_success_status() {
         let log_path = set_test_log_path("success");
         let logger = AuditLogger::new();
 
-        logger.log_event("test_event", "details").expect("Should log event");
+        logger
+            .log_event("test_event", "details")
+            .expect("Should log event");
 
         assert!(
             std::path::Path::new(&log_path).exists(),
@@ -109,7 +120,8 @@ mod mcp_audit_integration_tests {
         cleanup_test_log(&log_path);
     }
 
-    #[serial]    #[test]
+    #[serial]
+    #[test]
     fn test_tool_execution_logging() {
         let log_path = set_test_log_path("tool_exec");
         let logger = AuditLogger::new();
@@ -135,7 +147,8 @@ mod mcp_audit_integration_tests {
         cleanup_test_log(&log_path);
     }
 
-    #[serial]    #[test]
+    #[serial]
+    #[test]
     fn test_auth_event_logging() {
         let log_path = set_test_log_path("auth_event");
         let logger = AuditLogger::new();
@@ -156,13 +169,20 @@ mod mcp_audit_integration_tests {
         cleanup_test_log(&log_path);
     }
 
-    #[serial]    #[test]
+    #[serial]
+    #[test]
     fn test_failed_operation_logging() {
         let log_path = set_test_log_path("failed");
         let logger = AuditLogger::new();
 
         logger
-            .log_tool_execution("ssh_exec", "test-client", &serde_json::json!({}), None, false)
+            .log_tool_execution(
+                "ssh_exec",
+                "test-client",
+                &serde_json::json!({}),
+                None,
+                false,
+            )
             .expect("Should log tool execution");
 
         assert!(
@@ -176,7 +196,8 @@ mod mcp_audit_integration_tests {
         cleanup_test_log(&log_path);
     }
 
-    #[serial]    #[test]
+    #[serial]
+    #[test]
     fn test_clear_logs() {
         let log_path = set_test_log_path("clear");
         let logger = AuditLogger::new();
@@ -188,7 +209,8 @@ mod mcp_audit_integration_tests {
         assert!(!std::path::Path::new(&log_path).exists());
     }
 
-    #[serial]    #[test]
+    #[serial]
+    #[test]
     fn test_disable_logging() {
         let log_path = set_test_log_path("disable");
         let mut logger = AuditLogger::new();

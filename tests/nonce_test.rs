@@ -6,11 +6,11 @@
 //! - Provides appropriate recovery strategies
 //! - Handles user interaction for resolution
 
-use keyring_cli::sync::nonce_validator::{NonceStatus, NonceValidator, RecoveryStrategy};
-use keyring_cli::sync::export::SyncRecord;
-use keyring_cli::db::models::{RecordType, StoredRecord};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use chrono::Utc;
+use keyring_cli::db::models::{RecordType, StoredRecord};
+use keyring_cli::sync::export::SyncRecord;
+use keyring_cli::sync::nonce_validator::{NonceStatus, NonceValidator, RecoveryStrategy};
 use uuid::Uuid;
 
 #[test]
@@ -87,10 +87,16 @@ fn test_get_recovery_strategy_for_valid() {
 fn test_recovery_strategy_display() {
     // Test that recovery strategies have proper display text
     assert_eq!(RecoveryStrategy::NoAction.to_string(), "No action needed");
-    assert_eq!(RecoveryStrategy::AskUser.to_string(), "User resolution required");
+    assert_eq!(
+        RecoveryStrategy::AskUser.to_string(),
+        "User resolution required"
+    );
     assert_eq!(RecoveryStrategy::SkipRecord.to_string(), "Skip this record");
     assert_eq!(RecoveryStrategy::UseLocal.to_string(), "Keep local version");
-    assert_eq!(RecoveryStrategy::UseRemote.to_string(), "Use remote version");
+    assert_eq!(
+        RecoveryStrategy::UseRemote.to_string(),
+        "Use remote version"
+    );
 }
 
 #[test]
@@ -126,12 +132,16 @@ fn test_multiple_records_validation() {
 
     // Test validating multiple records
     let records = vec![
-        (create_test_record_with_nonce([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
-         create_sync_record_with_nonce([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
-         true),
-        (create_test_record_with_nonce([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
-         create_sync_record_with_nonce([99, 98, 97, 96, 95, 94, 93, 92, 91, 90, 89, 88]),
-         false),
+        (
+            create_test_record_with_nonce([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
+            create_sync_record_with_nonce([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
+            true,
+        ),
+        (
+            create_test_record_with_nonce([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
+            create_sync_record_with_nonce([99, 98, 97, 96, 95, 94, 93, 92, 91, 90, 89, 88]),
+            false,
+        ),
     ];
 
     for (local, sync, should_match) in records {

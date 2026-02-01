@@ -30,9 +30,7 @@ pub enum SecureMemoryError {
 impl From<PlatformError> for SecureMemoryError {
     fn from(err: PlatformError) -> Self {
         match err {
-            PlatformError::MemoryProtectionFailed(msg) => {
-                SecureMemoryError::ProtectionFailed(msg)
-            }
+            PlatformError::MemoryProtectionFailed(msg) => SecureMemoryError::ProtectionFailed(msg),
             _ => SecureMemoryError::ProtectionFailed(err.to_string()),
         }
     }

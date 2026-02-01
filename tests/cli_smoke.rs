@@ -2,8 +2,8 @@
 //!
 //! Tests the basic implemented workflow: init -> gen -> list -> show
 
-use std::env;
 use serial_test::serial;
+use std::env;
 use std::process::Command;
 use tempfile::TempDir;
 

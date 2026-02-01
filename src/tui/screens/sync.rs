@@ -62,7 +62,10 @@ impl SyncScreen {
         self.message = match &self.status {
             SyncStatus::Idle => "Ready to sync. Press F5 to start.".to_string(),
             SyncStatus::Syncing => format!("Syncing... {:.0}%", self.progress * 100.0),
-            SyncStatus::Success { uploaded, downloaded } => {
+            SyncStatus::Success {
+                uploaded,
+                downloaded,
+            } => {
                 format!("✓ Sync complete (↑{} ↓{})", uploaded, downloaded)
             }
             SyncStatus::Error { message } => format!("✗ Sync failed: {}", message),
@@ -74,14 +77,12 @@ impl SyncScreen {
 
     /// Render the sync screen
     pub fn render(&self, frame: &mut Frame, area: Rect) {
-        let title = Paragraph::new(Text::from(vec![
-            Line::from(Span::styled(
-                "Sync / 同步",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            )),
-        ]))
+        let title = Paragraph::new(Text::from(vec![Line::from(Span::styled(
+            "Sync / 同步",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ))]))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true });
 
@@ -90,9 +91,9 @@ impl SyncScreen {
             .margin(1)
             .constraints(
                 [
-                    Constraint::Length(3),  // Title
-                    Constraint::Min(0),      // Content
-                    Constraint::Length(3),  // Footer
+                    Constraint::Length(3), // Title
+                    Constraint::Min(0),    // Content
+                    Constraint::Length(3), // Footer
                 ]
                 .as_ref(),
             )
@@ -128,10 +129,7 @@ impl SyncScreen {
 
             let progress_area = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([
-                    Constraint::Length(3),
-                    Constraint::Length(1),
-                ].as_ref())
+                .constraints([Constraint::Length(3), Constraint::Length(1)].as_ref())
                 .split(chunks[1]);
 
             frame.render_widget(gauge, progress_area[1]);

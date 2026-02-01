@@ -5,10 +5,10 @@
 #![cfg(feature = "test-env")]
 
 use keyring_cli::cli::commands::update::{update_record, UpdateArgs};
-use serial_test::serial;
 use keyring_cli::db::models::{RecordType, StoredRecord};
 use keyring_cli::db::vault::Vault;
 use keyring_cli::error::Error;
+use serial_test::serial;
 use tempfile::TempDir;
 use uuid::Uuid;
 

@@ -119,7 +119,11 @@ impl ConflictResolutionScreen {
             )),
             Line::from(""),
             Line::from(Span::styled(
-                format!("共 {} 个冲突需要解决 / {} conflicts to resolve", self.conflicts.len(), self.conflicts.len()),
+                format!(
+                    "共 {} 个冲突需要解决 / {} conflicts to resolve",
+                    self.conflicts.len(),
+                    self.conflicts.len()
+                ),
                 Style::default().fg(Color::Yellow),
             )),
         ]))
@@ -188,19 +192,21 @@ impl ConflictResolutionScreen {
                     Span::styled(" ", style),
                     Span::styled(
                         resolution_text,
-                        Style::default()
-                            .fg(if resolution.is_some() {
-                                Color::Green
-                            } else {
-                                Color::Red
-                            }),
+                        Style::default().fg(if resolution.is_some() {
+                            Color::Green
+                        } else {
+                            Color::Red
+                        }),
                     ),
                 ])
             })
             .collect();
 
-        let list = List::new(conflict_items)
-            .block(Block::default().borders(Borders::ALL).title("冲突列表 / Conflicts"));
+        let list = List::new(conflict_items).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("冲突列表 / Conflicts"),
+        );
 
         let mut list_state = self.list_state.clone();
         frame.render_stateful_widget(list, chunks[1], &mut list_state);

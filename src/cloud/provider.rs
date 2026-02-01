@@ -47,7 +47,9 @@ pub fn create_operator(config: &CloudConfig) -> Result<Operator> {
         #[cfg(not(unix))]
         CloudProvider::SFTP => {
             // SFTP is only supported on Unix platforms
-            Err(anyhow::anyhow!("SFTP provider is not supported on this platform"))
+            Err(anyhow::anyhow!(
+                "SFTP provider is not supported on this platform"
+            ))
         }
     }
 }
@@ -60,8 +62,7 @@ fn create_icloud_operator(config: &CloudConfig) -> Result<Operator> {
         .context("icloud_path is required for ICloud provider")?;
 
     // Use OpenDAL's Fs service to access the local iCloud Drive path
-    let builder = opendal::services::Fs::default()
-        .root(path.to_string_lossy().as_ref());
+    let builder = opendal::services::Fs::default().root(path.to_string_lossy().as_ref());
 
     let operator = Operator::new(builder)
         .context("Failed to build Fs operator for iCloud Drive")?
@@ -377,8 +378,8 @@ pub async fn test_connection(config: &CloudConfig) -> Result<()> {
         .await
         .context("Failed to read test file from cloud storage")?;
 
-    let read_content = String::from_utf8(read_result.to_vec())
-        .context("Failed to parse test file content")?;
+    let read_content =
+        String::from_utf8(read_result.to_vec()).context("Failed to parse test file content")?;
 
     if read_content != test_content {
         anyhow::bail!("Connection test failed: content mismatch");

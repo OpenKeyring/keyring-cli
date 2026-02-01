@@ -250,14 +250,12 @@ impl HelpScreen {
 
         for section in &self.sections {
             // Section header
-            help_lines.push(Line::from(vec![
-                Span::styled(
-                    format!("{}:", section.title),
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD),
-                ),
-            ]));
+            help_lines.push(Line::from(vec![Span::styled(
+                format!("{}:", section.title),
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )]));
             help_lines.push(Line::from(""));
 
             // Shortcuts
@@ -281,7 +279,11 @@ impl HelpScreen {
         }
 
         let help = Paragraph::new(Text::from(help_lines))
-            .block(Block::default().borders(Borders::ALL).title("快捷键 / Shortcuts"))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("快捷键 / Shortcuts"),
+            )
             .scroll((self.scroll_position as u16, 0));
 
         frame.render_widget(help, chunks[1]);

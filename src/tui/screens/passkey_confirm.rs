@@ -60,43 +60,39 @@ impl PasskeyConfirmScreen {
             .margin(1)
             .constraints(
                 [
-                    Constraint::Length(3),  // Title
-                    Constraint::Length(2),  // Spacer
-                    Constraint::Length(2),  // Warning
-                    Constraint::Min(0),     // Passkey summary
-                    Constraint::Length(3),  // Confirmation
-                    Constraint::Length(3),  // Footer
+                    Constraint::Length(3), // Title
+                    Constraint::Length(2), // Spacer
+                    Constraint::Length(2), // Warning
+                    Constraint::Min(0),    // Passkey summary
+                    Constraint::Length(3), // Confirmation
+                    Constraint::Length(3), // Footer
                 ]
                 .as_ref(),
             )
             .split(area);
 
         // Title
-        let title = Paragraph::new(vec![
-            Line::from(Span::styled(
-                "确认 Passkey",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            )),
-        ])
+        let title = Paragraph::new(vec![Line::from(Span::styled(
+            "确认 Passkey",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ))])
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));
 
         frame.render_widget(title, chunks[0]);
 
         // Warning message
-        let warning = Paragraph::new(vec![
-            Line::from(vec![
-                Span::styled("⚠️ ", Style::default().fg(Color::Yellow)),
-                Span::styled(
-                    "请确认您已妥善保存 Passkey",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-            ]),
-        ])
+        let warning = Paragraph::new(vec![Line::from(vec![
+            Span::styled("⚠️ ", Style::default().fg(Color::Yellow)),
+            Span::styled(
+                "请确认您已妥善保存 Passkey",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ])])
         .alignment(Alignment::Center);
 
         frame.render_widget(warning, chunks[2]);
@@ -108,7 +104,9 @@ impl PasskeyConfirmScreen {
         let mut summary_lines = vec![
             Line::from(Span::styled(
                 format!("Passkey 摘要 (共 {} 词):", word_count),
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
         ];
@@ -122,7 +120,9 @@ impl PasskeyConfirmScreen {
         for word in self.passkey_words.iter().take(display_count) {
             first_line.push(Span::styled(
                 format!("{} ", word),
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
             ));
         }
         summary_lines.push(Line::from(first_line));
@@ -135,16 +135,25 @@ impl PasskeyConfirmScreen {
             Style::default().fg(Color::Gray),
         )));
         let mut last_line = Vec::new();
-        for word in self.passkey_words.iter().skip(word_count.saturating_sub(display_count)) {
+        for word in self
+            .passkey_words
+            .iter()
+            .skip(word_count.saturating_sub(display_count))
+        {
             last_line.push(Span::styled(
                 format!("{} ", word),
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
             ));
         }
         summary_lines.push(Line::from(last_line));
 
-        let summary = Paragraph::new(summary_lines)
-            .block(Block::default().borders(Borders::ALL).title(" Passkey 摘要 "));
+        let summary = Paragraph::new(summary_lines).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Passkey 摘要 "),
+        );
 
         frame.render_widget(summary, chunks[3]);
 
@@ -163,9 +172,10 @@ impl PasskeyConfirmScreen {
 
         let confirmation = Paragraph::new(vec![
             Line::from(confirm_text),
-            Line::from(vec![
-                Span::styled("  丢失将无法恢复数据！", Style::default().fg(Color::Red)),
-            ]),
+            Line::from(vec![Span::styled(
+                "  丢失将无法恢复数据！",
+                Style::default().fg(Color::Red),
+            )]),
         ])
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));
@@ -174,15 +184,30 @@ impl PasskeyConfirmScreen {
 
         // Footer
         let footer_spans = vec![
-            Span::styled("Enter", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Enter",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(if self.can_proceed() {
                 ": 下一步    "
             } else {
                 ": 需先确认    "
             }),
-            Span::styled("Space", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Space",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(": 确认    "),
-            Span::styled("Esc", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Esc",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(": 返回"),
         ];
 

@@ -5,8 +5,8 @@
 #![cfg(feature = "test-env")]
 
 use keyring_cli::cli::commands::recover::RecoverArgs;
-use serial_test::serial;
 use keyring_cli::crypto::{passkey::Passkey, CryptoManager};
+use serial_test::serial;
 use tempfile::TempDir;
 
 /// Helper to set up test environment with Passkey
@@ -92,7 +92,10 @@ fn test_recover_validates_passkey_word_count() {
     let valid_words = (0..12).map(|_| "abandon".to_string()).collect::<Vec<_>>();
     let result = Passkey::from_words(&valid_words);
     // 12 identical words have invalid checksum, so this will fail
-    assert!(result.is_err(), "12 identical words should fail checksum validation");
+    assert!(
+        result.is_err(),
+        "12 identical words should fail checksum validation"
+    );
 
     // Test with invalid word count (11 words - not a valid BIP39 count)
     let invalid_count = 11;
@@ -102,7 +105,10 @@ fn test_recover_validates_passkey_word_count() {
     // BIP39 supports: 12, 15, 18, 21, 24 words
     // 11 words should fail validation
     let result = Passkey::from_words(&wrong_count_words);
-    assert!(result.is_err(), "11 words should be rejected as invalid BIP39 count");
+    assert!(
+        result.is_err(),
+        "11 words should be rejected as invalid BIP39 count"
+    );
 
     // 20 words is valid BIP39 word count
     let twenty_words: Vec<String> = (0..20).map(|_| "abandon".to_string()).collect();
@@ -178,9 +184,7 @@ fn test_recover_reencrypts_wrapped_passkey() {
         .unwrap();
 
     // Verify wrapped_passkey file exists
-    let keyring_path = dirs::home_dir()
-        .unwrap()
-        .join(".local/share/open-keyring");
+    let keyring_path = dirs::home_dir().unwrap().join(".local/share/open-keyring");
     let _wrapped_passkey_path = keyring_path.join("wrapped_passkey");
 
     // Note: In test environment, this might not exist yet

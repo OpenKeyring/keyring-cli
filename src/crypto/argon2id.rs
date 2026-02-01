@@ -1,8 +1,8 @@
+use crate::types::SensitiveString;
 use anyhow::Result;
 use argon2::{Algorithm, Argon2, Params, Version};
 use rand::Rng;
 use sysinfo;
-use crate::types::SensitiveString;
 // use zeroize::ZeroizeOnDrop;  // Unused
 
 /// Device capability level for Argon2id parameter selection
@@ -81,7 +81,10 @@ pub fn detect_device_capability() -> DeviceCapability {
 ///
 /// # Returns
 /// 32-byte derived key
-pub fn derive_key_sensitive(password: &SensitiveString<String>, salt: &[u8; 16]) -> Result<Vec<u8>> {
+pub fn derive_key_sensitive(
+    password: &SensitiveString<String>,
+    salt: &[u8; 16],
+) -> Result<Vec<u8>> {
     let params = Argon2Params::default();
 
     let argon2 = Argon2::new(
@@ -199,7 +202,10 @@ pub fn hash_password(password: &str) -> Result<PasswordHash> {
 }
 
 /// Verify a password against a stored hash (with SensitiveString)
-pub fn verify_password_sensitive(password: &SensitiveString<String>, hash: &PasswordHash) -> Result<bool> {
+pub fn verify_password_sensitive(
+    password: &SensitiveString<String>,
+    hash: &PasswordHash,
+) -> Result<bool> {
     let key = derive_key_with_params_sensitive(password, &hash.salt, hash.params)?;
     Ok(key == hash.key)
 }

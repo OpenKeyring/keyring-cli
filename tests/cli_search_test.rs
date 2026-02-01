@@ -5,9 +5,9 @@
 #![cfg(feature = "test-env")]
 
 use keyring_cli::cli::commands::search::{search_records, SearchArgs};
-use serial_test::serial;
 use keyring_cli::db::models::{RecordType, StoredRecord};
 use keyring_cli::db::Vault;
+use serial_test::serial;
 use tempfile::TempDir;
 use uuid::Uuid;
 
@@ -153,7 +153,7 @@ fn test_search_respects_limit() {
             tags: vec![],
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
-        version: 0,
+            version: 0,
         };
         vault.add_record(&record).unwrap();
     }

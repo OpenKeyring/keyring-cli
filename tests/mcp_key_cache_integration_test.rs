@@ -50,7 +50,10 @@ mod mcp_key_cache_integration_tests {
         let key1 = derive_device_key(&master_key1, DeviceIndex::CLI.as_str());
         let key2 = derive_device_key(&master_key2, DeviceIndex::CLI.as_str());
 
-        assert_ne!(key1, key2, "Different master keys should produce different device keys");
+        assert_ne!(
+            key1, key2,
+            "Different master keys should produce different device keys"
+        );
     }
 
     /// Test device key derivation for all platforms
@@ -102,12 +105,7 @@ mod mcp_key_cache_integration_tests {
     /// Test zeroize on different key patterns
     #[test]
     fn test_zeroize_different_patterns() {
-        let patterns: [[u8; 32]; 4] = [
-            [0xFFu8; 32],
-            [0x00u8; 32],
-            [0xAAu8; 32],
-            [0x55u8; 32],
-        ];
+        let patterns: [[u8; 32]; 4] = [[0xFFu8; 32], [0x00u8; 32], [0xAAu8; 32], [0x55u8; 32]];
 
         for mut pattern in patterns {
             pattern.zeroize();
@@ -189,7 +187,8 @@ mod mcp_key_cache_integration_tests {
         ] {
             let key = derive_device_key(&master_key, platform.as_str());
             assert_eq!(
-                key.len(), 32,
+                key.len(),
+                32,
                 "Device key for {:?} should be 32 bytes (256 bits)",
                 platform
             );

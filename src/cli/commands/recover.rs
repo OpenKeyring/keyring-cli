@@ -6,8 +6,8 @@
 
 use crate::cli::ConfigManager;
 use crate::crypto::{passkey::Passkey, CryptoManager};
-use crate::error::{KeyringError, Result};
 use crate::db::vault::Vault;
+use crate::error::{KeyringError, Result};
 use clap::Parser;
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -55,9 +55,11 @@ pub async fn execute(args: RecoverArgs) -> Result<()> {
 
     // Generate new salt for recovery
     let salt = crate::crypto::argon2id::generate_salt();
-    let root_master_key = seed.derive_root_master_key(&salt).map_err(|e| KeyringError::Crypto {
-        context: format!("Failed to derive root master key: {}", e),
-    })?;
+    let root_master_key = seed
+        .derive_root_master_key(&salt)
+        .map_err(|e| KeyringError::Crypto {
+            context: format!("Failed to derive root master key: {}", e),
+        })?;
 
     // Generate KDF nonce for device key derivation
     let kdf_nonce = generate_kdf_nonce();

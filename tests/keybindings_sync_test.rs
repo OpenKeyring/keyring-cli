@@ -2,8 +2,8 @@
 //!
 //! Test-Driven Development tests for sync-related keyboard shortcuts.
 
-use keyring_cli::tui::keybindings::{Action, KeyBindingManager};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use keyring_cli::tui::keybindings::{Action, KeyBindingManager};
 
 #[test]
 fn test_sync_actions_exist() {

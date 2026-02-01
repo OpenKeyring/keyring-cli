@@ -2,7 +2,7 @@
 //!
 //! Tests SSH remote command execution functionality.
 
-use keyring_cli::mcp::executors::ssh_executor::{SshExecutor, SshExecOutput};
+use keyring_cli::mcp::executors::ssh_executor::{SshExecOutput, SshExecutor};
 use std::time::Duration;
 
 /// Sample SSH private key for testing (Ed25519 test key)
@@ -28,7 +28,8 @@ mod tests {
             "localhost".to_string(),
             "testuser".to_string(),
             Some(22),
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(executor.host(), "localhost");
         assert_eq!(executor.username(), "testuser");
@@ -43,7 +44,8 @@ mod tests {
             "example.com".to_string(),
             "admin".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(executor.host(), "example.com");
         assert_eq!(executor.username(), "admin");
@@ -74,7 +76,8 @@ mod tests {
             "localhost".to_string(),
             "testuser".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(executor.host(), "localhost");
     }
@@ -95,7 +98,8 @@ mod tests {
             "localhost".to_string(),
             "testuser".to_string(),
             Some(22),
-        ).unwrap();
+        )
+        .unwrap();
 
         let result = executor
             .exec("echo 'Hello from SSH'", Duration::from_secs(5))
@@ -117,12 +121,11 @@ mod tests {
             "localhost".to_string(),
             "testuser".to_string(),
             Some(22),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Execute a long-running command with short timeout
-        let result = executor
-            .exec("sleep 10", Duration::from_millis(100))
-            .await;
+        let result = executor.exec("sleep 10", Duration::from_millis(100)).await;
 
         assert!(result.is_err());
     }
@@ -137,7 +140,8 @@ mod tests {
             "localhost".to_string(),
             "testuser".to_string(),
             Some(22),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Execute a command that fails
         let result = executor.exec("exit 42", Duration::from_secs(5)).await;
@@ -158,7 +162,8 @@ mod tests {
             "localhost".to_string(),
             "testuser".to_string(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         // After creating executor, the original_bytes should still exist
         // We can't directly access the private_key_bytes, but we verified

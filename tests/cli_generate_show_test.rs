@@ -1,5 +1,5 @@
-use std::env;
 use serial_test::serial;
+use std::env;
 use std::io::Write;
 use std::process::Command;
 use tempfile::TempDir;

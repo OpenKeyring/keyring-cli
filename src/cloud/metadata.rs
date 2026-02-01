@@ -2,10 +2,10 @@
 //!
 //! Defines the metadata structures for cloud storage synchronization.
 
-use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc};
-use std::collections::HashMap;
 use base64::prelude::*;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Cloud metadata for synchronization
 ///

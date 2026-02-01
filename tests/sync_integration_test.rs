@@ -94,11 +94,9 @@ async fn test_full_sync_flow_with_passkey() {
     assert!(!metadata_json.contains("private_key"));
 
     // Verify encrypted data is base64 encoded
-    assert!(
-        base64::engine::general_purpose::STANDARD
-            .decode(&sync_record.encrypted_data)
-            .is_ok()
-    );
+    assert!(base64::engine::general_purpose::STANDARD
+        .decode(&sync_record.encrypted_data)
+        .is_ok());
 
     // Step 8: Simulate cross-device sync (import on device 2)
     // In production, this would be a different device with the same Passkey

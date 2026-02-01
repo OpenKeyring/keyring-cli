@@ -41,7 +41,10 @@ impl PasskeyGenerateScreen {
 
     /// Create with specific word count
     pub fn with_word_count(word_count: usize) -> Self {
-        assert!(word_count == 12 || word_count == 24, "Word count must be 12 or 24");
+        assert!(
+            word_count == 12 || word_count == 24,
+            "Word count must be 12 or 24"
+        );
         Self {
             word_count,
             words: None,
@@ -81,7 +84,11 @@ impl PasskeyGenerateScreen {
 
     /// Set the words directly (for testing or manual input)
     pub fn set_words(&mut self, words: Vec<String>) {
-        assert!(words.len() == self.word_count, "Expected {} words", self.word_count);
+        assert!(
+            words.len() == self.word_count,
+            "Expected {} words",
+            self.word_count
+        );
         self.words = Some(words);
         self.error = None;
     }
@@ -127,43 +134,42 @@ impl PasskeyGenerateScreen {
             .margin(1)
             .constraints(
                 [
-                    Constraint::Length(3),  // Title
-                    Constraint::Length(2),  // Spacer
-                    Constraint::Length(3),  // Warning
-                    Constraint::Min(0),     // Passkey display
-                    Constraint::Length(3),  // Confirmation
-                    Constraint::Length(3),  // Footer
+                    Constraint::Length(3), // Title
+                    Constraint::Length(2), // Spacer
+                    Constraint::Length(3), // Warning
+                    Constraint::Min(0),    // Passkey display
+                    Constraint::Length(3), // Confirmation
+                    Constraint::Length(3), // Footer
                 ]
                 .as_ref(),
             )
             .split(area);
 
         // Title
-        let title = Paragraph::new(vec![
-            Line::from(Span::styled(
-                "生成新的 Passkey",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            )),
-        ])
+        let title = Paragraph::new(vec![Line::from(Span::styled(
+            "生成新的 Passkey",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ))])
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));
 
         frame.render_widget(title, chunks[0]);
 
         // Warning message
-        let warning = Paragraph::new(vec![
-            Line::from(vec![
-                Span::styled("⚠️ ", Style::default().fg(Color::Yellow)),
-                Span::styled(
-                    format!("请务必保存以下 {} 词，这是恢复数据的唯一方式！", self.word_count),
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
+        let warning = Paragraph::new(vec![Line::from(vec![
+            Span::styled("⚠️ ", Style::default().fg(Color::Yellow)),
+            Span::styled(
+                format!(
+                    "请务必保存以下 {} 词，这是恢复数据的唯一方式！",
+                    self.word_count
                 ),
-            ]),
-        ])
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ])])
         .alignment(Alignment::Center);
 
         frame.render_widget(warning, chunks[2]);
@@ -208,12 +214,12 @@ impl PasskeyGenerateScreen {
             frame.render_widget(passkey, chunks[3]);
         } else {
             // Not generated yet
-            let loading = Paragraph::new(vec![
-                Line::from(Span::styled(
-                    "正在生成 Passkey...",
-                    Style::default().fg(Color::Gray).add_modifier(Modifier::ITALIC),
-                )),
-            ])
+            let loading = Paragraph::new(vec![Line::from(Span::styled(
+                "正在生成 Passkey...",
+                Style::default()
+                    .fg(Color::Gray)
+                    .add_modifier(Modifier::ITALIC),
+            ))])
             .alignment(Alignment::Center)
             .block(Block::default().borders(Borders::ALL));
 
@@ -235,26 +241,42 @@ impl PasskeyGenerateScreen {
 
         let confirmation = Paragraph::new(vec![
             Line::from(confirm_text),
-            Line::from(vec![
-                Span::styled("  丢失将无法恢复数据！", Style::default().fg(Color::Red)),
-            ]),
+            Line::from(vec![Span::styled(
+                "  丢失将无法恢复数据！",
+                Style::default().fg(Color::Red),
+            )]),
         ])
         .alignment(Alignment::Center)
-            .block(Block::default().borders(Borders::ALL));
+        .block(Block::default().borders(Borders::ALL));
 
         frame.render_widget(confirmation, chunks[4]);
 
         // Footer
         let footer_spans = vec![
-            Span::styled("Enter", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Enter",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(if self.can_proceed() {
                 ": 下一步    "
             } else {
                 ": 需先确认    "
             }),
-            Span::styled("Space", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Space",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(": 确认    "),
-            Span::styled("Esc", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Esc",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw(": 返回"),
         ];
 

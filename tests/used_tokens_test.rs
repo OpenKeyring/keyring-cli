@@ -114,9 +114,15 @@ fn test_token_expiry_boundary() {
 
     // Manually set timestamps
     let now = std::time::Instant::now();
-    cache.timestamps.insert("token-4min".to_string(), now - Duration::from_secs(240)); // 4 min
-    cache.timestamps.insert("token-5min".to_string(), now - Duration::from_secs(300)); // 5 min
-    cache.timestamps.insert("token-6min".to_string(), now - Duration::from_secs(360)); // 6 min
+    cache
+        .timestamps
+        .insert("token-4min".to_string(), now - Duration::from_secs(240)); // 4 min
+    cache
+        .timestamps
+        .insert("token-5min".to_string(), now - Duration::from_secs(300)); // 5 min
+    cache
+        .timestamps
+        .insert("token-6min".to_string(), now - Duration::from_secs(360)); // 6 min
 
     // Before cleanup
     assert_eq!(cache.len(), 3);

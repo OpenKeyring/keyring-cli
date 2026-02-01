@@ -1,7 +1,7 @@
 // tests/crypto/keyhierarchy_test.rs
 use keyring_cli::crypto::keywrap::KeyHierarchy;
-use tempfile::TempDir;
 use std::path::PathBuf;
+use tempfile::TempDir;
 
 #[test]
 fn test_keyhierarchy_save_and_unlock() {

@@ -69,7 +69,8 @@ fn test_encrypted_data_is_base64() {
 
     // Verify encrypted_data is valid base64
     assert!(base64::engine::general_purpose::STANDARD
-        .decode(&sync_record.encrypted_data).is_ok());
+        .decode(&sync_record.encrypted_data)
+        .is_ok());
 }
 
 /// Test that nonce is base64 encoded
@@ -92,7 +93,8 @@ fn test_nonce_is_base64() {
 
     // Verify nonce is valid base64
     assert!(base64::engine::general_purpose::STANDARD
-        .decode(&sync_record.nonce).is_ok());
+        .decode(&sync_record.nonce)
+        .is_ok());
 }
 
 /// Test that full sync record JSON doesn't leak sensitive information
@@ -102,9 +104,10 @@ fn test_full_sync_record_no_sensitive_data() {
 
     // Use realistic encrypted data (would be AES-256-GCM ciphertext in production)
     let encrypted_data = [
-        0x1a, 0x2b, 0x3c, 0x4d, 0x5e, 0x6f, 0x70, 0x81,
-        0x92, 0xa3, 0xb4, 0xc5, 0xd6, 0xe7, 0xf8, 0x09
-    ].to_vec();
+        0x1a, 0x2b, 0x3c, 0x4d, 0x5e, 0x6f, 0x70, 0x81, 0x92, 0xa3, 0xb4, 0xc5, 0xd6, 0xe7, 0xf8,
+        0x09,
+    ]
+    .to_vec();
 
     let test_record = StoredRecord {
         id: Uuid::new_v4(),
@@ -168,9 +171,10 @@ fn test_zero_knowledge_metadata_only() {
 
     // Use realistic encrypted data (would be AES-256-GCM ciphertext in production)
     let encrypted_data = [
-        0x9a, 0x8b, 0x7c, 0x6d, 0x5e, 0x4f, 0x30, 0x21,
-        0x12, 0x03, 0xf4, 0xe5, 0xd6, 0xc7, 0xb8, 0xa9
-    ].to_vec();
+        0x9a, 0x8b, 0x7c, 0x6d, 0x5e, 0x4f, 0x30, 0x21, 0x12, 0x03, 0xf4, 0xe5, 0xd6, 0xc7, 0xb8,
+        0xa9,
+    ]
+    .to_vec();
 
     let test_record = StoredRecord {
         id: Uuid::new_v4(),
@@ -188,7 +192,8 @@ fn test_zero_knowledge_metadata_only() {
     // The encrypted_data should be base64 encoded ciphertext
     // Not readable without the decryption key
     let encrypted_bytes = base64::engine::general_purpose::STANDARD
-        .decode(&sync_record.encrypted_data).unwrap();
+        .decode(&sync_record.encrypted_data)
+        .unwrap();
 
     // Verify the encrypted data is ciphertext (not readable text)
     // Real ciphertext should not contain common sensitive keywords

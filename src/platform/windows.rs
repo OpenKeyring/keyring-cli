@@ -4,7 +4,9 @@
 
 use crate::error::Result;
 use crate::platform::PlatformError;
-use windows::Win32::Security::Cryptography::{CRYPTPROTECTMEMORY_SAME_PROCESS, CryptProtectMemory, CryptUnprotectMemory};
+use windows::Win32::Security::Cryptography::{
+    CryptProtectMemory, CryptUnprotectMemory, CRYPTPROTECTMEMORY_SAME_PROCESS,
+};
 use windows::Win32::System::SystemInformation::{GetSystemInfo, SYSTEM_INFO};
 
 /// Protect memory in the current process
@@ -28,10 +30,9 @@ use windows::Win32::System::SystemInformation::{GetSystemInfo, SYSTEM_INFO};
 /// The length must be a multiple of 16 bytes.
 pub fn protect_memory(addr: *mut u8, len: usize) -> Result<()> {
     if addr.is_null() || len == 0 {
-        return Err(PlatformError::MemoryProtectionFailed(
-            "Invalid address or length".to_string(),
-        )
-        .into());
+        return Err(
+            PlatformError::MemoryProtectionFailed("Invalid address or length".to_string()).into(),
+        );
     }
 
     // CryptProtectMemory requires length to be a multiple of CRYPTPROTECTMEMORY_BLOCK_SIZE
@@ -47,18 +48,10 @@ pub fn protect_memory(addr: *mut u8, len: usize) -> Result<()> {
     // Call CryptProtectMemory
     // CRYPTPROTECTMEMORY_SAME_PROCESS: only accessible in same process
     // Note: windows crate v0.58 returns Result<()>, not BOOL
-    unsafe {
-        CryptProtectMemory(
-            addr as *mut _,
-            len as u32,
-            CRYPTPROTECTMEMORY_SAME_PROCESS,
-        )
-    }.map_err(|e| {
-        PlatformError::MemoryProtectionFailed(format!(
-            "CryptProtectMemory failed: {}",
-            e
-        ))
-    })?;
+    unsafe { CryptProtectMemory(addr as *mut _, len as u32, CRYPTPROTECTMEMORY_SAME_PROCESS) }
+        .map_err(|e| {
+            PlatformError::MemoryProtectionFailed(format!("CryptProtectMemory failed: {}", e))
+        })?;
 
     Ok(())
 }
@@ -79,10 +72,9 @@ pub fn protect_memory(addr: *mut u8, len: usize) -> Result<()> {
 /// The caller must ensure that the memory region was previously protected.
 pub fn unprotect_memory(addr: *mut u8, len: usize) -> Result<()> {
     if addr.is_null() || len == 0 {
-        return Err(PlatformError::MemoryProtectionFailed(
-            "Invalid address or length".to_string(),
-        )
-        .into());
+        return Err(
+            PlatformError::MemoryProtectionFailed("Invalid address or length".to_string()).into(),
+        );
     }
 
     const BLOCK_SIZE: usize = 16;
@@ -96,18 +88,10 @@ pub fn unprotect_memory(addr: *mut u8, len: usize) -> Result<()> {
 
     // Call CryptUnprotectMemory
     // Note: windows crate v0.58 returns Result<()>, not BOOL
-    unsafe {
-        CryptUnprotectMemory(
-            addr as *mut _,
-            len as u32,
-            CRYPTPROTECTMEMORY_SAME_PROCESS,
-        )
-    }.map_err(|e| {
-        PlatformError::MemoryProtectionFailed(format!(
-            "CryptUnprotectMemory failed: {}",
-            e
-        ))
-    })?;
+    unsafe { CryptUnprotectMemory(addr as *mut _, len as u32, CRYPTPROTECTMEMORY_SAME_PROCESS) }
+        .map_err(|e| {
+            PlatformError::MemoryProtectionFailed(format!("CryptUnprotectMemory failed: {}", e))
+        })?;
 
     Ok(())
 }
@@ -141,12 +125,18 @@ mod tests {
         // CryptProtectMemory requires length to be a multiple of 16 bytes
         let mut data = vec![0u8; 32]; // 32 = 2 * 16
         let result = protect_memory(data.as_mut_ptr(), data.len());
-        assert!(result.is_ok(), "CryptProtectMemory should succeed for aligned size");
+        assert!(
+            result.is_ok(),
+            "CryptProtectMemory should succeed for aligned size"
+        );
 
         // Verify the data is actually encrypted (should have changed)
         // Note: We can't decrypt without the original, but we can call unprotect_memory
         let unprotect_result = unprotect_memory(data.as_mut_ptr(), data.len());
-        assert!(unprotect_result.is_ok(), "CryptUnprotectMemory should succeed");
+        assert!(
+            unprotect_result.is_ok(),
+            "CryptUnprotectMemory should succeed"
+        );
     }
 
     #[test]
@@ -162,14 +152,20 @@ mod tests {
     #[test]
     fn test_protect_memory_null_pointer() {
         let result = protect_memory(std::ptr::null_mut(), 32);
-        assert!(result.is_err(), "CryptProtectMemory should fail with null pointer");
+        assert!(
+            result.is_err(),
+            "CryptProtectMemory should fail with null pointer"
+        );
     }
 
     #[test]
     fn test_protect_memory_zero_length() {
         let mut data = vec![0u8; 32];
         let result = protect_memory(data.as_mut_ptr(), 0);
-        assert!(result.is_err(), "CryptProtectMemory should fail with zero length");
+        assert!(
+            result.is_err(),
+            "CryptProtectMemory should fail with zero length"
+        );
     }
 
     #[test]
@@ -185,7 +181,10 @@ mod tests {
     fn test_allocation_granularity() {
         let gran = allocation_granularity();
         assert!(gran > 0, "Allocation granularity should be positive");
-        assert!(gran.is_power_of_two(), "Allocation granularity should be power of two");
+        assert!(
+            gran.is_power_of_two(),
+            "Allocation granularity should be power of two"
+        );
         // Windows typically uses 64KB granularity
         assert_eq!(gran, 65536, "Unexpected allocation granularity");
     }

@@ -1,10 +1,10 @@
 //! Vault operations for record management
 
+use crate::types::SensitiveString;
 use anyhow::Result;
 use rusqlite::Connection;
 use std::path::Path;
 use uuid::Uuid;
-use crate::types::SensitiveString;
 
 use super::models::{DecryptedRecord, RecordType, StoredRecord, SyncState, SyncStatus};
 
@@ -133,8 +133,16 @@ impl Vault {
 
         let mut records = Vec::new();
         for record in record_iter {
-            let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
-                record?;
+            let (
+                uuid,
+                record_type_str,
+                encrypted_data,
+                nonce,
+                created_ts,
+                updated_ts,
+                version,
+                tags,
+            ) = record?;
 
             records.push(StoredRecord {
                 id: uuid,
@@ -159,23 +167,30 @@ impl Vault {
         let uuid =
             Uuid::parse_str(id).map_err(|e| anyhow::anyhow!("Invalid UUID format: {}", e))?;
 
-        let (_id_str, record_type_str, encrypted_data, nonce_bytes, created_ts, updated_ts, version) =
-            self.conn.query_row(
-                "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at, version
+        let (
+            _id_str,
+            record_type_str,
+            encrypted_data,
+            nonce_bytes,
+            created_ts,
+            updated_ts,
+            version,
+        ) = self.conn.query_row(
+            "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at, version
          FROM records WHERE id = ?1 AND deleted = 0",
-                [id],
-                |row| {
-                    Ok((
-                        row.get::<_, String>(0)?,
-                        row.get::<_, String>(1)?,
-                        row.get::<_, Vec<u8>>(2)?,
-                        row.get::<_, Vec<u8>>(3)?,
-                        row.get::<_, i64>(4)?,
-                        row.get::<_, i64>(5)?,
-                        row.get::<_, i64>(6)?,
-                    ))
-                },
-            )?;
+            [id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Vec<u8>>(2)?,
+                    row.get::<_, Vec<u8>>(3)?,
+                    row.get::<_, i64>(4)?,
+                    row.get::<_, i64>(5)?,
+                    row.get::<_, i64>(6)?,
+                ))
+            },
+        )?;
 
         let nonce = decode_nonce(&nonce_bytes)?;
 
@@ -221,20 +236,27 @@ impl Vault {
     /// # Security Note
     /// The returned SensitiveString will automatically zeroize its contents when dropped,
     /// preventing sensitive password data from remaining in memory.
-    pub fn decrypt_password(&self, record: &StoredRecord, dek: &[u8]) -> Result<SensitiveString<String>> {
+    pub fn decrypt_password(
+        &self,
+        record: &StoredRecord,
+        dek: &[u8],
+    ) -> Result<SensitiveString<String>> {
         // Convert DEK slice to array
-        let dek_array: [u8; 32] = dek.try_into()
+        let dek_array: [u8; 32] = dek
+            .try_into()
             .map_err(|_| anyhow::anyhow!("Invalid DEK length: expected 32 bytes"))?;
 
         // Decrypt using the crypto module (ciphertext, nonce, key)
-        let decrypted = crate::crypto::aes256gcm::decrypt(&record.encrypted_data, &record.nonce, &dek_array)?;
+        let decrypted =
+            crate::crypto::aes256gcm::decrypt(&record.encrypted_data, &record.nonce, &dek_array)?;
 
         // Parse the decrypted JSON to extract the password field
         let json_str = String::from_utf8(decrypted)?;
         let payload: serde_json::Value = serde_json::from_str(&json_str)?;
 
         // Extract the password field
-        let password = payload.get("password")
+        let password = payload
+            .get("password")
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow::anyhow!("No password field in decrypted payload"))?;
 
@@ -257,11 +279,13 @@ impl Vault {
         let stored = self.get_record(id)?;
 
         // Convert DEK slice to array
-        let dek_array: [u8; 32] = dek.try_into()
+        let dek_array: [u8; 32] = dek
+            .try_into()
             .map_err(|_| anyhow::anyhow!("Invalid DEK length: expected 32 bytes"))?;
 
         // Decrypt the record data
-        let decrypted = crate::crypto::aes256gcm::decrypt(&stored.encrypted_data, &stored.nonce, &dek_array)?;
+        let decrypted =
+            crate::crypto::aes256gcm::decrypt(&stored.encrypted_data, &stored.nonce, &dek_array)?;
         let json_str = String::from_utf8(decrypted)?;
 
         // Parse the record payload
@@ -281,7 +305,7 @@ impl Vault {
             name: payload.name,
             record_type: stored.record_type,
             username: payload.username,
-            password: SensitiveString::new(payload.password),  // Wrapped in SensitiveString
+            password: SensitiveString::new(payload.password), // Wrapped in SensitiveString
             url: payload.url,
             notes: payload.notes,
             tags: stored.tags,
@@ -632,8 +656,16 @@ impl Vault {
 
         let mut records = Vec::new();
         for record in record_iter {
-            let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
-                record?;
+            let (
+                uuid,
+                record_type_str,
+                encrypted_data,
+                nonce,
+                created_ts,
+                updated_ts,
+                version,
+                tags,
+            ) = record?;
 
             records.push(StoredRecord {
                 id: uuid,
@@ -790,8 +822,16 @@ impl Vault {
 
         let mut records = Vec::new();
         for record in record_iter {
-            let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
-                record?;
+            let (
+                uuid,
+                record_type_str,
+                encrypted_data,
+                nonce,
+                created_ts,
+                updated_ts,
+                version,
+                tags,
+            ) = record?;
 
             records.push(StoredRecord {
                 id: uuid,

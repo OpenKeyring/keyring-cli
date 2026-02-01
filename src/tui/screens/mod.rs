@@ -16,7 +16,7 @@ pub mod welcome;
 pub mod wizard;
 
 pub use conflict::ConflictResolutionScreen;
-pub use help::{HelpSection, HelpScreen, Shortcut};
+pub use help::{HelpScreen, HelpSection, Shortcut};
 pub use master_password::{MasterPasswordScreen, PasswordStrength};
 pub use passkey_confirm::PasskeyConfirmScreen;
 pub use passkey_generate::PasskeyGenerateScreen;

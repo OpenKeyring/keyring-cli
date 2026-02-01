@@ -1,6 +1,6 @@
 // tests/cloud_service_test.rs
-use keyring_cli::sync::{cloud_service::{CloudSyncService, SyncDirection}};
 use keyring_cli::cloud::{config::CloudConfig, CloudProvider};
+use keyring_cli::sync::cloud_service::{CloudSyncService, SyncDirection};
 use tempfile::TempDir;
 
 #[tokio::test]

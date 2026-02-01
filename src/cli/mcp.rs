@@ -79,21 +79,19 @@ pub struct AuditQuery {
 /// Handle MCP CLI commands
 pub async fn handle_mcp_command(cmd: MCPCommands) -> Result<()> {
     match cmd {
-        MCPCommands::Start { verbose } => {
-            handle_start_command(verbose).await
-        }
+        MCPCommands::Start { verbose } => handle_start_command(verbose).await,
 
-        MCPCommands::Stop => {
-            handle_stop_command()
-        }
+        MCPCommands::Stop => handle_stop_command(),
 
-        MCPCommands::Status => {
-            handle_status_command()
-        }
+        MCPCommands::Status => handle_status_command(),
 
-        MCPCommands::Logs { today, tool, status, credential, limit } => {
-            handle_logs_command(today, tool, status, credential, limit).await
-        }
+        MCPCommands::Logs {
+            today,
+            tool,
+            status,
+            credential,
+            limit,
+        } => handle_logs_command(today, tool, status, credential, limit).await,
     }
 }
 
@@ -127,10 +125,22 @@ async fn handle_start_command(verbose: bool) -> Result<()> {
 
     if verbose {
         eprintln!("MCP server configuration loaded:");
-        eprintln!("  Max concurrent requests: {}", mcp_config.max_concurrent_requests);
-        eprintln!("  Max SSH response size: {} bytes", mcp_config.max_response_size_ssh);
-        eprintln!("  Max API response size: {} bytes", mcp_config.max_response_size_api);
-        eprintln!("  Session cache TTL: {} seconds", mcp_config.session_cache.ttl_seconds);
+        eprintln!(
+            "  Max concurrent requests: {}",
+            mcp_config.max_concurrent_requests
+        );
+        eprintln!(
+            "  Max SSH response size: {} bytes",
+            mcp_config.max_response_size_ssh
+        );
+        eprintln!(
+            "  Max API response size: {} bytes",
+            mcp_config.max_response_size_api
+        );
+        eprintln!(
+            "  Session cache TTL: {} seconds",
+            mcp_config.session_cache.ttl_seconds
+        );
         eprintln!();
         eprintln!("Database path: {}", db_path.display());
     }
@@ -156,11 +166,9 @@ async fn handle_start_command(verbose: bool) -> Result<()> {
     eprintln!("This is a placeholder that demonstrates the CLI structure.");
 
     // Wait for interrupt signal
-    tokio::signal::ctrl_c()
-        .await
-        .map_err(|e| Error::Mcp {
-            context: format!("Failed to listen for shutdown signal: {}", e),
-        })?;
+    tokio::signal::ctrl_c().await.map_err(|e| Error::Mcp {
+        context: format!("Failed to listen for shutdown signal: {}", e),
+    })?;
 
     eprintln!();
     eprintln!("MCP server stopped");
@@ -201,9 +209,16 @@ fn handle_status_command() -> Result<()> {
     eprintln!();
     eprintln!("配置:");
     eprintln!("  最大并发请求: {}", config.max_concurrent_requests);
-    eprintln!("  SSH 响应大小限制: {} MB", config.max_response_size_ssh / (1024 * 1024));
-    eprintln!("  API 响应大小限制: {} MB", config.max_response_size_api / (1024 * 1024));
-    eprintln!("  会话缓存 TTL: {} 秒 ({} 分钟)",
+    eprintln!(
+        "  SSH 响应大小限制: {} MB",
+        config.max_response_size_ssh / (1024 * 1024)
+    );
+    eprintln!(
+        "  API 响应大小限制: {} MB",
+        config.max_response_size_api / (1024 * 1024)
+    );
+    eprintln!(
+        "  会话缓存 TTL: {} 秒 ({} 分钟)",
         config.session_cache.ttl_seconds,
         config.session_cache.ttl_seconds / 60
     );
@@ -239,8 +254,8 @@ fn parse_audit_logs(
     credential_filter: Option<String>,
     limit: usize,
 ) -> Result<Vec<AuditEntry>> {
-    let log_path = std::env::var("OK_MCP_AUDIT_LOG")
-        .unwrap_or_else(|_| "mcp_audit.log".to_string());
+    let log_path =
+        std::env::var("OK_MCP_AUDIT_LOG").unwrap_or_else(|_| "mcp_audit.log".to_string());
 
     // Check if log file exists
     if !std::path::Path::new(&log_path).exists() {
@@ -248,8 +263,7 @@ fn parse_audit_logs(
         return Ok(Vec::new());
     }
 
-    let content = fs::read_to_string(&log_path)
-        .map_err(Error::Io)?;
+    let content = fs::read_to_string(&log_path).map_err(Error::Io)?;
 
     let mut entries = Vec::new();
 
@@ -337,28 +351,36 @@ fn parse_log_line(line: &str) -> Option<AuditEntry> {
     let is_success = success_part.contains("true");
 
     // Parse details
-    let details_part = parts.get(3).and_then(|p| p.strip_prefix("details=")).unwrap_or("{}");
+    let details_part = parts
+        .get(3)
+        .and_then(|p| p.strip_prefix("details="))
+        .unwrap_or("{}");
 
     // Try to parse details as JSON
-    let details: serde_json::Value = serde_json::from_str(details_part).unwrap_or_else(|_| serde_json::json!({}));
+    let details: serde_json::Value =
+        serde_json::from_str(details_part).unwrap_or_else(|_| serde_json::json!({}));
 
     // Extract fields from details or use defaults
-    let tool = details.get("tool_name")
+    let tool = details
+        .get("tool_name")
         .and_then(|v| v.as_str())
         .unwrap_or(&event_type)
         .to_string();
 
-    let credential = details.get("credential")
+    let credential = details
+        .get("credential")
         .and_then(|v| v.as_str())
         .unwrap_or("N/A")
         .to_string();
 
-    let operation = details.get("operation")
+    let operation = details
+        .get("operation")
         .and_then(|v| v.as_str())
         .unwrap_or("execute")
         .to_string();
 
-    let authorization = details.get("authorization")
+    let authorization = details
+        .get("authorization")
         .and_then(|v| v.as_str())
         .unwrap_or("N/A")
         .to_string();
@@ -400,12 +422,15 @@ fn display_audit_logs(entries: &[AuditEntry]) {
         println!("│ 凭证: {}  │", entry.credential);
         println!("│ 操作: {} │", entry.operation);
         println!("│ 授权: {}  │", entry.authorization);
-        println!("│ 状态: {}  │", match entry.status.as_str() {
-            "success" => "✓ 成功",
-            "failed" => "✗ 失败",
-            "denied" => "⊘ 拒绝",
-            _ => &entry.status,
-        });
+        println!(
+            "│ 状态: {}  │",
+            match entry.status.as_str() {
+                "success" => "✓ 成功",
+                "failed" => "✗ 失败",
+                "denied" => "⊘ 拒绝",
+                _ => &entry.status,
+            }
+        );
         println!("└────────────────────────────────────────────────────────────────────────────┘");
     }
 
@@ -440,7 +465,13 @@ mod tests {
         // Test logs command
         let cli = TestCli::parse_from(["test", "logs", "--today", "--limit", "10"]);
         match cli.mcp {
-            MCPCommands::Logs { today, tool, status, credential, limit } => {
+            MCPCommands::Logs {
+                today,
+                tool,
+                status,
+                credential,
+                limit,
+            } => {
                 assert!(today);
                 assert_eq!(limit, 10);
                 assert!(tool.is_none());

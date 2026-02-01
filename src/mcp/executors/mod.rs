@@ -6,9 +6,9 @@
 //! - Git executor for version control operations (using gix pure Rust implementation)
 
 pub mod api;
-pub mod git;  // Git executor using gix (pure Rust)
-pub mod ssh;  // SSH tool definitions (input/output structs)
-pub mod ssh_executor;  // SSH executor implementation
+pub mod git; // Git executor using gix (pure Rust)
+pub mod ssh; // SSH tool definitions (input/output structs)
+pub mod ssh_executor; // SSH executor implementation
 
 use crate::error::KeyringError;
 use crate::mcp::audit::AuditLogger;
@@ -19,8 +19,8 @@ use std::time::Duration;
 // Re-export API executor types
 pub use api::{ApiError, ApiExecutor, ApiResponse};
 pub use git::{GitCloneOutput, GitError, GitExecutor, GitPullOutput, GitPushOutput};
-pub use ssh::*;  // Re-export SSH tool definitions
-pub use ssh_executor::{SshError, SshExecOutput as SshExecutorOutput, SshExecutor};  // Re-export SSH executor
+pub use ssh::*; // Re-export SSH tool definitions
+pub use ssh_executor::{SshError, SshExecOutput as SshExecutorOutput, SshExecutor}; // Re-export SSH executor
 
 #[derive(Debug)]
 pub struct ExecutionResult {

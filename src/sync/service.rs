@@ -244,9 +244,9 @@ impl SyncService {
 
         // Load all remote records from directory
         let mut remote_records = Vec::new();
-        for entry in fs::read_dir(sync_dir).map_err(|e| {
-            KeyringError::IoError(format!("Failed to read sync directory: {}", e))
-        })? {
+        for entry in fs::read_dir(sync_dir)
+            .map_err(|e| KeyringError::IoError(format!("Failed to read sync directory: {}", e)))?
+        {
             let entry = entry.map_err(|e| {
                 KeyringError::IoError(format!("Failed to read directory entry: {}", e))
             })?;
@@ -262,9 +262,8 @@ impl SyncService {
                 continue;
             }
 
-            let json = fs::read_to_string(&path).map_err(|e| {
-                KeyringError::IoError(format!("Failed to read sync file: {}", e))
-            })?;
+            let json = fs::read_to_string(&path)
+                .map_err(|e| KeyringError::IoError(format!("Failed to read sync file: {}", e)))?;
 
             if let Ok(sync_record) = self.importer.import_from_json(&json) {
                 remote_records.push(sync_record);

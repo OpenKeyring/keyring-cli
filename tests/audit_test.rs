@@ -1,6 +1,8 @@
 //! Integration tests for Audit Logging module
 
-use keyring_cli::mcp::audit::{AsyncAuditEntry as AuditEntry, AsyncAuditLogger as AuditLogger, AuditQuery};
+use keyring_cli::mcp::audit::{
+    AsyncAuditEntry as AuditEntry, AsyncAuditLogger as AuditLogger, AuditQuery,
+};
 use tempfile::TempDir;
 
 fn create_test_entry(tool: &str, status: &str) -> AuditEntry {
@@ -53,9 +55,18 @@ async fn test_audit_query_all() {
     let logger = AuditLogger::with_path(log_path).unwrap();
 
     // Log multiple entries
-    logger.log(&create_test_entry("ssh", "success")).await.unwrap();
-    logger.log(&create_test_entry("git", "success")).await.unwrap();
-    logger.log(&create_test_entry("api", "failed")).await.unwrap();
+    logger
+        .log(&create_test_entry("ssh", "success"))
+        .await
+        .unwrap();
+    logger
+        .log(&create_test_entry("git", "success"))
+        .await
+        .unwrap();
+    logger
+        .log(&create_test_entry("api", "failed"))
+        .await
+        .unwrap();
 
     // Query all entries
     let results = logger
@@ -77,9 +88,18 @@ async fn test_audit_query_by_tool() {
     let logger = AuditLogger::with_path(log_path).unwrap();
 
     // Log entries with different tools
-    logger.log(&create_test_entry("ssh", "success")).await.unwrap();
-    logger.log(&create_test_entry("git", "success")).await.unwrap();
-    logger.log(&create_test_entry("ssh", "failed")).await.unwrap();
+    logger
+        .log(&create_test_entry("ssh", "success"))
+        .await
+        .unwrap();
+    logger
+        .log(&create_test_entry("git", "success"))
+        .await
+        .unwrap();
+    logger
+        .log(&create_test_entry("ssh", "failed"))
+        .await
+        .unwrap();
 
     // Query SSH entries only
     let results = logger
@@ -101,9 +121,18 @@ async fn test_audit_query_by_status() {
     let logger = AuditLogger::with_path(log_path).unwrap();
 
     // Log entries with different statuses
-    logger.log(&create_test_entry("ssh", "success")).await.unwrap();
-    logger.log(&create_test_entry("git", "failed")).await.unwrap();
-    logger.log(&create_test_entry("api", "failed")).await.unwrap();
+    logger
+        .log(&create_test_entry("ssh", "success"))
+        .await
+        .unwrap();
+    logger
+        .log(&create_test_entry("git", "failed"))
+        .await
+        .unwrap();
+    logger
+        .log(&create_test_entry("api", "failed"))
+        .await
+        .unwrap();
 
     // Query failed entries only
     let results = logger
@@ -176,7 +205,10 @@ async fn test_audit_query_limit() {
 
     // Log 10 entries
     for _ in 0..10 {
-        logger.log(&create_test_entry("ssh", "success")).await.unwrap();
+        logger
+            .log(&create_test_entry("ssh", "success"))
+            .await
+            .unwrap();
     }
 
     // Query with limit of 5
@@ -198,10 +230,22 @@ async fn test_audit_query_combined_filters() {
     let logger = AuditLogger::with_path(log_path).unwrap();
 
     // Log various entries
-    logger.log(&create_test_entry("ssh", "success")).await.unwrap();
-    logger.log(&create_test_entry("ssh", "failed")).await.unwrap();
-    logger.log(&create_test_entry("git", "success")).await.unwrap();
-    logger.log(&create_test_entry("git", "failed")).await.unwrap();
+    logger
+        .log(&create_test_entry("ssh", "success"))
+        .await
+        .unwrap();
+    logger
+        .log(&create_test_entry("ssh", "failed"))
+        .await
+        .unwrap();
+    logger
+        .log(&create_test_entry("git", "success"))
+        .await
+        .unwrap();
+    logger
+        .log(&create_test_entry("git", "failed"))
+        .await
+        .unwrap();
 
     // Query: ssh AND success
     let results = logger
@@ -256,10 +300,7 @@ async fn test_audit_log_rotation() {
         }
     }
 
-    assert!(
-        found_archive,
-        "Old log should be renamed to archive format"
-    );
+    assert!(found_archive, "Old log should be renamed to archive format");
     assert!(found_current_log, "New log file should be created");
 }
 
@@ -384,10 +425,7 @@ async fn test_audit_authorization_methods() {
         .expect("Failed to query entries");
 
     assert_eq!(results.len(), 3);
-    let auth_methods: Vec<&str> = results
-        .iter()
-        .map(|e| e.authorization.as_str())
-        .collect();
+    let auth_methods: Vec<&str> = results.iter().map(|e| e.authorization.as_str()).collect();
     assert!(auth_methods.contains(&"auto"));
     assert!(auth_methods.contains(&"session"));
     assert!(auth_methods.contains(&"always_confirm"));

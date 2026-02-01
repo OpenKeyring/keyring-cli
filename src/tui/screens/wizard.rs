@@ -224,7 +224,11 @@ impl WizardState {
             && self.passkey_choice.is_some()
             && self.passkey_words.is_some()
             && self.master_password.is_some()
-            && self.master_password.as_ref().map(|p| p.len() >= 8).unwrap_or(false)
+            && self
+                .master_password
+                .as_ref()
+                .map(|p| p.len() >= 8)
+                .unwrap_or(false)
     }
 
     /// Get the passkey choice, panic if not set
@@ -239,7 +243,9 @@ impl WizardState {
 
     /// Get the master password, panic if not set
     pub fn require_master_password(&self) -> &str {
-        self.master_password.as_ref().expect("Master password not set")
+        self.master_password
+            .as_ref()
+            .expect("Master password not set")
     }
 
     /// Get the keystore path, panic if not set

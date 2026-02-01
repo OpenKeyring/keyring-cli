@@ -140,11 +140,15 @@ impl TagConfigWidget {
         let title = Line::from(vec![
             Span::styled(
                 "编辑凭证标签: ",
-                Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 &self.credential_name,
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
             ),
         ]);
 
@@ -269,12 +273,12 @@ impl TagConfigWidget {
     /// Draw the advanced options section
     fn draw_advanced(&self, f: &mut Frame, area: Rect) {
         let mut lines = vec![
-            Line::from(vec![
-                Span::styled(
-                    "自定义标签 (Custom Tags)",
-                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-                ),
-            ]),
+            Line::from(vec![Span::styled(
+                "自定义标签 (Custom Tags)",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )]),
             Line::from(""),
             Line::from(vec![
                 Span::raw("格式: "),
@@ -287,31 +291,27 @@ impl TagConfigWidget {
         ];
 
         if self.config.custom.is_empty() {
-            lines.push(Line::from(vec![
-                Span::styled("暂无自定义标签", Style::default().fg(Color::DarkGray)),
-            ]));
+            lines.push(Line::from(vec![Span::styled(
+                "暂无自定义标签",
+                Style::default().fg(Color::DarkGray),
+            )]));
             lines.push(Line::from(""));
-            lines.push(Line::from(vec![
-                Span::styled(
-                    "[A] 添加自定义标签",
-                    Style::default().fg(Color::Green),
-                ),
-            ]));
+            lines.push(Line::from(vec![Span::styled(
+                "[A] 添加自定义标签",
+                Style::default().fg(Color::Green),
+            )]));
         } else {
-            lines.push(Line::from(vec![
-                Span::styled("已添加的标签:", Style::default().fg(Color::White)),
-            ]));
+            lines.push(Line::from(vec![Span::styled(
+                "已添加的标签:",
+                Style::default().fg(Color::White),
+            )]));
             lines.push(Line::from(""));
 
             for (i, tag) in self.config.custom.iter().enumerate() {
                 let selected = self.selected_custom == Some(i);
                 let focused = self.focus == TagFocus::Advanced;
 
-                let prefix = if selected {
-                    "►"
-                } else {
-                    " "
-                };
+                let prefix = if selected { "►" } else { " " };
 
                 let style = if selected && focused {
                     Style::default()
@@ -365,34 +365,32 @@ impl TagConfigWidget {
             Style::default().fg(Color::White)
         };
 
-        let text = vec![
-            Line::from(vec![
-                Span::raw(" ["),
-                Span::styled(
-                    "S",
-                    Style::default()
-                        .fg(Color::Green)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::raw("]ave & Preview  "),
-                Span::raw("["),
-                Span::styled(
-                    "A",
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::raw("]dvanced  "),
-                Span::raw("["),
-                Span::styled(
-                    "Esc",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                ),
-                Span::raw("] Cancel"),
-            ]),
-        ];
+        let text = vec![Line::from(vec![
+            Span::raw(" ["),
+            Span::styled(
+                "S",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw("]ave & Preview  "),
+            Span::raw("["),
+            Span::styled(
+                "A",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw("]dvanced  "),
+            Span::raw("["),
+            Span::styled(
+                "Esc",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw("] Cancel"),
+        ])];
 
         let paragraph = Paragraph::new(text)
             .block(
@@ -757,7 +755,10 @@ mod tests {
 
         widget.remove_selected_custom_tag();
         assert_eq!(widget.config.custom.len(), 2);
-        assert_eq!(widget.config.custom, vec!["tag1".to_string(), "tag3".to_string()]);
+        assert_eq!(
+            widget.config.custom,
+            vec!["tag1".to_string(), "tag3".to_string()]
+        );
         assert_eq!(widget.selected_custom, Some(1)); // Still at index 1
 
         widget.remove_selected_custom_tag();

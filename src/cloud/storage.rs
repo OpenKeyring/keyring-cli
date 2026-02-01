@@ -2,10 +2,10 @@
 //!
 //! Provides high-level storage operations for cloud synchronization using OpenDAL.
 
-use anyhow::Result;
 use crate::cloud::config::CloudConfig;
 use crate::cloud::metadata::CloudMetadata;
 use crate::cloud::provider::create_operator;
+use anyhow::Result;
 use opendal::Operator;
 
 /// Cloud storage client for synchronization operations
@@ -46,7 +46,9 @@ impl CloudStorage {
     /// * `metadata` - Cloud metadata to upload
     pub async fn upload_metadata(&self, metadata: &CloudMetadata) -> Result<()> {
         let json = serde_json::to_string_pretty(metadata)?;
-        self.operator.write(&self.metadata_path, json.into_bytes()).await?;
+        self.operator
+            .write(&self.metadata_path, json.into_bytes())
+            .await?;
         Ok(())
     }
 
@@ -106,11 +108,7 @@ impl CloudStorage {
     ///
     /// Returns the deserialized record data or an error if the file
     /// doesn't exist or is invalid
-    pub async fn download_record(
-        &self,
-        id: &str,
-        device_id: &str,
-    ) -> Result<serde_json::Value> {
+    pub async fn download_record(&self, id: &str, device_id: &str) -> Result<serde_json::Value> {
         let filename = format!("{}-{}.json", id, device_id);
         let buffer = self.operator.read(&filename).await?;
         let json = String::from_utf8(buffer.to_vec())?;

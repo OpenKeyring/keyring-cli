@@ -263,7 +263,9 @@ impl ApiExecutor {
         headers: Option<&HashMap<String, String>>,
     ) -> Result<ApiResponse, ApiError> {
         let method = method.to_uppercase();
-        let mut request = self.client.request(method.parse().unwrap_or(reqwest::Method::GET), url);
+        let mut request = self
+            .client
+            .request(method.parse().unwrap_or(reqwest::Method::GET), url);
 
         if let Some(body) = body {
             request = request.json(body);
@@ -348,7 +350,8 @@ impl ApiExecutor {
 
         let mut body_bytes = Vec::new();
         while let Some(chunk_result) = limiter.next_chunk().await {
-            let chunk = chunk_result.map_err(|e: reqwest::Error| ApiError::RequestFailed(e.to_string()))?;
+            let chunk =
+                chunk_result.map_err(|e: reqwest::Error| ApiError::RequestFailed(e.to_string()))?;
             body_bytes.extend_from_slice(&chunk);
         }
 

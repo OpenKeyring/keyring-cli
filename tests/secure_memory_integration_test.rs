@@ -113,5 +113,8 @@ fn test_secure_buffer_executor_pattern() {
 
     // Simulate passing to external function (into_inner)
     let key_bytes = secure_key.into_inner();
-    assert_eq!(String::from_utf8_lossy(&key_bytes), "private-key-data-12345");
+    assert_eq!(
+        String::from_utf8_lossy(&key_bytes),
+        "private-key-data-12345"
+    );
 }

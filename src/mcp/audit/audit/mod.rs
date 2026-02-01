@@ -101,7 +101,10 @@ impl AuditLogger {
         // Read signing key from key cache (passed during MCP init)
         let signing_key = b"audit_signing_key_placeholder_32_bytes!".to_vec();
 
-        Ok(Self { log_path, signing_key })
+        Ok(Self {
+            log_path,
+            signing_key,
+        })
     }
 
     /// Create audit logger with custom path (for testing)
@@ -112,7 +115,10 @@ impl AuditLogger {
 
         let signing_key = b"audit_signing_key_placeholder_32_bytes!".to_vec();
 
-        Ok(Self { log_path, signing_key })
+        Ok(Self {
+            log_path,
+            signing_key,
+        })
     }
 
     /// Log an audit entry
@@ -141,7 +147,9 @@ impl AuditLogger {
 
     /// Query audit logs with filters
     pub async fn query(&self, query: AuditQuery) -> Result<Vec<AuditEntry>, AuditError> {
-        let content = tokio::fs::read_to_string(&self.log_path).await.unwrap_or_default();
+        let content = tokio::fs::read_to_string(&self.log_path)
+            .await
+            .unwrap_or_default();
 
         let mut entries: Vec<AuditEntry> = content
             .lines()

@@ -41,9 +41,15 @@ fn test_navigation_section_content() {
 
     // Check for arrow keys
     let has_arrows = nav.shortcuts.iter().any(|s| {
-        s.keys.contains("↑") || s.keys.contains("↓") || s.keys.contains("Up") || s.keys.contains("Down")
+        s.keys.contains("↑")
+            || s.keys.contains("↓")
+            || s.keys.contains("Up")
+            || s.keys.contains("Down")
     });
-    assert!(has_arrows, "Navigation section should have arrow key shortcuts");
+    assert!(
+        has_arrows,
+        "Navigation section should have arrow key shortcuts"
+    );
 }
 
 #[test]
@@ -143,8 +149,14 @@ fn test_shortcut_format() {
     // All shortcuts should have non-empty keys and actions
     for section in &sections {
         for shortcut in &section.shortcuts {
-            assert!(!shortcut.keys.is_empty(), "Shortcut keys should not be empty");
-            assert!(!shortcut.action.is_empty(), "Shortcut action should not be empty");
+            assert!(
+                !shortcut.keys.is_empty(),
+                "Shortcut keys should not be empty"
+            );
+            assert!(
+                !shortcut.action.is_empty(),
+                "Shortcut action should not be empty"
+            );
         }
     }
 }
@@ -156,6 +168,10 @@ fn test_all_sections_have_content() {
 
     // Every section should have at least one shortcut
     for section in &sections {
-        assert!(!section.shortcuts.is_empty(), "Section '{}' should have shortcuts", section.title);
+        assert!(
+            !section.shortcuts.is_empty(),
+            "Section '{}' should have shortcuts",
+            section.title
+        );
     }
 }

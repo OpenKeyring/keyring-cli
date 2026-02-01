@@ -5,13 +5,13 @@
 
 use crate::error::Error;
 use crate::mcp::audit::AuditLogger;
-use crate::mcp::policy::{SessionCache, UsedTokenCache};
 use crate::mcp::config::McpConfig;
 use crate::mcp::key_cache::McpKeyCache;
+use crate::mcp::policy::{SessionCache, UsedTokenCache};
 // use crate::mcp::handlers::handle_ssh_exec; // TODO: Re-enable when handler is ready
 use crate::mcp::tools::ssh::*;
 use rmcp::{
-    model::{ServerInfo, ServerCapabilities},
+    model::{ServerCapabilities, ServerInfo},
     ServerHandler, ServiceExt,
 };
 use std::sync::Arc;
@@ -107,11 +107,7 @@ impl McpServer {
     /// # Returns
     ///
     /// A new McpServer instance with a unique session ID
-    pub fn new(
-        db: Arc<Database>,
-        key_cache: Arc<McpKeyCache>,
-        config: McpConfig,
-    ) -> Self {
+    pub fn new(db: Arc<Database>, key_cache: Arc<McpKeyCache>, config: McpConfig) -> Self {
         let session_id = uuid::Uuid::new_v4().to_string();
 
         let session_cache = Arc::new(SessionCache::new(
@@ -174,7 +170,7 @@ impl McpServer {
 ///
 /// This struct contains all the state and implements the tool methods.
 #[derive(Clone)]
-#[allow(dead_code)]  // Fields reserved for full MCP implementation
+#[allow(dead_code)] // Fields reserved for full MCP implementation
 pub struct OpenKeyringHandler {
     db: Arc<Database>,
     key_cache: Arc<McpKeyCache>,
@@ -200,12 +196,15 @@ impl OpenKeyringHandler {
     }
 
     /// Execute SSH command on remote host
-    #[allow(dead_code)]  // Reserved for full MCP implementation
+    #[allow(dead_code)] // Reserved for full MCP implementation
     async fn ssh_exec_impl(&self, input: SshExecInput) -> String {
         // Log the tool execution
         let _ = self.audit_logger.log_event(
             "ssh_exec_called",
-            &format!("credential={}, command={}", input.credential_name, input.command),
+            &format!(
+                "credential={}, command={}",
+                input.credential_name, input.command
+            ),
         );
 
         // Call the SSH handler
@@ -217,9 +216,8 @@ impl OpenKeyringHandler {
             duration_ms: 0,
         };
         match serde_json::to_string(&output) {
-            Ok(output) => {
-                serde_json::to_string(&output).unwrap_or_else(|_| r#"{"error":"Failed to serialize output"}"#.to_string())
-            }
+            Ok(output) => serde_json::to_string(&output)
+                .unwrap_or_else(|_| r#"{"error":"Failed to serialize output"}"#.to_string()),
             Err(e) => {
                 let error_msg = format!("SSH execution failed: {}", e);
                 let _ = self.audit_logger.log_event("ssh_exec_failed", &error_msg);
@@ -229,7 +227,7 @@ impl OpenKeyringHandler {
     }
 
     /// List SSH hosts
-    #[allow(dead_code)]  // Reserved for full MCP implementation
+    #[allow(dead_code)] // Reserved for full MCP implementation
     async fn ssh_list_hosts_impl(&self, _input: SshListHostsInput) -> String {
         // Log the tool execution
         let _ = self.audit_logger.log_event("ssh_list_hosts_called", "");
@@ -238,11 +236,12 @@ impl OpenKeyringHandler {
         let hosts: Vec<SshHostInfo> = vec![]; // TODO: Implement actual host listing
 
         let output = SshListHostsOutput { hosts };
-        serde_json::to_string(&output).unwrap_or_else(|_| r#"{"error":"Failed to serialize output"}"#.to_string())
+        serde_json::to_string(&output)
+            .unwrap_or_else(|_| r#"{"error":"Failed to serialize output"}"#.to_string())
     }
 
     /// Check SSH connection
-    #[allow(dead_code)]  // Reserved for full MCP implementation
+    #[allow(dead_code)] // Reserved for full MCP implementation
     async fn ssh_check_connection_impl(&self, input: SshCheckConnectionInput) -> String {
         // Log the tool execution
         let _ = self.audit_logger.log_event(
@@ -257,7 +256,8 @@ impl OpenKeyringHandler {
             error: Some("Not implemented yet".to_string()),
         };
 
-        serde_json::to_string(&output).unwrap_or_else(|_| r#"{"error":"Failed to serialize output"}"#.to_string())
+        serde_json::to_string(&output)
+            .unwrap_or_else(|_| r#"{"error":"Failed to serialize output"}"#.to_string())
     }
 }
 
@@ -268,9 +268,7 @@ impl ServerHandler for OpenKeyringHandler {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             protocol_version: rmcp::model::ProtocolVersion::V_2024_11_05,
-            capabilities: ServerCapabilities::builder()
-                .enable_tools()
-                .build(),
+            capabilities: ServerCapabilities::builder().enable_tools().build(),
             ..Default::default()
         }
     }

@@ -2,15 +2,15 @@
 //!
 //! Core TUI application handling alternate screen mode, rendering, and event loop.
 
+use crate::db::vault::Vault;
 use crate::error::{KeyringError, Result};
-use crate::onboarding::{is_initialized, initialize_keystore};
+use crate::onboarding::{initialize_keystore, is_initialized};
 use crate::tui::keybindings::{Action, KeyBindingManager};
 use crate::tui::screens::wizard::{WizardState, WizardStep};
 use crate::tui::screens::{
-    MasterPasswordScreen, PasskeyConfirmScreen, PasskeyGenerateScreen,
-    PasskeyImportScreen, SyncScreen, WelcomeScreen,
+    MasterPasswordScreen, PasskeyConfirmScreen, PasskeyGenerateScreen, PasskeyImportScreen,
+    SyncScreen, WelcomeScreen,
 };
-use crate::db::vault::Vault;
 use chrono::{DateTime, Utc};
 use ratatui::{
     backend::CrosstermBackend,
@@ -222,7 +222,8 @@ impl TuiApp {
     /// Return to the main screen
     pub fn return_to_main(&mut self) {
         self.current_screen = Screen::Main;
-        self.output_lines.push("Returned to main screen".to_string());
+        self.output_lines
+            .push("Returned to main screen".to_string());
     }
 
     // ========== Wizard Methods ==========
@@ -231,7 +232,8 @@ impl TuiApp {
     pub async fn check_onboarding(&mut self, keystore_path: &std::path::Path) -> Result<bool> {
         if !is_initialized(keystore_path) {
             // Show wizard
-            self.wizard_state = Some(WizardState::new().with_keystore_path(keystore_path.to_path_buf()));
+            self.wizard_state =
+                Some(WizardState::new().with_keystore_path(keystore_path.to_path_buf()));
             self.current_screen = Screen::Wizard;
             Ok(true)
         } else {
@@ -243,15 +245,21 @@ impl TuiApp {
     pub async fn complete_wizard(&mut self) -> Result<()> {
         if let Some(state) = &self.wizard_state {
             if !state.is_complete() {
-                return Err(KeyringError::InvalidInput { context: "Wizard not complete".to_string() }.into());
+                return Err(KeyringError::InvalidInput {
+                    context: "Wizard not complete".to_string(),
+                }
+                .into());
             }
 
             let keystore_path = state.require_keystore_path();
             let password = state.require_master_password();
 
             // Initialize keystore
-            let _keystore = initialize_keystore(keystore_path, password)
-                .map_err(|e| KeyringError::Internal { context: e.to_string() })?;
+            let _keystore = initialize_keystore(keystore_path, password).map_err(|e| {
+                KeyringError::Internal {
+                    context: e.to_string(),
+                }
+            })?;
 
             // TODO: Store Passkey seed wrapped with master password
 
@@ -263,7 +271,10 @@ impl TuiApp {
             self.output_lines.push("✓ 初始化完成".to_string());
             Ok(())
         } else {
-            Err(KeyringError::InvalidInput { context: "No wizard state".to_string() }.into())
+            Err(KeyringError::InvalidInput {
+                context: "No wizard state".to_string(),
+            }
+            .into())
         }
     }
 
@@ -302,7 +313,8 @@ impl TuiApp {
                     // Check if wizard complete
                     if state.is_complete() {
                         // Note: complete_wizard needs to be called separately in async context
-                        self.output_lines.push("Wizard complete! Type /wizard-complete to finish.".to_string());
+                        self.output_lines
+                            .push("Wizard complete! Type /wizard-complete to finish.".to_string());
                     }
                 }
             }
@@ -460,7 +472,8 @@ impl TuiApp {
 
                 // Try to trigger sync
                 // Note: Full sync implementation pending cloud integration
-                self.output_lines.push("Note: Full sync implementation pending Phase 4".to_string());
+                self.output_lines
+                    .push("Note: Full sync implementation pending Phase 4".to_string());
             }
             Action::ShowHelp => {
                 self.show_help();
@@ -620,9 +633,20 @@ impl TuiApp {
         // Check if input starts with "/" (command)
         if self.input_buffer.starts_with('/') {
             let commands = [
-                "/new", "/list", "/search", "/show", "/update", "/delete",
-                "/config", "/help", "/quit", "/exit", "/clear",
-                "/sync", "/generate", "/recover",
+                "/new",
+                "/list",
+                "/search",
+                "/show",
+                "/update",
+                "/delete",
+                "/config",
+                "/help",
+                "/quit",
+                "/exit",
+                "/clear",
+                "/sync",
+                "/generate",
+                "/recover",
             ];
 
             // Find the current word/prefix to complete
@@ -661,7 +685,8 @@ impl TuiApp {
                 }
                 _ => {
                     // Multiple matches - show them to user
-                    self.output_lines.push(format!("Matching commands: {}", matches.join(", ")));
+                    self.output_lines
+                        .push(format!("Matching commands: {}", matches.join(", ")));
                     // Use first match for now
                     self.input_buffer = format!("{} ", matches[0]);
                 }

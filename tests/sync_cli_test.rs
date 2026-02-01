@@ -5,8 +5,8 @@
 #![cfg(feature = "test-env")]
 
 use clap::Parser;
-use serial_test::serial;
 use keyring_cli::cli::commands::sync::SyncCommand;
+use serial_test::serial;
 use tempfile::TempDir;
 
 /// Helper to set up test environment and clean up afterwards
@@ -30,7 +30,9 @@ impl TestEnv {
         std::fs::create_dir_all(&config_dir).unwrap();
         std::fs::create_dir_all(&data_dir).unwrap();
 
-        Self { _temp_dir: temp_dir }
+        Self {
+            _temp_dir: temp_dir,
+        }
     }
 }
 

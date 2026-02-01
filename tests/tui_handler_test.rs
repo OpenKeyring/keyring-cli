@@ -2,8 +2,8 @@
 //!
 //! These tests verify that keyboard events are correctly mapped to AppActions.
 
-use keyring_cli::tui::handler::{TuiEventHandler, AppAction};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use keyring_cli::tui::handler::{AppAction, TuiEventHandler};
 
 #[test]
 fn test_f2_opens_settings() {

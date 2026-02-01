@@ -1,8 +1,11 @@
 // tests/cloud_storage_test.rs
-use keyring_cli::cloud::{CloudStorage, config::{CloudConfig, CloudProvider}};
-use keyring_cli::cloud::metadata::CloudMetadata;
-use tempfile::TempDir;
 use base64::prelude::*;
+use keyring_cli::cloud::metadata::CloudMetadata;
+use keyring_cli::cloud::{
+    config::{CloudConfig, CloudProvider},
+    CloudStorage,
+};
+use tempfile::TempDir;
 
 #[tokio::test]
 async fn test_upload_download_metadata() {
@@ -39,12 +42,18 @@ async fn test_upload_download_record() {
         "encrypted_payload": BASE64_STANDARD.encode(b"test-data"),
     });
 
-    storage.upload_record("test-id", "device-1", &record).await.unwrap();
+    storage
+        .upload_record("test-id", "device-1", &record)
+        .await
+        .unwrap();
 
     let files = storage.list_records().await.unwrap();
     assert!(files.iter().any(|f| f.contains("test-id")));
 
-    let downloaded = storage.download_record("test-id", "device-1").await.unwrap();
+    let downloaded = storage
+        .download_record("test-id", "device-1")
+        .await
+        .unwrap();
     assert_eq!(downloaded["id"], "test-id");
 }
 
@@ -60,7 +69,10 @@ async fn test_delete_record() {
     let storage = CloudStorage::new(&config).unwrap();
     let record = serde_json::json!({"id": "test-id"});
 
-    storage.upload_record("test-id", "device-1", &record).await.unwrap();
+    storage
+        .upload_record("test-id", "device-1", &record)
+        .await
+        .unwrap();
     storage.delete_record("test-id", "device-1").await.unwrap();
 
     let files = storage.list_records().await.unwrap();

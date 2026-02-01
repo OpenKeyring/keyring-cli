@@ -81,18 +81,10 @@ impl ProviderConfigScreen {
     /// Creates a new provider configuration screen
     pub fn new(provider: CloudProvider) -> Self {
         let fields = match provider {
-            CloudProvider::ICloud => vec![
-                ConfigField::new("iCloud 路径 (Path)", false),
-            ],
-            CloudProvider::Dropbox => vec![
-                ConfigField::new("Access Token", true),
-            ],
-            CloudProvider::GDrive => vec![
-                ConfigField::new("Access Token", true),
-            ],
-            CloudProvider::OneDrive => vec![
-                ConfigField::new("Access Token", true),
-            ],
+            CloudProvider::ICloud => vec![ConfigField::new("iCloud 路径 (Path)", false)],
+            CloudProvider::Dropbox => vec![ConfigField::new("Access Token", true)],
+            CloudProvider::GDrive => vec![ConfigField::new("Access Token", true)],
+            CloudProvider::OneDrive => vec![ConfigField::new("Access Token", true)],
             CloudProvider::WebDAV => vec![
                 ConfigField::new("WebDAV URL", false),
                 ConfigField::new("用户名", false),
@@ -105,9 +97,9 @@ impl ProviderConfigScreen {
                 ConfigField::new("密码", true),
                 ConfigField::new("根路径 (Root)", false),
             ],
-            CloudProvider::AliyunDrive => vec![
-                ConfigField::new("Access Token / Refresh Token", true),
-            ],
+            CloudProvider::AliyunDrive => {
+                vec![ConfigField::new("Access Token / Refresh Token", true)]
+            }
             CloudProvider::AliyunOSS => vec![
                 ConfigField::new("Endpoint", false),
                 ConfigField::new("Bucket", false),
@@ -219,69 +211,173 @@ impl ProviderConfigScreen {
             }
             crate::cloud::CloudProvider::Dropbox => {
                 if let Some(field) = self.fields.first() {
-                    config.dropbox_token = if field.value.is_empty() { None } else { Some(field.value.clone()) };
+                    config.dropbox_token = if field.value.is_empty() {
+                        None
+                    } else {
+                        Some(field.value.clone())
+                    };
                 }
             }
             crate::cloud::CloudProvider::GDrive => {
                 if let Some(field) = self.fields.first() {
-                    config.gdrive_token = if field.value.is_empty() { None } else { Some(field.value.clone()) };
+                    config.gdrive_token = if field.value.is_empty() {
+                        None
+                    } else {
+                        Some(field.value.clone())
+                    };
                 }
             }
             crate::cloud::CloudProvider::OneDrive => {
                 if let Some(field) = self.fields.first() {
-                    config.onedrive_token = if field.value.is_empty() { None } else { Some(field.value.clone()) };
+                    config.onedrive_token = if field.value.is_empty() {
+                        None
+                    } else {
+                        Some(field.value.clone())
+                    };
                 }
             }
             crate::cloud::CloudProvider::WebDAV => {
                 if self.fields.len() >= 3 {
-                    config.webdav_endpoint = if self.fields[0].value.is_empty() { None } else { Some(self.fields[0].value.clone()) };
-                    config.webdav_username = if self.fields[1].value.is_empty() { None } else { Some(self.fields[1].value.clone()) };
-                    config.webdav_password = if self.fields[2].value.is_empty() { None } else { Some(self.fields[2].value.clone()) };
+                    config.webdav_endpoint = if self.fields[0].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[0].value.clone())
+                    };
+                    config.webdav_username = if self.fields[1].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[1].value.clone())
+                    };
+                    config.webdav_password = if self.fields[2].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[2].value.clone())
+                    };
                 }
             }
             crate::cloud::CloudProvider::SFTP => {
                 if self.fields.len() >= 5 {
-                    config.sftp_host = if self.fields[0].value.is_empty() { None } else { Some(self.fields[0].value.clone()) };
+                    config.sftp_host = if self.fields[0].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[0].value.clone())
+                    };
                     config.sftp_port = self.fields[1].value.parse().ok();
-                    config.sftp_username = if self.fields[2].value.is_empty() { None } else { Some(self.fields[2].value.clone()) };
-                    config.sftp_password = if self.fields[3].value.is_empty() { None } else { Some(self.fields[3].value.clone()) };
-                    config.sftp_root = if self.fields[4].value.is_empty() { None } else { Some(self.fields[4].value.clone()) };
+                    config.sftp_username = if self.fields[2].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[2].value.clone())
+                    };
+                    config.sftp_password = if self.fields[3].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[3].value.clone())
+                    };
+                    config.sftp_root = if self.fields[4].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[4].value.clone())
+                    };
                 }
             }
             crate::cloud::CloudProvider::AliyunDrive => {
                 if let Some(field) = self.fields.first() {
-                    config.aliyun_drive_token = if field.value.is_empty() { None } else { Some(field.value.clone()) };
+                    config.aliyun_drive_token = if field.value.is_empty() {
+                        None
+                    } else {
+                        Some(field.value.clone())
+                    };
                 }
             }
             crate::cloud::CloudProvider::AliyunOSS => {
                 if self.fields.len() >= 4 {
-                    config.aliyun_oss_endpoint = if self.fields[0].value.is_empty() { None } else { Some(self.fields[0].value.clone()) };
-                    config.aliyun_oss_bucket = if self.fields[1].value.is_empty() { None } else { Some(self.fields[1].value.clone()) };
-                    config.aliyun_oss_access_key = if self.fields[2].value.is_empty() { None } else { Some(self.fields[2].value.clone()) };
-                    config.aliyun_oss_secret_key = if self.fields[3].value.is_empty() { None } else { Some(self.fields[3].value.clone()) };
+                    config.aliyun_oss_endpoint = if self.fields[0].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[0].value.clone())
+                    };
+                    config.aliyun_oss_bucket = if self.fields[1].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[1].value.clone())
+                    };
+                    config.aliyun_oss_access_key = if self.fields[2].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[2].value.clone())
+                    };
+                    config.aliyun_oss_secret_key = if self.fields[3].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[3].value.clone())
+                    };
                 }
             }
             crate::cloud::CloudProvider::TencentCOS => {
                 if self.fields.len() >= 4 {
-                    config.tencent_cos_secret_id = if self.fields[0].value.is_empty() { None } else { Some(self.fields[0].value.clone()) };
-                    config.tencent_cos_secret_key = if self.fields[1].value.is_empty() { None } else { Some(self.fields[1].value.clone()) };
-                    config.tencent_cos_region = if self.fields[2].value.is_empty() { None } else { Some(self.fields[2].value.clone()) };
-                    config.tencent_cos_bucket = if self.fields[3].value.is_empty() { None } else { Some(self.fields[3].value.clone()) };
+                    config.tencent_cos_secret_id = if self.fields[0].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[0].value.clone())
+                    };
+                    config.tencent_cos_secret_key = if self.fields[1].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[1].value.clone())
+                    };
+                    config.tencent_cos_region = if self.fields[2].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[2].value.clone())
+                    };
+                    config.tencent_cos_bucket = if self.fields[3].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[3].value.clone())
+                    };
                 }
             }
             crate::cloud::CloudProvider::HuaweiOBS => {
                 if self.fields.len() >= 4 {
-                    config.huawei_obs_endpoint = if self.fields[0].value.is_empty() { None } else { Some(self.fields[0].value.clone()) };
-                    config.huawei_obs_bucket = if self.fields[1].value.is_empty() { None } else { Some(self.fields[1].value.clone()) };
-                    config.huawei_obs_access_key = if self.fields[2].value.is_empty() { None } else { Some(self.fields[2].value.clone()) };
-                    config.huawei_obs_secret_key = if self.fields[3].value.is_empty() { None } else { Some(self.fields[3].value.clone()) };
+                    config.huawei_obs_endpoint = if self.fields[0].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[0].value.clone())
+                    };
+                    config.huawei_obs_bucket = if self.fields[1].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[1].value.clone())
+                    };
+                    config.huawei_obs_access_key = if self.fields[2].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[2].value.clone())
+                    };
+                    config.huawei_obs_secret_key = if self.fields[3].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[3].value.clone())
+                    };
                 }
             }
             crate::cloud::CloudProvider::UpYun => {
                 if self.fields.len() >= 3 {
-                    config.upyun_bucket = if self.fields[0].value.is_empty() { None } else { Some(self.fields[0].value.clone()) };
-                    config.upyun_operator = if self.fields[1].value.is_empty() { None } else { Some(self.fields[1].value.clone()) };
-                    config.upyun_password = if self.fields[2].value.is_empty() { None } else { Some(self.fields[2].value.clone()) };
+                    config.upyun_bucket = if self.fields[0].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[0].value.clone())
+                    };
+                    config.upyun_operator = if self.fields[1].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[1].value.clone())
+                    };
+                    config.upyun_password = if self.fields[2].value.is_empty() {
+                        None
+                    } else {
+                        Some(self.fields[2].value.clone())
+                    };
                 }
             }
         }
@@ -377,7 +473,14 @@ impl ProviderConfigScreen {
                         Style::default().fg(Color::Cyan),
                     ),
                     Span::styled(
-                        format!("[{}]", if display_value.is_empty() { " " } else { &display_value }),
+                        format!(
+                            "[{}]",
+                            if display_value.is_empty() {
+                                " "
+                            } else {
+                                &display_value
+                            }
+                        ),
                         Style::default()
                             .fg(Color::Yellow)
                             .add_modifier(Modifier::BOLD),
@@ -390,7 +493,14 @@ impl ProviderConfigScreen {
                         Style::default().fg(Color::Gray),
                     ),
                     Span::styled(
-                        format!("[{}]", if display_value.is_empty() { " " } else { &display_value }),
+                        format!(
+                            "[{}]",
+                            if display_value.is_empty() {
+                                " "
+                            } else {
+                                &display_value
+                            }
+                        ),
                         Style::default().fg(Color::White),
                     ),
                 ])
@@ -400,8 +510,11 @@ impl ProviderConfigScreen {
             form_lines.push(Line::from("")); // Empty line between fields
         }
 
-        let form = Paragraph::new(Text::from(form_lines))
-            .block(Block::default().borders(Borders::ALL).title("配置信息 / Configuration"));
+        let form = Paragraph::new(Text::from(form_lines)).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("配置信息 / Configuration"),
+        );
 
         frame.render_widget(form, chunks[1]);
 

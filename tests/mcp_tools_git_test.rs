@@ -1,6 +1,6 @@
 use keyring_cli::mcp::tools::git::{
-    GitCloneInput, GitCloneOutput, GitGetCurrentHeadInput, GitGetCurrentHeadOutput,
-    GitCredentialInfo, GitListCredentialsInput, GitListCredentialsOutput, GitPullInput,
+    GitCloneInput, GitCloneOutput, GitCredentialInfo, GitGetCurrentHeadInput,
+    GitGetCurrentHeadOutput, GitListCredentialsInput, GitListCredentialsOutput, GitPullInput,
     GitPullOutput, GitPushInput, GitPushOutput,
 };
 use serde_json::{from_value, to_value};
@@ -135,9 +135,7 @@ fn test_git_list_credentials_input_serialization() {
 
 #[test]
 fn test_git_list_credentials_input_empty() {
-    let input = GitListCredentialsInput {
-        filter_tags: None,
-    };
+    let input = GitListCredentialsInput { filter_tags: None };
 
     let json = to_value(&input).expect("Failed to serialize GitListCredentialsInput");
     assert!(json.get("filter_tags").is_none() || json["filter_tags"].is_null());
@@ -208,7 +206,11 @@ fn test_git_get_current_head_output_serialization() {
 fn test_git_clone_input_json_schema() {
     // Verify that JsonSchema is implemented for GitCloneInput
     let schema = schemars::schema_for!(GitCloneInput);
-    let obj = schema.schema.object.as_ref().expect("Schema should be an object");
+    let obj = schema
+        .schema
+        .object
+        .as_ref()
+        .expect("Schema should be an object");
     // Check that we have the expected properties
     assert!(obj.properties.contains_key("repo_url"));
     assert!(obj.properties.contains_key("destination"));
@@ -218,7 +220,11 @@ fn test_git_clone_input_json_schema() {
 #[test]
 fn test_git_push_input_json_schema() {
     let schema = schemars::schema_for!(GitPushInput);
-    let obj = schema.schema.object.as_ref().expect("Schema should be an object");
+    let obj = schema
+        .schema
+        .object
+        .as_ref()
+        .expect("Schema should be an object");
     // Check that we have the expected properties
     assert!(obj.properties.contains_key("credential_name"));
     assert!(obj.properties.contains_key("repo_url"));
@@ -237,8 +243,7 @@ fn test_round_trip_git_clone_input() {
     };
 
     let json = to_value(&original).expect("Failed to serialize");
-    let deserialized: GitCloneInput =
-        from_value(json).expect("Failed to deserialize");
+    let deserialized: GitCloneInput = from_value(json).expect("Failed to deserialize");
 
     assert_eq!(deserialized.repo_url, original.repo_url);
     assert_eq!(deserialized.destination, original.destination);
@@ -257,8 +262,7 @@ fn test_round_trip_git_push_input() {
     };
 
     let json = to_value(&original).expect("Failed to serialize");
-    let deserialized: GitPushInput =
-        from_value(json).expect("Failed to deserialize");
+    let deserialized: GitPushInput = from_value(json).expect("Failed to deserialize");
 
     assert_eq!(deserialized.credential_name, original.credential_name);
     assert_eq!(deserialized.repo_url, original.repo_url);

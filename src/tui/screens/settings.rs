@@ -145,11 +145,7 @@ impl SettingsScreen {
     }
 
     /// Creates a new settings screen with actual data
-    pub fn with_data(
-        device_count: usize,
-        sync_status: &str,
-        provider_name: &str,
-    ) -> Self {
+    pub fn with_data(device_count: usize, sync_status: &str, provider_name: &str) -> Self {
         let mut screen = Self::new();
         screen.device_count = device_count;
         screen.sync_status = sync_status.to_string();
@@ -165,8 +161,11 @@ impl SettingsScreen {
             if section.title == "Sync" {
                 for item in &mut section.items {
                     if item.label == "Devices" {
-                        item.value = format!("{} device{}", self.device_count,
-                            if self.device_count == 1 { "" } else { "s" });
+                        item.value = format!(
+                            "{} device{}",
+                            self.device_count,
+                            if self.device_count == 1 { "" } else { "s" }
+                        );
                     } else if item.label == "Status" {
                         item.value = self.sync_status.clone();
                     } else if item.label == "Provider" {
@@ -316,19 +315,18 @@ impl SettingsScreen {
 
         for (section_idx, section) in self.sections.iter().enumerate() {
             // Section header
-            settings_lines.push(Line::from(vec![
-                Span::styled(
-                    format!("{}:", section.title),
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD),
-                ),
-            ]));
+            settings_lines.push(Line::from(vec![Span::styled(
+                format!("{}:", section.title),
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )]));
             settings_lines.push(Line::from(""));
 
             // Section items
             for (item_idx, item) in section.items.iter().enumerate() {
-                let is_selected = section_idx == self.selected_section && item_idx == self.selected_item;
+                let is_selected =
+                    section_idx == self.selected_section && item_idx == self.selected_item;
 
                 let style = if is_selected {
                     Style::default()
@@ -348,16 +346,10 @@ impl SettingsScreen {
                 };
 
                 let line = if item.value.is_empty() {
-                    Line::from(vec![Span::styled(
-                        format!("  {}", item.label),
-                        style,
-                    )])
+                    Line::from(vec![Span::styled(format!("  {}", item.label), style)])
                 } else {
                     Line::from(vec![
-                        Span::styled(
-                            format!("  {}: ", item.label),
-                            style,
-                        ),
+                        Span::styled(format!("  {}: ", item.label), style),
                         Span::styled(item.value.clone(), value_style),
                     ])
                 };
@@ -369,8 +361,11 @@ impl SettingsScreen {
             settings_lines.push(Line::from(""));
         }
 
-        let settings = Paragraph::new(Text::from(settings_lines))
-            .block(Block::default().borders(Borders::ALL).title("设置项 / Settings"));
+        let settings = Paragraph::new(Text::from(settings_lines)).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("设置项 / Settings"),
+        );
 
         frame.render_widget(settings, chunks[1]);
 

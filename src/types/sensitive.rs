@@ -10,8 +10,8 @@
 //!
 //! See `docs/plans/2026-01-27-m1-security-and-tui-design.md` for details.
 
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use zeroize::Zeroize;
-use serde::{Deserialize, Serialize, Serializer, Deserializer};
 
 /// Wrapper for sensitive data that auto-zeroizes on drop
 ///

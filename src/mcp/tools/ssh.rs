@@ -255,7 +255,10 @@ mod tests {
         assert!(json.contains("approve"));
 
         let deserialized: SshExecInput = serde_json::from_str(&json).unwrap();
-        assert_eq!(deserialized.confirmation_id, Some("confirm-123".to_string()));
+        assert_eq!(
+            deserialized.confirmation_id,
+            Some("confirm-123".to_string())
+        );
         assert_eq!(deserialized.user_decision, Some("approve".to_string()));
     }
 

@@ -3,8 +3,8 @@
 //! Test suite for sync configuration file management with YAML serialization.
 
 use keyring_cli::config::SyncConfigFile;
-use tempfile::TempDir;
 use std::fs;
+use tempfile::TempDir;
 
 #[test]
 fn test_save_load_sync_config() {
@@ -24,7 +24,10 @@ fn test_save_load_sync_config() {
     let loaded = SyncConfigFile::load(&config_path).unwrap();
     assert_eq!(loaded.provider, "icloud");
     assert_eq!(loaded.sync_enabled, true);
-    assert_eq!(loaded.icloud_path, Some("~/iCloud/open-keyring".to_string()));
+    assert_eq!(
+        loaded.icloud_path,
+        Some("~/iCloud/open-keyring".to_string())
+    );
     assert_eq!(loaded.debounce_delay, 5);
 }
 
@@ -67,7 +70,10 @@ fn test_save_full_config() {
     let loaded = SyncConfigFile::load(&config_path).unwrap();
     assert_eq!(loaded.sync_enabled, true);
     assert_eq!(loaded.provider, "dropbox");
-    assert_eq!(loaded.icloud_path, Some("~/iCloud/open-keyring".to_string()));
+    assert_eq!(
+        loaded.icloud_path,
+        Some("~/iCloud/open-keyring".to_string())
+    );
     assert_eq!(loaded.debounce_delay, 10);
     assert_eq!(loaded.auto_sync, true);
 }

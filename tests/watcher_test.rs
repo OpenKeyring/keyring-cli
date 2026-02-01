@@ -1,10 +1,10 @@
 use keyring_cli::sync::watcher::{SyncEvent, SyncWatcher};
 use serial_test::serial;
-use tempfile::TempDir;
 use std::fs::File;
 use std::io::Write;
-use std::time::Duration;
 use std::path::PathBuf;
+use std::time::Duration;
+use tempfile::TempDir;
 
 #[tokio::test]
 #[serial]
@@ -45,8 +45,7 @@ async fn test_watch_file_changes() {
     file.sync_all().unwrap();
 
     // Wait for events with longer timeout
-    let result = tokio::time::timeout(Duration::from_secs(10), handle)
-        .await;
+    let result = tokio::time::timeout(Duration::from_secs(10), handle).await;
 
     match result {
         Ok(Ok(count)) => assert!(count >= 2, "Expected at least 2 events, got {}", count),

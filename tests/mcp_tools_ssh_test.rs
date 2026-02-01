@@ -36,7 +36,10 @@ fn test_ssh_exec_input_full_serialization() {
     assert_eq!(deserialized.credential_name, "production-db");
     assert_eq!(deserialized.command, "ps aux | grep postgres");
     assert_eq!(deserialized.timeout, 60);
-    assert_eq!(deserialized.confirmation_id, Some("conf-abc-123".to_string()));
+    assert_eq!(
+        deserialized.confirmation_id,
+        Some("conf-abc-123".to_string())
+    );
     assert_eq!(deserialized.user_decision, Some("approve".to_string()));
 }
 
@@ -153,7 +156,11 @@ fn test_ssh_host_info_complete() {
         host: "redis.example.com".to_string(),
         username: "redis".to_string(),
         port: Some(6379),
-        tags: vec!["production".to_string(), "cache".to_string(), "critical".to_string()],
+        tags: vec![
+            "production".to_string(),
+            "cache".to_string(),
+            "critical".to_string(),
+        ],
     };
 
     let json = serde_json::to_string(&host).unwrap();
@@ -227,7 +234,10 @@ fn test_ssh_upload_file_with_approval() {
     let deserialized: SshUploadFileInput = serde_json::from_str(&json).unwrap();
     assert_eq!(deserialized.credential_name, "deploy-server");
     assert_eq!(deserialized.local_path, "./build/app.jar");
-    assert_eq!(deserialized.confirmation_id, Some("upload-confirm-456".to_string()));
+    assert_eq!(
+        deserialized.confirmation_id,
+        Some("upload-confirm-456".to_string())
+    );
 }
 
 #[test]
@@ -335,10 +345,7 @@ fn test_ssh_check_connection_failure() {
 
     assert_eq!(deserialized.connected, false);
     assert_eq!(deserialized.latency_ms, 0);
-    assert_eq!(
-        deserialized.error,
-        Some("Connection timed out".to_string())
-    );
+    assert_eq!(deserialized.error, Some("Connection timed out".to_string()));
 }
 
 #[test]

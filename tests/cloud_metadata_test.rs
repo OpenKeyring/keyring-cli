@@ -1,8 +1,8 @@
 // tests/cloud/metadata_test.rs
-use keyring_cli::cloud::metadata::{CloudMetadata, DeviceInfo, RecordMetadata};
-use chrono::Utc;
-use std::collections::HashMap;
 use base64::prelude::*;
+use chrono::Utc;
+use keyring_cli::cloud::metadata::{CloudMetadata, DeviceInfo, RecordMetadata};
+use std::collections::HashMap;
 
 #[test]
 fn test_metadata_serialization() {

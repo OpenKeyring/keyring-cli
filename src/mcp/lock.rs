@@ -91,10 +91,9 @@ impl McpLock {
             .map_err(Error::Io)?;
 
         // Acquire exclusive lock (blocking)
-        file.lock()
-            .map_err(|e| Error::Mcp {
-                context: format!("Failed to acquire lock: {}", e),
-            })?;
+        file.lock().map_err(|e| Error::Mcp {
+            context: format!("Failed to acquire lock: {}", e),
+        })?;
 
         // Write our PID to the lock file
         let pid = std::process::id();
@@ -143,10 +142,9 @@ impl McpLock {
             .map_err(Error::Io)?;
 
         // Try to acquire exclusive lock (non-blocking)
-        file.try_lock()
-            .map_err(|e| Error::Mcp {
-                context: format!("Failed to acquire lock: {}", e),
-            })?;
+        file.try_lock().map_err(|e| Error::Mcp {
+            context: format!("Failed to acquire lock: {}", e),
+        })?;
 
         // Write our PID to the lock file
         let pid = std::process::id();
@@ -176,10 +174,9 @@ impl McpLock {
     /// Returns an error if the lock cannot be released
     pub fn release(mut self) -> Result<()> {
         if let Some(file) = self.file.take() {
-            file.unlock()
-                .map_err(|e| Error::Mcp {
-                    context: format!("Failed to release lock: {}", e),
-                })?;
+            file.unlock().map_err(|e| Error::Mcp {
+                context: format!("Failed to release lock: {}", e),
+            })?;
         }
         Ok(())
     }
@@ -205,10 +202,7 @@ impl McpLock {
 
         // Try to read the PID from the lock file
         match fs::read_to_string(&self.path) {
-            Ok(content) => content
-                .trim()
-                .parse::<u32>()
-                .unwrap_or_else(|_| 0),
+            Ok(content) => content.trim().parse::<u32>().unwrap_or_else(|_| 0),
             Err(_) => 0,
         }
     }
@@ -295,10 +289,7 @@ mod tests {
         #[cfg(windows)]
         {
             let path = lock_file_path();
-            assert_eq!(
-                path,
-                PathBuf::from("C:\\Temp\\open-keyring-mcp.lock")
-            );
+            assert_eq!(path, PathBuf::from("C:\\Temp\\open-keyring-mcp.lock"));
         }
     }
 }

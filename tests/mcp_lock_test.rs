@@ -95,7 +95,10 @@ fn test_concurrent_lock_attempts() {
     let handle = thread::spawn(|| {
         // This should fail since lock1 is held
         let lock_result = McpLock::try_acquire();
-        assert!(lock_result.is_err(), "Lock acquisition in thread should fail");
+        assert!(
+            lock_result.is_err(),
+            "Lock acquisition in thread should fail"
+        );
     });
 
     handle.join().expect("Thread should complete");

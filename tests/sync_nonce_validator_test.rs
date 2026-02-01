@@ -1,5 +1,5 @@
 // tests/sync/nonce_validator_test.rs
-use keyring_cli::sync::nonce_validator::{NonceValidator, RecoveryStrategy, NonceStatus};
+use keyring_cli::sync::nonce_validator::{NonceStatus, NonceValidator, RecoveryStrategy};
 
 #[test]
 fn test_nonce_validator_creation() {

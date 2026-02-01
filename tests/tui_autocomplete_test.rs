@@ -43,8 +43,14 @@ fn test_command_autocomplete_multiple_matches() {
     app.handle_autocomplete();
 
     // Should complete to one of the matches (either "/show " or "/search ")
-    let is_valid = app.input_buffer == "/show " || app.input_buffer == "/search " || app.input_buffer == "/set";
-    assert!(is_valid, "Expected valid autocomplete, got: {}", app.input_buffer);
+    let is_valid = app.input_buffer == "/show "
+        || app.input_buffer == "/search "
+        || app.input_buffer == "/set";
+    assert!(
+        is_valid,
+        "Expected valid autocomplete, got: {}",
+        app.input_buffer
+    );
 }
 
 #[test]
@@ -92,11 +98,20 @@ fn test_autocomplete_shows_matches() {
     app.handle_autocomplete();
 
     // Should have output line showing matches
-    assert!(app.output_lines.iter().any(|line| line.contains("Matching commands")));
+    assert!(app
+        .output_lines
+        .iter()
+        .any(|line| line.contains("Matching commands")));
 
     // The output should show the matching commands (/search, /show, /sync)
-    let matches_line = app.output_lines.iter()
+    let matches_line = app
+        .output_lines
+        .iter()
         .find(|line| line.contains("Matching commands"))
         .unwrap();
-    assert!(matches_line.contains("/search") || matches_line.contains("/show") || matches_line.contains("/sync"));
+    assert!(
+        matches_line.contains("/search")
+            || matches_line.contains("/show")
+            || matches_line.contains("/sync")
+    );
 }
