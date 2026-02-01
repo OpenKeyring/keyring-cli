@@ -31,9 +31,9 @@ fn test_f5_navigates_to_sync_screen() {
     let f5 = KeyEvent::new(KeyCode::F(5), KeyModifiers::empty());
     app.handle_key_event(f5);
 
-    // Verify we're on the main screen (sync doesn't have its own screen yet)
-    assert_eq!(app.current_screen(), Screen::Main);
-    // But sync output should be shown
+    // Verify we're on the sync screen
+    assert_eq!(app.current_screen(), Screen::Sync);
+    // Sync output should be shown
     assert!(app.output_lines.iter().any(|l: &String| l.contains("Sync")));
 }
 
@@ -74,12 +74,12 @@ fn test_escape_returns_to_main_screen() {
 fn test_screen_navigation_sequence() {
     let mut app = TuiApp::new();
 
-    // Navigate: Main -> Settings -> Help -> Help (F5 doesn't change screen from Help)
+    // Navigate: Main -> Settings -> Help -> Sync
     // Then Esc to return to Main
     let screens_visited = vec![
         (KeyCode::F(2), Screen::Settings),
         (KeyCode::Char('?'), Screen::Help),
-        (KeyCode::F(5), Screen::Help), // F5 from Help stays on Help (shows help again)
+        (KeyCode::F(5), Screen::Sync), // F5 navigates to Sync screen
         (KeyCode::Esc, Screen::Main),  // Esc returns to Main
     ];
 
@@ -150,11 +150,12 @@ fn test_multiple_screen_transitions() {
     let transitions = vec![
         (KeyCode::F(2), Screen::Settings),   // Settings
         (KeyCode::Esc, Screen::Main),        // Return to Main
-        (KeyCode::F(5), Screen::Main),       // Sync (stays on main)
+        (KeyCode::F(5), Screen::Sync),       // Navigate to Sync
+        (KeyCode::Esc, Screen::Main),        // Return to Main
         (KeyCode::Char('?'), Screen::Help),  // Help
         (KeyCode::F(2), Screen::Settings),   // Settings (from Help)
         (KeyCode::Esc, Screen::Main),        // Main (from Settings)
-        (KeyCode::F(5), Screen::Main),       // Sync (stays on main)
+        (KeyCode::F(5), Screen::Sync),       // Navigate to Sync
         // Don't press Esc on Main as it would quit
     ];
 
@@ -192,6 +193,6 @@ fn test_screen_routing_delegates_to_correct_handler() {
     // Sync screen (F5)
     let f5 = KeyEvent::new(KeyCode::F(5), KeyModifiers::empty());
     app.handle_key_event(f5);
-    assert_eq!(app.current_screen(), Screen::Main);
+    assert_eq!(app.current_screen(), Screen::Sync);
     assert!(app.output_lines.iter().any(|l: &String| l.contains("Sync")));
 }
