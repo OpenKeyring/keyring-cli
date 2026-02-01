@@ -37,7 +37,12 @@ mod mcp_audit_integration_tests {
         let log_path = set_test_log_path("single");
         let logger = AuditLogger::new();
 
-        logger.log_event("ssh_exec", "test operation").unwrap();
+        logger.log_event("ssh_exec", "test operation").expect("Should log event");
+
+        assert!(
+            std::path::Path::new(&log_path).exists(),
+            "Log file should exist after logging event"
+        );
 
         let content = std::fs::read_to_string(&log_path).expect("Should read log file");
         assert!(!content.is_empty());
@@ -57,6 +62,11 @@ mod mcp_audit_integration_tests {
                 .expect("Should log event");
         }
 
+        assert!(
+            std::path::Path::new(&log_path).exists(),
+            "Log file should exist after logging events"
+        );
+
         let content = std::fs::read_to_string(&log_path).expect("Should read log file");
         assert!(!content.is_empty());
 
@@ -68,7 +78,12 @@ mod mcp_audit_integration_tests {
         let log_path = set_test_log_path("event_type");
         let logger = AuditLogger::new();
 
-        logger.log_event("api_get", "test details").unwrap();
+        logger.log_event("api_get", "test details").expect("Should log event");
+
+        assert!(
+            std::path::Path::new(&log_path).exists(),
+            "Log file should exist after logging event"
+        );
 
         let content = std::fs::read_to_string(&log_path).expect("Should read log file");
         assert!(content.contains("api_get"));
@@ -81,7 +96,12 @@ mod mcp_audit_integration_tests {
         let log_path = set_test_log_path("success");
         let logger = AuditLogger::new();
 
-        logger.log_event("test_event", "details").unwrap();
+        logger.log_event("test_event", "details").expect("Should log event");
+
+        assert!(
+            std::path::Path::new(&log_path).exists(),
+            "Log file should exist after logging event"
+        );
 
         let content = std::fs::read_to_string(&log_path).expect("Should read log file");
         assert!(content.contains("success="));
@@ -102,7 +122,12 @@ mod mcp_audit_integration_tests {
                 None,
                 true,
             )
-            .unwrap();
+            .expect("Should log tool execution");
+
+        assert!(
+            std::path::Path::new(&log_path).exists(),
+            "Log file should exist after logging event"
+        );
 
         let content = std::fs::read_to_string(&log_path).expect("Should read log file");
         assert!(content.contains("tool_execution"));
@@ -117,7 +142,13 @@ mod mcp_audit_integration_tests {
 
         logger
             .log_authentication_event("test-client", "login", true, None)
-            .unwrap();
+            .expect("Should log auth event");
+
+        // File should exist after logging
+        assert!(
+            std::path::Path::new(&log_path).exists(),
+            "Log file should exist after logging event"
+        );
 
         let content = std::fs::read_to_string(&log_path).expect("Should read log file");
         assert!(content.contains("auth_login"));
@@ -132,7 +163,12 @@ mod mcp_audit_integration_tests {
 
         logger
             .log_tool_execution("ssh_exec", "test-client", &serde_json::json!({}), None, false)
-            .unwrap();
+            .expect("Should log tool execution");
+
+        assert!(
+            std::path::Path::new(&log_path).exists(),
+            "Log file should exist after logging event"
+        );
 
         let content = std::fs::read_to_string(&log_path).expect("Should read log file");
         assert!(content.contains("success=false"));
