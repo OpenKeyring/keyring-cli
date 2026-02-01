@@ -50,8 +50,6 @@ jobs:
             -A redundant_closure \
             -A module_name_repetitions \
             -A too_many_arguments \
-            -A dead_code \
-            -A unused_import \
             -A clippy::needless_borrow \
             -A clippy::needless_lifetimes \
             -A clippy::type_repetition_in_bounds \
