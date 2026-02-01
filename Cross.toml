@@ -1,0 +1,17 @@
+# Cross compilation configuration for keyring-cli
+# See https://github.com/cross-rs/cross for more details
+
+[build.env]
+passthrough = ["RUST_BACKTRACE", "CARGO_TERM_COLOR"]
+
+# Linux x86_64 target
+[x86_64-unknown-linux-gnu]
+image = "ghcr.io/cross/x86_64-unknown-linux-gnu:main"
+
+# Linux ARM64 target
+[aarch64-unknown-linux-gnu]
+image = "ghcr.io/cross/aarch64-unknown-linux-gnu:main"
+
+# Windows x86_64 target
+[x86_64-pc-windows-msvc]
+image = "ghcr.io/cross/x86_64-pc-windows-msvc:main"
