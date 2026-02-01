@@ -78,8 +78,12 @@ futures-util = "0.3"
 # SSH execution - using system ssh command (no C dependency)
 # openssh = "0.11"
 
-# Git operations
-git2 = "0.19"
+# Git operations - pure Rust implementation
+gix = { version = "0.70", default-features = false, features = [
+    "max-performance-safe",
+    "blocking-network-client",
+    "blocking-http-transport-reqwest"
+] }
 
 # File system watcher
 notify = "6.0"

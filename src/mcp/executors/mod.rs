@@ -3,10 +3,10 @@
 //! This module contains executors for different types of MCP tools:
 //! - API executor for HTTP requests
 //! - SSH executor for remote command execution
-//! - Git executor for version control operations (TODO: update for git2 API compatibility)
+//! - Git executor for version control operations (using gix pure Rust implementation)
 
 pub mod api;
-// pub mod git;  // TODO: Temporarily disabled - needs git2 API updates
+pub mod git;  // Git executor using gix (pure Rust)
 pub mod ssh;  // SSH tool definitions (input/output structs)
 pub mod ssh_executor;  // SSH executor implementation
 
@@ -18,7 +18,7 @@ use std::time::Duration;
 
 // Re-export API executor types
 pub use api::{ApiError, ApiExecutor, ApiResponse};
-// pub use git::{GitCloneOutput, GitError, GitExecutor, GitPullOutput, GitPushOutput};
+pub use git::{GitCloneOutput, GitError, GitExecutor, GitPullOutput, GitPushOutput};
 pub use ssh::*;  // Re-export SSH tool definitions
 pub use ssh_executor::{SshError, SshExecOutput as SshExecutorOutput, SshExecutor};  // Re-export SSH executor
 

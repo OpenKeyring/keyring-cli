@@ -367,21 +367,6 @@ mod error_tests {
     use super::*;
 
     #[test]
-    fn test_git_error_from_git2_error() {
-        use git2::ErrorCode;
-        use git2::ErrorClass;
-
-        let git2_err = git2::Error::new(
-            ErrorCode::GenericError,
-            ErrorClass::None,
-            "Test git2 error"
-        );
-
-        let git_error = GitError::from(git2_err);
-        assert!(matches!(git_error, GitError::GitError(_)));
-    }
-
-    #[test]
     fn test_git_error_from_io_error() {
         let io_err = std::io::Error::new(
             std::io::ErrorKind::NotFound,
@@ -390,5 +375,14 @@ mod error_tests {
 
         let git_error = GitError::from(io_err);
         assert!(matches!(git_error, GitError::IoError(_)));
+    }
+
+    #[test]
+    fn test_git_error_from_secure_memory_error() {
+        // Test that SecureMemoryError converts properly
+        // This is a basic test since SecureMemoryError is an enum
+        let mem_err = crate::mcp::secure_memory::SecureMemoryError::Locked;
+        let git_error = GitError::from(mem_err);
+        assert!(matches!(git_error, GitError::MemoryProtectionFailed(_)));
     }
 }

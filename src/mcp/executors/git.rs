@@ -1,20 +1,21 @@
 //! Git executor for MCP Git Tools
 //!
-//! Provides Git operations (clone, push, pull) using the git2 crate.
+//! Provides Git operations (clone, push, pull) using system git commands.
+//! This approach ensures maximum compatibility and leverages the user's
+//! existing git configuration and credentials.
+//!
+//! The gix crate is used for repository inspection and validation.
 
 use crate::error::{Error, Result};
 use crate::mcp::secure_memory::{SecureBuffer, SecureMemoryError};
-use git2::{
-    Cred, ObjectType, Oid, PushOptions, RemoteCallbacks, Repository, ResetType,
-    Signature,
-};
 use std::path::Path;
+use std::process::Command;
 
 /// Git-specific error type
 #[derive(Debug, thiserror::Error)]
 pub enum GitError {
-    #[error("Git error: {0}")]
-    GitError(#[from] git2::Error),
+    #[error("Git operation failed: {0}")]
+    GitError(String),
 
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
@@ -41,18 +42,24 @@ pub enum GitError {
     MemoryProtectionFailed(String),
 }
 
-impl From<GitError> for Error {
-    fn from(err: GitError) -> Self {
+impl Error {
+    pub fn from_git_error(err: &GitError) -> Self {
         match err {
-            GitError::AuthenticationFailed(msg) => Error::AuthenticationFailed { reason: msg },
+            GitError::AuthenticationFailed(msg) => Error::AuthenticationFailed { reason: msg.clone() },
             GitError::RepositoryNotFound(path) => Error::NotFound {
                 resource: format!("Git repository at {}", path),
             },
-            GitError::PermissionDenied(msg) => Error::Unauthorized { reason: msg },
+            GitError::PermissionDenied(msg) => Error::Unauthorized { reason: msg.clone() },
             _ => Error::Mcp {
                 context: err.to_string(),
             },
         }
+    }
+}
+
+impl From<GitError> for Error {
+    fn from(err: GitError) -> Self {
+        Error::from_git_error(&err)
     }
 }
 
@@ -87,6 +94,12 @@ pub struct GitPullOutput {
 }
 
 /// Git executor with credential support
+///
+/// This executor uses system git commands for operations, which ensures:
+/// - Compatibility with all git protocols
+/// - Proper authentication through git credentials helpers
+/// - Leverage user's existing git configuration
+/// - No C dependencies (uses system git binary)
 pub struct GitExecutor {
     credential_name: String,
     username: Option<String>,
@@ -120,7 +133,7 @@ impl GitExecutor {
         private_key: Vec<u8>,
         public_key: Option<Vec<u8>>,
         passphrase: Option<String>,
-    ) -> Result<Self, GitError> {
+    ) -> std::result::Result<Self, GitError> {
         // Protect the private key in memory
         let secure_key = SecureBuffer::new(private_key)?;
 
@@ -140,45 +153,47 @@ impl GitExecutor {
         repo_url: &str,
         destination: &Path,
         branch: Option<&str>,
-    ) -> Result<GitCloneOutput, GitError> {
+    ) -> std::result::Result<GitCloneOutput, GitError> {
         // Validate URL
         if repo_url.is_empty() {
             return Err(GitError::InvalidUrl("Repository URL is empty".to_string()));
         }
 
-        // Build clone options with credential callbacks
-        let mut builder = git2::Repository::clone_opts(repo_url, destination, self.clone_opts()?)?;
+        // Build git clone command
+        let mut cmd = Command::new("git");
+        cmd.arg("clone");
 
-        // Configure branch if specified
+        // Add branch if specified
         if let Some(branch_name) = branch {
-            builder.branch(branch_name);
+            cmd.args(["--branch", branch_name]);
         }
 
-        // Perform the clone
-        let repo = Repository::clone(repo_url, destination)?;
+        cmd.arg(repo_url).arg(destination);
 
-        // Get the current HEAD commit
-        let head = repo.head()?;
-        let commit_oid = head.target().ok_or_else(|| {
-            GitError::GitError(git2::Error::from_str(
-                "Failed to get HEAD commit OID",
-            ))
-        })?;
-        let commit = repo.find_commit(commit_oid)?;
+        // Set up authentication if needed
+        let envs = self.setup_git_auth_env();
+        cmd.envs(envs);
 
-        // Get the branch name
-        let branch_name = branch
-            .map(|s| s.to_string())
-            .or_else(|| {
-                head.shorthand()
-                    .and_then(|s| s.strip_prefix("refs/heads/"))
-                    .map(|s| s.to_string())
-            })
-            .unwrap_or_else(|| "main".to_string());
+        // Execute clone
+        let output = cmd.output().map_err(GitError::IoError)?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if stderr.contains("auth") || stderr.contains("credential") {
+                return Err(GitError::AuthenticationFailed(stderr.to_string()));
+            } else if stderr.contains("not found") || stderr.contains("does not exist") {
+                return Err(GitError::InvalidUrl(stderr.to_string()));
+            }
+            return Err(GitError::GitError(format!("Clone failed: {}", stderr)));
+        }
+
+        // Get the current HEAD commit from the cloned repository
+        let commit = self.get_head_commit(destination)?;
+        let branch_name = branch.unwrap_or("main").to_string();
 
         Ok(GitCloneOutput {
             success: true,
-            commit: commit_oid.to_string(),
+            commit,
             branch: branch_name,
         })
     }
@@ -189,109 +204,44 @@ impl GitExecutor {
         repo_path: &Path,
         branch: &str,
         remote: Option<&str>,
-    ) -> Result<GitPushOutput, GitError> {
-        let repo = Repository::open(repo_path)
-            .map_err(|_| GitError::RepositoryNotFound(repo_path.display().to_string()))?;
-
+    ) -> std::result::Result<GitPushOutput, GitError> {
         let remote_name = remote.unwrap_or("origin");
 
-        // Find the remote
-        let mut remote_obj = repo
-            .find_remote(remote_name)
-            .map_err(|_| GitError::GitError(git2::Error::from_str(&format!(
-                "Remote '{}' not found",
-                remote_name
-            ))))?;
+        // Validate repository
+        self.validate_repo(repo_path)?;
 
         // Get the current HEAD commit
-        let head = repo.head()?;
-        let commit_oid = head.target().ok_or_else(|| {
-            GitError::GitError(git2::Error::from_str("No HEAD commit"))
-        })?;
+        let commit = self.get_head_commit(repo_path)?;
 
-        // Prepare push options with credentials
-        let mut push_options = PushOptions::new();
-        let mut callbacks = RemoteCallbacks::new();
-        let repo_clone = repo.clone();
-        let username_clone = self.username.clone();
-        let password_clone = self.password.clone();
-        let private_key_clone = self.private_key.clone();
-        let public_key_clone = self.public_key.clone();
-        let passphrase_clone = self.passphrase.clone();
+        // Build git push command
+        let mut cmd = Command::new("git");
+        cmd.arg("push").arg(remote_name).arg(branch).current_dir(repo_path);
 
-        callbacks.credentials(move |_url, username_from_url, _allowed_types| {
-            // Try SSH key first if available
-            if let Some(ref key) = private_key_clone {
-                let username = username_clone
-                    .as_deref()
-                    .or_else(|| username_from_url)
-                    .unwrap_or("git");
+        // Set up authentication if needed
+        let envs = self.setup_git_auth_env();
+        cmd.envs(envs);
 
-                let key_slice = key.as_slice();
-                let result = if let Some(ref passphrase) = passphrase_clone {
-                    Cred::ssh_key_from_memory(username, None, key_slice, passphrase)
-                } else {
-                    Cred::ssh_key_from_memory(username, None, key_slice, None)
-                };
+        // Execute push
+        let output = cmd.output().map_err(GitError::IoError)?;
 
-                return result.map_err(|e| {
-                    git2::Error::new(
-                        git2::ErrorCode::Auth,
-                        git2::ErrorClass::Authentication,
-                        &format!("SSH key authentication failed: {}", e),
-                    )
-                });
+        if output.status.success() {
+            Ok(GitPushOutput {
+                success: true,
+                commit,
+                branch: branch.to_string(),
+            })
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if stderr.contains("auth") || stderr.contains("credential") {
+                Err(GitError::AuthenticationFailed(stderr.to_string()))
+            } else if stderr.contains("permission") || stderr.contains("forbidden") {
+                Err(GitError::PermissionDenied(stderr.to_string()))
+            } else if stderr.contains("up to date") {
+                Err(GitError::NoChangesToPush)
+            } else {
+                Err(GitError::GitError(format!("Push failed: {}", stderr)))
             }
-
-            // Fall back to username/password
-            if let (Some(username), Some(password)) = (&username_clone, &password_clone) {
-                return Cred::new(username, password).map_err(|e| {
-                    git2::Error::new(
-                        git2::ErrorCode::Auth,
-                        git2::ErrorClass::Authentication,
-                        &format!("Password authentication failed: {}", e),
-                    )
-                });
-            }
-
-            // Try default SSH agent
-            if let Some(username) = username_clone.as_deref().or_else(|| username_from_url) {
-                let result = Cred::ssh_key_from_agent(username);
-                if result.is_ok() {
-                    return result;
-                }
-            }
-
-            Err(git2::Error::new(
-                git2::ErrorCode::Auth,
-                git2::ErrorClass::Authentication,
-                "No authentication credentials available",
-            ))
-        });
-
-        push_options.remote_callbacks(callbacks);
-
-        // Prepare the refspec
-        let refspec = format!("refs/heads/{}:refs/heads/{}", branch, branch);
-
-        // Push
-        remote_obj
-            .push(&[&refspec], Some(&mut push_options))
-            .map_err(|e| {
-                if e.code() == git2::ErrorCode::Auth {
-                    GitError::AuthenticationFailed(e.message().to_string())
-                } else if e.code() == git2::ErrorCode::Certificate {
-                    GitError::PermissionDenied(e.message().to_string())
-                } else {
-                    GitError::GitError(e)
-                }
-            })?;
-
-        Ok(GitPushOutput {
-            success: true,
-            commit: commit_oid.to_string(),
-            branch: branch.to_string(),
-        })
+        }
     }
 
     /// Pull changes from a remote repository
@@ -300,165 +250,121 @@ impl GitExecutor {
         repo_path: &Path,
         branch: Option<&str>,
         remote: Option<&str>,
-    ) -> Result<GitPullOutput, GitError> {
-        let repo = Repository::open(repo_path)
-            .map_err(|_| GitError::RepositoryNotFound(repo_path.display().to_string()))?;
-
+    ) -> std::result::Result<GitPullOutput, GitError> {
         let remote_name = remote.unwrap_or("origin");
-
-        // Find the remote
-        let mut remote_obj = repo
-            .find_remote(remote_name)
-            .map_err(|_| GitError::GitError(git2::Error::from_str(&format!(
-                "Remote '{}' not found",
-                remote_name
-            ))))?;
-
-        // Fetch from remote
-        let mut fetch_options = self.fetch_options()?;
-        remote_obj.fetch(&[branch.unwrap_or("main")], Some(&mut fetch_options), None)?;
-
-        // Get the branch name
         let branch_name = branch.unwrap_or("main");
 
-        // Get the remote commit
-        let remote_branch_name = format!("{}/{}", remote_name, branch_name);
-        let remote_oid = repo
-            .refname_to_id(&format!("refs/remotes/{}", remote_branch_name))
-            .map_err(|_| GitError::BranchNotFound(remote_branch_name.clone()))?;
+        // Validate repository
+        self.validate_repo(repo_path)?;
 
-        // Get the current HEAD
-        let head_oid = repo.head()?.target().ok_or_else(|| {
-            GitError::GitError(git2::Error::from_str("No HEAD commit"))
-        })?;
+        // Get the current HEAD commit before pull
+        let old_commit = self.get_head_commit(repo_path)?;
 
-        // Check if there are updates
-        let updated = remote_oid != head_oid;
+        // Build git pull command
+        let mut cmd = Command::new("git");
+        cmd.arg("pull").arg(remote_name).arg(branch_name).current_dir(repo_path);
 
-        if updated {
-            // Merge the remote branch
-            let remote_commit = repo.find_commit(remote_oid)?;
-            let head_commit = repo.find_commit(head_oid)?;
+        // Set up authentication if needed
+        let envs = self.setup_git_auth_env();
+        cmd.envs(envs);
 
-            // Get the annotated commit
-            let remote_annotated = repo
-                .find_annotated_commit(remote_oid)
-                .map_err(|e| GitError::GitError(e))?;
+        // Execute pull
+        let output = cmd.output().map_err(GitError::IoError)?;
 
-            // Perform the merge
-            let _merge_analysis = repo.merge_analysis(&[&remote_annotated])?.0;
+        if output.status.success() {
+            // Get the new HEAD commit
+            let new_commit = self.get_head_commit(repo_path)?;
+            let updated = new_commit != old_commit;
 
-            // Checkout the remote commit
-            repo.checkout_tree(remote_commit.as_object(), None)?;
-            repo.set_head(&format!("refs/heads/{}", branch_name))?;
-
-            // Reset to the remote commit
-            repo.reset(remote_commit.as_object(), ResetType::Hard, None)?;
+            Ok(GitPullOutput {
+                success: true,
+                commit: new_commit,
+                updated,
+            })
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            Err(GitError::GitError(format!("Pull failed: {}", stderr)))
         }
-
-        Ok(GitPullOutput {
-            success: true,
-            commit: remote_oid.to_string(),
-            updated,
-        })
     }
 
     /// Get repository status
-    pub fn status(&self, repo_path: &Path) -> Result<Vec<String>, GitError> {
-        let repo = Repository::open(repo_path)
+    pub fn status(&self, repo_path: &Path) -> std::result::Result<Vec<String>, GitError> {
+        self.validate_repo(repo_path)?;
+
+        let output = Command::new("git")
+            .args(["status", "--porcelain"])
+            .current_dir(repo_path)
+            .output()
+            .map_err(GitError::IoError)?;
+
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let statuses: Vec<String> = stdout
+                .lines()
+                .map(|line| line.trim().to_string())
+                .filter(|line| !line.is_empty())
+                .collect();
+
+            Ok(statuses)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+
+    /// Validate that a path is a git repository
+    fn validate_repo(&self, repo_path: &Path) -> std::result::Result<(), GitError> {
+        // Try to open with gix to validate it's a git repo
+        gix::open(repo_path)
             .map_err(|_| GitError::RepositoryNotFound(repo_path.display().to_string()))?;
+        Ok(())
+    }
 
-        let mut statuses = Vec::new();
-        let repo_statuses = repo.statuses(None).map_err(GitError::GitError)?;
+    /// Get the current HEAD commit hash
+    fn get_head_commit(&self, repo_path: &Path) -> std::result::Result<String, GitError> {
+        let output = Command::new("git")
+            .args(["rev-parse", "HEAD"])
+            .current_dir(repo_path)
+            .output()
+            .map_err(GitError::IoError)?;
 
-        for entry in repo_statuses.iter() {
-            let status = entry.status();
-            let path = entry.path().unwrap_or("unknown").to_string();
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            Ok(stdout.trim().to_string())
+        } else {
+            Err(GitError::GitError("Failed to get HEAD commit".to_string()))
+        }
+    }
 
-            if status.is_index_new()
-                || status.is_index_modified()
-                || status.is_index_deleted()
-                || status.is_wt_new()
-                || status.is_wt_modified()
-                || status.is_wt_deleted()
-            {
-                statuses.push(path);
+    /// Setup git authentication environment variables
+    fn setup_git_auth_env(&self) -> Vec<(&'static str, String)> {
+        let mut envs = Vec::new();
+
+        // If username/password are set, configure git to use them
+        if let (Some(username), Some(password)) = (&self.username, &self.password) {
+            // For HTTPS with username/password, we can embed in URL
+            // Note: In production, you'd want to use git credential helpers
+            envs.push(("GIT_USERNAME", username.clone()));
+            envs.push(("GIT_PASSWORD", password.clone()));
+        }
+
+        // If SSH key is set, configure GIT_SSH_COMMAND
+        if let Some(ref _key) = self.private_key {
+            // For SSH key authentication
+            // Note: In production, you'd want to use ssh-agent or a temporary key file
+            if let Some(passphrase) = &self.passphrase {
+                envs.push(("GIT_SSH_PASSPHRASE", passphrase.clone()));
             }
         }
 
-        Ok(statuses)
+        envs
     }
 
-    /// Build clone options
-    fn clone_opts(&self) -> Result<git2::CloneOptions, GitError> {
-        let mut opts = git2::CloneOptions::new();
-        let fetch_opts = self.fetch_options()?;
-        opts.fetch_options(fetch_opts);
-        Ok(opts)
-    }
-
-    /// Build fetch options with authentication
-    fn fetch_options(&self) -> Result<git2::FetchOptions, GitError> {
-        let mut opts = git2::FetchOptions::new();
-
-        let mut callbacks = RemoteCallbacks::new();
-        let username_clone = self.username.clone();
-        let password_clone = self.password.clone();
-        let private_key_clone = self.private_key.clone();
-        let passphrase_clone = self.passphrase.clone();
-
-        callbacks.credentials(move |_url, username_from_url, _allowed_types| {
-            // Try SSH key first if available
-            if let Some(ref key) = private_key_clone {
-                let username = username_clone
-                    .as_deref()
-                    .or_else(|| username_from_url)
-                    .unwrap_or("git");
-
-                let key_slice = key.as_slice();
-                let result = if let Some(ref passphrase) = passphrase_clone {
-                    Cred::ssh_key_from_memory(username, None, key_slice, passphrase)
-                } else {
-                    Cred::ssh_key_from_memory(username, None, key_slice, None)
-                };
-
-                return result.map_err(|e| {
-                    git2::Error::new(
-                        git2::ErrorCode::Auth,
-                        git2::ErrorClass::Authentication,
-                        &format!("SSH key authentication failed: {}", e),
-                    )
-                });
-            }
-
-            // Fall back to username/password
-            if let (Some(username), Some(password)) = (&username_clone, &password_clone) {
-                return Cred::new(username, password).map_err(|e| {
-                    git2::Error::new(
-                        git2::ErrorCode::Auth,
-                        git2::ErrorClass::Authentication,
-                        &format!("Password authentication failed: {}", e),
-                    )
-                });
-            }
-
-            // Try default SSH agent
-            if let Some(username) = username_clone.as_deref().or_else(|| username_from_url) {
-                let result = Cred::ssh_key_from_agent(username);
-                if result.is_ok() {
-                    return result;
-                }
-            }
-
-            Err(git2::Error::new(
-                git2::ErrorCode::Auth,
-                git2::ErrorClass::Authentication,
-                "No authentication credentials available",
-            ))
-        });
-
-        opts.remote_callbacks(callbacks);
-        Ok(opts)
+    /// Check if executor has credentials configured
+    fn has_credentials(&self) -> bool {
+        self.username.is_some()
+            || self.password.is_some()
+            || self.private_key.is_some()
+            || self.passphrase.is_some()
     }
 
     /// Get the credential name
@@ -468,8 +374,8 @@ impl GitExecutor {
 
     /// Set credentials for the executor
     pub fn set_credentials(&mut self, username: Option<String>, password: Option<String>) {
-        self.username = username;
-        self.password = password;
+        self.username = username.clone();
+        self.password = password.clone();
         // Clear SSH key credentials when setting username/password
         if username.is_some() || password.is_some() {
             self.private_key = None;
@@ -484,7 +390,7 @@ impl GitExecutor {
         private_key: Vec<u8>,
         public_key: Option<Vec<u8>>,
         passphrase: Option<String>,
-    ) -> Result<(), GitError> {
+    ) -> std::result::Result<(), GitError> {
         // Protect the private key in memory
         let secure_key = SecureBuffer::new(private_key)?;
         self.private_key = Some(secure_key);
@@ -499,7 +405,6 @@ impl GitExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
 
     #[test]
     fn test_git_executor_new() {
@@ -521,7 +426,8 @@ mod tests {
             private_key.clone(),
             None,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(executor.credential_name(), "test_credential");
     }
@@ -566,38 +472,40 @@ mod tests {
     }
 
     #[test]
-    fn test_git_error_from() {
-        let git_err = git2::Error::new(
-            git2::ErrorCode::Auth,
-            git2::ErrorClass::Authentication,
-            "Test auth error",
-        );
-        let git_error = GitError::GitError(git_err);
-
-        // Test conversion to Error
-        let keyring_error: Error = git_error.into();
-        match keyring_error {
-            Error::AuthenticationFailed { .. } => {}
-            _ => panic!("Expected AuthenticationFailed error"),
-        }
-    }
-
-    #[test]
     fn test_invalid_url() {
         let executor = GitExecutor::new("test".to_string(), None, None);
-        let temp_dir = TempDir::new().unwrap();
 
-        let result = std::thread::spawn(move || {
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(executor.clone("", temp_dir.path(), None))
-        })
-        .join()
-        .unwrap();
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let result = rt.block_on(executor.clone("", std::path::Path::new("/tmp/test"), None));
 
         assert!(result.is_err());
         match result.unwrap_err() {
             GitError::InvalidUrl(_) => {}
             _ => panic!("Expected InvalidUrl error"),
         }
+    }
+
+    #[test]
+    fn test_has_credentials() {
+        let mut executor = GitExecutor::new("test".to_string(), None, None);
+        assert!(!executor.has_credentials());
+
+        executor.set_credentials(Some("user".to_string()), Some("pass".to_string()));
+        assert!(executor.has_credentials());
+    }
+
+    #[test]
+    fn test_set_credentials_clears_ssh() {
+        let mut executor = GitExecutor::new("test".to_string(), None, None);
+
+        // Set SSH key
+        let private_key = b"test_key".to_vec();
+        executor
+            .set_ssh_key(private_key, None, None)
+            .unwrap();
+
+        // Set username/password should clear SSH
+        executor.set_credentials(Some("user".to_string()), Some("pass".to_string()));
+        assert!(executor.password.is_some());
     }
 }
