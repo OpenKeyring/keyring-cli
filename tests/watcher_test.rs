@@ -1,4 +1,5 @@
 use keyring_cli::sync::watcher::{SyncEvent, SyncWatcher};
+use serial_test::serial;
 use tempfile::TempDir;
 use std::fs::File;
 use std::io::Write;
@@ -6,6 +7,7 @@ use std::time::Duration;
 use std::path::PathBuf;
 
 #[tokio::test]
+#[serial]
 async fn test_watch_file_changes() {
     let temp_dir = TempDir::new().unwrap();
     let watch_path = temp_dir.path().to_path_buf();
@@ -57,6 +59,7 @@ async fn test_watch_file_changes() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_watch_file_creation() {
     let temp_dir = TempDir::new().unwrap();
     let watch_path = temp_dir.path().to_path_buf();
@@ -107,6 +110,7 @@ async fn test_watch_file_creation() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_watch_file_deletion() {
     let temp_dir = TempDir::new().unwrap();
     let watch_path = temp_dir.path().to_path_buf();
@@ -162,6 +166,7 @@ async fn test_watch_file_deletion() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_watch_json_files_only() {
     let temp_dir = TempDir::new().unwrap();
     let watch_path = temp_dir.path().to_path_buf();
@@ -221,6 +226,7 @@ async fn test_watch_json_files_only() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_watcher_creation() {
     let temp_dir = TempDir::new().unwrap();
     let watch_path = temp_dir.path().to_path_buf();
@@ -230,6 +236,7 @@ async fn test_watcher_creation() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_watcher_invalid_path() {
     let invalid_path = PathBuf::from("/nonexistent/path/that/does/not/exist");
 
