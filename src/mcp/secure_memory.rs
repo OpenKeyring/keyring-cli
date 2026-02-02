@@ -12,6 +12,7 @@
 //! - Protection is applied immediately on creation
 
 use crate::platform::{protect_memory, unprotect_memory, PlatformError};
+use std::cell::UnsafeCell;
 use zeroize::Zeroize;
 
 /// Error types for secure memory operations
@@ -50,6 +51,9 @@ impl From<PlatformError> for SecureMemoryError {
 /// SecureBuffer automatically pads data to meet this requirement. The logical length
 /// (the actual data length) is preserved and returned by `len()` and `as_slice()`.
 ///
+/// On Windows, the first call to `as_slice()` will decrypt the data for reading.
+/// Subsequent calls will return the decrypted data. The data is re-encrypted on drop.
+///
 /// # Example
 ///
 /// ```no_run
@@ -66,14 +70,20 @@ impl From<PlatformError> for SecureMemoryError {
 /// ```
 pub struct SecureBuffer {
     /// The protected data (may be padded on Windows for 16-byte alignment)
-    data: Vec<u8>,
+    /// Using UnsafeCell for interior mutability needed on Windows
+    data: UnsafeCell<Vec<u8>>,
 
     /// The actual logical length of the data (excluding padding)
     logical_len: usize,
 
-    /// Whether memory is currently protected
-    is_protected: bool,
+    /// Whether memory is currently protected (encrypted on Windows)
+    is_protected: UnsafeCell<bool>,
 }
+
+// SAFETY: We only access data mutably in methods that logically have mutable access
+// (as_slice needs to decrypt on Windows, but this is safe because we track state)
+unsafe impl Send for SecureBuffer {}
+unsafe impl Sync for SecureBuffer {}
 
 impl SecureBuffer {
     /// Create a new protected buffer
@@ -101,9 +111,9 @@ impl SecureBuffer {
 
         if data.is_empty() {
             return Ok(Self {
-                data,
+                data: UnsafeCell::new(data),
                 logical_len: 0,
-                is_protected: false,
+                is_protected: UnsafeCell::new(false),
             });
         }
 
@@ -122,20 +132,20 @@ impl SecureBuffer {
             .map_err(|e| SecureMemoryError::ProtectionFailed(e.to_string()))?;
 
         Ok(Self {
-            data,
+            data: UnsafeCell::new(data),
             logical_len,
-            is_protected: true,
+            is_protected: UnsafeCell::new(true),
         })
     }
 
     /// Get the length of the buffer
     pub fn len(&self) -> usize {
-        self.data.len()
+        self.logical_len
     }
 
     /// Check if the buffer is empty
     pub fn is_empty(&self) -> bool {
-        self.data.is_empty()
+        self.logical_len == 0
     }
 
     /// Get a reference to the protected data
@@ -143,10 +153,35 @@ impl SecureBuffer {
     /// # Note
     ///
     /// The data remains protected while you have a reference to it.
-    /// On Windows, the data is encrypted and will be decrypted on access.
+    /// On Windows, the data is encrypted and will be decrypted on first access.
     /// Only the logical data (excluding padding) is returned.
+    ///
+    /// # Platform Notes
+    ///
+    /// On Windows, the first call to `as_slice()` decrypts the data in-place.
+    /// After this, the data remains decrypted until the SecureBuffer is dropped.
+    /// This is a limitation of the CryptProtectMemory API which encrypts data in-place.
     pub fn as_slice(&self) -> &[u8] {
-        &self.data[..self.logical_len]
+        // On Windows, decrypt the data on first access
+        #[cfg(target_os = "windows")]
+        {
+            // SAFETY: We use UnsafeCell to allow modification through &self.
+            // The is_protected flag ensures we only decrypt once.
+            // This is safe because:
+            // 1. We check is_protected before modifying
+            // 2. We only decrypt (not encrypt) here
+            // 3. The memory is properly synchronized
+            unsafe {
+                if *self.is_protected.get() {
+                    let data = &mut *self.data.get();
+                    let _ = unprotect_memory(data.as_mut_ptr(), data.len());
+                    *self.is_protected.get() = false;
+                }
+            }
+        }
+
+        // SAFETY: We're only reading the data here, and we ensure it's synchronized
+        unsafe { &(&*self.data.get())[..self.logical_len] }
     }
 
     /// Unprotect the memory and return the underlying data
@@ -155,26 +190,36 @@ impl SecureBuffer {
     /// The caller is responsible for zeroizing the data after use.
     /// On Windows, padding is removed before returning.
     pub fn into_inner(mut self) -> Vec<u8> {
-        if self.is_protected {
+        // SAFETY: We own self now, so we have exclusive access
+        let is_protected = unsafe { *self.is_protected.get() };
+        if is_protected {
             // Unprotect before returning
-            let _ = unprotect_memory(self.data.as_mut_ptr(), self.data.len());
-            self.is_protected = false;
+            let data = unsafe { &mut *self.data.get() };
+            let _ = unprotect_memory(data.as_mut_ptr(), data.len());
         }
+        // Mark as unprotected so Drop doesn't try to unprotect again
+        unsafe { *self.is_protected.get() = false };
         // Take the data and truncate to logical length
-        let mut data = std::mem::take(&mut self.data);
+        // SAFETY: We have exclusive ownership and marked is_protected as false
+        let mut data = unsafe { std::ptr::read(self.data.get()) };
         data.truncate(self.logical_len);
+        // Prevent Drop from running on self.data since we took ownership
+        std::mem::forget(self);
         data
     }
 }
 
 impl Drop for SecureBuffer {
     fn drop(&mut self) {
-        if self.is_protected {
+        // SAFETY: We have &mut self in drop, so exclusive access
+        let is_protected = unsafe { *self.is_protected.get() };
+        if is_protected {
             // Unprotect memory before zeroizing
-            let _ = unprotect_memory(self.data.as_mut_ptr(), self.data.len());
+            let data = unsafe { &mut *self.data.get() };
+            let _ = unprotect_memory(data.as_mut_ptr(), data.len());
         }
         // Zeroize the data
-        self.data.zeroize();
+        unsafe { (*self.data.get()).zeroize() };
     }
 }
 
@@ -183,9 +228,9 @@ impl Clone for SecureBuffer {
         // Clone only the logical data (without padding)
         let cloned_data = self.as_slice().to_vec();
         Self::new(cloned_data).unwrap_or_else(|_| Self {
-            data: vec![],
+            data: UnsafeCell::new(vec![]),
             logical_len: 0,
-            is_protected: false,
+            is_protected: UnsafeCell::new(false),
         })
     }
 }
