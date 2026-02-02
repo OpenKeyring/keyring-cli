@@ -53,6 +53,7 @@ pub fn lock_file_path() -> PathBuf {
 pub struct McpLock {
     file: Option<File>,
     path: PathBuf,
+    pid: u32,
 }
 
 impl McpLock {
@@ -105,6 +106,7 @@ impl McpLock {
         Ok(Self {
             file: Some(file),
             path,
+            pid,
         })
     }
 
@@ -156,6 +158,7 @@ impl McpLock {
         Ok(Self {
             file: Some(file),
             path,
+            pid,
         })
     }
 
@@ -190,20 +193,16 @@ impl McpLock {
         self.file.is_some()
     }
 
-    /// Get the PID written to the lock file
+    /// Get the PID of the process holding this lock
     ///
     /// # Returns
     ///
     /// The PID of the process holding the lock, or 0 if not locked
     pub fn pid(&self) -> u32 {
-        if !self.is_locked() {
-            return 0;
-        }
-
-        // Try to read the PID from the lock file
-        match fs::read_to_string(&self.path) {
-            Ok(content) => content.trim().parse::<u32>().unwrap_or_else(|_| 0),
-            Err(_) => 0,
+        if self.is_locked() {
+            self.pid
+        } else {
+            0
         }
     }
 
