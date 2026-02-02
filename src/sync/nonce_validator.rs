@@ -185,7 +185,7 @@ impl NonceValidator {
                     reason: "Sync cancelled by user".to_string(),
                 })
             }
-            "" | _ => {
+            _ => {
                 // Empty input (non-interactive) or invalid choice defaults to UseLocal
                 RecoveryStrategy::UseLocal
             }

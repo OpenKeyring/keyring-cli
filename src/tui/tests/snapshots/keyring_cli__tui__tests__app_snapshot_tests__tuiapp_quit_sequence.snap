@@ -1,0 +1,5 @@
+---
+source: src/tui/tests/app_snapshot_tests.rs
+expression: "format!(\"is_running: {}\", app.is_running())"
+---
+is_running: true

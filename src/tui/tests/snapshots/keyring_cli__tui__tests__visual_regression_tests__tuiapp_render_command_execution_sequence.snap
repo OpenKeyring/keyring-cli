@@ -1,0 +1,140 @@
+---
+source: src/tui/tests/visual_regression_tests.rs
+expression: seq.to_string()
+---
+Sequence: command_execution_render
+
+Step 1: initial
+──────────────
+┌ OpenKeyring TUI ─────────────────────────────────────────────────────────────┐
+│OpenKeyring TUI v0.1.0                                                        │
+│Type /help for available commands                                             │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│> Type a command...                                                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+
+Step 2: typed_help
+─────────────────
+┌ OpenKeyring TUI ─────────────────────────────────────────────────────────────┐
+│OpenKeyring TUI v0.1.0                                                        │
+│Type /help for available commands                                             │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│> /help                                                                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+
+Step 3: submitted_help
+─────────────────────
+┌ OpenKeyring TUI ─────────────────────────────────────────────────────────────┐
+│OpenKeyring TUI v0.1.0                                                        │
+│Type /help for available commands                                             │
+│                                                                              │
+│> /help                                                                       │
+│                                                                              │
+│Keyboard Shortcuts:                                                           │
+│                                                                              │
+│Ctrl+k               - Clear screen                                           │
+│Ctrl+y               - Copy password to clipboard                             │
+│Ctrl+u               - Copy username to clipboard                             │
+│Ctrl+n               - Create a new record                                    │
+│Ctrl+x               - Delete a record                                        │
+│Ctrl+d               - Disable synchronization                                │
+│Ctrl+l               - List all records                                       │
+│Ctrl+p               - Open configuration                                     │
+│F2                   - Open settings screen                                   │
+│Ctrl+q               - Quit TUI                                               │
+│Ctrl+r               - Refresh current view                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│> Type a command...                                                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+
+Step 4: typed_config
+───────────────────
+┌ OpenKeyring TUI ─────────────────────────────────────────────────────────────┐
+│OpenKeyring TUI v0.1.0                                                        │
+│Type /help for available commands                                             │
+│                                                                              │
+│> /help                                                                       │
+│                                                                              │
+│Keyboard Shortcuts:                                                           │
+│                                                                              │
+│Ctrl+k               - Clear screen                                           │
+│Ctrl+y               - Copy password to clipboard                             │
+│Ctrl+u               - Copy username to clipboard                             │
+│Ctrl+n               - Create a new record                                    │
+│Ctrl+x               - Delete a record                                        │
+│Ctrl+d               - Disable synchronization                                │
+│Ctrl+l               - List all records                                       │
+│Ctrl+p               - Open configuration                                     │
+│F2                   - Open settings screen                                   │
+│Ctrl+q               - Quit TUI                                               │
+│Ctrl+r               - Refresh current view                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│> /config                                                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+
+Step 5: submitted_config
+───────────────────────
+┌ OpenKeyring TUI ─────────────────────────────────────────────────────────────┐
+│OpenKeyring TUI v0.1.0                                                        │
+│Type /help for available commands                                             │
+│                                                                              │
+│> /help                                                                       │
+│                                                                              │
+│Keyboard Shortcuts:                                                           │
+│                                                                              │
+│Ctrl+k               - Clear screen                                           │
+│Ctrl+y               - Copy password to clipboard                             │
+│Ctrl+u               - Copy username to clipboard                             │
+│Ctrl+n               - Create a new record                                    │
+│Ctrl+x               - Delete a record                                        │
+│Ctrl+d               - Disable synchronization                                │
+│Ctrl+l               - List all records                                       │
+│Ctrl+p               - Open configuration                                     │
+│F2                   - Open settings screen                                   │
+│Ctrl+q               - Quit TUI                                               │
+│Ctrl+r               - Refresh current view                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│> Type a command...                                                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐

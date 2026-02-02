@@ -1,0 +1,15 @@
+---
+source: src/tui/tests/wizard_snapshot_tests.rs
+expression: state
+---
+WizardState {
+    step: PasskeyImport,
+    passkey_choice: Some(
+        ImportExisting,
+    ),
+    passkey_words: None,
+    master_password: None,
+    confirmed: false,
+    keystore_path: None,
+    error: None,
+}

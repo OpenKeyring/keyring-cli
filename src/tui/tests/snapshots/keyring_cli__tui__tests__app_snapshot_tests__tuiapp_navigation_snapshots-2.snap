@@ -1,0 +1,5 @@
+---
+source: src/tui/tests/app_snapshot_tests.rs
+expression: app.current_screen().name()
+---
+Settings

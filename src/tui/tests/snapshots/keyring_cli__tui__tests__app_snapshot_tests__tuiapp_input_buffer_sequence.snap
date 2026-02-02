@@ -1,0 +1,29 @@
+---
+source: src/tui/tests/app_snapshot_tests.rs
+expression: seq.to_string()
+---
+Sequence: input_buffer_sequence
+
+Step 1: typed_slash
+──────────────────
+buffer: '/'
+
+Step 2: typed_h
+──────────────
+buffer: '/h'
+
+Step 3: typed_e
+──────────────
+buffer: '/he'
+
+Step 4: typed_l
+──────────────
+buffer: '/hel'
+
+Step 5: typed_p
+──────────────
+buffer: '/help'
+
+Step 6: after_submit
+───────────────────
+buffer: ''

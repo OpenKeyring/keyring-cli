@@ -1,0 +1,42 @@
+---
+source: src/tui/tests/wizard_snapshot_tests.rs
+expression: state
+---
+WizardState {
+    step: MasterPassword,
+    passkey_choice: Some(
+        ImportExisting,
+    ),
+    passkey_words: Some(
+        [
+            "abandon",
+            "ability",
+            "able",
+            "about",
+            "above",
+            "absent",
+            "absorb",
+            "abstract",
+            "absurd",
+            "abuse",
+            "access",
+            "accident",
+            "account",
+            "accuse",
+            "achieve",
+            "acid",
+            "acoustic",
+            "acquire",
+            "across",
+            "act",
+            "action",
+            "actor",
+            "actress",
+            "actual",
+        ],
+    ),
+    master_password: None,
+    confirmed: false,
+    keystore_path: None,
+    error: None,
+}

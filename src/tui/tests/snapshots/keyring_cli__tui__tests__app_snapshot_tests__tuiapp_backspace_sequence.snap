@@ -1,0 +1,17 @@
+---
+source: src/tui/tests/app_snapshot_tests.rs
+expression: seq.to_string()
+---
+Sequence: backspace_sequence
+
+Step 1: typed_test
+─────────────────
+buffer: 'test'
+
+Step 2: after_backspace
+──────────────────────
+buffer: 'tes'
+
+Step 3: after_second_backspace
+─────────────────────────────
+buffer: 'te'

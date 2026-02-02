@@ -1,0 +1,9 @@
+---
+source: src/tui/tests/app_snapshot_tests.rs
+expression: "&app.output_lines"
+---
+[
+    "OpenKeyring TUI v0.1.0",
+    "Type /help for available commands",
+    "",
+]

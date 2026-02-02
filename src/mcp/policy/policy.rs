@@ -184,7 +184,7 @@ impl PolicyEngine {
         // Return the most restrictive decision
         decisions
             .into_iter()
-            .reduce(|a, b| Self::most_restrictive_decision(a, b))
+            .reduce(Self::most_restrictive_decision)
             .unwrap_or(AuthDecision::SessionApprove)
     }
 

@@ -1396,7 +1396,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Lock path construction needs refactoring - see issue in lock.rs"]
     fn test_with_read_lock() {
         let temp_dir = TempDir::new().unwrap();
         let db_path = temp_dir.path().join("passwords.db");

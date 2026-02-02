@@ -1,0 +1,29 @@
+---
+source: src/tui/tests/wizard_snapshot_tests.rs
+expression: seq.to_string()
+---
+Sequence: wizard_generate_flow
+
+Step 1: initial
+──────────────
+WizardState { step: Welcome, passkey_choice: None, passkey_words: None, master_password: None, confirmed: false, keystore_path: None, error: None }
+
+Step 2: choice_set
+─────────────────
+WizardState { step: Welcome, passkey_choice: Some(GenerateNew), passkey_words: None, master_password: None, confirmed: false, keystore_path: None, error: None }
+
+Step 3: to_generate
+──────────────────
+WizardState { step: PasskeyGenerate, passkey_choice: Some(GenerateNew), passkey_words: None, master_password: None, confirmed: false, keystore_path: None, error: None }
+
+Step 4: words_set
+────────────────
+WizardState { step: PasskeyGenerate, passkey_choice: Some(GenerateNew), passkey_words: Some(["word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word"]), master_password: None, confirmed: false, keystore_path: None, error: None }
+
+Step 5: to_confirm
+─────────────────
+WizardState { step: PasskeyConfirm, passkey_choice: Some(GenerateNew), passkey_words: Some(["word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word"]), master_password: None, confirmed: false, keystore_path: None, error: None }
+
+Step 6: confirmed
+────────────────
+WizardState { step: PasskeyConfirm, passkey_choice: Some(GenerateNew), passkey_words: Some(["word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word"]), master_password: None, confirmed: true, keystore_path: None, error: None }

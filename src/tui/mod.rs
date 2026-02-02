@@ -12,6 +12,12 @@ pub mod tags;
 mod utils;
 mod widgets;
 
+#[cfg(test)]
+pub mod testing;
+
+#[cfg(test)]
+mod tests;
+
 pub use app::{run_tui, Screen, TuiApp, TuiError};
 pub use handler::{AppAction, TuiEventHandler};
 

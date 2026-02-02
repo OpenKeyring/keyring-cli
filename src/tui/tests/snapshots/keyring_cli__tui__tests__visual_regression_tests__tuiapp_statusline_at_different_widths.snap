@@ -1,0 +1,17 @@
+---
+source: src/tui/tests/visual_regression_tests.rs
+expression: seq.to_string()
+---
+Sequence: statusline_widths
+
+Step 1: narrow_statusline
+────────────────────────
+ Unsynced
+
+Step 2: full_statusline
+──────────────────────
+🔓  0 rec | Unsynced | v0.1.0 | Ctrl+N new | Ctrl+Q quit
+
+Step 3: wide_statusline
+──────────────────────
+🔓  0 rec | Unsynced | v0.1.0 | Ctrl+N new | Ctrl+L list | Ctrl+Q quit

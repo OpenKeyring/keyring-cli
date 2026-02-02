@@ -87,6 +87,57 @@ struct SshCredential {
     pub tags: HashSet<String>,
 }
 
+/// Authentication context for confirmed operations
+///
+/// Groups together authentication-related parameters to reduce
+/// function parameter count and improve maintainability.
+struct AuthContext<'a> {
+    /// Confirmation token from user
+    confirmation_id: &'a str,
+    /// Signing key for token verification
+    signing_key: &'a [u8],
+    /// Session cache for session-based approvals
+    session_cache: &'a mut SessionCache,
+    /// Used tokens cache for replay protection
+    used_tokens: &'a mut UsedTokenCache,
+    /// Session identifier for binding
+    session_id: &'a str,
+}
+
+impl<'a> AuthContext<'a> {
+    /// Verify the confirmation token and check replay protection
+    fn verify_token(&mut self) -> Result<ConfirmationToken, HandlerError> {
+        // 1. Decode and verify token
+        let token = ConfirmationToken::decode(self.confirmation_id)
+            .map_err(|e| HandlerError::InvalidToken {
+                reason: e.to_string(),
+            })?;
+
+        // 2. Verify signature and session binding
+        token
+            .verify_with_session(self.signing_key, self.session_id)
+            .map_err(|e| HandlerError::InvalidToken {
+                reason: e.to_string(),
+            })?;
+
+        // 3. Check if token was already used (replay protection)
+        if self.used_tokens.is_used(&token.nonce) {
+            return Err(HandlerError::InvalidToken {
+                reason: "Token already used".to_string(),
+            });
+        }
+
+        // 4. Mark token as used
+        self.used_tokens
+            .mark_used(&token.nonce)
+            .map_err(|e| HandlerError::InvalidToken {
+                reason: e.to_string(),
+            })?;
+
+        Ok(token)
+    }
+}
+
 /// Handler error types
 #[derive(Debug, thiserror::Error)]
 pub enum HandlerError {
@@ -169,7 +220,7 @@ impl From<HandlerError> for KeyringError {
 /// * `Err(HandlerError::PendingConfirmation)` - User confirmation required
 /// * `Err(HandlerError)` - Other errors
 pub async fn handle_ssh_exec(
-    input: SshExecInput,
+    mut input: SshExecInput,
     vault: &Vault,
     signing_key: &[u8],
     session_cache: &mut SessionCache,
@@ -180,18 +231,16 @@ pub async fn handle_ssh_exec(
     let ssh_credential = load_ssh_credential(vault, &input.credential_name)?;
 
     // 2. Check if confirmation_id present (user approved)
-    if let Some(ref cid) = input.confirmation_id {
-        return handle_confirmed_exec(
-            cid,
-            input.clone(), // Clone to avoid move
-            ssh_credential,
-            vault,
+    let confirmation_id = input.confirmation_id.take();
+    if let Some(cid) = &confirmation_id {
+        let auth = AuthContext {
+            confirmation_id: cid,
             signing_key,
             session_cache,
             used_tokens,
             session_id,
-        )
-        .await;
+        };
+        return handle_confirmed_exec(input, ssh_credential, vault, auth).await;
     }
 
     // 3. Check policy engine
@@ -244,36 +293,15 @@ pub async fn handle_ssh_exec(
 
 /// Handle confirmed SSH execution (user provided confirmation_id)
 async fn handle_confirmed_exec(
-    confirmation_id: &str,
     input: SshExecInput,
     ssh_credential: SshCredential,
     _vault: &Vault,
-    signing_key: &[u8],
-    session_cache: &mut SessionCache,
-    used_tokens: &mut UsedTokenCache,
-    session_id: &str,
+    mut auth: AuthContext<'_>,
 ) -> Result<SshExecOutput, HandlerError> {
-    // 1. Decode and verify token
-    let token =
-        ConfirmationToken::decode(confirmation_id).map_err(|e| HandlerError::InvalidToken {
-            reason: e.to_string(),
-        })?;
+    // 1. Verify token using AuthContext
+    let _token = auth.verify_token()?;
 
-    // 2. Verify signature and session binding
-    token
-        .verify_with_session(signing_key, session_id)
-        .map_err(|e| HandlerError::InvalidToken {
-            reason: e.to_string(),
-        })?;
-
-    // 3. Check if token was already used (replay protection)
-    if used_tokens.is_used(&token.nonce) {
-        return Err(HandlerError::InvalidToken {
-            reason: "Token already used".to_string(),
-        });
-    }
-
-    // 4. Check user decision if provided
+    // 2. Check user decision if provided
     if let Some(ref decision) = input.user_decision {
         match decision.to_lowercase().as_str() {
             "approve" | "yes" | "true" => {
@@ -290,17 +318,10 @@ async fn handle_confirmed_exec(
         }
     }
 
-    // 5. Mark token as used
-    used_tokens
-        .mark_used(&token.nonce)
-        .map_err(|e| HandlerError::InvalidToken {
-            reason: e.to_string(),
-        })?;
+    // 3. Authorize in session cache (for SessionApprove policy)
+    let _ = auth.session_cache.authorize(&input.credential_name);
 
-    // 6. Authorize in session cache (for SessionApprove policy)
-    let _ = session_cache.authorize(&input.credential_name);
-
-    // 7. Execute SSH command
+    // 4. Execute SSH command
     execute_ssh(input, ssh_credential).await
 }
 

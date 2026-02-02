@@ -84,6 +84,9 @@ impl Default for AuditQuery {
 /// Audit logger for MCP operations
 pub struct AuditLogger {
     log_path: PathBuf,
+    /// Signing key for audit log integrity verification
+    /// Reserved for future implementation of cryptographic signatures
+    #[allow(dead_code)]
     signing_key: Vec<u8>,
 }
 

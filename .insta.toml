@@ -1,0 +1,44 @@
+# insta snapshot testing configuration
+# See https://insta.rs/docs/configuration/
+
+[insta]
+# Auto-accept new snapshots during development
+# Set to "no" for CI/strict mode
+update = "auto"
+
+# Automatically delete snapshots that are no longer referenced
+unreferenced = "delete"
+
+# Snapshot filters - normalize dynamic content
+[insta.filters]
+# Timestamps in various formats
+"\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}" = "[TIMESTAMP]"
+"\\d{4}-\\d{2}-\\d{2}" = "[DATE]"
+"\\d{2}:\\d{2}:\\d{2}" = "[TIME]"
+
+# UUIDs
+"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" = "[UUID]"
+"[0-9a-f]{32}" = "[UUID_NO_DASHES]"
+
+# Relative time strings
+"\\d+[mhd]\\s+ago" = "[DURATION]"
+"\\d+\\s+(seconds?|minutes?|hours?|days?|weeks?|months?|years?)\\s+ago" = "[DURATION]"
+
+# Duration patterns
+"\\d+ms" = "[MILLISECONDS]"
+"\\d+\\.\\d+s" = "[SECONDS]"
+"\\d+s" = "[SECONDS]"
+
+# File sizes
+"\\d+\\.?\\d*\\s*(KB|MB|GB|TB)" = "[FILESIZE]"
+"\\d+\\s+bytes?" = "[BYTES]"
+
+# Memory addresses
+"0x[0-9a-f]+" = "[ADDRESS]"
+
+# Process/thread IDs
+"pid:\\s*\\d+" = "[PID]"
+"thread:\\s*\\d+" = "[THREAD_ID]"
+
+# Path normalization (optional - uncomment if needed)
+# "/[\\w/-.]+" = "[PATH]"

@@ -1,0 +1,33 @@
+---
+source: src/tui/tests/screen_snapshot_tests.rs
+expression: screen
+---
+PasskeyConfirmScreen {
+    passkey_words: [
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+        "word",
+    ],
+    confirmed: true,
+}

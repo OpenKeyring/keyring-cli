@@ -1,0 +1,28 @@
+---
+source: src/tui/tests/visual_regression_tests.rs
+expression: output
+---
+┌ OpenKeyring TUI ───────────┐
+│OpenKeyring TUI v0.1.0      │
+│Type /help for available    │
+│commands                    │
+│                            │
+│> /help                     │
+│                            │
+│Keyboard Shortcuts:         │
+│                            │
+│Ctrl+k               - Clear│
+│screen                      │
+│Ctrl+y               - Copy │
+│password to clipboard       │
+│Ctrl+u               - Copy │
+│username to clipboard       │
+│Ctrl+n               -      │
+│Create a new record         │
+│Ctrl+x               -      │
+│Delete a record             │
+└────────────────────────────┘
+┌────────────────────────────┐
+│> Type a command...         │
+└────────────────────────────┘
+┌────────────────────────────┐

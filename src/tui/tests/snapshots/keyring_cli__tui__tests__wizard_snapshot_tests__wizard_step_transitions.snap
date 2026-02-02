@@ -1,0 +1,5 @@
+---
+source: src/tui/tests/wizard_snapshot_tests.rs
+expression: state.step.name()
+---
+欢迎

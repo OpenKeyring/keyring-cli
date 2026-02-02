@@ -200,8 +200,15 @@ impl KeyBindingManager {
     }
 
     /// Get all keybindings for display
+    ///
+    /// Returns bindings sorted by action description for consistent ordering.
     pub fn all_bindings(&self) -> Vec<(Action, KeyEvent)> {
-        self.action_to_key.iter().map(|(a, k)| (*a, *k)).collect()
+        let mut bindings: Vec<(Action, KeyEvent)> =
+            self.action_to_key.iter().map(|(a, k)| (*a, *k)).collect();
+
+        // Sort by action description for deterministic ordering
+        bindings.sort_by_key(|(action, _)| action.description());
+        bindings
     }
 
     /// Reload configuration from file

@@ -88,6 +88,7 @@ impl McpLock {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(&path)
             .map_err(Error::Io)?;
 
@@ -140,6 +141,7 @@ impl McpLock {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(&path)
             .map_err(Error::Io)?;
 

@@ -102,30 +102,30 @@ fn decode_nonce(bytes: &[u8]) -> Result<[u8; 12], KeyringError> {
     Ok(nonce)
 }
 
-// Helper function to create test SyncRecord
-fn create_test_sync_record(id: &str, version: u64, encrypted_data: &str) -> SyncRecord {
-    use crate::db::models::RecordType;
-    SyncRecord {
-        id: id.to_string(),
-        version,
-        record_type: RecordType::Password,
-        encrypted_data: encrypted_data.to_string(),
-        nonce: "AAAAAAAAAAAAAAAA".to_string(), // base64 of [0u8; 12]
-        metadata: crate::sync::export::RecordMetadata {
-            name: "Test Record".to_string(),
-            tags: vec!["tag1".to_string(), "tag2".to_string()],
-            platform: "linux".to_string(),
-            device_id: "device1".to_string(),
-        },
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use tempfile::TempDir;
+    use crate::db::models::RecordType;
+
+    // Helper function to create test SyncRecord
+    fn create_test_sync_record(id: &str, version: u64, encrypted_data: &str) -> SyncRecord {
+        SyncRecord {
+            id: id.to_string(),
+            version,
+            record_type: RecordType::Password,
+            encrypted_data: encrypted_data.to_string(),
+            nonce: "AAAAAAAAAAAAAAAA".to_string(), // base64 of [0u8; 12]
+            metadata: crate::sync::export::RecordMetadata {
+                name: "Test Record".to_string(),
+                tags: vec!["tag1".to_string(), "tag2".to_string()],
+                platform: "linux".to_string(),
+                device_id: "device1".to_string(),
+            },
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
 
     // decode_nonce helper tests
     #[test]

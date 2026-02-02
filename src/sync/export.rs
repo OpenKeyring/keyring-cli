@@ -102,24 +102,24 @@ impl JsonSyncExporter {
     }
 }
 
-// Helper function to create test StoredRecord
-fn create_test_stored_record(id: &str, version: u64, encrypted_data: Vec<u8>) -> StoredRecord {
-    StoredRecord {
-        id: uuid::Uuid::parse_str(id).unwrap(),
-        record_type: RecordType::Password,
-        encrypted_data,
-        nonce: [0u8; 12],
-        tags: vec!["tag1".to_string(), "tag2".to_string()],
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-        version,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use tempfile::TempDir;
+
+    // Helper function to create test StoredRecord
+    fn create_test_stored_record(id: &str, version: u64, encrypted_data: Vec<u8>) -> StoredRecord {
+        StoredRecord {
+            id: uuid::Uuid::parse_str(id).unwrap(),
+            record_type: RecordType::Password,
+            encrypted_data,
+            nonce: [0u8; 12],
+            tags: vec!["tag1".to_string(), "tag2".to_string()],
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+            version,
+        }
+    }
 
     // SyncRecord struct tests
     #[test]

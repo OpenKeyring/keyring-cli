@@ -247,8 +247,7 @@ impl TuiApp {
             if !state.is_complete() {
                 return Err(KeyringError::InvalidInput {
                     context: "Wizard not complete".to_string(),
-                }
-                .into());
+                });
             }
 
             let keystore_path = state.require_keystore_path();
@@ -273,8 +272,7 @@ impl TuiApp {
         } else {
             Err(KeyringError::InvalidInput {
                 context: "No wizard state".to_string(),
-            }
-            .into())
+            })
         }
     }
 
@@ -305,9 +303,10 @@ impl TuiApp {
                     state.next();
 
                     // Handle special cases
-                    if state.step == WizardStep::PasskeyConfirm && state.passkey_words.is_some() {
-                        let words = state.passkey_words.as_ref().unwrap().clone();
-                        self.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(words));
+                    if state.step == WizardStep::PasskeyConfirm {
+                        if let Some(words) = state.passkey_words.clone() {
+                            self.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(words));
+                        }
                     }
 
                     // Check if wizard complete

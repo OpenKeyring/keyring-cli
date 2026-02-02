@@ -159,6 +159,9 @@ impl SimpleAuditLogger {
 }
 
 // Re-export the async audit logger types for tests and external use
+// Note: audit subdirectory contains the async audit logger implementation
+// The module inception warning is acceptable for cleaner namespace
+#[allow(clippy::module_inception)]
 pub mod audit;
 
 // Re-export the async logger types for tests

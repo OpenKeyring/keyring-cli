@@ -117,8 +117,7 @@ impl McpKeyCache {
     /// A reference to the DEK byte slice
     pub fn dek(&self) -> Result<&[u8], KeyCacheError> {
         self.dek
-            .as_ref()
-            .map(|v| v.as_slice())
+            .as_deref()
             .ok_or(KeyCacheError::NotInitialized)
     }
 

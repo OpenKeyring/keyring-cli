@@ -9,6 +9,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 ///
 /// Uses fslock-style file locking with platform-specific implementations.
 /// The lock file is created alongside the vault database.
+///
+/// # Lock Path Construction
+///
+/// When `vault_path` is a file path (e.g., `/path/to/passwords.db`):
+/// - Lock file is created as `/path/to/passwords.db.lock` (replacing extension)
+///
+/// When `vault_path` is a directory path (e.g., `/path/to/vault/`):
+/// - Lock file is created as `/path/to/vault/.lock`
 #[allow(dead_code)]
 pub struct VaultLock {
     #[allow(dead_code)]
@@ -22,7 +30,7 @@ impl VaultLock {
     /// Acquire an exclusive write lock
     ///
     /// # Arguments
-    /// * `vault_path` - Path to the vault directory
+    /// * `vault_path` - Path to the vault database file
     /// * `timeout_ms` - Maximum time to wait for lock acquisition
     ///
     /// # Returns
@@ -33,7 +41,7 @@ impl VaultLock {
     /// - **Unix/macOS**: Uses `flock` with exclusive lock
     /// - **Windows**: Uses Windows file locking
     pub fn acquire_write(vault_path: &Path, timeout_ms: u64) -> Result<Self> {
-        let lock_path = vault_path.join(".lock");
+        let lock_path = Self::lock_path_for_vault(vault_path);
         let lock_file = Self::open_lock_file(&lock_path)?;
 
         // Try to acquire lock with timeout
@@ -70,10 +78,10 @@ impl VaultLock {
     /// Multiple read locks can be held simultaneously, but write locks are exclusive.
     ///
     /// # Arguments
-    /// * `vault_path` - Path to the vault directory
+    /// * `vault_path` - Path to the vault database file
     /// * `timeout_ms` - Maximum time to wait for lock acquisition
     pub fn acquire_read(vault_path: &Path, timeout_ms: u64) -> Result<Self> {
-        let lock_path = vault_path.join(".lock");
+        let lock_path = Self::lock_path_for_vault(vault_path);
         let lock_file = Self::open_lock_file(&lock_path)?;
 
         // Try to acquire shared lock with timeout
@@ -102,6 +110,25 @@ impl VaultLock {
             lock_path,
             _held: AtomicBool::new(true),
         })
+    }
+
+    /// Determine the lock file path for a given vault path
+    ///
+    /// Handles both file paths and directory paths:
+    /// - File path (`/path/to/passwords.db`) → `/path/to/passwords.db.lock`
+    /// - Directory path (`/path/to/vault/`) → `/path/to/vault/.lock`
+    fn lock_path_for_vault(vault_path: &Path) -> std::path::PathBuf {
+        if vault_path.extension().is_some() {
+            // It's a file path (e.g., /path/to/passwords.db)
+            // Replace/add .lock extension
+            let mut lock_path = vault_path.to_path_buf();
+            lock_path.set_extension("lock");
+            lock_path
+        } else {
+            // It's a directory path (e.g., /path/to/vault/)
+            // Append .lock
+            vault_path.join(".lock")
+        }
     }
 
     /// Release the lock

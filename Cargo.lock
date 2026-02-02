@@ -2435,6 +2435,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "insta"
+version = "1.46.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38c91d64f9ad425e80200a50a0e8b8a641680b44e33ce832efe5b8bc65161b07"
+dependencies = [
+ "console",
+ "once_cell",
+ "similar",
+ "tempfile",
+]
+
+[[package]]
 name = "instability"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2614,6 +2626,7 @@ dependencies = [
  "hex",
  "hkdf",
  "hmac",
+ "insta",
  "libc",
  "log",
  "notify",
@@ -2621,6 +2634,7 @@ dependencies = [
  "pbkdf2",
  "rand 0.9.2",
  "ratatui",
+ "regex",
  "reqwest 0.12.28",
  "rmcp",
  "rpassword",
@@ -4140,6 +4154,12 @@ name = "simd-adler32"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e320a6c5ad31d271ad523dcf3ad13e2767ad8b1cb8f047f75a8aeaf8da139da2"
+
+[[package]]
+name = "similar"
+version = "2.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa"
 
 [[package]]
 name = "slab"

@@ -118,29 +118,29 @@ impl DefaultConflictResolver {
     }
 }
 
-// Helper function to create test SyncRecord
-fn create_test_sync_record(id: &str, version: u64) -> SyncRecord {
-    use crate::db::models::RecordType;
-    SyncRecord {
-        id: id.to_string(),
-        version,
-        record_type: RecordType::Password,
-        encrypted_data: "encrypted".to_string(),
-        nonce: "nonce123".to_string(),
-        metadata: crate::sync::export::RecordMetadata {
-            name: "test".to_string(),
-            tags: vec![],
-            platform: "test".to_string(),
-            device_id: "device1".to_string(),
-        },
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::models::RecordType;
+
+    // Helper function to create test SyncRecord
+    fn create_test_sync_record(id: &str, version: u64) -> SyncRecord {
+        SyncRecord {
+            id: id.to_string(),
+            version,
+            record_type: RecordType::Password,
+            encrypted_data: "encrypted".to_string(),
+            nonce: "nonce123".to_string(),
+            metadata: crate::sync::export::RecordMetadata {
+                name: "test".to_string(),
+                tags: vec![],
+                platform: "test".to_string(),
+                device_id: "device1".to_string(),
+            },
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
 
     // Conflict struct tests
     #[test]

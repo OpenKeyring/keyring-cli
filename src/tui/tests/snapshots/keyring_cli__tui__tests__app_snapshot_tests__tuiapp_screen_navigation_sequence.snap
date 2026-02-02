@@ -1,0 +1,25 @@
+---
+source: src/tui/tests/app_snapshot_tests.rs
+expression: seq.to_string()
+---
+Sequence: screen_navigation
+
+Step 1: initial_screen
+─────────────────────
+Main
+
+Step 2: to_settings
+──────────────────
+Settings
+
+Step 3: to_help
+──────────────
+Help
+
+Step 4: to_sync
+──────────────
+Sync
+
+Step 5: back_to_main
+───────────────────
+Main
