@@ -48,6 +48,7 @@ jobs:
         continue-on-error: true  # Continue to next steps even if tests fail
 
       - name: Run clippy
+        shell: bash
         run: |
           # Allow some pre-existing warnings while keeping CI green
           # TODO: Fix these pre-existing warnings and remove the allows
