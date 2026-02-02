@@ -62,6 +62,7 @@ fn test_webdav_operator_creation() {
     assert!(operator.info().full_capability().write);
 }
 
+#[cfg(unix)]
 #[test]
 fn test_sftp_operator_creation() {
     // Create SFTP config
@@ -134,6 +135,7 @@ fn test_webdav_without_endpoint_returns_error() {
     assert!(result.unwrap_err().to_string().contains("endpoint"));
 }
 
+#[cfg(unix)]
 #[test]
 fn test_sftp_without_host_returns_error() {
     // Test SFTP without host
@@ -148,4 +150,34 @@ fn test_sftp_without_host_returns_error() {
     let result = create_operator(&config);
     assert!(result.is_err());
     assert!(result.unwrap_err().to_string().contains("host"));
+}
+
+#[test]
+fn test_sftp_not_supported_on_windows() {
+    #[cfg(not(unix))]
+    {
+        // Test SFTP on Windows returns platform not supported error
+        let config = CloudConfig {
+            provider: keyring_cli::cloud::config::CloudProvider::SFTP,
+            sftp_host: Some("sftp.example.com".to_string()),
+            sftp_username: Some("testuser".to_string()),
+            sftp_password: Some("testpass".to_string()),
+            ..Default::default()
+        };
+
+        let result = create_operator(&config);
+        assert!(result.is_err());
+        let error_msg = result.unwrap_err().to_string();
+        assert!(
+            error_msg.contains("not supported") || error_msg.contains("platform"),
+            "Expected platform support error, got: {}",
+            error_msg
+        );
+    }
+
+    #[cfg(unix)]
+    {
+        // On Unix, this test is a no-op since SFTP is supported
+        // The actual SFTP tests will run
+    }
 }
