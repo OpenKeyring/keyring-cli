@@ -189,7 +189,7 @@ impl SecureBuffer {
     /// This consumes the SecureBuffer and returns the raw Vec<u8>.
     /// The caller is responsible for zeroizing the data after use.
     /// On Windows, padding is removed before returning.
-    pub fn into_inner(mut self) -> Vec<u8> {
+    pub fn into_inner(self) -> Vec<u8> {
         // SAFETY: We own self now, so we have exclusive access
         let is_protected = unsafe { *self.is_protected.get() };
         if is_protected {
