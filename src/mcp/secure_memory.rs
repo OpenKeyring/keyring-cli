@@ -258,7 +258,12 @@ mod tests {
             assert!(buffer.is_ok(), "Failed for size {}", size);
             let buffer = buffer.unwrap();
             assert_eq!(buffer.len(), size, "Length mismatch for size {}", size);
-            assert_eq!(buffer.as_slice(), data.as_slice(), "Data mismatch for size {}", size);
+            assert_eq!(
+                buffer.as_slice(),
+                data.as_slice(),
+                "Data mismatch for size {}",
+                size
+            );
         }
     }
 }
