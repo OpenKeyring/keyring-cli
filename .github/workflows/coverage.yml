@@ -45,7 +45,7 @@ jobs:
 
       - name: Check coverage threshold
         run: |
-          COVERAGE=$(jq '.coverage // 0' coverage/tarpaulin.json 2>/dev/null || echo "0")
+          COVERAGE=$(jq '.coverage // 0' coverage/tarpaulin-report.json 2>/dev/null || echo "0")
           echo "Coverage: $COVERAGE%"
           if (( $(echo "$COVERAGE < 80" | bc -l) )); then
             echo "❌ Coverage below 80% (current: $COVERAGE%)"
@@ -56,7 +56,7 @@ jobs:
 
       - name: Add coverage summary
         run: |
-          COVERAGE=$(jq '.coverage // 0' coverage/tarpaulin.json 2>/dev/null || echo "0")
+          COVERAGE=$(jq '.coverage // 0' coverage/tarpaulin-report.json 2>/dev/null || echo "0")
           echo "## Test Coverage" >> $GITHUB_STEP_SUMMARY
           echo "Current coverage: **$COVERAGE%**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
