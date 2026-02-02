@@ -41,8 +41,14 @@ impl From<PlatformError> for SecureMemoryError {
 /// # Security
 ///
 /// - On Unix: Uses mlock() to prevent memory from being swapped to disk
-/// - On Windows: Uses CryptProtectMemory to encrypt memory
+/// - On Windows: Uses CryptProtectMemory to encrypt memory (data is padded to 16-byte boundaries)
 /// - Automatically zeroizes on drop
+///
+/// # Platform Notes
+///
+/// On Windows, CryptProtectMemory requires memory to be aligned to 16-byte boundaries.
+/// SecureBuffer automatically pads data to meet this requirement. The logical length
+/// (the actual data length) is preserved and returned by `len()` and `as_slice()`.
 ///
 /// # Example
 ///
@@ -59,8 +65,11 @@ impl From<PlatformError> for SecureMemoryError {
 /// // Buffer is automatically zeroized and unprotected on drop
 /// ```
 pub struct SecureBuffer {
-    /// The protected data
+    /// The protected data (may be padded on Windows for 16-byte alignment)
     data: Vec<u8>,
+
+    /// The actual logical length of the data (excluding padding)
+    logical_len: usize,
 
     /// Whether memory is currently protected
     is_protected: bool,
@@ -82,12 +91,30 @@ impl SecureBuffer {
     /// Returns an error if:
     /// - Memory protection fails (e.g., mlock fails due to resource limits)
     /// - Data pointer is null
+    ///
+    /// # Platform Notes
+    ///
+    /// On Windows, data is automatically padded to meet CryptProtectMemory's
+    /// 16-byte alignment requirement. The logical length is preserved.
     pub fn new(mut data: Vec<u8>) -> Result<Self, SecureMemoryError> {
+        let logical_len = data.len();
+
         if data.is_empty() {
             return Ok(Self {
                 data,
+                logical_len: 0,
                 is_protected: false,
             });
+        }
+
+        // On Windows, pad data to 16-byte boundary for CryptProtectMemory
+        #[cfg(target_os = "windows")]
+        {
+            const BLOCK_SIZE: usize = 16;
+            let padding_needed = (BLOCK_SIZE - (data.len() % BLOCK_SIZE)) % BLOCK_SIZE;
+            if padding_needed != 0 {
+                data.extend(vec![0u8; padding_needed]);
+            }
         }
 
         // Protect the memory
@@ -96,6 +123,7 @@ impl SecureBuffer {
 
         Ok(Self {
             data,
+            logical_len,
             is_protected: true,
         })
     }
@@ -116,22 +144,26 @@ impl SecureBuffer {
     ///
     /// The data remains protected while you have a reference to it.
     /// On Windows, the data is encrypted and will be decrypted on access.
+    /// Only the logical data (excluding padding) is returned.
     pub fn as_slice(&self) -> &[u8] {
-        &self.data
+        &self.data[..self.logical_len]
     }
 
     /// Unprotect the memory and return the underlying data
     ///
     /// This consumes the SecureBuffer and returns the raw Vec<u8>.
     /// The caller is responsible for zeroizing the data after use.
+    /// On Windows, padding is removed before returning.
     pub fn into_inner(mut self) -> Vec<u8> {
         if self.is_protected {
             // Unprotect before returning
             let _ = unprotect_memory(self.data.as_mut_ptr(), self.data.len());
             self.is_protected = false;
         }
-        // Use std::mem::take to avoid moving out of type with Drop
-        std::mem::take(&mut self.data)
+        // Take the data and truncate to logical length
+        let mut data = std::mem::take(&mut self.data);
+        data.truncate(self.logical_len);
+        data
     }
 }
 
@@ -148,11 +180,11 @@ impl Drop for SecureBuffer {
 
 impl Clone for SecureBuffer {
     fn clone(&self) -> Self {
-        // Create a new buffer with cloned data
-        // The new buffer will also be protected
-        let cloned_data = self.data.clone();
+        // Clone only the logical data (without padding)
+        let cloned_data = self.as_slice().to_vec();
         Self::new(cloned_data).unwrap_or_else(|_| Self {
             data: vec![],
+            logical_len: 0,
             is_protected: false,
         })
     }
@@ -213,5 +245,20 @@ mod tests {
         assert!(buffer.is_ok());
         let buffer = buffer.unwrap();
         assert_eq!(buffer.len(), 1024);
+    }
+
+    #[test]
+    fn test_secure_buffer_non_16_byte_sizes() {
+        // Test various sizes that are not multiples of 16
+        // This ensures Windows padding works correctly
+        for size in [1, 3, 5, 7, 8, 11, 13, 15] {
+            let data = vec![0x42u8; size];
+            let buffer = SecureBuffer::new(data.clone());
+
+            assert!(buffer.is_ok(), "Failed for size {}", size);
+            let buffer = buffer.unwrap();
+            assert_eq!(buffer.len(), size, "Length mismatch for size {}", size);
+            assert_eq!(buffer.as_slice(), data.as_slice(), "Data mismatch for size {}", size);
+        }
     }
 }
