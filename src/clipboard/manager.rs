@@ -79,7 +79,7 @@ impl From<Box<dyn ClipboardManager>> for BoxClipboardManager {
 pub fn create_platform_clipboard() -> Result<BoxClipboardManager, KeyringError> {
     #[cfg(target_os = "macos")]
     {
-        let clipboard: Box<dyn ClipboardManager> = Box::new(MacOSClipboard);
+        let clipboard: Box<dyn ClipboardManager> = Box::new(MacOSClipboard::new()?);
         Ok(BoxClipboardManager::from(clipboard))
     }
     #[cfg(target_os = "linux")]
@@ -119,8 +119,23 @@ impl<T: ClipboardManager> ClipboardService<T> {
             let timeout = self.manager.timeout();
             std::thread::spawn(move || {
                 std::thread::sleep(timeout);
-                // In a real implementation, this would clear the clipboard
-                println!("Clipboard cleared after timeout");
+                // Create a new clipboard instance to clear after timeout
+                #[cfg(target_os = "macos")]
+                {
+                    if let Ok(mut clipboard) = MacOSClipboard::new() {
+                        let _ = clipboard.clear();
+                    }
+                }
+                #[cfg(target_os = "linux")]
+                {
+                    let mut clipboard = LinuxClipboard;
+                    let _ = clipboard.clear();
+                }
+                #[cfg(target_os = "windows")]
+                {
+                    let mut clipboard = WindowsClipboard;
+                    let _ = clipboard.clear();
+                }
             });
         }
 

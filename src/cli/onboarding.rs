@@ -4,10 +4,10 @@
 //! and to unlock the keystore for encryption/decryption operations.
 
 use crate::cli::ConfigManager;
-use crate::crypto::{keystore::KeyStore, CryptoManager};
+use crate::crypto::{hkdf::DeviceIndex, keystore::KeyStore, CryptoManager};
 use crate::db::Vault;
 use crate::error::{KeyringError, Result};
-use crate::onboarding::{initialize_keystore, is_initialized};
+use crate::onboarding::is_initialized;
 use std::path::PathBuf;
 
 /// Ensure the vault is initialized
@@ -37,34 +37,78 @@ pub fn ensure_initialized() -> Result<()> {
     Ok(())
 }
 
+/// Check if this is first-time use (keystore doesn't exist)
+pub fn is_first_time() -> Result<bool> {
+    let config = ConfigManager::new()?;
+    let keystore_path = config.get_keystore_path();
+    Ok(!is_initialized(&keystore_path))
+}
+
+/// Check if wrapped_passkey file exists
+fn has_wrapped_passkey() -> bool {
+    if let Some(home) = dirs::home_dir() {
+        let wrapped_path = home.join(".local/share/open-keyring/wrapped_passkey");
+        wrapped_path.exists()
+    } else {
+        false
+    }
+}
+
 /// Unlock the keystore and return a CryptoManager initialized with DEK
 ///
+/// First checks for wrapped_passkey (from recovery), then falls back to keystore.
 /// Prompts for master password, unlocks keystore, and initializes CryptoManager with DEK.
 ///
 /// # Returns
 /// Initialized CryptoManager ready for encryption/decryption
 pub fn unlock_keystore() -> Result<CryptoManager> {
     let config = ConfigManager::new()?;
-    let master_password = prompt_for_master_password()?;
     let keystore_path = config.get_keystore_path();
 
-    // Unlock or initialize keystore
-    let keystore = if is_initialized(&keystore_path) {
-        KeyStore::unlock(&keystore_path, &master_password)?
-    } else {
-        let keystore = initialize_keystore(&keystore_path, &master_password)?;
-        if let Some(recovery_key) = &keystore.recovery_key {
-            println!("🔑 Recovery Key (save securely): {}", recovery_key);
+    // Check if this is first-time use
+    if !is_initialized(&keystore_path) && !has_wrapped_passkey() {
+        return Err(KeyringError::AuthenticationFailed {
+            reason: "Keystore not initialized. Please run 'ok wizard' to set up OpenKeyring for the first time.".to_string(),
+        });
+    }
+
+    let master_password = prompt_for_master_password()?;
+
+    // Try wrapped_passkey first (from recover command)
+    if has_wrapped_passkey() {
+        let mut crypto = CryptoManager::new();
+        match crypto.initialize_with_wrapped_passkey(&master_password, DeviceIndex::CLI) {
+            Ok(()) => return Ok(crypto),
+            Err(KeyringError::NotFound { .. }) => {
+                // wrapped_passkey not found, fall through to keystore
+            }
+            Err(e) => {
+                // If wrapped_passkey exists but fails to decrypt, it might be wrong password
+                // Try keystore as fallback
+                if is_initialized(&keystore_path) {
+                    // Fall through to keystore unlock
+                } else {
+                    return Err(e);
+                }
+            }
         }
-        keystore
-    };
+    }
 
-    // Initialize CryptoManager with DEK
-    let mut crypto = CryptoManager::new();
-    let dek_array: [u8; 32] = keystore.get_dek().try_into().expect("DEK must be 32 bytes");
-    crypto.initialize_with_key(dek_array);
+    // Fallback: Unlock keystore with password
+    if is_initialized(&keystore_path) {
+        let keystore = KeyStore::unlock(&keystore_path, &master_password)?;
 
-    Ok(crypto)
+        // Initialize CryptoManager with DEK
+        let mut crypto = CryptoManager::new();
+        let dek_array: [u8; 32] = keystore.get_dek().try_into().expect("DEK must be 32 bytes");
+        crypto.initialize_with_key(dek_array);
+
+        Ok(crypto)
+    } else {
+        Err(KeyringError::AuthenticationFailed {
+            reason: "Keystore not initialized. Please run 'ok wizard' to set up OpenKeyring.".to_string(),
+        })
+    }
 }
 
 /// Prompt user for master password

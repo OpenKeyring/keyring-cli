@@ -378,6 +378,30 @@ async fn main() -> Result<()> {
     // Set up logging based on verbose flag
     setup_logging(cli.verbose, cli.quiet);
 
+    // Check for first-time use before executing any command (except wizard)
+    let is_first_run = if cli.command.as_ref().map_or(false, |c| !matches!(c, Commands::Wizard)) {
+        keyring_cli::cli::onboarding::is_first_time().unwrap_or(false)
+    } else {
+        false
+    };
+
+    if is_first_run {
+        println!("═══════════════════════════════════════════════════");
+        println!("         Welcome to OpenKeyring!");
+        println!("═══════════════════════════════════════════════════");
+        println!();
+        println!("It looks like you're using OpenKeyring for the first time.");
+        println!();
+        println!("Before you can use OpenKeyring, you need to set up a");
+        println!("master password and recovery key.");
+        println!();
+        println!("Please run: ok wizard");
+        println!();
+        println!("This will guide you through the setup process.");
+        println!("═══════════════════════════════════════════════════");
+        return Ok(());
+    }
+
     // Launch TUI if no command provided and TUI is not disabled
     if cli.command.is_none() {
         if cli.no_tui {

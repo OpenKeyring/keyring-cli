@@ -140,8 +140,13 @@ opendal = { version = "0.50", features = [
 ] }
 
 # Clipboard (platform-specific)
+# SECURITY: Do NOT use pbcopy/pbpaste subprocess - exposes password via process arguments
+# Using arboard crate for secure, direct clipboard API access
+arboard = "3"
+
 [target.'cfg(target_os = "macos")'.dependencies]
-# macOS uses pbcopy/pbpaste via std::process
+# macOS uses NSPasteboard via arboard (no subprocess)
+arboard = "3"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Linux clipboard via xclip/wl-copy
