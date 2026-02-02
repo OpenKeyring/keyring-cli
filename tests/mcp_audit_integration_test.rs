@@ -16,9 +16,11 @@ mod mcp_audit_integration_tests {
 
     /// Helper to set a unique log path for each test
     fn set_test_log_path(test_name: &str) -> String {
-        let log_path = format!("/tmp/test_audit_{}.log", test_name);
-        env::set_var("OK_MCP_AUDIT_LOG", &log_path);
-        log_path
+        let temp_dir = std::env::temp_dir();
+        let log_path = temp_dir.join(format!("test_audit_{}.log", test_name));
+        let log_path_str = log_path.to_string_lossy().to_string();
+        env::set_var("OK_MCP_AUDIT_LOG", &log_path_str);
+        log_path_str
     }
 
     fn cleanup_test_log(log_path: &str) {
