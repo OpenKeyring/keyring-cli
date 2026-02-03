@@ -169,7 +169,7 @@ pub fn generate_random(length: usize, numbers: bool, symbols: bool) -> Result<St
     let lowercase = "abcdefghijkmnpqrstuvwxyz"; // no o, l
     let uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no O, I
     let nums = "23456789"; // no 0, 1
-    let syms = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+    let syms = "!@#$%^&*"; // safe symbols only (no : ; , .)
 
     let mut charset = String::from(lowercase);
     charset.push_str(uppercase);
