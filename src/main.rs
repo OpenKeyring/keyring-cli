@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use keyring_cli::cli::{commands, mcp};
+use keyring_cli::cli::{commands, diagnostics, mcp};
 
 /// OpenKeyring CLI - A privacy-first password manager
 #[derive(Parser, Debug)]
@@ -378,32 +378,33 @@ async fn main() -> Result<()> {
     // Set up logging based on verbose flag
     setup_logging(cli.verbose, cli.quiet);
 
-    // Check for first-time use before executing any command (except wizard)
-    let is_first_run = if cli
+    // Check system status before executing any command (except wizard)
+    let skip_status_check = cli
         .command
         .as_ref()
-        .map_or(false, |c| !matches!(c, Commands::Wizard))
-    {
-        keyring_cli::cli::onboarding::is_first_time().unwrap_or(false)
-    } else {
-        false
-    };
+        .map_or(false, |c| matches!(c, Commands::Wizard));
 
-    if is_first_run {
-        println!("═══════════════════════════════════════════════════");
-        println!("         Welcome to OpenKeyring!");
-        println!("═══════════════════════════════════════════════════");
-        println!();
-        println!("It looks like you're using OpenKeyring for the first time.");
-        println!();
-        println!("Before you can use OpenKeyring, you need to set up a");
-        println!("master password and recovery key.");
-        println!();
-        println!("Please run: ok wizard");
-        println!();
-        println!("This will guide you through the setup process.");
-        println!("═══════════════════════════════════════════════════");
-        return Ok(());
+    if !skip_status_check {
+        match diagnostics::check_system_status() {
+            Ok(status) if status.is_first_time() => {
+                diagnostics::print_first_time_message();
+                return Ok(());
+            }
+            Ok(status) if !status.is_healthy() => {
+                diagnostics::print_diagnostic_report(&status);
+                return Err(anyhow::anyhow!(
+                    "System configuration incomplete. Please resolve the issues above."
+                ));
+            }
+            Ok(_) => {
+                // System is healthy, proceed with command
+            }
+            Err(e) => {
+                // Diagnostics failed - show error but allow continuing
+                eprintln!("Warning: Failed to check system status: {}", e);
+                eprintln!("Continuing anyway...");
+            }
+        }
     }
 
     // Launch TUI if no command provided and TUI is not disabled
