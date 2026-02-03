@@ -104,6 +104,49 @@ fn test_content_length_limit() {
 #[cfg(target_os = "macos")]
 #[serial]
 #[test]
+fn test_auto_clear_after_timeout_strict() {
+    let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
+    let config = ClipboardConfig {
+        timeout_seconds: 2,
+        clear_after_copy: true,
+        max_content_length: 256,
+    };
+
+    let mut service = ClipboardService::new(macos_clipboard, config);
+
+    // PRE-CONDITION: Clear clipboard first to ensure clean state
+    let _ = service.clear_clipboard();
+
+    // Copy password to clipboard
+    assert!(service.copy_password("auto_clear_test").is_ok());
+
+    // Immediately verify content exists
+    let content = service.get_clipboard_content();
+    assert!(content.is_ok());
+    assert_eq!(content.unwrap(), "auto_clear_test");
+
+    // Wait for timeout to pass
+    std::thread::sleep(Duration::from_secs(3));
+
+    // Verify clipboard was automatically cleared
+    let mut check_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
+    let result = check_clipboard.get_content();
+
+    match &result {
+        Ok(content) => {
+            // FAIL: If content exists, auto-clear didn't work
+            panic!("Auto-clear failed! Clipboard still contains: {:?}", content);
+        }
+        Err(_e) => {
+            // SUCCESS: Empty clipboard means clear worked
+            println!("SUCCESS: Auto-clear worked, clipboard is empty");
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[serial]
+#[test]
 fn test_auto_clear_after_timeout() {
     let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let config = ClipboardConfig {
@@ -130,15 +173,22 @@ fn test_auto_clear_after_timeout() {
     let mut check_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let result = check_clipboard.get_content();
 
+    // EVIDENCE: Print what we actually found
+    match &result {
+        Ok(content) => println!("After timeout, clipboard contains: {:?}", content),
+        Err(e) => println!("After timeout, clipboard error (empty?): {:?}", e),
+    }
+
     // Clipboard should be empty or contain different content
     match result {
         Ok(content) => {
             // If there's content, it should NOT be our test password
             assert_ne!(content, "auto_clear_test",
-                       "Clipboard should have been auto-cleared after timeout");
+                       "Clipboard should have been auto-cleared after timeout, but still contains test password");
         }
         Err(_) => {
             // Empty clipboard is also acceptable (depends on platform behavior)
+            println!("Clipboard is empty (clear worked)");
         }
     }
 }
