@@ -105,8 +105,8 @@ fn decode_nonce(bytes: &[u8]) -> Result<[u8; 12], KeyringError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use crate::db::models::RecordType;
+    use tempfile::TempDir;
 
     // Helper function to create test SyncRecord
     fn create_test_sync_record(id: &str, version: u64, encrypted_data: &str) -> SyncRecord {
@@ -311,14 +311,18 @@ mod tests {
     fn test_sync_record_to_db_success() {
         let importer = JsonSyncImporter;
 
-        let sync_record = create_test_sync_record("550e8400-e29b-41d4-a716-446655440000", 1, "AA==");
+        let sync_record =
+            create_test_sync_record("550e8400-e29b-41d4-a716-446655440000", 1, "AA==");
 
         let result = importer.sync_record_to_db(sync_record);
 
         assert!(result.is_ok());
         let stored_record = result.unwrap();
 
-        assert_eq!(stored_record.id, uuid::Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap());
+        assert_eq!(
+            stored_record.id,
+            uuid::Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap()
+        );
         assert_eq!(stored_record.version, 1);
         assert_eq!(stored_record.encrypted_data, vec![0]);
         assert_eq!(stored_record.tags.len(), 2);
@@ -328,7 +332,8 @@ mod tests {
     fn test_sync_record_to_db_invalid_base64_encoding() {
         let importer = JsonSyncImporter;
 
-        let mut sync_record = create_test_sync_record("550e8400-e29b-41d4-a716-446655440001", 1, "AA==");
+        let mut sync_record =
+            create_test_sync_record("550e8400-e29b-41d4-a716-446655440001", 1, "AA==");
         sync_record.encrypted_data = "invalid base64!@#".to_string();
 
         let result = importer.sync_record_to_db(sync_record);
@@ -341,7 +346,8 @@ mod tests {
     fn test_sync_record_to_db_invalid_nonce_length() {
         let importer = JsonSyncImporter;
 
-        let mut sync_record = create_test_sync_record("550e8400-e29b-41d4-a716-446655440002", 1, "AA==");
+        let mut sync_record =
+            create_test_sync_record("550e8400-e29b-41d4-a716-446655440002", 1, "AA==");
         // Nonce is only 8 bytes decoded instead of 12
         sync_record.nonce = "AAAAAAAA".to_string();
 
@@ -355,7 +361,8 @@ mod tests {
     fn test_sync_record_to_db_invalid_nonce_encoding() {
         let importer = JsonSyncImporter;
 
-        let mut sync_record = create_test_sync_record("550e8400-e29b-41d4-a716-446655440003", 1, "AA==");
+        let mut sync_record =
+            create_test_sync_record("550e8400-e29b-41d4-a716-446655440003", 1, "AA==");
         sync_record.nonce = "invalid base64!@#".to_string();
 
         let result = importer.sync_record_to_db(sync_record);
@@ -379,7 +386,8 @@ mod tests {
     fn test_sync_record_to_db_preserves_tags() {
         let importer = JsonSyncImporter;
 
-        let sync_record = create_test_sync_record("550e8400-e29b-41d4-a716-446655440004", 1, "AA==");
+        let sync_record =
+            create_test_sync_record("550e8400-e29b-41d4-a716-446655440004", 1, "AA==");
 
         let result = importer.sync_record_to_db(sync_record).unwrap();
 
@@ -395,7 +403,8 @@ mod tests {
         let created_at = chrono::Utc::now() - chrono::Duration::hours(1);
         let updated_at = chrono::Utc::now();
 
-        let mut sync_record = create_test_sync_record("550e8400-e29b-41d4-a716-446655440005", 1, "AA==");
+        let mut sync_record =
+            create_test_sync_record("550e8400-e29b-41d4-a716-446655440005", 1, "AA==");
         sync_record.created_at = created_at;
         sync_record.updated_at = updated_at;
 
@@ -409,7 +418,8 @@ mod tests {
     fn test_sync_record_to_db_preserves_record_type() {
         let importer = JsonSyncImporter;
 
-        let mut sync_record = create_test_sync_record("550e8400-e29b-41d4-a716-446655440006", 1, "AA==");
+        let mut sync_record =
+            create_test_sync_record("550e8400-e29b-41d4-a716-446655440006", 1, "AA==");
         sync_record.record_type = crate::db::models::RecordType::SshKey;
 
         let result = importer.sync_record_to_db(sync_record).unwrap();
@@ -531,7 +541,10 @@ mod tests {
         let records = result.unwrap();
         // Only JSON file should be imported
         assert_eq!(records.len(), 1);
-        assert_eq!(records[0].id.to_string(), "550e8400-e29b-41d4-a716-446655440104");
+        assert_eq!(
+            records[0].id.to_string(),
+            "550e8400-e29b-41d4-a716-446655440104"
+        );
     }
 
     #[test]
@@ -564,7 +577,10 @@ mod tests {
         assert!(result.is_ok());
         let records = result.unwrap();
         assert_eq!(records.len(), 1);
-        assert_eq!(records[0].id.to_string(), "550e8400-e29b-41d4-a716-446655440103");
+        assert_eq!(
+            records[0].id.to_string(),
+            "550e8400-e29b-41d4-a716-446655440103"
+        );
     }
 
     #[test]

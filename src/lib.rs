@@ -18,4 +18,7 @@ pub mod sync;
 pub mod tui;
 pub mod types;
 
+// CLI diagnostics module
+pub use cli::diagnostics;
+
 pub use error::Result;

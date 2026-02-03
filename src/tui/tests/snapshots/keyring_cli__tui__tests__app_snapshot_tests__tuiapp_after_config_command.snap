@@ -11,7 +11,7 @@ expression: "&app.output_lines"
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
     "",
     "[Database]",
-    "  database.path = /var/folders/ft/fkw6yj6d0ndbs8ksqr5pq2k80000gn/T/.tmpKxl3Nk/passwords.db",
+    "  database.path = /Users/bytedance/Library/Application Support/open-keyring/passwords.db",
     "  database.encryption_enabled = true",
     "",
     "[Sync]",

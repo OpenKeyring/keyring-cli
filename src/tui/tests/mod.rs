@@ -9,10 +9,8 @@
 //! - `screen_snapshot_tests` - Individual screen component snapshots
 //! - `integration_tests` - Cross-component integration tests
 
-mod wizard_snapshot_tests;
 mod app_snapshot_tests;
-mod visual_regression_tests;
-mod screen_snapshot_tests;
 mod integration_tests;
-
-
+mod screen_snapshot_tests;
+mod visual_regression_tests;
+mod wizard_snapshot_tests;

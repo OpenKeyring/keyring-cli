@@ -108,7 +108,10 @@ fn test_tuiapp_backspace_sequence() {
 
     // Backspace again
     app.handle_backspace();
-    seq.step("after_second_backspace", format!("buffer: '{}'", app.input_buffer));
+    seq.step(
+        "after_second_backspace",
+        format!("buffer: '{}'", app.input_buffer),
+    );
 
     insta::assert_snapshot!(seq.to_string());
 }

@@ -4,6 +4,7 @@
 
 pub mod commands;
 pub mod config;
+pub mod diagnostics;
 pub mod mcp;
 pub mod onboarding;
 pub mod utils;

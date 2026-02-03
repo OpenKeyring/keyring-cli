@@ -108,24 +108,52 @@ mod tests {
     #[test]
     fn test_severity_ord() {
         // Test ordering works correctly
-        let mut severities = vec![Severity::High, Severity::Low, Severity::Critical, Severity::Medium];
+        let mut severities = vec![
+            Severity::High,
+            Severity::Low,
+            Severity::Critical,
+            Severity::Medium,
+        ];
         severities.sort();
-        assert_eq!(severities, vec![Severity::Low, Severity::Medium, Severity::High, Severity::Critical]);
+        assert_eq!(
+            severities,
+            vec![
+                Severity::Low,
+                Severity::Medium,
+                Severity::High,
+                Severity::Critical
+            ]
+        );
     }
 
     // HealthIssueType enum tests
     #[test]
     fn test_health_issue_type_equality() {
         assert_eq!(HealthIssueType::WeakPassword, HealthIssueType::WeakPassword);
-        assert_eq!(HealthIssueType::DuplicatePassword, HealthIssueType::DuplicatePassword);
-        assert_eq!(HealthIssueType::CompromisedPassword, HealthIssueType::CompromisedPassword);
+        assert_eq!(
+            HealthIssueType::DuplicatePassword,
+            HealthIssueType::DuplicatePassword
+        );
+        assert_eq!(
+            HealthIssueType::CompromisedPassword,
+            HealthIssueType::CompromisedPassword
+        );
     }
 
     #[test]
     fn test_health_issue_type_inequality() {
-        assert_ne!(HealthIssueType::WeakPassword, HealthIssueType::DuplicatePassword);
-        assert_ne!(HealthIssueType::DuplicatePassword, HealthIssueType::CompromisedPassword);
-        assert_ne!(HealthIssueType::CompromisedPassword, HealthIssueType::WeakPassword);
+        assert_ne!(
+            HealthIssueType::WeakPassword,
+            HealthIssueType::DuplicatePassword
+        );
+        assert_ne!(
+            HealthIssueType::DuplicatePassword,
+            HealthIssueType::CompromisedPassword
+        );
+        assert_ne!(
+            HealthIssueType::CompromisedPassword,
+            HealthIssueType::WeakPassword
+        );
     }
 
     // HealthIssue struct tests
@@ -196,14 +224,12 @@ mod tests {
 
     #[test]
     fn test_health_report_from_issues_duplicate_passwords() {
-        let issues = vec![
-            HealthIssue {
-                issue_type: HealthIssueType::DuplicatePassword,
-                record_names: vec!["record1".to_string(), "record2".to_string()],
-                description: "Duplicate".to_string(),
-                severity: Severity::Medium,
-            },
-        ];
+        let issues = vec![HealthIssue {
+            issue_type: HealthIssueType::DuplicatePassword,
+            record_names: vec!["record1".to_string(), "record2".to_string()],
+            description: "Duplicate".to_string(),
+            severity: Severity::Medium,
+        }];
 
         let report = HealthReport::from_issues(5, issues.clone());
 

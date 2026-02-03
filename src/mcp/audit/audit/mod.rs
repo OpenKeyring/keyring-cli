@@ -337,7 +337,7 @@ mod tests {
         let logger = AuditLogger::with_path(log_path).unwrap();
 
         // Write 5 entries
-        for i in 0..5 {
+        for _i in 0..5 {
             let mut entry = create_test_entry();
             entry.id = uuid::Uuid::new_v4().to_string();
             logger.log(&entry).await.unwrap();

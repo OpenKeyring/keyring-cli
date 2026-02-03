@@ -3,11 +3,11 @@
 //! These tests verify complete multi-screen flows and interactions
 //! between TuiApp and the various wizard screens.
 
-use crate::tui::{Screen, TuiApp};
 use crate::tui::screens::welcome::WelcomeChoice;
-use crate::tui::screens::PasskeyConfirmScreen;
 use crate::tui::screens::wizard::{WizardState, WizardStep};
+use crate::tui::screens::PasskeyConfirmScreen;
 use crate::tui::testing::{render_snapshot, SnapshotSequence};
+use crate::tui::{Screen, TuiApp};
 
 #[test]
 fn test_wizard_generate_flow_integration() {
@@ -15,10 +15,8 @@ fn test_wizard_generate_flow_integration() {
     let mut seq = SnapshotSequence::new("wizard_generate_flow");
 
     // Start wizard by setting up state
-    app.wizard_state = Some(
-        WizardState::new()
-            .with_keystore_path(std::path::PathBuf::from("/test/path")),
-    );
+    app.wizard_state =
+        Some(WizardState::new().with_keystore_path(std::path::PathBuf::from("/test/path")));
     app.navigate_to(Screen::Wizard);
 
     // Initial wizard render (Welcome screen)
@@ -46,9 +44,7 @@ fn test_wizard_generate_flow_integration() {
     if let Some(state) = &mut app.wizard_state {
         state.next();
     }
-    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec![
-        "word".to_string(); 24
-    ]));
+    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec!["word".to_string(); 24]));
 
     let confirm_screen = render_snapshot(80, 24, |frame| {
         app.render(frame);
@@ -64,10 +60,8 @@ fn test_wizard_import_flow_integration() {
     let mut seq = SnapshotSequence::new("wizard_import_flow");
 
     // Start wizard
-    app.wizard_state = Some(
-        WizardState::new()
-            .with_keystore_path(std::path::PathBuf::from("/test/path")),
-    );
+    app.wizard_state =
+        Some(WizardState::new().with_keystore_path(std::path::PathBuf::from("/test/path")));
     app.navigate_to(Screen::Wizard);
 
     // Make import choice
@@ -132,9 +126,7 @@ fn test_wizard_back_navigation_flow() {
         state.step = WizardStep::MasterPassword;
         state.set_master_password("password123".to_string());
     }
-    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec![
-        "word".to_string(); 24
-    ]));
+    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec!["word".to_string(); 24]));
 
     // At MasterPassword
     let at_password = render_snapshot(80, 24, |frame| {
@@ -199,9 +191,7 @@ fn test_complete_onboarding_flow_snapshots() {
     if let Some(state) = &mut app.wizard_state {
         state.next();
     }
-    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec![
-        "word".to_string(); 24
-    ]));
+    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec!["word".to_string(); 24]));
     let confirm = render_snapshot(80, 24, |frame| {
         app.render(frame);
     });
@@ -278,9 +268,7 @@ fn test_screen_sizes_integration() {
         state.set_passkey_words(vec!["word".to_string(); 24]);
         state.next();
     }
-    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec![
-        "word".to_string(); 24
-    ]));
+    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec!["word".to_string(); 24]));
 
     let mut seq = SnapshotSequence::new("screen_sizes");
 

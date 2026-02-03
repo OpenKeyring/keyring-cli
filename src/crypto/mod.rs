@@ -9,8 +9,8 @@ pub mod keywrap;
 pub mod passkey;
 pub mod record;
 
-use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
 
 use crate::crypto::passkey::Passkey;
 use crate::error::KeyringError;
@@ -404,7 +404,8 @@ impl CryptoManager {
         let wrapped_content = std::fs::read_to_string(&wrapped_passkey_path).map_err(|e| {
             if e.kind() == std::io::ErrorKind::NotFound {
                 KeyringError::NotFound {
-                    resource: "wrapped_passkey file. Run 'ok recover' to set up recovery.".to_string(),
+                    resource: "wrapped_passkey file. Run 'ok recover' to set up recovery."
+                        .to_string(),
                 }
             } else {
                 KeyringError::IoError(format!("Failed to read wrapped_passkey: {}", e))
@@ -412,45 +413,55 @@ impl CryptoManager {
         })?;
 
         // Parse wrapped_passkey JSON
-        let wrapped_data: serde_json::Value = serde_json::from_str(&wrapped_content)
-            .map_err(|e| KeyringError::Crypto {
+        let wrapped_data: serde_json::Value =
+            serde_json::from_str(&wrapped_content).map_err(|e| KeyringError::Crypto {
                 context: format!("Failed to parse wrapped_passkey: {}", e),
             })?;
 
         // Extract wrapped seed, nonce, salt, and kdf_nonce
-        let wrapped_seed_b64 = wrapped_data["wrapped_seed"].as_str().ok_or_else(|| {
-            KeyringError::Crypto {
-                context: "Missing wrapped_seed in wrapped_passkey".to_string(),
-            }
-        })?;
-        let nonce_b64 = wrapped_data["nonce"].as_str().ok_or_else(|| {
-            KeyringError::Crypto {
+        let wrapped_seed_b64 =
+            wrapped_data["wrapped_seed"]
+                .as_str()
+                .ok_or_else(|| KeyringError::Crypto {
+                    context: "Missing wrapped_seed in wrapped_passkey".to_string(),
+                })?;
+        let nonce_b64 = wrapped_data["nonce"]
+            .as_str()
+            .ok_or_else(|| KeyringError::Crypto {
                 context: "Missing nonce in wrapped_passkey".to_string(),
-            }
-        })?;
-        let salt_b64 = wrapped_data["salt"].as_str().ok_or_else(|| {
-            KeyringError::Crypto {
+            })?;
+        let salt_b64 = wrapped_data["salt"]
+            .as_str()
+            .ok_or_else(|| KeyringError::Crypto {
                 context: "Missing salt in wrapped_passkey".to_string(),
-            }
-        })?;
-        let kdf_nonce_b64 = wrapped_data["kdf_nonce"].as_str().ok_or_else(|| {
-            KeyringError::Crypto {
-                context: "Missing kdf_nonce in wrapped_passkey".to_string(),
-            }
-        })?;
+            })?;
+        let kdf_nonce_b64 =
+            wrapped_data["kdf_nonce"]
+                .as_str()
+                .ok_or_else(|| KeyringError::Crypto {
+                    context: "Missing kdf_nonce in wrapped_passkey".to_string(),
+                })?;
 
-        let wrapped_seed = STANDARD.decode(wrapped_seed_b64).map_err(|e| KeyringError::Crypto {
-            context: format!("Failed to decode wrapped_seed: {}", e),
-        })?;
-        let nonce = STANDARD.decode(nonce_b64).map_err(|e| KeyringError::Crypto {
-            context: format!("Failed to decode nonce: {}", e),
-        })?;
-        let salt = STANDARD.decode(salt_b64).map_err(|e| KeyringError::Crypto {
-            context: format!("Failed to decode salt: {}", e),
-        })?;
-        let kdf_nonce = STANDARD.decode(kdf_nonce_b64).map_err(|e| KeyringError::Crypto {
-            context: format!("Failed to decode kdf_nonce: {}", e),
-        })?;
+        let wrapped_seed = STANDARD
+            .decode(wrapped_seed_b64)
+            .map_err(|e| KeyringError::Crypto {
+                context: format!("Failed to decode wrapped_seed: {}", e),
+            })?;
+        let nonce = STANDARD
+            .decode(nonce_b64)
+            .map_err(|e| KeyringError::Crypto {
+                context: format!("Failed to decode nonce: {}", e),
+            })?;
+        let salt = STANDARD
+            .decode(salt_b64)
+            .map_err(|e| KeyringError::Crypto {
+                context: format!("Failed to decode salt: {}", e),
+            })?;
+        let kdf_nonce = STANDARD
+            .decode(kdf_nonce_b64)
+            .map_err(|e| KeyringError::Crypto {
+                context: format!("Failed to decode kdf_nonce: {}", e),
+            })?;
 
         let nonce_array: [u8; 12] = nonce.try_into().map_err(|_| KeyringError::Crypto {
             context: "Invalid nonce length".to_string(),
@@ -463,19 +474,25 @@ impl CryptoManager {
         })?;
 
         // Derive wrapping key from device password
-        let wrapping_key_bytes = argon2id::derive_key(device_password, &salt_array).map_err(|e| {
-            KeyringError::Crypto {
-                context: format!("Failed to derive wrapping key: {}", e),
-            }
-        })?;
-        let wrapping_key: [u8; 32] = wrapping_key_bytes.try_into().map_err(|_| KeyringError::Crypto {
-            context: "Invalid wrapping key length".to_string(),
-        })?;
+        let wrapping_key_bytes =
+            argon2id::derive_key(device_password, &salt_array).map_err(|e| {
+                KeyringError::Crypto {
+                    context: format!("Failed to derive wrapping key: {}", e),
+                }
+            })?;
+        let wrapping_key: [u8; 32] =
+            wrapping_key_bytes
+                .try_into()
+                .map_err(|_| KeyringError::Crypto {
+                    context: "Invalid wrapping key length".to_string(),
+                })?;
 
         // Unwrap the Passkey seed (32 bytes - first half of 64-byte BIP39 seed)
-        let seed_bytes = keywrap::unwrap_key(&wrapped_seed, &nonce_array, &wrapping_key)
-            .map_err(|e| KeyringError::Crypto {
-                context: format!("Failed to unwrap Passkey seed: {}", e),
+        let seed_bytes =
+            keywrap::unwrap_key(&wrapped_seed, &nonce_array, &wrapping_key).map_err(|e| {
+                KeyringError::Crypto {
+                    context: format!("Failed to unwrap Passkey seed: {}", e),
+                }
             })?;
 
         // The seed_bytes is 32 bytes (first half of the 64-byte BIP39 seed)
@@ -498,16 +515,17 @@ impl CryptoManager {
 
 /// Get the keyring directory path
 ///
-/// Returns `~/.local/share/open-keyring` on Unix systems or
-/// `%LOCALAPPDATA%\open-keyring` on Windows.
+/// Returns platform-specific path:
+/// - Linux/macOS: `~/.local/share/open-keyring`
+/// - Windows: `%LOCALAPPDATA%\open-keyring`
+///
+/// 使用 `dirs::data_local_dir()` 获取正确的平台目录。
 fn get_keyring_dir() -> Result<PathBuf, KeyringError> {
-    if let Some(home) = dirs::home_dir() {
-        Ok(home.join(".local/share/open-keyring"))
-    } else {
-        Err(KeyringError::Internal {
-            context: "Failed to determine home directory".to_string(),
+    dirs::data_local_dir()
+        .map(|p| p.join("open-keyring"))
+        .ok_or_else(|| KeyringError::Internal {
+            context: "无法确定系统数据目录".to_string(),
         })
-    }
 }
 
 impl Drop for CryptoManager {

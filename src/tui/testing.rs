@@ -21,13 +21,7 @@
 //! seq.step("after_enter", render_snapshot(80, 24, |f| app.render(f)));
 //! ```
 
-use ratatui::{
-    backend::TestBackend,
-    buffer::Buffer,
-    layout::Rect,
-    widgets::Widget,
-    Terminal,
-};
+use ratatui::{backend::TestBackend, buffer::Buffer, layout::Rect, widgets::Widget, Terminal};
 
 /// Snapshot normalizer for handling dynamic content in TUI output.
 ///
@@ -44,10 +38,7 @@ impl SnapshotNormalizer {
         let mut normalizer = Self::default();
 
         // Timestamps
-        normalizer.add_replace(
-            r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}",
-            "[TIMESTAMP]",
-        );
+        normalizer.add_replace(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}", "[TIMESTAMP]");
 
         // UUIDs
         normalizer.add_replace(

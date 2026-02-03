@@ -379,7 +379,11 @@ async fn main() -> Result<()> {
     setup_logging(cli.verbose, cli.quiet);
 
     // Check for first-time use before executing any command (except wizard)
-    let is_first_run = if cli.command.as_ref().map_or(false, |c| !matches!(c, Commands::Wizard)) {
+    let is_first_run = if cli
+        .command
+        .as_ref()
+        .map_or(false, |c| !matches!(c, Commands::Wizard))
+    {
         keyring_cli::cli::onboarding::is_first_time().unwrap_or(false)
     } else {
         false

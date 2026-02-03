@@ -5,25 +5,28 @@
 
 use crate::clipboard::manager::ClipboardManager;
 use crate::error::KeyringError;
-use clipboard_win::{get_clipboard_string, set_clipboard_string, empty_clipboard};
+use clipboard_win::{empty_clipboard, get_clipboard_string, set_clipboard_string};
 use std::time::Duration;
 
 pub struct WindowsClipboard;
 
 impl ClipboardManager for WindowsClipboard {
     fn set_content(&mut self, content: &str) -> Result<(), KeyringError> {
-        set_clipboard_string(content)
-            .map_err(|e| KeyringError::Clipboard { context: format!("Failed to set clipboard: {}", e) })
+        set_clipboard_string(content).map_err(|e| KeyringError::Clipboard {
+            context: format!("Failed to set clipboard: {}", e),
+        })
     }
 
     fn get_content(&mut self) -> Result<String, KeyringError> {
-        get_clipboard_string()
-            .map_err(|e| KeyringError::Clipboard { context: format!("Failed to get clipboard: {}", e) })
+        get_clipboard_string().map_err(|e| KeyringError::Clipboard {
+            context: format!("Failed to get clipboard: {}", e),
+        })
     }
 
     fn clear(&mut self) -> Result<(), KeyringError> {
-        empty_clipboard()
-            .map_err(|e| KeyringError::Clipboard { context: format!("Failed to clear clipboard: {}", e) })
+        empty_clipboard().map_err(|e| KeyringError::Clipboard {
+            context: format!("Failed to clear clipboard: {}", e),
+        })
     }
 
     fn is_supported(&self) -> bool {

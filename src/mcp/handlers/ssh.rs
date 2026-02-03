@@ -108,10 +108,11 @@ impl<'a> AuthContext<'a> {
     /// Verify the confirmation token and check replay protection
     fn verify_token(&mut self) -> Result<ConfirmationToken, HandlerError> {
         // 1. Decode and verify token
-        let token = ConfirmationToken::decode(self.confirmation_id)
-            .map_err(|e| HandlerError::InvalidToken {
+        let token = ConfirmationToken::decode(self.confirmation_id).map_err(|e| {
+            HandlerError::InvalidToken {
                 reason: e.to_string(),
-            })?;
+            }
+        })?;
 
         // 2. Verify signature and session binding
         token

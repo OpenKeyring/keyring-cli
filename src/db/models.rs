@@ -113,18 +113,36 @@ mod tests {
 
     #[test]
     fn test_record_type_from_all_valid_values() {
-        assert_eq!(RecordType::from("password".to_string()), RecordType::Password);
+        assert_eq!(
+            RecordType::from("password".to_string()),
+            RecordType::Password
+        );
         assert_eq!(RecordType::from("ssh_key".to_string()), RecordType::SshKey);
-        assert_eq!(RecordType::from("api_credential".to_string()), RecordType::ApiCredential);
-        assert_eq!(RecordType::from("mnemonic".to_string()), RecordType::Mnemonic);
-        assert_eq!(RecordType::from("private_key".to_string()), RecordType::PrivateKey);
+        assert_eq!(
+            RecordType::from("api_credential".to_string()),
+            RecordType::ApiCredential
+        );
+        assert_eq!(
+            RecordType::from("mnemonic".to_string()),
+            RecordType::Mnemonic
+        );
+        assert_eq!(
+            RecordType::from("private_key".to_string()),
+            RecordType::PrivateKey
+        );
     }
 
     #[test]
     fn test_record_type_from_invalid_value_defaults_to_password() {
-        assert_eq!(RecordType::from("invalid_type".to_string()), RecordType::Password);
+        assert_eq!(
+            RecordType::from("invalid_type".to_string()),
+            RecordType::Password
+        );
         assert_eq!(RecordType::from("".to_string()), RecordType::Password);
-        assert_eq!(RecordType::from("random-value".to_string()), RecordType::Password);
+        assert_eq!(
+            RecordType::from("random-value".to_string()),
+            RecordType::Password
+        );
     }
 
     #[test]

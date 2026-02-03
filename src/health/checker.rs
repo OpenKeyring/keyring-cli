@@ -215,10 +215,17 @@ mod tests {
     #[tokio::test]
     async fn test_check_all_with_weak_password() {
         let crypto = setup_test_crypto();
-        let record1 = create_test_record("550e8400-e29b-41d4-a716-446655440001", "password", &crypto);
-        let record2 = create_test_record("550e8400-e29b-41d4-a716-446655440002", "StrongP@ss123!", &crypto);
+        let record1 =
+            create_test_record("550e8400-e29b-41d4-a716-446655440001", "password", &crypto);
+        let record2 = create_test_record(
+            "550e8400-e29b-41d4-a716-446655440002",
+            "StrongP@ss123!",
+            &crypto,
+        );
 
-        let checker = HealthChecker::new(crypto).with_duplicates(false).with_leaks(false);
+        let checker = HealthChecker::new(crypto)
+            .with_duplicates(false)
+            .with_leaks(false);
         let issues = checker.check_all(&[record1, record2]).await;
 
         // Only "password" should be flagged as weak
@@ -229,11 +236,25 @@ mod tests {
     #[tokio::test]
     async fn test_check_all_with_duplicate_passwords() {
         let crypto = setup_test_crypto();
-        let record1 = create_test_record("550e8400-e29b-41d4-a716-446655440001", "SamePass123!", &crypto);
-        let record2 = create_test_record("550e8400-e29b-41d4-a716-446655440002", "SamePass123!", &crypto);
-        let record3 = create_test_record("550e8400-e29b-41d4-a716-446655440003", "DifferentPass!", &crypto);
+        let record1 = create_test_record(
+            "550e8400-e29b-41d4-a716-446655440001",
+            "SamePass123!",
+            &crypto,
+        );
+        let record2 = create_test_record(
+            "550e8400-e29b-41d4-a716-446655440002",
+            "SamePass123!",
+            &crypto,
+        );
+        let record3 = create_test_record(
+            "550e8400-e29b-41d4-a716-446655440003",
+            "DifferentPass!",
+            &crypto,
+        );
 
-        let checker = HealthChecker::new(crypto).with_weak(false).with_leaks(false);
+        let checker = HealthChecker::new(crypto)
+            .with_weak(false)
+            .with_leaks(false);
         let issues = checker.check_all(&[record1, record2, record3]).await;
 
         // Should find one duplicate issue with 2 record IDs
@@ -251,8 +272,12 @@ mod tests {
         let record4 = create_test_record("550e8400-e29b-41d4-a716-446655440004", "Pass2!", &crypto);
         let record5 = create_test_record("550e8400-e29b-41d4-a716-446655440005", "Pass2!", &crypto);
 
-        let checker = HealthChecker::new(crypto).with_weak(false).with_leaks(false);
-        let issues = checker.check_all(&[record1, record2, record3, record4, record5]).await;
+        let checker = HealthChecker::new(crypto)
+            .with_weak(false)
+            .with_leaks(false);
+        let issues = checker
+            .check_all(&[record1, record2, record3, record4, record5])
+            .await;
 
         // Should find two duplicate issues
         assert_eq!(issues.len(), 2);
@@ -272,7 +297,9 @@ mod tests {
         let record2 = create_test_record("550e8400-e29b-41d4-a716-446655440002", "Pass2!", &crypto);
         let record3 = create_test_record("550e8400-e29b-41d4-a716-446655440003", "Pass3!", &crypto);
 
-        let checker = HealthChecker::new(crypto).with_weak(false).with_leaks(false);
+        let checker = HealthChecker::new(crypto)
+            .with_weak(false)
+            .with_leaks(false);
         let issues = checker.check_all(&[record1, record2, record3]).await;
 
         assert!(issues.is_empty());
@@ -281,8 +308,10 @@ mod tests {
     #[tokio::test]
     async fn test_check_all_disabled_all_checks() {
         let crypto = setup_test_crypto();
-        let record1 = create_test_record("550e8400-e29b-41d4-a716-446655440001", "password", &crypto);
-        let record2 = create_test_record("550e8400-e29b-41d4-a716-446655440002", "password", &crypto);
+        let record1 =
+            create_test_record("550e8400-e29b-41d4-a716-446655440001", "password", &crypto);
+        let record2 =
+            create_test_record("550e8400-e29b-41d4-a716-446655440002", "password", &crypto);
 
         let checker = HealthChecker::new(crypto)
             .with_weak(false)
@@ -296,10 +325,14 @@ mod tests {
     #[tokio::test]
     async fn test_check_all_duplicate_severity() {
         let crypto = setup_test_crypto();
-        let record1 = create_test_record("550e8400-e29b-41d4-a716-446655440001", "SamePass!", &crypto);
-        let record2 = create_test_record("550e8400-e29b-41d4-a716-446655440002", "SamePass!", &crypto);
+        let record1 =
+            create_test_record("550e8400-e29b-41d4-a716-446655440001", "SamePass!", &crypto);
+        let record2 =
+            create_test_record("550e8400-e29b-41d4-a716-446655440002", "SamePass!", &crypto);
 
-        let checker = HealthChecker::new(crypto).with_weak(false).with_leaks(false);
+        let checker = HealthChecker::new(crypto)
+            .with_weak(false)
+            .with_leaks(false);
         let issues = checker.check_all(&[record1, record2]).await;
 
         assert_eq!(issues.len(), 1);
@@ -334,13 +367,18 @@ mod tests {
         other_key_array.copy_from_slice(&other_key_vec[..32]);
         other_crypto.initialize_with_key(other_key_array);
 
-        let record = create_test_record("550e8400-e29b-41d4-a716-446655440001", "test", &other_crypto);
+        let record = create_test_record(
+            "550e8400-e29b-41d4-a716-446655440001",
+            "test",
+            &other_crypto,
+        );
 
-        let checker = HealthChecker::new(crypto).with_weak(false).with_leaks(false);
+        let checker = HealthChecker::new(crypto)
+            .with_weak(false)
+            .with_leaks(false);
         let issues = checker.check_all(&[record]).await;
 
         // Decryption failure should be handled gracefully (no issues)
         assert!(issues.is_empty());
     }
 }
-

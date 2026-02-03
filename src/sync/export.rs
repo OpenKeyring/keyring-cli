@@ -214,7 +214,8 @@ mod tests {
     fn test_export_record_success() {
         let exporter = JsonSyncExporter;
 
-        let stored_record = create_test_stored_record("550e8400-e29b-41d4-a716-446655440000", 1, vec![1, 2, 3, 4]);
+        let stored_record =
+            create_test_stored_record("550e8400-e29b-41d4-a716-446655440000", 1, vec![1, 2, 3, 4]);
 
         let result = exporter.export_record(&stored_record);
 
@@ -234,7 +235,8 @@ mod tests {
 
         // Test with known values
         let data = vec![0x00, 0x01, 0x02, 0x03];
-        let stored_record = create_test_stored_record("550e8400-e29b-41d4-a716-446655440001", 1, data);
+        let stored_record =
+            create_test_stored_record("550e8400-e29b-41d4-a716-446655440001", 1, data);
 
         let result = exporter.export_record(&stored_record).unwrap();
 
@@ -246,8 +248,13 @@ mod tests {
     fn test_export_record_preserves_tags() {
         let exporter = JsonSyncExporter;
 
-        let mut stored_record = create_test_stored_record("550e8400-e29b-41d4-a716-446655440002", 1, vec![1, 2, 3]);
-        stored_record.tags = vec!["work".to_string(), "personal".to_string(), "important".to_string()];
+        let mut stored_record =
+            create_test_stored_record("550e8400-e29b-41d4-a716-446655440002", 1, vec![1, 2, 3]);
+        stored_record.tags = vec![
+            "work".to_string(),
+            "personal".to_string(),
+            "important".to_string(),
+        ];
 
         let result = exporter.export_record(&stored_record).unwrap();
 
@@ -261,7 +268,8 @@ mod tests {
     fn test_export_record_sets_platform() {
         let exporter = JsonSyncExporter;
 
-        let stored_record = create_test_stored_record("550e8400-e29b-41d4-a716-446655440003", 1, vec![1, 2, 3]);
+        let stored_record =
+            create_test_stored_record("550e8400-e29b-41d4-a716-446655440003", 1, vec![1, 2, 3]);
 
         let result = exporter.export_record(&stored_record).unwrap();
 
@@ -274,7 +282,8 @@ mod tests {
     fn test_export_record_sets_device_id() {
         let exporter = JsonSyncExporter;
 
-        let stored_record = create_test_stored_record("550e8400-e29b-41d4-a716-446655440004", 1, vec![1, 2, 3]);
+        let stored_record =
+            create_test_stored_record("550e8400-e29b-41d4-a716-446655440004", 1, vec![1, 2, 3]);
 
         let result = exporter.export_record(&stored_record).unwrap();
 
@@ -541,7 +550,8 @@ mod tests {
     fn test_export_record_with_record_type() {
         let exporter = JsonSyncExporter;
 
-        let mut record = create_test_stored_record("550e8400-e29b-41d4-a716-446655440013", 1, vec![1]);
+        let mut record =
+            create_test_stored_record("550e8400-e29b-41d4-a716-446655440013", 1, vec![1]);
         record.record_type = RecordType::SshKey;
 
         let result = exporter.export_record(&record).unwrap();
@@ -556,7 +566,8 @@ mod tests {
         let created_at = chrono::Utc::now() - chrono::Duration::hours(1);
         let updated_at = chrono::Utc::now();
 
-        let mut record = create_test_stored_record("550e8400-e29b-41d4-a716-446655440014", 1, vec![1]);
+        let mut record =
+            create_test_stored_record("550e8400-e29b-41d4-a716-446655440014", 1, vec![1]);
         record.created_at = created_at;
         record.updated_at = updated_at;
 
@@ -570,7 +581,8 @@ mod tests {
     fn test_export_record_with_nonce_encoding() {
         let exporter = JsonSyncExporter;
 
-        let mut record = create_test_stored_record("550e8400-e29b-41d4-a716-446655440015", 1, vec![1]);
+        let mut record =
+            create_test_stored_record("550e8400-e29b-41d4-a716-446655440015", 1, vec![1]);
         record.nonce = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
         let result = exporter.export_record(&record).unwrap();

@@ -898,7 +898,10 @@ mod tests {
         // Verify database was created
         assert!(db_path.exists());
         // Simple query to verify connection works
-        let result: i64 = vault.conn.query_row("SELECT 1", [], |row| row.get(0)).unwrap();
+        let result: i64 = vault
+            .conn
+            .query_row("SELECT 1", [], |row| row.get(0))
+            .unwrap();
         assert_eq!(result, 1);
     }
 
@@ -912,7 +915,10 @@ mod tests {
 
         // Second open should succeed
         let vault2 = Vault::open(&db_path, "password").unwrap();
-        let result: i64 = vault2.conn.query_row("SELECT 1", [], |row| row.get(0)).unwrap();
+        let result: i64 = vault2
+            .conn
+            .query_row("SELECT 1", [], |row| row.get(0))
+            .unwrap();
         assert_eq!(result, 1);
     }
 
@@ -1005,13 +1011,22 @@ mod tests {
         let (_temp_dir, mut vault) = create_test_vault();
 
         vault
-            .add_record(&create_test_record("550e8400-e29b-41d4-a716-446655440004", vec![1]))
+            .add_record(&create_test_record(
+                "550e8400-e29b-41d4-a716-446655440004",
+                vec![1],
+            ))
             .unwrap();
         vault
-            .add_record(&create_test_record("550e8400-e29b-41d4-a716-446655440005", vec![2]))
+            .add_record(&create_test_record(
+                "550e8400-e29b-41d4-a716-446655440005",
+                vec![2],
+            ))
             .unwrap();
         vault
-            .add_record(&create_test_record("550e8400-e29b-41d4-a716-446655440006", vec![3]))
+            .add_record(&create_test_record(
+                "550e8400-e29b-41d4-a716-446655440006",
+                vec![3],
+            ))
             .unwrap();
 
         let records = vault.list_records().unwrap();
@@ -1135,7 +1150,10 @@ mod tests {
         let (_temp_dir, mut vault) = create_test_vault();
 
         vault
-            .add_record(&create_test_record("550e8400-e29b-41d4-a716-446655440012", vec![1, 2, 3]))
+            .add_record(&create_test_record(
+                "550e8400-e29b-41d4-a716-446655440012",
+                vec![1, 2, 3],
+            ))
             .unwrap();
 
         // The encrypted data contains [1,2,3] which as bytes won't match "test" in encrypted form
@@ -1278,7 +1296,9 @@ mod tests {
             .unwrap();
 
         // Clear the pending state that add_record created
-        let _ = vault.conn.execute("DELETE FROM sync_state WHERE record_id = ?1", [id]);
+        let _ = vault
+            .conn
+            .execute("DELETE FROM sync_state WHERE record_id = ?1", [id]);
 
         vault.mark_record_pending(id).unwrap();
 

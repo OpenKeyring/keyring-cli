@@ -221,7 +221,10 @@ mod tests {
         assert_eq!(ConflictResolution::Local, ConflictResolution::Local);
         assert_eq!(ConflictResolution::Remote, ConflictResolution::Remote);
         assert_eq!(ConflictResolution::Merge, ConflictResolution::Merge);
-        assert_eq!(ConflictResolution::Interactive, ConflictResolution::Interactive);
+        assert_eq!(
+            ConflictResolution::Interactive,
+            ConflictResolution::Interactive
+        );
     }
 
     #[test]
@@ -398,7 +401,10 @@ mod tests {
         let resolved = resolver.resolve_conflicts(&conflicts, ConflictResolution::Interactive);
 
         assert_eq!(resolved.len(), 1);
-        assert_eq!(resolved[0].resolution, Some(ConflictResolution::Interactive));
+        assert_eq!(
+            resolved[0].resolution,
+            Some(ConflictResolution::Interactive)
+        );
     }
 
     #[test]
@@ -547,7 +553,11 @@ mod tests {
         let local = create_test_sync_record("record-15", 1);
         let remote = create_test_sync_record("record-15", 2);
 
-        let conflict = Conflict::new("record-15".to_string(), Some(local.clone()), Some(remote.clone()));
+        let conflict = Conflict::new(
+            "record-15".to_string(),
+            Some(local.clone()),
+            Some(remote.clone()),
+        );
 
         let cloned = conflict.clone();
 

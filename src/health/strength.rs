@@ -471,7 +471,9 @@ mod tests {
     #[test]
     fn test_length_scoring_8_to_11() {
         // 8-11 chars: 25 + variety (1 type = 5) - 15 repeated penalty = 15
-        let scores = (8..=11).map(|len| calculate_strength(&"a".repeat(len))).collect::<Vec<_>>();
+        let scores = (8..=11)
+            .map(|len| calculate_strength(&"a".repeat(len)))
+            .collect::<Vec<_>>();
         for score in scores {
             assert_eq!(score, 15);
         }
@@ -480,7 +482,9 @@ mod tests {
     #[test]
     fn test_length_scoring_12_to_15() {
         // 12-15 chars: 32 + variety (1 type = 5) - 15 repeated penalty = 22
-        let scores = (12..=15).map(|len| calculate_strength(&"a".repeat(len))).collect::<Vec<_>>();
+        let scores = (12..=15)
+            .map(|len| calculate_strength(&"a".repeat(len)))
+            .collect::<Vec<_>>();
         for score in scores {
             assert_eq!(score, 22);
         }

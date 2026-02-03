@@ -3,9 +3,7 @@
 //! These tests provide snapshot coverage for individual screen components
 //! including PasskeyGenerate, PasskeyImport, and PasskeyConfirm screens.
 
-use crate::tui::screens::{
-    PasskeyConfirmScreen, PasskeyGenerateScreen, PasskeyImportScreen,
-};
+use crate::tui::screens::{PasskeyConfirmScreen, PasskeyGenerateScreen, PasskeyImportScreen};
 use crate::tui::testing::{render_snapshot, SnapshotSequence};
 
 #[test]

@@ -3,8 +3,8 @@
 //! These tests render TUI components using ratatui's TestBackend
 //! and snapshot the visual output to catch layout and rendering changes.
 
-use crate::tui::{Screen, TuiApp};
 use crate::tui::testing::{render_snapshot, SnapshotSequence};
+use crate::tui::{Screen, TuiApp};
 
 #[test]
 fn test_tuiapp_initial_render() {
@@ -252,8 +252,8 @@ fn test_tuiapp_statusline_at_different_widths() {
     // Very narrow (< 60 columns)
     let narrow = render_snapshot(40, 1, |frame| {
         // Render minimal statusline test
-        use ratatui::widgets::Paragraph;
         use ratatui::text::{Line, Text};
+        use ratatui::widgets::Paragraph;
         let spans = app.render_statusline(40);
         frame.render_widget(Paragraph::new(Text::from(Line::from(spans))), frame.area());
     });
@@ -261,8 +261,8 @@ fn test_tuiapp_statusline_at_different_widths() {
 
     // Full width (>= 60 columns)
     let full = render_snapshot(80, 1, |frame| {
-        use ratatui::widgets::Paragraph;
         use ratatui::text::{Line, Text};
+        use ratatui::widgets::Paragraph;
         let spans = app.render_statusline(80);
         frame.render_widget(Paragraph::new(Text::from(Line::from(spans))), frame.area());
     });
@@ -270,8 +270,8 @@ fn test_tuiapp_statusline_at_different_widths() {
 
     // Wide screen (>= 100 columns)
     let wide = render_snapshot(120, 1, |frame| {
-        use ratatui::widgets::Paragraph;
         use ratatui::text::{Line, Text};
+        use ratatui::widgets::Paragraph;
         let spans = app.render_statusline(120);
         frame.render_widget(Paragraph::new(Text::from(Line::from(spans))), frame.area());
     });

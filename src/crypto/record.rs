@@ -115,7 +115,10 @@ mod tests {
             password: "p@$$w0rd!\"'\\<>|&".to_string(),
             url: Some("https://example.com?param=value&other=123".to_string()),
             notes: Some("Notes with \"quotes\" and 'apostrophes'\nNewlines too!".to_string()),
-            tags: vec!["tag-with-dash".to_string(), "tag_with_underscore".to_string()],
+            tags: vec![
+                "tag-with-dash".to_string(),
+                "tag_with_underscore".to_string(),
+            ],
         };
 
         let (ciphertext, nonce) = encrypt_payload(&crypto, &payload).unwrap();

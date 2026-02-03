@@ -179,7 +179,12 @@ mod tests {
                 ))
                 .unwrap();
             let result: Option<String> = stmt.query_row([], |row| row.get(0)).unwrap();
-            assert_eq!(result, Some(table.to_string()), "Table {} should exist", table);
+            assert_eq!(
+                result,
+                Some(table.to_string()),
+                "Table {} should exist",
+                table
+            );
         }
     }
 
@@ -223,7 +228,11 @@ mod tests {
             .pragma_query_value(None, "synchronous", |row| row.get(0))
             .unwrap();
         // NORMAL is 1 in newer SQLite, FULL is 2
-        assert!(synchronous >= 1 && synchronous <= 2, "synchronous should be NORMAL (1) or FULL (2), got {}", synchronous);
+        assert!(
+            synchronous >= 1 && synchronous <= 2,
+            "synchronous should be NORMAL (1) or FULL (2), got {}",
+            synchronous
+        );
     }
 
     #[test]
@@ -248,9 +257,7 @@ mod tests {
         let conn = initialize_database(&db_path).unwrap();
 
         // Get table info for records
-        let mut stmt = conn
-            .prepare("PRAGMA table_info(records)")
-            .unwrap();
+        let mut stmt = conn.prepare("PRAGMA table_info(records)").unwrap();
 
         let columns: Vec<String> = stmt
             .query_map([], |row| Ok(row.get::<_, String>(1).unwrap()))
@@ -323,7 +330,10 @@ mod tests {
             .unwrap();
         let sql: String = stmt.query_row([], |row| row.get(0)).unwrap();
 
-        assert!(sql.contains("UNIQUE"), "tags.name should have UNIQUE constraint");
+        assert!(
+            sql.contains("UNIQUE"),
+            "tags.name should have UNIQUE constraint"
+        );
     }
 
     #[test]
@@ -334,7 +344,9 @@ mod tests {
         let conn = initialize_database(&db_path).unwrap();
 
         // Verify record_tags table has foreign keys
-        let mut stmt = conn.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='record_tags'").unwrap();
+        let mut stmt = conn
+            .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='record_tags'")
+            .unwrap();
         let sql: String = stmt.query_row([], |row| row.get(0)).unwrap();
 
         assert!(
@@ -355,9 +367,7 @@ mod tests {
         let conn = initialize_database(&db_path).unwrap();
 
         // Verify sync_state table has correct columns
-        let mut stmt = conn
-            .prepare("PRAGMA table_info(sync_state)")
-            .unwrap();
+        let mut stmt = conn.prepare("PRAGMA table_info(sync_state)").unwrap();
 
         let columns: Vec<String> = stmt
             .query_map([], |row| Ok(row.get::<_, String>(1).unwrap()))
@@ -387,9 +397,7 @@ mod tests {
         let conn = initialize_database(&db_path).unwrap();
 
         // Verify mcp_sessions table has required columns
-        let mut stmt = conn
-            .prepare("PRAGMA table_info(mcp_sessions)")
-            .unwrap();
+        let mut stmt = conn.prepare("PRAGMA table_info(mcp_sessions)").unwrap();
 
         let columns: Vec<String> = stmt
             .query_map([], |row| Ok(row.get::<_, String>(1).unwrap()))
@@ -481,7 +489,10 @@ mod tests {
             .unwrap();
         let sql: String = stmt.query_row([], |row| row.get(0)).unwrap();
 
-        assert!(sql.contains("PRIMARY KEY"), "metadata should have primary key");
+        assert!(
+            sql.contains("PRIMARY KEY"),
+            "metadata should have primary key"
+        );
         assert!(
             sql.contains("key TEXT PRIMARY KEY"),
             "metadata.key should be the primary key"

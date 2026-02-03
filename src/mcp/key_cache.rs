@@ -116,9 +116,7 @@ impl McpKeyCache {
     ///
     /// A reference to the DEK byte slice
     pub fn dek(&self) -> Result<&[u8], KeyCacheError> {
-        self.dek
-            .as_deref()
-            .ok_or(KeyCacheError::NotInitialized)
+        self.dek.as_deref().ok_or(KeyCacheError::NotInitialized)
     }
 
     /// Get the keystore path (for reference/logging)

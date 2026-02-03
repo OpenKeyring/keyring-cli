@@ -46,12 +46,10 @@ pub fn is_first_time() -> Result<bool> {
 
 /// Check if wrapped_passkey file exists
 fn has_wrapped_passkey() -> bool {
-    if let Some(home) = dirs::home_dir() {
-        let wrapped_path = home.join(".local/share/open-keyring/wrapped_passkey");
-        wrapped_path.exists()
-    } else {
-        false
-    }
+    dirs::data_local_dir()
+        .map(|p| p.join("open-keyring/wrapped_passkey"))
+        .map(|p| p.exists())
+        .unwrap_or(false)
 }
 
 /// Unlock the keystore and return a CryptoManager initialized with DEK
@@ -106,7 +104,8 @@ pub fn unlock_keystore() -> Result<CryptoManager> {
         Ok(crypto)
     } else {
         Err(KeyringError::AuthenticationFailed {
-            reason: "Keystore not initialized. Please run 'ok wizard' to set up OpenKeyring.".to_string(),
+            reason: "Keystore not initialized. Please run 'ok wizard' to set up OpenKeyring."
+                .to_string(),
         })
     }
 }
