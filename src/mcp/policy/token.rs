@@ -253,7 +253,7 @@ mod tests {
             "test_tool".to_string(),
             "session".to_string(),
             b"key",
-        );
+        ).unwrap();
         // 16 bytes = 32 hex chars
         assert_eq!(token.nonce.len(), 32);
     }
