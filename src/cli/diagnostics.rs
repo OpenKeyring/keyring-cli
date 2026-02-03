@@ -531,4 +531,109 @@ mod tests {
         assert_eq!(status.data_items[0].status, StatusCategory::OK);
         assert_eq!(status.data_items[1].status, StatusCategory::OK);
     }
+
+    #[test]
+    fn test_missing_keystore_only() {
+        // Test scenario where only keystore is missing (config and DB exist)
+        // This should still be considered first-time use
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let config_dir = temp_dir.path().join("config");
+        let data_dir = temp_dir.path().join("data");
+
+        std::fs::create_dir_all(&config_dir).unwrap();
+        std::fs::create_dir_all(&data_dir).unwrap();
+
+        // Only create config file and database, not keystore
+        std::fs::write(config_dir.join("config.yaml"), "test: config").unwrap();
+        std::fs::write(data_dir.join("passwords.db"), "test db").unwrap();
+
+        let result = check_system_status_with_dirs(config_dir.clone(), data_dir.clone());
+
+        assert!(result.is_ok());
+        let status = result.unwrap();
+
+        // keystore doesn't exist = first-time use
+        assert!(status.is_first_time());
+        assert!(!status.is_healthy());
+
+        // Verify keystore status
+        let keystore_item = status.key_items.iter()
+            .find(|item| item.name == "Keystore file")
+            .expect("Keystore file should be in key_items");
+        assert_eq!(keystore_item.status, StatusCategory::Missing);
+
+        // Config and database should exist
+        assert_eq!(status.config_items[1].status, StatusCategory::OK);
+        assert_eq!(status.data_items[1].status, StatusCategory::OK);
+    }
+
+    #[test]
+    fn test_missing_database_after_init() {
+        // Test scenario where keystore exists but database is missing
+        // This indicates an initialized system with data issues
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let config_dir = temp_dir.path().join("config");
+        let data_dir = temp_dir.path().join("data");
+
+        std::fs::create_dir_all(&config_dir).unwrap();
+        std::fs::create_dir_all(&data_dir).unwrap();
+
+        // Only create keystore and config, not database
+        std::fs::write(config_dir.join("keystore.json"), "{}").unwrap();
+        std::fs::write(config_dir.join("config.yaml"), "test: config").unwrap();
+
+        let result = check_system_status_with_dirs(config_dir.clone(), data_dir.clone());
+
+        assert!(result.is_ok());
+        let status = result.unwrap();
+
+        // keystore exists = not first-time, but database missing = unhealthy
+        assert!(!status.is_first_time());
+        assert!(!status.is_healthy());
+
+        // Verify database status
+        let db_item = status.data_items.iter()
+            .find(|item| item.name == "Database file")
+            .expect("Database file should be in data_items");
+        assert_eq!(db_item.status, StatusCategory::Missing);
+
+        // Keystore should be OK
+        assert_eq!(status.key_items[0].status, StatusCategory::OK);
+    }
+
+    #[test]
+    fn test_config_auto_generate_scenario() {
+        // Test scenario where only config is missing (keystore and DB exist)
+        // Note: Even though config can be auto-generated, the system health check
+        // requires all core files to be present for an initialized system
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let config_dir = temp_dir.path().join("config");
+        let data_dir = temp_dir.path().join("data");
+
+        std::fs::create_dir_all(&config_dir).unwrap();
+        std::fs::create_dir_all(&data_dir).unwrap();
+
+        // Only create keystore and database, config missing
+        std::fs::write(config_dir.join("keystore.json"), "{}").unwrap();
+        std::fs::write(data_dir.join("passwords.db"), "test db").unwrap();
+
+        let result = check_system_status_with_dirs(config_dir.clone(), data_dir.clone());
+
+        assert!(result.is_ok());
+        let status = result.unwrap();
+
+        // Not first-time (keystore exists), but unhealthy due to missing config
+        assert!(!status.is_first_time());
+        assert!(!status.is_healthy());
+
+        // Verify config file status is Missing
+        let config_item = status.config_items.iter()
+            .find(|item| item.name == "Config file")
+            .expect("Config file should be in config_items");
+        assert_eq!(config_item.status, StatusCategory::Missing);
+
+        // Keystore and database should be OK
+        assert_eq!(status.key_items[0].status, StatusCategory::OK);
+        assert_eq!(status.data_items[1].status, StatusCategory::OK);
+    }
 }
