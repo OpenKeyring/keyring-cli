@@ -204,7 +204,7 @@ impl TagConfigWidget {
         let list = List::new(items)
             .block(
                 Block::default()
-                    .title(" 环境标签 (Environment) [单选] ")
+                    .title(" Environment [Single] ")
                     .borders(Borders::ALL)
                     .border_style(border_style),
             )
@@ -257,7 +257,7 @@ impl TagConfigWidget {
         let list = List::new(items)
             .block(
                 Block::default()
-                    .title(" 风险标签 (Risk Level) [单选] ")
+                    .title(" Risk Level [Single] ")
                     .borders(Borders::ALL)
                     .border_style(border_style),
             )
@@ -274,16 +274,16 @@ impl TagConfigWidget {
     fn draw_advanced(&self, f: &mut Frame, area: Rect) {
         let mut lines = vec![
             Line::from(vec![Span::styled(
-                "自定义标签 (Custom Tags)",
+                "Custom Tags",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             )]),
             Line::from(""),
             Line::from(vec![
-                Span::raw("格式: "),
+                Span::raw("Format: "),
                 Span::styled("key:value", Style::default().fg(Color::Yellow)),
-                Span::raw(" (例如: "),
+                Span::raw(" (e.g.: "),
                 Span::styled("category:database", Style::default().fg(Color::Green)),
                 Span::raw(")"),
             ]),
@@ -347,7 +347,7 @@ impl TagConfigWidget {
         let paragraph = Paragraph::new(lines)
             .block(
                 Block::default()
-                    .title(" 高级选项 (Advanced Options) ")
+                    .title(" Advanced Options ")
                     .borders(Borders::ALL)
                     .border_style(border_style),
             )

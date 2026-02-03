@@ -281,14 +281,14 @@ impl SettingsScreen {
         // Title
         let title = Paragraph::new(Text::from(vec![
             Line::from(Span::styled(
-                "设置 / Settings",
+                "Settings",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
             Line::from(Span::styled(
-                "使用 ↑↓ 导航，Enter 确认，Esc 返回",
+                "Use ↑↓ to navigate, Enter to confirm, Esc to go back",
                 Style::default().fg(Color::Gray),
             )),
         ]))
@@ -364,16 +364,16 @@ impl SettingsScreen {
         let settings = Paragraph::new(Text::from(settings_lines)).block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("设置项 / Settings"),
+                .title(" Settings "),
         );
 
         frame.render_widget(settings, chunks[1]);
 
         // Footer
         let footer = Paragraph::new(Text::from(vec![Line::from(vec![
-            Span::from("Enter: 打开  "),
-            Span::from("↑↓: 导航  "),
-            Span::from("Esc: 返回"),
+            Span::from("Enter: Open  "),
+            Span::from("↑↓: Navigate  "),
+            Span::from("Esc: Back"),
         ])]))
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));

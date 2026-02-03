@@ -147,7 +147,7 @@ impl PasskeyGenerateScreen {
 
         // Title
         let title = Paragraph::new(vec![Line::from(Span::styled(
-            "生成新的 Passkey",
+            "Generate New Passkey",
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
@@ -162,7 +162,7 @@ impl PasskeyGenerateScreen {
             Span::styled("⚠️ ", Style::default().fg(Color::Yellow)),
             Span::styled(
                 format!(
-                    "请务必保存以下 {} 词，这是恢复数据的唯一方式！",
+                    "Please save these {} words, this is the ONLY way to recover your data!",
                     self.word_count
                 ),
                 Style::default()
@@ -215,7 +215,7 @@ impl PasskeyGenerateScreen {
         } else {
             // Not generated yet
             let loading = Paragraph::new(vec![Line::from(Span::styled(
-                "正在生成 Passkey...",
+                "Generating Passkey...",
                 Style::default()
                     .fg(Color::Gray)
                     .add_modifier(Modifier::ITALIC),
@@ -230,19 +230,19 @@ impl PasskeyGenerateScreen {
         let confirm_text = if self.confirmed {
             vec![
                 Span::styled("✓", Style::default().fg(Color::Green)),
-                Span::raw(" 我已保存 Passkey"),
+                Span::raw(" I have saved the Passkey"),
             ]
         } else {
             vec![
                 Span::styled("☐", Style::default().fg(Color::White)),
-                Span::raw(" 我已保存 Passkey"),
+                Span::raw(" I have saved the Passkey"),
             ]
         };
 
         let confirmation = Paragraph::new(vec![
             Line::from(confirm_text),
             Line::from(vec![Span::styled(
-                "  丢失将无法恢复数据！",
+                "  Data cannot be recovered if lost!",
                 Style::default().fg(Color::Red),
             )]),
         ])
@@ -260,9 +260,9 @@ impl PasskeyGenerateScreen {
                     .add_modifier(Modifier::BOLD),
             ),
             Span::raw(if self.can_proceed() {
-                ": 下一步    "
+                ": Next    "
             } else {
-                ": 需先确认    "
+                ": Confirm first    "
             }),
             Span::styled(
                 "Space",
@@ -270,14 +270,14 @@ impl PasskeyGenerateScreen {
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(": 确认    "),
+            Span::raw(": Confirm    "),
             Span::styled(
                 "Esc",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(": 返回"),
+            Span::raw(": Back"),
         ];
 
         let footer = Paragraph::new(Line::from(footer_spans))

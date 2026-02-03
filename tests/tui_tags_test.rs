@@ -11,18 +11,18 @@ fn test_env_tag_to_string() {
 
 #[test]
 fn test_env_tag_display_name() {
-    assert_eq!(EnvTag::Dev.display_name(), "dev (开发环境)");
-    assert_eq!(EnvTag::Test.display_name(), "test (测试环境)");
-    assert_eq!(EnvTag::Staging.display_name(), "staging (预发布环境)");
-    assert_eq!(EnvTag::Prod.display_name(), "prod (生产环境)");
+    assert_eq!(EnvTag::Dev.display_name(), "dev (development)");
+    assert_eq!(EnvTag::Test.display_name(), "test (testing)");
+    assert_eq!(EnvTag::Staging.display_name(), "staging (pre-production)");
+    assert_eq!(EnvTag::Prod.display_name(), "prod (production)");
 }
 
 #[test]
 fn test_env_tag_description() {
-    assert_eq!(EnvTag::Dev.description(), "本地开发环境，会话级授权");
-    assert_eq!(EnvTag::Test.description(), "测试环境，会话级授权");
-    assert_eq!(EnvTag::Staging.description(), "预发布环境，会话级授权");
-    assert_eq!(EnvTag::Prod.description(), "生产环境，每次需要确认 ⚠️");
+    assert_eq!(EnvTag::Dev.description(), "Local development environment, session-level authorization");
+    assert_eq!(EnvTag::Test.description(), "Test environment, session-level authorization");
+    assert_eq!(EnvTag::Staging.description(), "Staging environment, session-level authorization");
+    assert_eq!(EnvTag::Prod.description(), "Production environment, confirmation required each time ⚠️");
 }
 
 #[test]
@@ -34,16 +34,16 @@ fn test_risk_tag_to_string() {
 
 #[test]
 fn test_risk_tag_display_name() {
-    assert_eq!(RiskTag::Low.display_name(), "low (低风险)");
-    assert_eq!(RiskTag::Medium.display_name(), "medium (中风险)");
-    assert_eq!(RiskTag::High.display_name(), "high (高风险)");
+    assert_eq!(RiskTag::Low.display_name(), "low (low risk)");
+    assert_eq!(RiskTag::Medium.display_name(), "medium (medium risk)");
+    assert_eq!(RiskTag::High.display_name(), "high (high risk)");
 }
 
 #[test]
 fn test_risk_tag_description() {
-    assert_eq!(RiskTag::Low.description(), "只读操作，会话级授权");
-    assert_eq!(RiskTag::Medium.description(), "读写操作，需确认");
-    assert_eq!(RiskTag::High.description(), "危险操作，每次确认 ⚠️");
+    assert_eq!(RiskTag::Low.description(), "Read-only operations, session-level authorization");
+    assert_eq!(RiskTag::Medium.description(), "Read-write operations, confirmation required");
+    assert_eq!(RiskTag::High.description(), "Dangerous operations, confirmation each time ⚠️");
 }
 
 #[test]
@@ -68,7 +68,7 @@ fn test_validate_tag_config_prod_with_low_risk() {
     match result {
         Err(TagError::Contradiction { field, message }) => {
             assert_eq!(field, "env:prod + risk:low");
-            assert_eq!(message, "生产环境不应标记为低风险");
+            assert_eq!(message, "Production environment should not be marked as low risk");
         }
         _ => panic!("Expected Contradiction error"),
     }
@@ -86,7 +86,7 @@ fn test_validate_tag_config_dev_with_high_risk() {
     match result {
         Err(TagError::Contradiction { field, message }) => {
             assert_eq!(field, "env:dev + risk:high");
-            assert_eq!(message, "开发环境不应标记为高风险");
+            assert_eq!(message, "Development environment should not be marked as high risk");
         }
         _ => panic!("Expected Contradiction error"),
     }

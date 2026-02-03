@@ -27,12 +27,12 @@ impl WizardStep {
     /// Get display name for this step
     pub fn name(&self) -> &str {
         match self {
-            WizardStep::Welcome => "欢迎",
-            WizardStep::PasskeyGenerate => "生成 Passkey",
-            WizardStep::PasskeyImport => "导入 Passkey",
-            WizardStep::PasskeyConfirm => "确认 Passkey",
-            WizardStep::MasterPassword => "设置主密码",
-            WizardStep::Complete => "完成",
+            WizardStep::Welcome => "Welcome",
+            WizardStep::PasskeyGenerate => "Generate Passkey",
+            WizardStep::PasskeyImport => "Import Passkey",
+            WizardStep::PasskeyConfirm => "Confirm Passkey",
+            WizardStep::MasterPassword => "Master Password",
+            WizardStep::Complete => "Complete",
         }
     }
 }
@@ -274,12 +274,12 @@ mod tests {
 
     #[test]
     fn test_wizard_step_name() {
-        assert_eq!(WizardStep::Welcome.name(), "欢迎");
-        assert_eq!(WizardStep::PasskeyGenerate.name(), "生成 Passkey");
-        assert_eq!(WizardStep::PasskeyImport.name(), "导入 Passkey");
-        assert_eq!(WizardStep::PasskeyConfirm.name(), "确认 Passkey");
-        assert_eq!(WizardStep::MasterPassword.name(), "设置主密码");
-        assert_eq!(WizardStep::Complete.name(), "完成");
+        assert_eq!(WizardStep::Welcome.name(), "Welcome");
+        assert_eq!(WizardStep::PasskeyGenerate.name(), "Generate Passkey");
+        assert_eq!(WizardStep::PasskeyImport.name(), "Import Passkey");
+        assert_eq!(WizardStep::PasskeyConfirm.name(), "Confirm Passkey");
+        assert_eq!(WizardStep::MasterPassword.name(), "Master Password");
+        assert_eq!(WizardStep::Complete.name(), "Complete");
     }
 
     #[test]

@@ -112,18 +112,14 @@ impl ConflictResolutionScreen {
         // Title
         let title = Paragraph::new(Text::from(vec![
             Line::from(Span::styled(
-                "冲突解决 / Conflict Resolution",
+                "Conflict Resolution",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
             Line::from(Span::styled(
-                format!(
-                    "共 {} 个冲突需要解决 / {} conflicts to resolve",
-                    self.conflicts.len(),
-                    self.conflicts.len()
-                ),
+                format!("{} conflicts to resolve", self.conflicts.len()),
                 Style::default().fg(Color::Yellow),
             )),
         ]))
@@ -205,7 +201,7 @@ impl ConflictResolutionScreen {
         let list = List::new(conflict_items).block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("冲突列表 / Conflicts"),
+                .title(" Conflicts "),
         );
 
         let mut list_state = self.list_state.clone();

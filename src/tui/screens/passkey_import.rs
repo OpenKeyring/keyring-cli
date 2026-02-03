@@ -89,7 +89,7 @@ impl PasskeyImportScreen {
         // Check word count
         if words.len() != 12 && words.len() != 24 {
             self.validation_error = Some(format!(
-                "Passkey 必须是 12 或 24 词（当前：{} 词）",
+                "Passkey must be 12 or 24 words (current: {} words)",
                 words.len()
             ));
             return Err(anyhow!("{}", self.validation_error.as_ref().unwrap()));
@@ -97,7 +97,7 @@ impl PasskeyImportScreen {
 
         // Validate BIP39 checksum
         Passkey::from_words(&words).map_err(|e| {
-            self.validation_error = Some(format!("无效的 Passkey: {}", e));
+            self.validation_error = Some(format!("Invalid Passkey: {}", e));
             anyhow!("{}", self.validation_error.as_ref().unwrap())
         })?;
 
@@ -134,7 +134,7 @@ impl PasskeyImportScreen {
 
         // Title
         let title = Paragraph::new(vec![Line::from(Span::styled(
-            "导入已有 Passkey",
+            "Import Existing Passkey",
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
@@ -146,7 +146,7 @@ impl PasskeyImportScreen {
 
         // Instructions
         let instructions = Paragraph::new(vec![Line::from(Span::styled(
-            "请输入您的 12 或 24 词 Passkey（用空格分隔）:",
+            "Enter your 12 or 24 word Passkey (separated by spaces):",
             Style::default().fg(Color::White),
         ))])
         .alignment(Alignment::Left);
@@ -159,7 +159,7 @@ impl PasskeyImportScreen {
                 Span::styled("> ", Style::default().fg(Color::Gray)),
                 Span::styled(
                     if self.input.is_empty() {
-                        "在此输入 Passkey..."
+                        "Type Passkey here..."
                     } else {
                         &self.input
                     },
@@ -168,7 +168,7 @@ impl PasskeyImportScreen {
             ]),
             Line::from(""),
             Line::from(Span::styled(
-                "提示: 输入完成后按 Enter 验证",
+                "Hint: Press Enter to validate when done",
                 Style::default()
                     .fg(Color::DarkGray)
                     .add_modifier(Modifier::ITALIC),
@@ -177,7 +177,7 @@ impl PasskeyImportScreen {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(" 输入 / Input "),
+                .title(" Input "),
         )
         .wrap(Wrap { trim: true });
 
@@ -192,7 +192,7 @@ impl PasskeyImportScreen {
         } else if self.validated {
             Paragraph::new(Line::from(vec![
                 Span::styled("✓ ", Style::default().fg(Color::Green)),
-                Span::styled("Passkey 验证成功", Style::default().fg(Color::Green)),
+                Span::styled("Passkey validated successfully", Style::default().fg(Color::Green)),
             ]))
         } else {
             Paragraph::new(Line::from(""))
@@ -209,9 +209,9 @@ impl PasskeyImportScreen {
                     .add_modifier(Modifier::BOLD),
             ),
             Span::raw(if self.can_proceed() {
-                ": 下一步    "
+                ": Next    "
             } else {
-                ": 验证    "
+                ": Validate    "
             }),
             Span::styled(
                 "Esc",
@@ -219,7 +219,7 @@ impl PasskeyImportScreen {
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(": 返回"),
+            Span::raw(": Back"),
         ];
 
         let footer = Paragraph::new(Line::from(footer_spans))
@@ -282,6 +282,6 @@ mod tests {
 
         let result = screen.validate();
         assert!(result.is_err());
-        assert!(screen.validation_error().unwrap().contains("12 或 24 词"));
+        assert!(screen.validation_error().unwrap().contains("12 or 24 words"));
     }
 }

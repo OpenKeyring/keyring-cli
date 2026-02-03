@@ -519,8 +519,16 @@ impl CryptoManager {
 /// - Linux/macOS: `~/.local/share/open-keyring`
 /// - Windows: `%LOCALAPPDATA%\open-keyring`
 ///
+/// When `test-env` feature is enabled, respects `OK_DATA_DIR` environment variable.
 /// Uses `dirs::data_local_dir()` to get the correct platform-specific directory.
 fn get_keyring_dir() -> Result<PathBuf, KeyringError> {
+    #[cfg(feature = "test-env")]
+    {
+        if let Ok(data_dir) = std::env::var("OK_DATA_DIR") {
+            return Ok(PathBuf::from(data_dir).join("open-keyring"));
+        }
+    }
+
     dirs::data_local_dir()
         .map(|p| p.join("open-keyring"))
         .ok_or_else(|| KeyringError::Internal {

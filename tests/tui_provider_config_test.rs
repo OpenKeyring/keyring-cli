@@ -10,8 +10,8 @@ fn test_webdav_config_fields() {
 
     assert_eq!(fields.len(), 3);
     assert_eq!(fields[0].label, "WebDAV URL");
-    assert_eq!(fields[1].label, "用户名");
-    assert_eq!(fields[2].label, "密码");
+    assert_eq!(fields[1].label, "Username");
+    assert_eq!(fields[2].label, "Password");
 }
 
 #[test]
@@ -40,11 +40,11 @@ fn test_sftp_config_fields() {
     let fields = screen.get_fields();
 
     assert_eq!(fields.len(), 5);
-    assert_eq!(fields[0].label, "主机");
-    assert_eq!(fields[1].label, "端口");
-    assert_eq!(fields[2].label, "用户名");
-    assert_eq!(fields[3].label, "密码");
-    assert_eq!(fields[4].label, "根路径 (Root)");
+    assert_eq!(fields[0].label, "Host");
+    assert_eq!(fields[1].label, "Port");
+    assert_eq!(fields[2].label, "Username");
+    assert_eq!(fields[3].label, "Password");
+    assert_eq!(fields[4].label, "Root Path");
 }
 
 #[test]

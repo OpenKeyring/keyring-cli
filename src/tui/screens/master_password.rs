@@ -26,9 +26,9 @@ impl PasswordStrength {
     /// Get display text for this strength level
     pub fn display(&self) -> &str {
         match self {
-            PasswordStrength::Weak => "弱",
-            PasswordStrength::Medium => "中",
-            PasswordStrength::Strong => "强",
+            PasswordStrength::Weak => "Weak",
+            PasswordStrength::Medium => "Medium",
+            PasswordStrength::Strong => "Strong",
         }
     }
 
@@ -187,19 +187,19 @@ impl MasterPasswordScreen {
     /// Validate and return error if any
     pub fn validate(&self) -> Result<(), String> {
         if self.password_input.is_empty() {
-            return Err("请输入主密码".to_string());
+            return Err("Please enter a master password".to_string());
         }
 
         if self.password_input.len() < 8 {
-            return Err("主密码至少需要 8 个字符".to_string());
+            return Err("Master password must be at least 8 characters".to_string());
         }
 
         if self.confirm_input.is_empty() {
-            return Err("请再次输入主密码".to_string());
+            return Err("Please re-enter the master password".to_string());
         }
 
         if !self.passwords_match {
-            return Err("两次输入的密码不匹配".to_string());
+            return Err("Passwords do not match".to_string());
         }
 
         Ok(())
@@ -236,7 +236,7 @@ impl MasterPasswordScreen {
 
         // Title
         let title = Paragraph::new(vec![Line::from(Span::styled(
-            "设置本设备的主密码",
+            "Set Master Password for This Device",
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
@@ -251,7 +251,7 @@ impl MasterPasswordScreen {
         let password_field = Paragraph::new(vec![
             Line::from(vec![
                 Span::styled(
-                    "主密码: ",
+                    "Master Password: ",
                     Style::default().fg(if self.show_first {
                         Color::Cyan
                     } else {
@@ -261,7 +261,7 @@ impl MasterPasswordScreen {
                 Span::styled(
                     if password_display.is_empty() {
                         if self.show_first {
-                            "在此输入..."
+                            "Type here..."
                         } else {
                             ""
                         }
@@ -278,7 +278,7 @@ impl MasterPasswordScreen {
             Line::from(vec![
                 Span::raw("  "),
                 Span::styled(
-                    format!("{} 强度: {}", self.strength.icon(), self.strength.display()),
+                    format!("{} Strength: {}", self.strength.icon(), self.strength.display()),
                     Style::default()
                         .fg(self.strength.color())
                         .add_modifier(Modifier::BOLD),
@@ -299,7 +299,7 @@ impl MasterPasswordScreen {
                 } else {
                     Style::default().fg(Color::DarkGray)
                 })
-                .title(" 主密码 "),
+                .title(" Master Password "),
         )
         .wrap(Wrap { trim: false });
 
@@ -309,7 +309,7 @@ impl MasterPasswordScreen {
         let confirm_display = "•".repeat(self.confirm_input.len());
         let confirm_field = Paragraph::new(vec![Line::from(vec![
             Span::styled(
-                "确认密码: ",
+                "Confirm Password: ",
                 Style::default().fg(if !self.show_first {
                     Color::Cyan
                 } else {
@@ -319,7 +319,7 @@ impl MasterPasswordScreen {
             Span::styled(
                 if confirm_display.is_empty() {
                     if !self.show_first {
-                        "在此输入..."
+                        "Type here..."
                     } else {
                         ""
                     }
@@ -341,9 +341,9 @@ impl MasterPasswordScreen {
             }),
             Span::styled(
                 if !self.confirm_input.is_empty() && self.passwords_match {
-                    " 匹配"
+                    " Match"
                 } else if !self.confirm_input.is_empty() {
-                    " 不匹配"
+                    " Mismatch"
                 } else {
                     ""
                 },
@@ -362,7 +362,7 @@ impl MasterPasswordScreen {
                 } else {
                     Style::default().fg(Color::DarkGray)
                 })
-                .title(" 确认密码 "),
+                .title(" Confirm Password "),
         )
         .wrap(Wrap { trim: false });
 
@@ -377,11 +377,11 @@ impl MasterPasswordScreen {
         } else if self.can_complete() {
             Paragraph::new(Line::from(vec![
                 Span::styled("✓ ", Style::default().fg(Color::Green)),
-                Span::styled("密码设置完成", Style::default().fg(Color::Green)),
+                Span::styled("Password setup complete", Style::default().fg(Color::Green)),
             ]))
         } else if self.show_first {
             Paragraph::new(Line::from(Span::styled(
-                "提示: 密码至少需要 8 个字符",
+                "Hint: Password must be at least 8 characters",
                 Style::default()
                     .fg(Color::DarkGray)
                     .add_modifier(Modifier::ITALIC),
@@ -398,14 +398,14 @@ impl MasterPasswordScreen {
             Line::from(vec![
                 Span::styled("💡 ", Style::default().fg(Color::Cyan)),
                 Span::styled(
-                    "此密码仅用于加密 Passkey",
+                    "This password is only used to encrypt the Passkey",
                     Style::default().fg(Color::White),
                 ),
             ]),
             Line::from(vec![
                 Span::raw("   "),
                 Span::styled(
-                    "与其他设备的密码可以不同",
+                    "Can be different from other devices",
                     Style::default()
                         .fg(Color::Gray)
                         .add_modifier(Modifier::ITALIC),
@@ -425,9 +425,9 @@ impl MasterPasswordScreen {
                     .add_modifier(Modifier::BOLD),
             ),
             Span::raw(if self.can_complete() {
-                ": 完成    "
+                ": Done    "
             } else if self.show_first && !self.password_input.is_empty() {
-                ": 继续    "
+                ": Continue    "
             } else {
                 "         "
             }),
@@ -437,14 +437,14 @@ impl MasterPasswordScreen {
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(": 切换    "),
+            Span::raw(": Switch    "),
             Span::styled(
                 "Esc",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(": 返回"),
+            Span::raw(": Back"),
         ];
 
         let footer = Paragraph::new(Line::from(footer_spans))
@@ -551,9 +551,9 @@ mod tests {
 
     #[test]
     fn test_password_strength_display() {
-        assert_eq!(PasswordStrength::Weak.display(), "弱");
-        assert_eq!(PasswordStrength::Medium.display(), "中");
-        assert_eq!(PasswordStrength::Strong.display(), "强");
+        assert_eq!(PasswordStrength::Weak.display(), "Weak");
+        assert_eq!(PasswordStrength::Medium.display(), "Medium");
+        assert_eq!(PasswordStrength::Strong.display(), "Strong");
     }
 
     #[test]

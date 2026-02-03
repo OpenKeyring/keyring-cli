@@ -266,23 +266,85 @@ fn test_path_correctness() {
 
     let status = check_system_status().unwrap();
 
+    // Canonicalize paths for comparison (handles macOS /var -> /private/var symlinks)
+    let config_dir_canonical = fs::canonicalize(&config_dir).unwrap_or_else(|_| config_dir.clone());
+    let data_dir_canonical = fs::canonicalize(&data_dir).unwrap_or_else(|_| data_dir.clone());
+
     // Verify all paths are present and correct
     for item in &status.config_items {
         assert!(item.path.is_some(), "Config item should have a path");
         let path = item.path.as_ref().unwrap();
-        assert!(path.starts_with(&config_dir));
+
+        // For directory items, check exact match
+        // For file items, check that parent directory matches
+        if item.name.ends_with("directory") {
+            let path_canonical = fs::canonicalize(path)
+                .unwrap_or_else(|_| path.clone());
+            assert_eq!(
+                path_canonical, config_dir_canonical,
+                "Config directory path mismatch: '{}' vs '{}'",
+                path_canonical.display(),
+                config_dir_canonical.display()
+            );
+        } else {
+            // File item - check parent directory
+            if let Some(parent) = path.parent() {
+                let parent_canonical = fs::canonicalize(parent)
+                    .unwrap_or_else(|_| parent.to_path_buf());
+                assert_eq!(
+                    parent_canonical, config_dir_canonical,
+                    "Config file parent mismatch: '{}' vs '{}'",
+                    parent_canonical.display(),
+                    config_dir_canonical.display()
+                );
+            }
+        }
     }
 
     for item in &status.key_items {
         assert!(item.path.is_some(), "Key item should have a path");
         let path = item.path.as_ref().unwrap();
-        assert!(path.starts_with(&config_dir));
+        // Key items are files - check parent directory
+        if let Some(parent) = path.parent() {
+            let parent_canonical = fs::canonicalize(parent)
+                .unwrap_or_else(|_| parent.to_path_buf());
+            assert_eq!(
+                parent_canonical, config_dir_canonical,
+                "Key file parent mismatch: '{}' vs '{}'",
+                parent_canonical.display(),
+                config_dir_canonical.display()
+            );
+        }
     }
 
     for item in &status.data_items {
         assert!(item.path.is_some(), "Data item should have a path");
         let path = item.path.as_ref().unwrap();
-        assert!(path.starts_with(&data_dir));
+
+        // For directory items, check exact match
+        // For file items, check that parent directory matches
+        if item.name.ends_with("directory") {
+            let path_canonical = fs::canonicalize(path)
+                .unwrap_or_else(|_| path.clone());
+            assert_eq!(
+                path_canonical, data_dir_canonical,
+                "Data directory path mismatch: '{}' vs '{}'",
+                path_canonical.display(),
+                data_dir_canonical.display()
+            );
+        } else {
+            // File item - check parent directory
+            if let Some(parent) = path.parent() {
+                let parent_canonical = fs::canonicalize(parent)
+                    .unwrap_or_else(|_| parent.to_path_buf());
+                assert_eq!(
+                    parent_canonical, data_dir_canonical,
+                    "Data file parent mismatch: '{}' vs '{}'",
+                    parent_canonical.display(),
+                    data_dir_canonical.display()
+                );
+            }
+        }
     }
 
     // Clean up environment

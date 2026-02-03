@@ -24,16 +24,16 @@ impl WelcomeChoice {
     /// Get display text for this choice
     pub fn display_text(&self) -> &str {
         match self {
-            WelcomeChoice::GenerateNew => "全新使用（生成新的 Passkey）",
-            WelcomeChoice::ImportExisting => "导入已有 Passkey",
+            WelcomeChoice::GenerateNew => "New User (Generate New Passkey)",
+            WelcomeChoice::ImportExisting => "Import Existing Passkey",
         }
     }
 
     /// Get description text for this choice
     pub fn description(&self) -> &str {
         match self {
-            WelcomeChoice::GenerateNew => "将生成一个 24 词的 Passkey",
-            WelcomeChoice::ImportExisting => "如果您已经在其他设备上使用过",
+            WelcomeChoice::GenerateNew => "A 24-word Passkey will be generated",
+            WelcomeChoice::ImportExisting => "If you have used it on another device",
         }
     }
 
@@ -97,7 +97,7 @@ impl WelcomeScreen {
 
         // Title
         let title = Paragraph::new(vec![Line::from(Span::styled(
-            "OpenKeyring 初始化向导",
+            "OpenKeyring Setup Wizard",
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
@@ -109,7 +109,7 @@ impl WelcomeScreen {
 
         // Welcome message
         let welcome = Paragraph::new(vec![Line::from(Span::styled(
-            "欢迎使用 OpenKeyring！",
+            "Welcome to OpenKeyring!",
             Style::default()
                 .fg(Color::White)
                 .add_modifier(Modifier::BOLD),
@@ -120,7 +120,7 @@ impl WelcomeScreen {
 
         // Prompt
         let prompt = Paragraph::new(vec![Line::from(Span::styled(
-            "选择设置方式:",
+            "Choose setup method:",
             Style::default()
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
@@ -198,7 +198,7 @@ impl WelcomeScreen {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(" 选项 / Options "),
+                .title(" Options "),
         )
         .wrap(Wrap { trim: false });
 
@@ -212,21 +212,21 @@ impl WelcomeScreen {
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(": 下一步    "),
+            Span::raw(": Next    "),
             Span::styled(
                 "↑↓",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(": 选择    "),
+            Span::raw(": Choose    "),
             Span::styled(
                 "Esc",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(": 退出"),
+            Span::raw(": Exit"),
         ])])
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));

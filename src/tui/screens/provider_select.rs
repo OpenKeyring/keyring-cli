@@ -68,12 +68,12 @@ impl ProviderSelectScreen {
                 provider: CloudProvider::SFTP,
             },
             Provider {
-                name: "阿里云盘",
+                name: "Aliyun Drive",
                 shortcut: '7',
                 provider: CloudProvider::AliyunDrive,
             },
             Provider {
-                name: "阿里云 OSS",
+                name: "Aliyun OSS",
                 shortcut: '8',
                 provider: CloudProvider::AliyunOSS,
             },
@@ -137,14 +137,14 @@ impl ProviderSelectScreen {
         // Title
         let title = Paragraph::new(Text::from(vec![
             Line::from(Span::styled(
-                "选择云存储服务 / Select Cloud Storage",
+                "Select Cloud Storage",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
             Line::from(Span::styled(
-                "按数字键 1-8 快速选择，或使用 ↑↓ 导航",
+                "Press 1-8 for quick selection, or use ↑↓ to navigate",
                 Style::default().fg(Color::Gray),
             )),
         ]))
@@ -195,16 +195,16 @@ impl ProviderSelectScreen {
         let list = List::new(items).block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("可用服务 / Available"),
+                .title(" Available "),
         );
 
         frame.render_widget(list, chunks[1]);
 
         // Footer
         let footer = Paragraph::new(Text::from(vec![Line::from(vec![
-            Span::from("Enter: 确认  "),
-            Span::from("Esc: 取消  "),
-            Span::from("↑↓: 导航"),
+            Span::from("Enter: Confirm  "),
+            Span::from("Esc: Cancel  "),
+            Span::from("↑↓: Navigate"),
         ])]))
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));

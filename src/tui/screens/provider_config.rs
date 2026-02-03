@@ -81,21 +81,21 @@ impl ProviderConfigScreen {
     /// Creates a new provider configuration screen
     pub fn new(provider: CloudProvider) -> Self {
         let fields = match provider {
-            CloudProvider::ICloud => vec![ConfigField::new("iCloud 路径 (Path)", false)],
+            CloudProvider::ICloud => vec![ConfigField::new("iCloud Path", false)],
             CloudProvider::Dropbox => vec![ConfigField::new("Access Token", true)],
             CloudProvider::GDrive => vec![ConfigField::new("Access Token", true)],
             CloudProvider::OneDrive => vec![ConfigField::new("Access Token", true)],
             CloudProvider::WebDAV => vec![
                 ConfigField::new("WebDAV URL", false),
-                ConfigField::new("用户名", false),
-                ConfigField::new("密码", true),
+                ConfigField::new("Username", false),
+                ConfigField::new("Password", true),
             ],
             CloudProvider::SFTP => vec![
-                ConfigField::new("主机", false),
-                ConfigField::new("端口", false),
-                ConfigField::new("用户名", false),
-                ConfigField::new("密码", true),
-                ConfigField::new("根路径 (Root)", false),
+                ConfigField::new("Host", false),
+                ConfigField::new("Port", false),
+                ConfigField::new("Username", false),
+                ConfigField::new("Password", true),
+                ConfigField::new("Root Path", false),
             ],
             CloudProvider::AliyunDrive => {
                 vec![ConfigField::new("Access Token / Refresh Token", true)]
@@ -109,7 +109,7 @@ impl ProviderConfigScreen {
             CloudProvider::TencentCOS => vec![
                 ConfigField::new("Secret ID", false),
                 ConfigField::new("Secret Key", true),
-                ConfigField::new("区域 (Region)", false),
+                ConfigField::new("Region", false),
                 ConfigField::new("Bucket", false),
             ],
             CloudProvider::HuaweiOBS => vec![
@@ -121,7 +121,7 @@ impl ProviderConfigScreen {
             CloudProvider::UpYun => vec![
                 ConfigField::new("Bucket", false),
                 ConfigField::new("Operator", false),
-                ConfigField::new("密码", true),
+                ConfigField::new("Password", true),
             ],
         };
 
@@ -416,23 +416,23 @@ impl ProviderConfigScreen {
             CloudProvider::OneDrive => "OneDrive",
             CloudProvider::WebDAV => "WebDAV",
             CloudProvider::SFTP => "SFTP",
-            CloudProvider::AliyunDrive => "阿里云盘",
-            CloudProvider::AliyunOSS => "阿里云 OSS",
-            CloudProvider::TencentCOS => "腾讯云 COS",
-            CloudProvider::HuaweiOBS => "华为云 OBS",
-            CloudProvider::UpYun => "又拍云",
+            CloudProvider::AliyunDrive => "Aliyun Drive",
+            CloudProvider::AliyunOSS => "Aliyun OSS",
+            CloudProvider::TencentCOS => "Tencent COS",
+            CloudProvider::HuaweiOBS => "Huawei OBS",
+            CloudProvider::UpYun => "UpYun",
         };
 
         let title = Paragraph::new(Text::from(vec![
             Line::from(Span::styled(
-                format!("配置 {} / Configure {}", provider_name, provider_name),
+                format!("Configure {}", provider_name),
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
             Line::from(Span::styled(
-                "输入配置信息，使用 Tab 切换字段",
+                "Enter configuration info, use Tab to switch fields",
                 Style::default().fg(Color::Gray),
             )),
         ]))
@@ -513,17 +513,17 @@ impl ProviderConfigScreen {
         let form = Paragraph::new(Text::from(form_lines)).block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("配置信息 / Configuration"),
+                .title(" Configuration "),
         );
 
         frame.render_widget(form, chunks[1]);
 
         // Footer
         let footer = Paragraph::new(Text::from(vec![Line::from(vec![
-            Span::from("Enter: 测试连接  "),
-            Span::from("Ctrl+S: 保存  "),
-            Span::from("Tab: 切换字段  "),
-            Span::from("Esc: 返回"),
+            Span::from("Enter: Test Connection  "),
+            Span::from("Ctrl+S: Save  "),
+            Span::from("Tab: Switch Fields  "),
+            Span::from("Esc: Back"),
         ])]))
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL));

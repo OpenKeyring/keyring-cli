@@ -78,7 +78,7 @@ impl SyncScreen {
     /// Render the sync screen
     pub fn render(&self, frame: &mut Frame, area: Rect) {
         let title = Paragraph::new(Text::from(vec![Line::from(Span::styled(
-            "Sync / 同步",
+            "Sync",
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),

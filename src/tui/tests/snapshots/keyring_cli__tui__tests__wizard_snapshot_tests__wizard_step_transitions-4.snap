@@ -2,4 +2,4 @@
 source: src/tui/tests/wizard_snapshot_tests.rs
 expression: state.step.name()
 ---
-设置主密码
+Master Password

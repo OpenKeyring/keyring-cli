@@ -217,14 +217,14 @@ impl HelpScreen {
         // Title
         let title = Paragraph::new(Text::from(vec![
             Line::from(Span::styled(
-                "键盘快捷键 / Keyboard Shortcuts",
+                "Keyboard Shortcuts",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
             Line::from(Span::styled(
-                "使用 ↑↓ 或 Page Up/Down 滚动，Esc 返回",
+                "Use ↑↓ or Page Up/Down to scroll, Esc to return",
                 Style::default().fg(Color::Gray),
             )),
         ]))
@@ -282,7 +282,7 @@ impl HelpScreen {
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title("快捷键 / Shortcuts"),
+                    .title("Shortcuts"),
             )
             .scroll((self.scroll_position as u16, 0));
 

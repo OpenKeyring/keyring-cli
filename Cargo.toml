@@ -13,10 +13,12 @@ categories = ["command-line-utilities"]
 [[bin]]
 name = "ok"
 path = "src/main.rs"
+required-features = []
 
 [[bin]]
 name = "ok-mcp-server"
 path = "src/mcp/main.rs"
+required-features = []
 
 [features]
 default = []

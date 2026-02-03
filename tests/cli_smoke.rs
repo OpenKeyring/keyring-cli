@@ -2,6 +2,7 @@
 //!
 //! Tests the basic implemented workflow: init -> gen -> list -> show
 
+use keyring_cli::onboarding;
 use serial_test::serial;
 use std::env;
 use std::process::Command;
@@ -13,6 +14,10 @@ fn cli_smoke_flow() {
     let temp_dir = TempDir::new().unwrap();
     let config_dir = temp_dir.path().join("config");
     let data_dir = temp_dir.path().join("data");
+
+    // Set up test environment using the library helper
+    onboarding::setup_test_system(&config_dir, &data_dir, "test-master-password")
+        .expect("Failed to set up test system");
 
     env::set_var("OK_CONFIG_DIR", &config_dir);
     env::set_var("OK_DATA_DIR", &data_dir);

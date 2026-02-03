@@ -2,4 +2,4 @@
 source: src/tui/tests/wizard_snapshot_tests.rs
 expression: state.step.name()
 ---
-确认 Passkey
+Confirm Passkey

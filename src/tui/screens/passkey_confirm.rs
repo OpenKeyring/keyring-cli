@@ -73,7 +73,7 @@ impl PasskeyConfirmScreen {
 
         // Title
         let title = Paragraph::new(vec![Line::from(Span::styled(
-            "确认 Passkey",
+            "Confirm Passkey",
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
@@ -87,7 +87,7 @@ impl PasskeyConfirmScreen {
         let warning = Paragraph::new(vec![Line::from(vec![
             Span::styled("⚠️ ", Style::default().fg(Color::Yellow)),
             Span::styled(
-                "请确认您已妥善保存 Passkey",
+                "Please confirm you have safely saved the Passkey",
                 Style::default()
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),
@@ -103,7 +103,7 @@ impl PasskeyConfirmScreen {
 
         let mut summary_lines = vec![
             Line::from(Span::styled(
-                format!("Passkey 摘要 (共 {} 词):", word_count),
+                format!("Passkey Summary ({} words):", word_count),
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
@@ -113,7 +113,7 @@ impl PasskeyConfirmScreen {
 
         // First 4 words
         summary_lines.push(Line::from(Span::styled(
-            "前 4 词:",
+            "First 4 words:",
             Style::default().fg(Color::Gray),
         )));
         let mut first_line = Vec::new();
@@ -131,7 +131,7 @@ impl PasskeyConfirmScreen {
 
         // Last 4 words
         summary_lines.push(Line::from(Span::styled(
-            "后 4 词:".to_string(),
+            "Last 4 words:".to_string(),
             Style::default().fg(Color::Gray),
         )));
         let mut last_line = Vec::new();
@@ -152,7 +152,7 @@ impl PasskeyConfirmScreen {
         let summary = Paragraph::new(summary_lines).block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(" Passkey 摘要 "),
+                .title(" Passkey Summary "),
         );
 
         frame.render_widget(summary, chunks[3]);
@@ -161,19 +161,19 @@ impl PasskeyConfirmScreen {
         let confirm_text = if self.confirmed {
             vec![
                 Span::styled("✓", Style::default().fg(Color::Green)),
-                Span::raw(" 我已安全保存此 Passkey"),
+                Span::raw(" I have safely saved this Passkey"),
             ]
         } else {
             vec![
                 Span::styled("☐", Style::default().fg(Color::White)),
-                Span::raw(" 我已安全保存此 Passkey"),
+                Span::raw(" I have safely saved this Passkey"),
             ]
         };
 
         let confirmation = Paragraph::new(vec![
             Line::from(confirm_text),
             Line::from(vec![Span::styled(
-                "  丢失将无法恢复数据！",
+                "  Data cannot be recovered if lost!",
                 Style::default().fg(Color::Red),
             )]),
         ])
@@ -191,9 +191,9 @@ impl PasskeyConfirmScreen {
                     .add_modifier(Modifier::BOLD),
             ),
             Span::raw(if self.can_proceed() {
-                ": 下一步    "
+                ": Next    "
             } else {
-                ": 需先确认    "
+                ": Confirm first    "
             }),
             Span::styled(
                 "Space",
@@ -201,14 +201,14 @@ impl PasskeyConfirmScreen {
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(": 确认    "),
+            Span::raw(": Confirm    "),
             Span::styled(
                 "Esc",
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::raw(": 返回"),
+            Span::raw(": Back"),
         ];
 
         let footer = Paragraph::new(Line::from(footer_spans))

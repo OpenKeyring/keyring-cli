@@ -1,19 +1,35 @@
 //! Tests for CryptoManager Passkey integration and device key derivation
+//!
+//! All tests use temporary directories for isolation via test-env feature.
+//! The OK_DATA_DIR environment variable is set to point to a temp directory
+//! that is automatically cleaned up after each test.
 
 use keyring_cli::crypto::{passkey::Passkey, CryptoManager, DeviceIndex};
 use serial_test::serial;
-use std::fs;
+use std::env;
+use tempfile::TempDir;
 
-/// Default keyring directory relative to home directory
-const DEFAULT_KEYRING_DIR: &str = ".local/share/open-keyring";
+/// Helper function to set up a temporary test environment
+///
+/// Creates a temporary directory and sets OK_DATA_DIR to point to it.
+/// Returns the TempDir guard (automatically cleaned up on drop).
+fn setup_temp_env() -> TempDir {
+    let temp_dir = TempDir::new().expect("Failed to create temp directory");
+    let data_dir = temp_dir.path().join("data");
+
+    // Create data directory
+    std::fs::create_dir_all(&data_dir).expect("Failed to create data directory");
+
+    // Set environment variable for test isolation
+    env::set_var("OK_DATA_DIR", &data_dir);
+
+    temp_dir
+}
 
 #[test]
 #[serial]
 fn test_passkey_initialization_flow() {
-    // Cleanup before test
-    let home = dirs::home_dir().expect("Failed to get home directory");
-    let wrapped_passkey_path = home.join(DEFAULT_KEYRING_DIR).join("wrapped_passkey");
-    let _ = std::fs::remove_file(&wrapped_passkey_path);
+    let _temp_dir = setup_temp_env();
 
     // Generate a new Passkey (24-word BIP39 mnemonic)
     let passkey = Passkey::generate(24).expect("Failed to generate passkey");
@@ -58,35 +74,33 @@ fn test_passkey_initialization_flow() {
         "Device key should be 32 bytes"
     );
 
-    // Verify wrapped Passkey file was created in default location
+    // Verify wrapped Passkey file was created in temp directory
+    let wrapped_passkey_path = env::var("OK_DATA_DIR")
+        .expect("OK_DATA_DIR should be set")
+        .to_string()
+        + "/open-keyring/wrapped_passkey";
     assert!(
-        wrapped_passkey_path.exists(),
+        std::path::Path::new(&wrapped_passkey_path).exists(),
         "Wrapped Passkey file should be created"
     );
 
     // Verify the wrapped Passkey can be read and decrypted
     let wrapped_content =
-        fs::read_to_string(&wrapped_passkey_path).expect("Failed to read wrapped Passkey file");
+        std::fs::read_to_string(&wrapped_passkey_path).expect("Failed to read wrapped Passkey file");
 
     // The content should be base64-encoded JSON
     assert!(
         !wrapped_content.is_empty(),
         "Wrapped Passkey should not be empty"
     );
-
-    // Cleanup
-    let _ = std::fs::remove_file(&wrapped_passkey_path);
 }
 
 #[test]
 #[serial]
 fn test_device_key_derivation_and_use() {
-    // Test that device keys are deterministic but unique per device
+    let _temp_dir = setup_temp_env();
 
-    // Cleanup before test
-    let home = dirs::home_dir().expect("Failed to get home directory");
-    let wrapped_passkey_path = home.join(DEFAULT_KEYRING_DIR).join("wrapped_passkey");
-    let _ = std::fs::remove_file(&wrapped_passkey_path);
+    // Test that device keys are deterministic but unique per device
 
     // Same root master key
     let root_master_key = [1u8; 32];
@@ -160,9 +174,6 @@ fn test_device_key_derivation_and_use() {
         device_key_1, device_key_3,
         "Same device type should produce same device key (deterministic)"
     );
-
-    // Cleanup
-    let _ = std::fs::remove_file(&wrapped_passkey_path);
 }
 
 #[test]
@@ -181,14 +192,10 @@ fn test_get_device_key_returns_none_when_not_initialized() {
 #[test]
 #[serial]
 fn test_get_keyring_dir() {
-    // Test that get_keyring_dir returns the correct path
-    // This will be a private helper function, so we test it indirectly
-    // through initialize_with_passkey
+    let _temp_dir = setup_temp_env();
 
-    // Cleanup before test
-    let home = dirs::home_dir().expect("Failed to get home directory");
-    let wrapped_passkey_path = home.join(DEFAULT_KEYRING_DIR).join("wrapped_passkey");
-    let _ = std::fs::remove_file(&wrapped_passkey_path);
+    // Test that get_keyring_dir respects the OK_DATA_DIR environment variable
+    // This is tested indirectly through initialize_with_passkey
 
     let passkey = Passkey::generate(24).expect("Failed to generate passkey");
     let root_master_key = [1u8; 32];
@@ -197,7 +204,7 @@ fn test_get_keyring_dir() {
 
     let mut crypto_manager = CryptoManager::new();
 
-    // Initialize (should use default keyring dir)
+    // Initialize (should use OK_DATA_DIR)
     let result = crypto_manager.initialize_with_passkey(
         &passkey,
         device_password,
@@ -206,36 +213,29 @@ fn test_get_keyring_dir() {
         &kdf_nonce,
     );
 
-    // This should create the wrapped_passkey in the default location
+    // This should succeed
     assert!(
         result.is_ok(),
-        "Initialization with default path should succeed"
+        "Initialization with OK_DATA_DIR should succeed"
     );
 
-    // Verify the wrapped_passkey file exists in the default location
-    // The default location should be ~/.local/share/open-keyring/wrapped_passkey
+    // Verify the wrapped_passkey file exists in the temp directory
+    let wrapped_passkey_path = env::var("OK_DATA_DIR")
+        .expect("OK_DATA_DIR should be set")
+        .to_string()
+        + "/open-keyring/wrapped_passkey";
     assert!(
-        wrapped_passkey_path.exists(),
-        "Wrapped Passkey file should exist"
+        std::path::Path::new(&wrapped_passkey_path).exists(),
+        "Wrapped Passkey file should exist in temp directory"
     );
-
-    // Note: This might fail if the directory doesn't exist or permissions are wrong
-    // In a real test, we'd need to set up the environment properly
-    // For now, we'll just check that the initialization succeeded
-
-    // Cleanup
-    let _ = std::fs::remove_file(&wrapped_passkey_path);
 }
 
 #[test]
 #[serial]
 fn test_passkey_seed_wrapping_and_storage() {
-    // Test that the Passkey seed is properly wrapped and stored
+    let _temp_dir = setup_temp_env();
 
-    // Cleanup before test
-    let home = dirs::home_dir().expect("Failed to get home directory");
-    let wrapped_passkey_path = home.join(DEFAULT_KEYRING_DIR).join("wrapped_passkey");
-    let _ = std::fs::remove_file(&wrapped_passkey_path);
+    // Test that the Passkey seed is properly wrapped and stored
 
     let passkey = Passkey::generate(24).expect("Failed to generate passkey");
     let root_master_key = [1u8; 32];
@@ -254,9 +254,13 @@ fn test_passkey_seed_wrapping_and_storage() {
         )
         .expect("Initialization should succeed");
 
-    // Read the wrapped Passkey file from default location
+    // Read the wrapped Passkey file from temp directory
+    let wrapped_passkey_path = env::var("OK_DATA_DIR")
+        .expect("OK_DATA_DIR should be set")
+        .to_string()
+        + "/open-keyring/wrapped_passkey";
     let wrapped_content =
-        fs::read_to_string(&wrapped_passkey_path).expect("Failed to read wrapped Passkey");
+        std::fs::read_to_string(&wrapped_passkey_path).expect("Failed to read wrapped Passkey");
 
     // Parse as JSON to verify structure
     let wrapped_data: serde_json::Value =
@@ -271,7 +275,10 @@ fn test_passkey_seed_wrapping_and_storage() {
         wrapped_data.get("nonce").is_some(),
         "Should have nonce field"
     );
-    assert!(wrapped_data.get("salt").is_some(), "Should have salt field");
+    assert!(
+        wrapped_data.get("salt").is_some(),
+        "Should have salt field"
+    );
 
     // The wrapped seed should be base64-encoded (not plaintext)
     let wrapped_seed = wrapped_data["wrapped_seed"].as_str().unwrap();
@@ -279,7 +286,4 @@ fn test_passkey_seed_wrapping_and_storage() {
         !wrapped_seed.contains(&passkey.to_words().join(" ")),
         "Wrapped seed should not contain plaintext mnemonic"
     );
-
-    // Cleanup
-    let _ = std::fs::remove_file(&wrapped_passkey_path);
 }
