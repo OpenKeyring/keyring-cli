@@ -13,8 +13,9 @@ use std::time::Duration;
 
 #[cfg(target_os = "macos")]
 #[test]
+#[ignore = "Requires GUI context - run manually with: cargo test --test clipboard_test -- --ignored"]
 fn test_macos_clipboard() {
-    let mut clipboard = MacOSClipboard;
+    let mut clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     assert!(clipboard.is_supported());
 
     // Test setting content
@@ -56,8 +57,9 @@ fn test_linux_clipboard() {
 
 #[cfg(target_os = "macos")]
 #[test]
+#[ignore = "Requires GUI context - run manually with: cargo test --test clipboard_test -- --ignored"]
 fn test_clipboard_service() {
-    let macos_clipboard = MacOSClipboard;
+    let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let config = ClipboardConfig {
         timeout_seconds: 60,
         clear_after_copy: true,
@@ -78,8 +80,9 @@ fn test_clipboard_service() {
 
 #[cfg(target_os = "macos")]
 #[test]
+#[ignore = "Requires GUI context - run manually with: cargo test --test clipboard_test -- --ignored"]
 fn test_content_length_limit() {
-    let macos_clipboard = MacOSClipboard;
+    let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let config = ClipboardConfig {
         timeout_seconds: 30,
         clear_after_copy: true,
