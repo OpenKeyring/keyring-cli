@@ -408,20 +408,24 @@ async fn main() -> Result<()> {
     }
 
     // Launch TUI if no command provided and TUI is not disabled
-    if cli.command.is_none() {
-        if cli.no_tui {
-            // No command and --no-tui flag: show help
-            println!("OpenKeyring CLI v0.1.0");
-            println!("Use --help for usage information or run without --no-tui for interactive TUI mode.");
-            return Ok(());
-        } else {
-            // No command: launch TUI mode
-            return keyring_cli::tui::run_tui().map_err(|e| anyhow::anyhow!("TUI error: {}", e));
+    let command = match cli.command {
+        None => {
+            // No command provided
+            if cli.no_tui {
+                // No command and --no-tui flag: show help
+                println!("OpenKeyring CLI v0.1.0");
+                println!("Use --help for usage information or run without --no-tui for interactive TUI mode.");
+                return Ok(());
+            } else {
+                // No command: launch TUI mode
+                return keyring_cli::tui::run_tui().map_err(|e| anyhow::anyhow!("TUI error: {}", e));
+            }
         }
-    }
+        Some(cmd) => cmd,
+    };
 
     // Execute command (CLI mode)
-    match cli.command.unwrap() {
+    match command {
         Commands::New {
             name,
             length,

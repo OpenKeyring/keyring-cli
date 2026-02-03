@@ -250,8 +250,16 @@ impl TuiApp {
                 });
             }
 
-            let keystore_path = state.require_keystore_path();
-            let password = state.require_master_password();
+            let Some(keystore_path) = state.require_keystore_path() else {
+                return Err(KeyringError::InvalidInput {
+                    context: "Keystore path not set".to_string(),
+                });
+            };
+            let Some(password) = state.require_master_password() else {
+                return Err(KeyringError::InvalidInput {
+                    context: "Master password not set".to_string(),
+                });
+            };
 
             // Initialize keystore
             let _keystore = initialize_keystore(keystore_path, password).map_err(|e| {
@@ -280,11 +288,9 @@ impl TuiApp {
     pub fn handle_wizard_key_event(&mut self, event: crossterm::event::KeyEvent) {
         use crossterm::event::KeyCode;
 
-        if self.wizard_state.is_none() {
+        let Some(state) = self.wizard_state.as_mut() else {
             return;
-        }
-
-        let state = self.wizard_state.as_mut().unwrap();
+        };
 
         match event.code {
             KeyCode::Esc => {

@@ -51,7 +51,7 @@ impl ConfirmationToken {
         tool: String,
         session_id: String,
         signing_key: &[u8],
-    ) -> Self {
+    ) -> Result<Self, KeyringError> {
         let nonce = Self::generate_nonce();
         let timestamp = Self::current_timestamp();
 
@@ -64,8 +64,8 @@ impl ConfirmationToken {
             signature: String::new(), // Will be set below
         };
 
-        let signature = token.sign(signing_key);
-        Self { signature, ..token }
+        let signature = token.sign(signing_key)?;
+        Ok(Self { signature, ..token })
     }
 
     /// Generate a random nonce for token uniqueness.
@@ -86,21 +86,23 @@ impl ConfirmationToken {
     /// Sign the token with HMAC-SHA256.
     ///
     /// The signature covers: nonce, credential_name, tool, and session_id
-    fn sign(&self, key: &[u8]) -> String {
+    fn sign(&self, key: &[u8]) -> Result<String, KeyringError> {
         let message = format!(
             "{}:{}:{}:{}",
             self.nonce, self.credential_name, self.tool, self.session_id
         );
-        let mut mac = HmacSha256::new_from_slice(key).expect("HMAC key should be valid length");
+        let mut mac = HmacSha256::new_from_slice(key).map_err(|_| {
+            KeyringError::Crypto { context: "Invalid HMAC key length".to_string() }
+        })?;
         mac.update(message.as_bytes());
-        hex::encode(mac.finalize().into_bytes())
+        Ok(hex::encode(mac.finalize().into_bytes()))
     }
 
     /// Encode the token as a base64 string.
     ///
     /// This encodes the entire token (excluding signature) as JSON,
     /// then base64-encodes it. The signature is appended separately.
-    pub fn encode(&self) -> String {
+    pub fn encode(&self) -> Result<String, KeyringError> {
         let token_data = TokenData {
             nonce: &self.nonce,
             credential_name: &self.credential_name,
@@ -110,8 +112,10 @@ impl ConfirmationToken {
             signature: &self.signature,
         };
 
-        let json = serde_json::to_string(&token_data).expect("Token serialization should not fail");
-        STANDARD.encode(json)
+        let json = serde_json::to_string(&token_data).map_err(|e| {
+            KeyringError::Crypto { context: format!("Token serialization failed: {}", e) }
+        })?;
+        Ok(STANDARD.encode(json))
     }
 
     /// Decode a token from a base64 string.
@@ -200,7 +204,7 @@ impl ConfirmationToken {
     /// # Errors
     /// Returns KeyringError::Unauthorized if the signature is invalid
     pub fn verify(&self, signing_key: &[u8]) -> Result<(), KeyringError> {
-        let expected_signature = self.sign(signing_key);
+        let expected_signature = self.sign(signing_key)?;
 
         // Constant-time comparison to prevent timing attacks
         if !self.constant_time_compare(&self.signature, &expected_signature) {

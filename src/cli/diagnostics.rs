@@ -303,7 +303,8 @@ pub fn print_diagnostic_report(status: &SystemStatus) {
                 _ => "".to_string(),
             },
         };
-        println!("      {} {}: {}{}", icon, item.name, item.path.as_ref().unwrap().display(), status_text);
+        let path_display = item.path.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "N/A".to_string());
+        println!("      {} {}: {}{}", icon, item.name, path_display, status_text);
         if !extra.is_empty() && item.status != StatusCategory::OK {
             println!("{}", extra);
         }
@@ -319,7 +320,8 @@ pub fn print_diagnostic_report(status: &SystemStatus) {
             StatusCategory::Missing => " (missing)",
             StatusCategory::Error => " (error)",
         };
-        println!("      {} {}: {}{}", icon, item.name, item.path.as_ref().unwrap().display(), status_text);
+        let path_display = item.path.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "N/A".to_string());
+        println!("      {} {}: {}{}", icon, item.name, path_display, status_text);
     }
 
     // Print Data section
@@ -332,7 +334,8 @@ pub fn print_diagnostic_report(status: &SystemStatus) {
             StatusCategory::Missing => " (missing)",
             StatusCategory::Error => " (error)",
         };
-        println!("      {} {}: {}{}", icon, item.name, item.path.as_ref().unwrap().display(), status_text);
+        let path_display = item.path.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "N/A".to_string());
+        println!("      {} {}: {}{}", icon, item.name, path_display, status_text);
     }
 
     println!();

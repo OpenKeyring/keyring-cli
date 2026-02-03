@@ -7,7 +7,7 @@ use crate::crypto::{
 };
 use crate::db::models::{RecordType, StoredRecord};
 use crate::db::vault::Vault;
-use crate::error::Result;
+use crate::error::{KeyringError, Result};
 use crate::onboarding::is_initialized;
 use clap::Parser;
 use std::path::PathBuf;
@@ -73,7 +73,10 @@ async fn generate_mnemonic(word_count: u8, name: Option<String>) -> Result<()> {
 
         // Initialize crypto manager
         let mut crypto = CryptoManager::new();
-        let dek_array: [u8; 32] = keystore.get_dek().try_into().expect("DEK must be 32 bytes");
+        let dek = keystore.get_dek();
+        let dek_array: [u8; 32] = dek.try_into().map_err(|_| {
+            KeyringError::Crypto { context: "Invalid DEK length: expected 32 bytes".to_string() }
+        })?;
         crypto.initialize_with_key(dek_array);
 
         // Encrypt the mnemonic

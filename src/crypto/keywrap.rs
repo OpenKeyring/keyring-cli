@@ -1,6 +1,7 @@
 //! Key wrapping functionality for key hierarchy
 
 use crate::crypto::aes256gcm;
+use crate::error::KeyringError;
 use crate::types::SensitiveString;
 use anyhow::Result;
 use std::fs;
@@ -137,19 +138,25 @@ impl KeyHierarchy {
 
         // Load wrapped DEK
         let wrapped_dek = fs::read(wrapped_keys_path.join("wrapped_dek"))?;
-        let nonce_dek: [u8; 12] = wrapped_dek[0..12].try_into().unwrap();
+        let nonce_dek: [u8; 12] = wrapped_dek[0..12].try_into().map_err(|_| {
+            KeyringError::Crypto { context: "Invalid wrapped DEK: nonce too short".to_string() }
+        })?;
         let dek_bytes = &wrapped_dek[12..];
         let dek = Self::unwrap_key(dek_bytes, &nonce_dek, &master_key.0)?;
 
         // Load wrapped RecoveryKey
         let wrapped_rec = fs::read(wrapped_keys_path.join("wrapped_recovery"))?;
-        let nonce_rec: [u8; 12] = wrapped_rec[0..12].try_into().unwrap();
+        let nonce_rec: [u8; 12] = wrapped_rec[0..12].try_into().map_err(|_| {
+            KeyringError::Crypto { context: "Invalid wrapped recovery key: nonce too short".to_string() }
+        })?;
         let rec_bytes = &wrapped_rec[12..];
         let recovery_key = Self::unwrap_key(rec_bytes, &nonce_rec, &master_key.0)?;
 
         // Load wrapped DeviceKey
         let wrapped_dev = fs::read(wrapped_keys_path.join("wrapped_device"))?;
-        let nonce_dev: [u8; 12] = wrapped_dev[0..12].try_into().unwrap();
+        let nonce_dev: [u8; 12] = wrapped_dev[0..12].try_into().map_err(|_| {
+            KeyringError::Crypto { context: "Invalid wrapped device key: nonce too short".to_string() }
+        })?;
         let dev_bytes = &wrapped_dev[12..];
         let device_key = Self::unwrap_key(dev_bytes, &nonce_dev, &master_key.0)?;
 
@@ -179,19 +186,25 @@ impl KeyHierarchy {
 
         // Load wrapped DEK
         let wrapped_dek = fs::read(wrapped_keys_path.join("wrapped_dek"))?;
-        let nonce_dek: [u8; 12] = wrapped_dek[0..12].try_into().unwrap();
+        let nonce_dek: [u8; 12] = wrapped_dek[0..12].try_into().map_err(|_| {
+            KeyringError::Crypto { context: "Invalid wrapped DEK: nonce too short".to_string() }
+        })?;
         let dek_bytes = &wrapped_dek[12..];
         let dek = Self::unwrap_key(dek_bytes, &nonce_dek, &master_key.0)?;
 
         // Load wrapped RecoveryKey
         let wrapped_rec = fs::read(wrapped_keys_path.join("wrapped_recovery"))?;
-        let nonce_rec: [u8; 12] = wrapped_rec[0..12].try_into().unwrap();
+        let nonce_rec: [u8; 12] = wrapped_rec[0..12].try_into().map_err(|_| {
+            KeyringError::Crypto { context: "Invalid wrapped recovery key: nonce too short".to_string() }
+        })?;
         let rec_bytes = &wrapped_rec[12..];
         let recovery_key = Self::unwrap_key(rec_bytes, &nonce_rec, &master_key.0)?;
 
         // Load wrapped DeviceKey
         let wrapped_dev = fs::read(wrapped_keys_path.join("wrapped_device"))?;
-        let nonce_dev: [u8; 12] = wrapped_dev[0..12].try_into().unwrap();
+        let nonce_dev: [u8; 12] = wrapped_dev[0..12].try_into().map_err(|_| {
+            KeyringError::Crypto { context: "Invalid wrapped device key: nonce too short".to_string() }
+        })?;
         let dev_bytes = &wrapped_dev[12..];
         let device_key = Self::unwrap_key(dev_bytes, &nonce_dev, &master_key.0)?;
 

@@ -65,7 +65,10 @@ pub fn parse_shortcut(input: &str) -> Result<KeyEvent, ParseError> {
     }
 
     // Last part is always the key
-    let key_part = parts.last().unwrap();
+    let key_part = match parts.last() {
+        Some(key) => key,
+        None => return Err(ParseError::EmptyInput),
+    };
     let modifier_parts = &parts[..parts.len() - 1];
 
     // Parse modifiers
@@ -126,7 +129,10 @@ fn parse_key_code(key_str: &str, has_shift: bool) -> Result<KeyCode, ParseError>
 
     // Single character
     if key_str.len() == 1 {
-        let c = key_str.chars().next().unwrap();
+        let c = match key_str.chars().next() {
+            Some(ch) => ch,
+            None => return Err(ParseError::UnknownKey(key_str.to_string())),
+        };
         if has_shift {
             // When shift is pressed, use the uppercase version
             return Ok(KeyCode::Char(c.to_ascii_uppercase()));

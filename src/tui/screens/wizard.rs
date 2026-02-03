@@ -231,26 +231,24 @@ impl WizardState {
                 .unwrap_or(false)
     }
 
-    /// Get the passkey choice, panic if not set
-    pub fn require_passkey_choice(&self) -> WelcomeChoice {
-        self.passkey_choice.expect("Passkey choice not set")
+    /// Get the passkey choice
+    pub fn require_passkey_choice(&self) -> Option<WelcomeChoice> {
+        self.passkey_choice
     }
 
-    /// Get the passkey words, panic if not set
-    pub fn require_passkey_words(&self) -> &[String] {
-        self.passkey_words.as_ref().expect("Passkey words not set")
+    /// Get the passkey words
+    pub fn require_passkey_words(&self) -> Option<&[String]> {
+        self.passkey_words.as_deref()
     }
 
-    /// Get the master password, panic if not set
-    pub fn require_master_password(&self) -> &str {
-        self.master_password
-            .as_ref()
-            .expect("Master password not set")
+    /// Get the master password
+    pub fn require_master_password(&self) -> Option<&str> {
+        self.master_password.as_deref()
     }
 
-    /// Get the keystore path, panic if not set
-    pub fn require_keystore_path(&self) -> &PathBuf {
-        self.keystore_path.as_ref().expect("Keystore path not set")
+    /// Get the keystore path
+    pub fn require_keystore_path(&self) -> Option<&PathBuf> {
+        self.keystore_path.as_ref()
     }
 
     /// Reset the wizard state (useful for retry)
@@ -373,6 +371,6 @@ mod tests {
         let path = PathBuf::from("/test/path");
         let state = WizardState::new().with_keystore_path(path.clone());
 
-        assert_eq!(state.require_keystore_path(), &path);
+        assert_eq!(state.require_keystore_path(), Some(&path));
     }
 }
