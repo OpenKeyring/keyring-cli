@@ -255,12 +255,94 @@ fn check_system_status_with_dirs(config_dir: PathBuf, data_dir: PathBuf) -> Resu
 
 /// Print first-time welcome message
 pub fn print_first_time_message() {
-    todo!("Implement print_first_time_message")
+    println!();
+    println!("═══════════════════════════════════════════════════");
+    println!("💡 Detected first-time use of OpenKeyring");
+    println!();
+    println!("Welcome to OpenKeyring! Before you start, you need to");
+    println!("complete the initial setup.");
+    println!();
+    println!("Please run one of the following commands:");
+    println!("  • Interactive wizard: ok wizard");
+    println!("  • TUI mode:           ok");
+    println!("═══════════════════════════════════════════════════");
 }
 
 /// Print diagnostic report (non-first-time but with issues)
-pub fn print_diagnostic_report(_status: &SystemStatus) {
-    todo!("Implement print_diagnostic_report")
+pub fn print_diagnostic_report(status: &SystemStatus) {
+    println!();
+    println!("═══════════════════════════════════════════════════");
+    println!("⚠️  System Status Abnormal");
+    println!();
+    println!("Detected the following issues with your OpenKeyring configuration:");
+    println!();
+
+    // Helper function to format status icon
+    fn status_icon(status: &StatusCategory) -> &str {
+        match status {
+            StatusCategory::OK => "✅",
+            StatusCategory::Missing => "❌",
+            StatusCategory::Error => "⚠️",
+        }
+    }
+
+    // Print Configuration section
+    println!("  📁 Configuration");
+    for item in &status.config_items {
+        let icon = status_icon(&item.status);
+        let status_text = match item.status {
+            StatusCategory::OK => "",
+            StatusCategory::Missing => " (missing",
+            StatusCategory::Error => " (error",
+        };
+        let extra = match &item.message {
+            Some(msg) => format!(", {}", msg),
+            None => match item.status {
+                StatusCategory::Missing => ", will auto-generate)".to_string(),
+                StatusCategory::Error => ")".to_string(),
+                _ => "".to_string(),
+            },
+        };
+        println!("      {} {}: {}{}", icon, item.name, item.path.as_ref().unwrap().display(), status_text);
+        if !extra.is_empty() && item.status != StatusCategory::OK {
+            println!("{}", extra);
+        }
+    }
+
+    // Print Keys section
+    println!();
+    println!("  🔑 Keys");
+    for item in &status.key_items {
+        let icon = status_icon(&item.status);
+        let status_text = match item.status {
+            StatusCategory::OK => "",
+            StatusCategory::Missing => " (missing)",
+            StatusCategory::Error => " (error)",
+        };
+        println!("      {} {}: {}{}", icon, item.name, item.path.as_ref().unwrap().display(), status_text);
+    }
+
+    // Print Data section
+    println!();
+    println!("  💾 Data");
+    for item in &status.data_items {
+        let icon = status_icon(&item.status);
+        let status_text = match item.status {
+            StatusCategory::OK => "",
+            StatusCategory::Missing => " (missing)",
+            StatusCategory::Error => " (error)",
+        };
+        println!("      {} {}: {}{}", icon, item.name, item.path.as_ref().unwrap().display(), status_text);
+    }
+
+    println!();
+    println!("───────────────────────────────────────────────────");
+    println!("💡 Suggested solutions:");
+    println!();
+    println!("  • Missing keystore: Run 'ok recover' to restore your keystore");
+    println!("  • Missing database: Data may be lost, re-run 'ok wizard'");
+    println!("  • Missing config:  Will auto-generate default config");
+    println!("═══════════════════════════════════════════════════");
 }
 
 #[cfg(test)]
