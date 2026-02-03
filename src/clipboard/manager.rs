@@ -116,9 +116,9 @@ impl<T: ClipboardManager> ClipboardService<T> {
         self.manager.set_content(password)?;
 
         if self.config.clear_after_copy {
-            let timeout = self.manager.timeout();
+            let timeout_seconds = self.config.timeout_seconds;
             std::thread::spawn(move || {
-                std::thread::sleep(timeout);
+                std::thread::sleep(Duration::from_secs(timeout_seconds));
                 // Create a new clipboard instance to clear after timeout
                 #[cfg(target_os = "macos")]
                 {
