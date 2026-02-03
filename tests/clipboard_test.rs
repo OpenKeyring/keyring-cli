@@ -9,12 +9,21 @@ use keyring_cli::clipboard::windows::WindowsClipboard;
 
 use keyring_cli::clipboard::manager::{ClipboardConfig, ClipboardManager};
 use keyring_cli::clipboard::ClipboardService;
+use std::sync::Mutex;
 use std::time::Duration;
+
+/// Global lock to ensure clipboard tests run serially.
+///
+/// Multiple tests accessing the system clipboard simultaneously can cause
+/// conflicts and crashes (SIGSEGV). This lock ensures only one clipboard
+/// test runs at a time, preventing race conditions.
+static CLIPBOARD_LOCK: Mutex<()> = Mutex::new(());
 
 #[cfg(target_os = "macos")]
 #[test]
-#[ignore = "Requires GUI context - run manually with: cargo test --test clipboard_test -- --ignored"]
 fn test_macos_clipboard() {
+    let _lock = CLIPBOARD_LOCK.lock().unwrap();
+
     let mut clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     assert!(clipboard.is_supported());
 
@@ -57,8 +66,9 @@ fn test_linux_clipboard() {
 
 #[cfg(target_os = "macos")]
 #[test]
-#[ignore = "Requires GUI context - run manually with: cargo test --test clipboard_test -- --ignored"]
 fn test_clipboard_service() {
+    let _lock = CLIPBOARD_LOCK.lock().unwrap();
+
     let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let config = ClipboardConfig {
         timeout_seconds: 60,
@@ -80,8 +90,9 @@ fn test_clipboard_service() {
 
 #[cfg(target_os = "macos")]
 #[test]
-#[ignore = "Requires GUI context - run manually with: cargo test --test clipboard_test -- --ignored"]
 fn test_content_length_limit() {
+    let _lock = CLIPBOARD_LOCK.lock().unwrap();
+
     let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let config = ClipboardConfig {
         timeout_seconds: 30,
