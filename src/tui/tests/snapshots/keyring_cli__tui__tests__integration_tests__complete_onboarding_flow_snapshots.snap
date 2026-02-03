@@ -1,5 +1,6 @@
 ---
 source: src/tui/tests/integration_tests.rs
+assertion_line: 220
 expression: seq.to_string()
 ---
 Sequence: complete_onboarding
@@ -115,9 +116,9 @@ Step 4: master_password
 Step 5: complete
 ───────────────
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                                ✓ 初 始 化 完 成 ！                                 │
+│                          ✓ Initialization Complete!                          │
 │                                                                              │
-│                             按 任 意 键 返 回 主 界 面 ...                            │
+│                   Press any key to return to main screen...                  │
 │                                                                              │
 │                                                                              │
 │                                                                              │

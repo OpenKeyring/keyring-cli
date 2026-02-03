@@ -54,10 +54,10 @@ impl EnvTag {
     /// Get the description of this environment tag
     pub fn description(&self) -> &str {
         match self {
-            EnvTag::Dev => "开发环境 - 开发和测试",
-            EnvTag::Test => "测试环境 - 集成测试",
-            EnvTag::Staging => "预发布环境 - 生产前验证",
-            EnvTag::Prod => "生产环境 - 线上环境",
+            EnvTag::Dev => "Development environment - Development and testing",
+            EnvTag::Test => "Test environment - Integration testing",
+            EnvTag::Staging => "Staging environment - Pre-production verification",
+            EnvTag::Prod => "Production environment - Live environment",
         }
     }
 
@@ -86,9 +86,9 @@ impl RiskTag {
     /// Get the description of this risk tag
     pub fn description(&self) -> &str {
         match self {
-            RiskTag::Low => "低风险 - 开发/测试数据",
-            RiskTag::Medium => "中风险 - 非关键生产数据",
-            RiskTag::High => "高风险 - 关键生产数据",
+            RiskTag::Low => "Low risk - Development/test data",
+            RiskTag::Medium => "Medium risk - Non-critical production data",
+            RiskTag::High => "High risk - Critical production data",
         }
     }
 

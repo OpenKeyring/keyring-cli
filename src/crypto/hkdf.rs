@@ -335,7 +335,7 @@ mod tests {
         let master_key = [0u8; 32];
 
         // Test with Unicode characters
-        let device_id_unicode = "设备-MacBookPro-测试";
+        let device_id_unicode = "device-MacBookPro-test";
         let device_id_emoji = "🔐-device-🔑";
 
         let key1 = derive_device_key(&master_key, device_id_unicode);

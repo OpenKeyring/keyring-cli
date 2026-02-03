@@ -275,7 +275,7 @@ impl TuiApp {
             self.passkey_confirm_screen = None;
             self.current_screen = Screen::Main;
 
-            self.output_lines.push("✓ 初始化完成".to_string());
+            self.output_lines.push("✓ Initialization complete".to_string());
             Ok(())
         } else {
             Err(KeyringError::InvalidInput {
@@ -902,7 +902,7 @@ impl TuiApp {
                     Line::from(vec![
                         Span::styled("✓ ", Style::default().fg(Color::Green)),
                         Span::styled(
-                            "初始化完成！",
+                            "Initialization Complete!",
                             Style::default()
                                 .fg(Color::Green)
                                 .add_modifier(Modifier::BOLD),
@@ -910,7 +910,7 @@ impl TuiApp {
                     ]),
                     Line::from(""),
                     Line::from(Span::styled(
-                        "按任意键返回主界面...",
+                        "Press any key to return to main screen...",
                         Style::default().fg(Color::Gray),
                     )),
                 ])
@@ -1177,10 +1177,10 @@ mod tests {
     fn test_process_list_command() {
         let mut app = TuiApp::new();
         app.process_command("/list");
-        // 应显示密码提示或列表输出或错误信息
-        // 由于 keystore 可能未初始化，应该显示错误或提示信息
+        // Should show password prompt or list output or error message
+        // Since keystore may not be initialized, should show error or prompt
         let has_output = !app.output_lines.is_empty();
-        assert!(has_output, "应该有输出内容");
+        assert!(has_output, "Should have output content");
     }
 
     #[test]

@@ -519,12 +519,12 @@ impl CryptoManager {
 /// - Linux/macOS: `~/.local/share/open-keyring`
 /// - Windows: `%LOCALAPPDATA%\open-keyring`
 ///
-/// 使用 `dirs::data_local_dir()` 获取正确的平台目录。
+/// Uses `dirs::data_local_dir()` to get the correct platform-specific directory.
 fn get_keyring_dir() -> Result<PathBuf, KeyringError> {
     dirs::data_local_dir()
         .map(|p| p.join("open-keyring"))
         .ok_or_else(|| KeyringError::Internal {
-            context: "无法确定系统数据目录".to_string(),
+            context: "Cannot determine system data directory".to_string(),
         })
 }
 

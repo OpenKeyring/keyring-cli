@@ -51,18 +51,18 @@ impl PolicyPreviewDialog {
     fn get_policy_text(&self) -> String {
         format!(
             "═══════════════════════════════════════\n\
-             授权策略预览\n\
+             Authorization Policy Preview\n\
             ══════════════════════════════════════\n\
              \n\
-             标签配置:\n\
+             Tag Configuration:\n\
              {}\n\
              {}\n\
              \n\
              {}\n\
              \n\
-             确认保存此配置？",
-            self.format_tag("环境", self.env.as_ref().map(|e| e.to_string())),
-            self.format_tag("风险", self.risk.as_ref().map(|r| r.to_string())),
+             Confirm saving this configuration?",
+            self.format_tag("Environment", self.env.as_ref().map(|e| e.to_string())),
+            self.format_tag("Risk", self.risk.as_ref().map(|r| r.to_string())),
             self.format_decision()
         )
     }
@@ -71,31 +71,31 @@ impl PolicyPreviewDialog {
     fn format_tag(&self, label: &str, value: Option<String>) -> String {
         match value {
             Some(v) => format!("  {}: {}", label, v),
-            None => format!("  {}: (未设置)", label),
+            None => format!("  {}: (not set)", label),
         }
     }
 
     /// Format the authorization decision for display
     fn format_decision(&self) -> String {
         match self.decision {
-            AuthDecision::AutoApprove => "  ✓ 自动授权\n\
+            AuthDecision::AutoApprove => "  ✓ Auto Approve\n\
                   \n\
-                  AI 调用此凭证时将自动执行操作，无需任何用户确认。"
+                  Operations using this credential will be executed automatically without any user confirmation."
                 .to_string(),
-            AuthDecision::SessionApprove => "  ✓ 会话级授权\n\
+            AuthDecision::SessionApprove => "  ✓ Session-level Approval\n\
                   \n\
-                  • 首次 AI 调用时需要用户确认\n\
-                  • 确认后 1 小时内自动授权\n\
-                  • 1 小时后需要重新确认"
+                  • User confirmation required on first AI call\n\
+                  • Auto-approved within 1 hour after confirmation\n\
+                  • Re-confirmation required after 1 hour"
                 .to_string(),
-            AuthDecision::AlwaysConfirm => "  ⚠ 每次确认\n\
+            AuthDecision::AlwaysConfirm => "  ⚠ Always Confirm\n\
                   \n\
-                  • 每次 AI 调用都需要用户确认\n\
-                  • 适用于生产环境或高风险操作"
+                  • User confirmation required for every AI call\n\
+                  • Suitable for production environments or high-risk operations"
                 .to_string(),
-            AuthDecision::Deny => "  ⊘ 拒绝执行\n\
+            AuthDecision::Deny => "  ⊘ Deny\n\
                   \n\
-                  • AI 将无法使用此凭证执行任何操作"
+                  • AI will not be able to use this credential for any operations"
                 .to_string(),
         }
     }
@@ -114,8 +114,8 @@ mod tests {
         };
 
         let text = dialog.format_decision();
-        assert!(text.contains("自动授权"));
-        assert!(text.contains("无需任何用户确认"));
+        assert!(text.contains("Auto Approve"));
+        assert!(text.contains("without any user confirmation"));
     }
 
     #[test]
@@ -127,9 +127,9 @@ mod tests {
         };
 
         let text = dialog.format_decision();
-        assert!(text.contains("会话级授权"));
-        assert!(text.contains("首次 AI 调用时需要用户确认"));
-        assert!(text.contains("1 小时内自动授权"));
+        assert!(text.contains("Session-level Approval"));
+        assert!(text.contains("User confirmation required on first AI call"));
+        assert!(text.contains("Auto-approved within 1 hour"));
     }
 
     #[test]
@@ -141,8 +141,8 @@ mod tests {
         };
 
         let text = dialog.format_decision();
-        assert!(text.contains("每次确认"));
-        assert!(text.contains("每次 AI 调用都需要用户确认"));
+        assert!(text.contains("Always Confirm"));
+        assert!(text.contains("User confirmation required for every AI call"));
     }
 
     #[test]
@@ -154,8 +154,8 @@ mod tests {
         };
 
         let text = dialog.format_decision();
-        assert!(text.contains("拒绝执行"));
-        assert!(text.contains("AI 将无法使用此凭证"));
+        assert!(text.contains("Deny"));
+        assert!(text.contains("AI will not be able to use"));
     }
 
     #[test]
@@ -166,8 +166,8 @@ mod tests {
             risk: Some(RiskTag::Low),
         };
 
-        let text = dialog.format_tag("环境", Some("env:dev".to_string()));
-        assert_eq!(text, "  环境: env:dev");
+        let text = dialog.format_tag("Environment", Some("env:dev".to_string()));
+        assert_eq!(text, "  Environment: env:dev");
     }
 
     #[test]
@@ -178,8 +178,8 @@ mod tests {
             risk: None,
         };
 
-        let text = dialog.format_tag("环境", None);
-        assert_eq!(text, "  环境: (未设置)");
+        let text = dialog.format_tag("Environment", None);
+        assert_eq!(text, "  Environment: (not set)");
     }
 
     #[test]

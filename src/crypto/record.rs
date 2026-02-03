@@ -110,7 +110,7 @@ mod tests {
         crypto.initialize("test-password").unwrap();
 
         let payload = RecordPayload {
-            name: "测试记录-🔒".to_string(),
+            name: "test-record-🔒".to_string(),
             username: Some("user+test@example.com".to_string()),
             password: "p@$$w0rd!\"'\\<>|&".to_string(),
             url: Some("https://example.com?param=value&other=123".to_string()),

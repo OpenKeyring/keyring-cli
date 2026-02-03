@@ -323,8 +323,8 @@ mod tests {
     #[test]
     fn test_password_with_unicode() {
         // Unicode characters should be counted but don't contribute to variety
-        assert!(calculate_strength("密码123") < 60); // Chinese characters
-        assert!(calculate_strength("пароль123") < 60); // Cyrillic
+        assert!(calculate_strength("密码123") < 60); // Non-Latin scripts score lower
+        assert!(calculate_strength("пароль123") < 60); // Cyrillic scores lower
     }
 
     #[test]

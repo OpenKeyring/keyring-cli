@@ -18,38 +18,38 @@ use std::sync::Arc;
 /// MCP CLI commands
 #[derive(Subcommand, Debug)]
 pub enum MCPCommands {
-    /// 启动 MCP 服务器（stdio 模式）
+    /// Start MCP server (stdio mode)
     Start {
-        /// 详细输出
+        /// Verbose output
         #[arg(short, long)]
         verbose: bool,
     },
 
-    /// 停止 MCP 服务器
+    /// Stop MCP server
     Stop,
 
-    /// 查看服务状态
+    /// Show service status
     Status,
 
-    /// 查看审计日志
+    /// View audit logs
     Logs {
-        /// 只显示今天的日志
+        /// Show only today's logs
         #[arg(long)]
         today: bool,
 
-        /// 按工具过滤
+        /// Filter by tool
         #[arg(long)]
         tool: Option<String>,
 
-        /// 按状态过滤
+        /// Filter by status
         #[arg(long)]
         status: Option<String>,
 
-        /// 按凭证过滤
+        /// Filter by credential
         #[arg(long)]
         credential: Option<String>,
 
-        /// 显示最近 N 条
+        /// Show last N entries
         #[arg(short, long, default_value = "50")]
         limit: usize,
     },
@@ -106,7 +106,7 @@ async fn handle_start_command(verbose: bool) -> Result<()> {
 
     // Prompt for master password
     let master_password = dialoguer::Password::new()
-        .with_prompt("请输入主密码以解密 MCP 密钥缓存")
+        .with_prompt("Enter master password to decrypt MCP key cache")
         .interact()
         .map_err(|e| Error::InvalidInput {
             context: format!("Password prompt failed: {}", e),
@@ -179,15 +179,15 @@ async fn handle_start_command(verbose: bool) -> Result<()> {
 /// Handle the MCP stop command
 fn handle_stop_command() -> Result<()> {
     if is_locked() {
-        eprintln!("MCP 服务器正在运行");
-        eprintln!("请按 Ctrl+C 停止服务器");
+        eprintln!("MCP server is running");
+        eprintln!("Press Ctrl+C to stop the server");
         eprintln!();
-        eprintln!("或者在另一个终端运行:");
+        eprintln!("Or run in another terminal:");
         let lock_path = lock_file_path();
         eprintln!("  kill $(cat {})", lock_path.display());
         Ok(())
     } else {
-        eprintln!("MCP 服务器未运行");
+        eprintln!("MCP server is not running");
         Ok(())
     }
 }
@@ -200,29 +200,29 @@ fn handle_status_command() -> Result<()> {
     eprintln!();
 
     if is_locked() {
-        eprintln!("状态: 运行中");
+        eprintln!("Status: Running");
         eprintln!("PID: {}", std::process::id());
     } else {
-        eprintln!("状态: 未运行");
+        eprintln!("Status: Not running");
     }
 
     eprintln!();
-    eprintln!("配置:");
-    eprintln!("  最大并发请求: {}", config.max_concurrent_requests);
+    eprintln!("Configuration:");
+    eprintln!("  Max concurrent requests: {}", config.max_concurrent_requests);
     eprintln!(
-        "  SSH 响应大小限制: {} MB",
+        "  SSH response size limit: {} MB",
         config.max_response_size_ssh / (1024 * 1024)
     );
     eprintln!(
-        "  API 响应大小限制: {} MB",
+        "  API response size limit: {} MB",
         config.max_response_size_api / (1024 * 1024)
     );
     eprintln!(
-        "  会话缓存 TTL: {} 秒 ({} 分钟)",
+        "  Session cache TTL: {} seconds ({} minutes)",
         config.session_cache.ttl_seconds,
         config.session_cache.ttl_seconds / 60
     );
-    eprintln!("  会话缓存最大条目: {}", config.session_cache.max_entries);
+    eprintln!("  Session cache max entries: {}", config.session_cache.max_entries);
 
     Ok(())
 }
@@ -259,7 +259,7 @@ fn parse_audit_logs(
 
     // Check if log file exists
     if !std::path::Path::new(&log_path).exists() {
-        eprintln!("审计日志文件不存在: {}", log_path);
+        eprintln!("Audit log file does not exist: {}", log_path);
         return Ok(Vec::new());
     }
 
@@ -405,12 +405,12 @@ fn parse_log_line(line: &str) -> Option<AuditEntry> {
 fn display_audit_logs(entries: &[AuditEntry]) {
     println!();
     println!("╔══════════════════════════════════════════════════════════════════════════╗");
-    println!("║                           MCP 审计日志                                  ║");
+    println!("║                           MCP Audit Logs                                 ║");
     println!("╚══════════════════════════════════════════════════════════════════════════╝");
     println!();
 
     if entries.is_empty() {
-        println!("没有找到审计日志");
+        println!("No audit logs found");
         println!();
         return;
     }
@@ -418,16 +418,16 @@ fn display_audit_logs(entries: &[AuditEntry]) {
     for entry in entries {
         println!("┌────────────────────────────────────────────────────────────────────────────┐");
         println!("│ {} │", entry.timestamp.format("%Y-%m-%d %H:%M:%S"));
-        println!("│ 工具: {}  │", entry.tool);
-        println!("│ 凭证: {}  │", entry.credential);
-        println!("│ 操作: {} │", entry.operation);
-        println!("│ 授权: {}  │", entry.authorization);
+        println!("│ Tool: {}  │", entry.tool);
+        println!("│ Credential: {}  │", entry.credential);
+        println!("│ Operation: {} │", entry.operation);
+        println!("│ Authorization: {}  │", entry.authorization);
         println!(
-            "│ 状态: {}  │",
+            "│ Status: {}  │",
             match entry.status.as_str() {
-                "success" => "✓ 成功",
-                "failed" => "✗ 失败",
-                "denied" => "⊘ 拒绝",
+                "success" => "✓ Success",
+                "failed" => "✗ Failed",
+                "denied" => "⊘ Denied",
                 _ => &entry.status,
             }
         );
@@ -435,7 +435,7 @@ fn display_audit_logs(entries: &[AuditEntry]) {
     }
 
     println!();
-    println!("共 {} 条记录", entries.len());
+    println!("Total {} records", entries.len());
 }
 
 #[cfg(test)]

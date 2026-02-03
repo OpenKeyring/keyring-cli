@@ -139,7 +139,7 @@ impl TagConfigWidget {
     fn draw_header(&self, f: &mut Frame, area: Rect) {
         let title = Line::from(vec![
             Span::styled(
-                "编辑凭证标签: ",
+                "Edit Credential Tags: ",
                 Style::default()
                     .fg(Color::White)
                     .add_modifier(Modifier::BOLD),
@@ -166,10 +166,10 @@ impl TagConfigWidget {
     /// Draw the environment tag selection section
     fn draw_env_tags(&self, f: &mut Frame, area: Rect) {
         let env_options = [
-            (EnvTag::Dev, "dev (开发环境)"),
-            (EnvTag::Test, "test (测试环境)"),
-            (EnvTag::Staging, "staging (预发布环境)"),
-            (EnvTag::Prod, "prod (生产环境) ⚠️"),
+            (EnvTag::Dev, "dev (development)"),
+            (EnvTag::Test, "test (testing)"),
+            (EnvTag::Staging, "staging (pre-production)"),
+            (EnvTag::Prod, "prod (production) ⚠️"),
         ];
 
         let items: Vec<ListItem> = env_options
@@ -220,9 +220,9 @@ impl TagConfigWidget {
     /// Draw the risk tag selection section
     fn draw_risk_tags(&self, f: &mut Frame, area: Rect) {
         let risk_options = [
-            (RiskTag::Low, "low (低风险)"),
-            (RiskTag::Medium, "medium (中风险)"),
-            (RiskTag::High, "high (高风险) ⚠️"),
+            (RiskTag::Low, "low (low risk)"),
+            (RiskTag::Medium, "medium (medium risk)"),
+            (RiskTag::High, "high (high risk) ⚠️"),
         ];
 
         let items: Vec<ListItem> = risk_options
@@ -292,17 +292,17 @@ impl TagConfigWidget {
 
         if self.config.custom.is_empty() {
             lines.push(Line::from(vec![Span::styled(
-                "暂无自定义标签",
+                "No custom tags",
                 Style::default().fg(Color::DarkGray),
             )]));
             lines.push(Line::from(""));
             lines.push(Line::from(vec![Span::styled(
-                "[A] 添加自定义标签",
+                "[A] Add custom tag",
                 Style::default().fg(Color::Green),
             )]));
         } else {
             lines.push(Line::from(vec![Span::styled(
-                "已添加的标签:",
+                "Added tags:",
                 Style::default().fg(Color::White),
             )]));
             lines.push(Line::from(""));
@@ -333,8 +333,8 @@ impl TagConfigWidget {
 
             lines.push(Line::from(""));
             lines.push(Line::from(vec![
-                Span::styled("[A] 添加  ", Style::default().fg(Color::Green)),
-                Span::styled("[Enter] 选择", Style::default().fg(Color::Cyan)),
+                Span::styled("[A] Add  ", Style::default().fg(Color::Green)),
+                Span::styled("[Enter] Select", Style::default().fg(Color::Cyan)),
             ]));
         }
 

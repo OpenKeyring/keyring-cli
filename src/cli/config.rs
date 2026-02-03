@@ -3,35 +3,35 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
-/// 获取配置目录路径
+/// Get the configuration directory path
 ///
-/// 平台特定路径:
+/// Platform-specific paths:
 /// - Linux/macOS: `~/.config/open-keyring`
 /// - Windows: `%APPDATA%\open-keyring`
 ///
-/// 如果目录不存在，调用者需要使用 `create_dir_all()` 创建。
+/// If the directory does not exist, caller needs to create it using `create_dir_all()`.
 fn get_config_dir() -> PathBuf {
     dirs::config_dir()
         .map(|p| p.join("open-keyring"))
         .unwrap_or_else(|| {
-            // 降级方案：使用 HOME 环境变量
+            // Fallback: use HOME environment variable
             let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
             PathBuf::from(home).join(".config").join("open-keyring")
         })
 }
 
-/// 获取默认数据库路径
+/// Get the default database path
 ///
-/// 平台特定路径:
+/// Platform-specific paths:
 /// - Linux/macOS: `~/.local/share/open-keyring/passwords.db`
 /// - Windows: `%LOCALAPPDATA%\open-keyring\passwords.db`
 ///
-/// 如果目录不存在，调用者需要使用 `create_dir_all()` 创建。
+/// If the directory does not exist, caller needs to create it using `create_dir_all()`.
 fn get_default_database_path() -> String {
     let db_dir = dirs::data_local_dir()
         .map(|p| p.join("open-keyring"))
         .unwrap_or_else(|| {
-            // 降级方案：使用 HOME 环境变量
+            // Fallback: use HOME environment variable
             let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
             PathBuf::from(home)
                 .join(".local")
@@ -98,7 +98,7 @@ impl Default for ClipboardConfig {
 
 impl Default for OpenKeyringConfig {
     fn default() -> Self {
-        // 测试环境：使用环境变量覆盖
+        // Test environment: override with environment variable
         #[cfg(feature = "test-env")]
         let db_path = get_default_database_path_with_env();
         #[cfg(not(feature = "test-env"))]
@@ -143,7 +143,7 @@ pub struct ConfigManager {
 
 impl ConfigManager {
     pub fn new() -> Result<Self> {
-        // 测试环境：使用环境变量覆盖
+        // Test environment: override with environment variable
         #[cfg(feature = "test-env")]
         let config_dir = get_config_dir_with_env();
         #[cfg(not(feature = "test-env"))]
@@ -151,10 +151,10 @@ impl ConfigManager {
 
         let config_file = config_dir.join("config.yaml");
 
-        // 创建配置目录（包括所有父目录）
+        // Create configuration directory (including all parent directories)
         fs::create_dir_all(&config_dir).map_err(|e| {
             KeyringError::IoError(format!(
-                "无法创建配置目录 '{}': {}",
+                "Failed to create config directory '{}': {}",
                 config_dir.display(),
                 e
             ))
@@ -235,7 +235,7 @@ impl ConfigManager {
     }
 }
 
-// 测试环境支持：允许通过环境变量覆盖目录
+// Test environment support: allow directory override via environment variable
 #[cfg(feature = "test-env")]
 fn get_config_dir_with_env() -> PathBuf {
     if let Ok(config_dir) = std::env::var("OK_CONFIG_DIR") {

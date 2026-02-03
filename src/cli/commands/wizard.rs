@@ -24,16 +24,16 @@ pub async fn run_wizard(_args: WizardArgs) -> Result<()> {
     }
 
     println!("═══════════════════════════════════════════════════");
-    println!("         OpenKeyring 初始化向导");
+    println!("         OpenKeyring Initialization Wizard");
     println!("═══════════════════════════════════════════════════");
     println!();
 
     // Step 1: Welcome
     let choice = prompt_choice(
-        "选择设置方式:",
+        "Choose setup method:",
         &[
-            ("1", "全新使用（生成新的 Passkey）"),
-            ("2", "导入已有 Passkey"),
+            ("1", "New user (Generate new Passkey)"),
+            ("2", "Import existing Passkey"),
         ],
     )?;
 
@@ -47,23 +47,23 @@ pub async fn run_wizard(_args: WizardArgs) -> Result<()> {
 
     println!();
     println!("═══════════════════════════════════════════════════");
-    println!("         设置主密码");
+    println!("         Set Master Password");
     println!("═══════════════════════════════════════════════════");
     println!();
-    println!("💡 此密码仅用于加密 Passkey");
-    println!("   与其他设备的密码可以不同");
+    println!("💡 This password only encrypts the Passkey");
+    println!("   Can be different from other devices");
     println!();
 
     // Step 3: Master password
-    let password = prompt_password("请输入主密码: ")?;
-    let confirm = prompt_password("请再次输入主密码: ")?;
+    let password = prompt_password("Enter master password: ")?;
+    let confirm = prompt_password("Confirm master password: ")?;
 
     if password != confirm {
-        return Err(anyhow!("密码不匹配").into());
+        return Err(anyhow!("Passwords do not match").into());
     }
 
     if password.len() < 8 {
-        return Err(anyhow!("主密码至少需要 8 个字符").into());
+        return Err(anyhow!("Master password must be at least 8 characters").into());
     }
 
     // Initialize
@@ -72,32 +72,32 @@ pub async fn run_wizard(_args: WizardArgs) -> Result<()> {
 
     println!();
     println!("═══════════════════════════════════════════════════");
-    println!("✓ 初始化完成");
+    println!("✓ Initialization Complete");
     println!("═══════════════════════════════════════════════════");
     println!("✓ Keystore: {}", keystore_path.display());
     println!(
-        "✓ 恢复密钥: {}",
+        "✓ Recovery Key: {}",
         keystore
             .recovery_key
             .as_ref()
-            .unwrap_or(&"(未生成)".to_string())
+            .unwrap_or(&"(not generated)".to_string())
     );
     println!();
-    println!("您现在可以开始使用 OpenKeyring 了！");
+    println!("You can now start using OpenKeyring!");
 
     Ok(())
 }
 
 /// Generate a new Passkey
 fn generate_new_passkey() -> Result<Vec<String>> {
-    println!("正在生成新的 Passkey...");
+    println!("Generating new Passkey...");
 
     let passkey = Passkey::generate(24)?;
     let words = passkey.to_words();
 
     println!();
     println!("═══════════════════════════════════════════════════");
-    println!("⚠️  请务必保存以下 24 词，这是恢复数据的唯一方式！");
+    println!("⚠️  PLEASE SAVE THE FOLLOWING 24 WORDS - THIS IS THE ONLY WAY TO RECOVER YOUR DATA!");
     println!("═══════════════════════════════════════════════════");
     println!();
 
@@ -112,10 +112,10 @@ fn generate_new_passkey() -> Result<Vec<String>> {
     println!("═══════════════════════════════════════════════════");
     println!();
 
-    let confirmed = prompt_yes_no("已保存此 Passkey？", true)?;
+    let confirmed = prompt_yes_no("Have you saved this Passkey?", true)?;
 
     if !confirmed {
-        return Err(anyhow!("必须保存 Passkey 才能继续").into());
+        return Err(anyhow!("You must save the Passkey to continue").into());
     }
 
     Ok(words)
@@ -123,21 +123,21 @@ fn generate_new_passkey() -> Result<Vec<String>> {
 
 /// Import an existing Passkey
 fn import_passkey() -> Result<Vec<String>> {
-    println!("请输入您的 24 词 Passkey（用空格分隔）:");
-    println!("提示: 输入完成后按 Enter 验证");
+    println!("Enter your 24-word Passkey (space-separated):");
+    println!("Hint: Press Enter to validate when done");
     println!();
 
     let input = prompt_input("> ")?;
     let words: Vec<String> = input.split_whitespace().map(String::from).collect();
 
     if words.len() != 12 && words.len() != 24 {
-        return Err(anyhow!("Passkey 必须是 12 或 24 词（当前：{} 词）", words.len()).into());
+        return Err(anyhow!("Passkey must be 12 or 24 words (current: {} words)", words.len()).into());
     }
 
     // Validate BIP39 checksum
-    Passkey::from_words(&words).map_err(|e| anyhow!("无效的 Passkey: {}", e))?;
+    Passkey::from_words(&words).map_err(|e| anyhow!("Invalid Passkey: {}", e))?;
 
-    println!("✓ Passkey 验证成功");
+    println!("✓ Passkey validated successfully");
 
     Ok(words)
 }
@@ -174,9 +174,9 @@ fn prompt_yes_no(prompt: &str, default: bool) -> Result<bool> {
 
         match input.as_str() {
             "" => return Ok(default),
-            "y" | "yes" | "是" => return Ok(true),
-            "n" | "no" | "否" => return Ok(false),
-            _ => println!("请输入 y/yes/是 或 n/no/否"),
+            "y" | "yes" => return Ok(true),
+            "n" | "no" => return Ok(false),
+            _ => println!("Please enter y/yes or n/no"),
         }
     }
 }

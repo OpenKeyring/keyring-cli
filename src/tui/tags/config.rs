@@ -46,19 +46,19 @@ impl fmt::Display for EnvTag {
 impl EnvTag {
     pub fn display_name(&self) -> &'static str {
         match self {
-            Self::Dev => "dev (开发环境)",
-            Self::Test => "test (测试环境)",
-            Self::Staging => "staging (预发布环境)",
-            Self::Prod => "prod (生产环境)",
+            Self::Dev => "dev (development)",
+            Self::Test => "test (testing)",
+            Self::Staging => "staging (pre-production)",
+            Self::Prod => "prod (production)",
         }
     }
 
     pub fn description(&self) -> &'static str {
         match self {
-            Self::Dev => "本地开发环境，会话级授权",
-            Self::Test => "测试环境，会话级授权",
-            Self::Staging => "预发布环境，会话级授权",
-            Self::Prod => "生产环境，每次需要确认 ⚠️",
+            Self::Dev => "Local development environment, session-level authorization",
+            Self::Test => "Test environment, session-level authorization",
+            Self::Staging => "Staging environment, session-level authorization",
+            Self::Prod => "Production environment, confirmation required each time ⚠️",
         }
     }
 }
@@ -76,17 +76,17 @@ impl fmt::Display for RiskTag {
 impl RiskTag {
     pub fn display_name(&self) -> &'static str {
         match self {
-            Self::Low => "low (低风险)",
-            Self::Medium => "medium (中风险)",
-            Self::High => "high (高风险)",
+            Self::Low => "low (low risk)",
+            Self::Medium => "medium (medium risk)",
+            Self::High => "high (high risk)",
         }
     }
 
     pub fn description(&self) -> &'static str {
         match self {
-            Self::Low => "只读操作，会话级授权",
-            Self::Medium => "读写操作，需确认",
-            Self::High => "危险操作，每次确认 ⚠️",
+            Self::Low => "Read-only operations, session-level authorization",
+            Self::Medium => "Read-write operations, confirmation required",
+            Self::High => "Dangerous operations, confirmation each time ⚠️",
         }
     }
 }
@@ -96,14 +96,14 @@ pub fn validate_tag_config(config: &TagConfig) -> Result<(), TagError> {
     if matches!(config.env, Some(EnvTag::Prod)) && matches!(config.risk, Some(RiskTag::Low)) {
         return Err(TagError::Contradiction {
             field: "env:prod + risk:low".to_string(),
-            message: "生产环境不应标记为低风险".to_string(),
+            message: "Production environment should not be marked as low risk".to_string(),
         });
     }
 
     if matches!(config.env, Some(EnvTag::Dev)) && matches!(config.risk, Some(RiskTag::High)) {
         return Err(TagError::Contradiction {
             field: "env:dev + risk:high".to_string(),
-            message: "开发环境不应标记为高风险".to_string(),
+            message: "Development environment should not be marked as high risk".to_string(),
         });
     }
 
