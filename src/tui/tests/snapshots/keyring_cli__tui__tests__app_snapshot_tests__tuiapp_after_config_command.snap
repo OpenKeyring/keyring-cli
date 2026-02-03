@@ -1,6 +1,6 @@
 ---
 source: src/tui/tests/app_snapshot_tests.rs
-expression: "&app.output_lines"
+expression: "&normalized"
 ---
 [
     "OpenKeyring TUI v0.1.0",
@@ -11,7 +11,7 @@ expression: "&app.output_lines"
     "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
     "",
     "[Database]",
-    "  database.path = /Users/bytedance/Library/Application Support/open-keyring/passwords.db",
+    "  database.path = [DATA_PATH]/passwords.db",
     "  database.encryption_enabled = true",
     "",
     "[Sync]",

@@ -3,64 +3,80 @@
 //! These tests use `insta` to snapshot TuiApp state at various stages
 //! of command execution, navigation, and screen transitions.
 
-use crate::tui::{Screen, TuiApp};
+#![cfg(feature = "test-env")]
+
+use crate::tui::{Screen, TuiApp, testing::TestSnapshotEnv};
+use serial_test::serial;
 
 #[test]
+#[serial]
 fn test_tuiapp_initial_output() {
+    let env = TestSnapshotEnv::new();
     let app = TuiApp::new();
-    // Snapshot initial output lines
-    insta::assert_debug_snapshot!(&app.output_lines);
+    // Normalize paths for consistent snapshots across platforms
+    let normalized = env.normalize_paths(&app.output_lines);
+    insta::assert_debug_snapshot!(&normalized);
 }
 
 #[test]
+#[serial]
 fn test_tuiapp_after_help_command() {
+    let env = TestSnapshotEnv::new();
     let mut app = TuiApp::new();
     app.process_command("/help");
 
-    // Snapshot state after help command
-    insta::assert_debug_snapshot!(&app.output_lines);
+    // Normalize paths for consistent snapshots
+    let normalized = env.normalize_paths(&app.output_lines);
+    insta::assert_debug_snapshot!(&normalized);
 }
 
 #[test]
+#[serial]
 fn test_tuiapp_after_config_command() {
+    let env = TestSnapshotEnv::new();
     let mut app = TuiApp::new();
     app.process_command("/config");
 
-    // Snapshot state after config command
-    insta::assert_debug_snapshot!(&app.output_lines);
+    // Normalize paths for consistent snapshots
+    let normalized = env.normalize_paths(&app.output_lines);
+    insta::assert_debug_snapshot!(&normalized);
 }
 
 #[test]
+#[serial]
 fn test_tuiapp_command_sequence() {
+    let env = TestSnapshotEnv::new();
     use crate::tui::testing::SnapshotSequence;
 
     let mut app = TuiApp::new();
     let mut seq = SnapshotSequence::new("command_execution_flow");
 
     // Initial state
-    let output_lines_snapshot = format!("{:?}", app.output_lines);
-    seq.step("initial", output_lines_snapshot);
+    let normalized = env.normalize_paths(&app.output_lines);
+    seq.step("initial", format!("{:?}", normalized));
 
     // After /help command
     app.process_command("/help");
-    let help_snapshot = format!("{:?}", app.output_lines);
-    seq.step("after_help", help_snapshot);
+    let normalized = env.normalize_paths(&app.output_lines);
+    seq.step("after_help", format!("{:?}", normalized));
 
     // After /config command
     app.process_command("/config");
-    let config_snapshot = format!("{:?}", app.output_lines);
-    seq.step("after_config", config_snapshot);
+    let normalized = env.normalize_paths(&app.output_lines);
+    seq.step("after_config", format!("{:?}", normalized));
 
     // After /list command
     app.process_command("/list");
-    let list_snapshot = format!("{:?}", app.output_lines);
-    seq.step("after_list", list_snapshot);
+    let normalized = env.normalize_paths(&app.output_lines);
+    seq.step("after_list", format!("{:?}", normalized));
 
     insta::assert_snapshot!(seq.to_string());
 }
 
 #[test]
+#[serial]
 fn test_tuiapp_input_buffer_sequence() {
+    let _env = TestSnapshotEnv::new();
     use crate::tui::testing::SnapshotSequence;
 
     let mut app = TuiApp::new();
@@ -90,7 +106,9 @@ fn test_tuiapp_input_buffer_sequence() {
 }
 
 #[test]
+#[serial]
 fn test_tuiapp_backspace_sequence() {
+    let _env = TestSnapshotEnv::new();
     use crate::tui::testing::SnapshotSequence;
 
     let mut app = TuiApp::new();
@@ -117,7 +135,9 @@ fn test_tuiapp_backspace_sequence() {
 }
 
 #[test]
+#[serial]
 fn test_tuiapp_navigation_snapshots() {
+    let _env = TestSnapshotEnv::new();
     let mut app = TuiApp::new();
 
     // Initial screen - snapshot screen name
@@ -141,7 +161,9 @@ fn test_tuiapp_navigation_snapshots() {
 }
 
 #[test]
+#[serial]
 fn test_tuiapp_screen_navigation_sequence() {
+    let _env = TestSnapshotEnv::new();
     use crate::tui::testing::SnapshotSequence;
 
     let mut app = TuiApp::new();
@@ -165,15 +187,20 @@ fn test_tuiapp_screen_navigation_sequence() {
 }
 
 #[test]
+#[serial]
 fn test_tuiapp_unknown_command() {
+    let env = TestSnapshotEnv::new();
     let mut app = TuiApp::new();
     app.process_command("/unknown_command");
 
-    insta::assert_debug_snapshot!(&app.output_lines);
+    let normalized = env.normalize_paths(&app.output_lines);
+    insta::assert_debug_snapshot!(&normalized);
 }
 
 #[test]
+#[serial]
 fn test_tuiapp_autocomplete_sequence() {
+    let _env = TestSnapshotEnv::new();
     use crate::tui::testing::SnapshotSequence;
 
     let mut app = TuiApp::new();
@@ -206,7 +233,9 @@ fn test_tuiapp_autocomplete_sequence() {
 }
 
 #[test]
+#[serial]
 fn test_tuiapp_quit_sequence() {
+    let _env = TestSnapshotEnv::new();
     let mut app = TuiApp::new();
 
     // Initially running
@@ -222,7 +251,9 @@ fn test_tuiapp_quit_sequence() {
 }
 
 #[test]
+#[serial]
 fn test_tuiapp_multiple_commands_sequence() {
+    let _env = TestSnapshotEnv::new();
     use crate::tui::testing::SnapshotSequence;
 
     let mut app = TuiApp::new();

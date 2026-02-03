@@ -167,7 +167,9 @@ fn test_invalid_base64_decode() {
 #[test]
 fn test_malformed_token_decode() {
     // Valid base64 but doesn't contain expected format
-    let valid_base64 = base64::encode("invalid_token_format");
+    use base64::engine::general_purpose::STANDARD;
+    use base64::Engine;
+    let valid_base64 = STANDARD.encode("invalid_token_format");
     let result = ConfirmationToken::decode(&valid_base64);
     assert!(result.is_err());
 }

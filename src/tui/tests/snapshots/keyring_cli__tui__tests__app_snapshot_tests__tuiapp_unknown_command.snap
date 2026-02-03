@@ -1,6 +1,6 @@
 ---
 source: src/tui/tests/app_snapshot_tests.rs
-expression: "&app.output_lines"
+expression: "&normalized"
 ---
 [
     "OpenKeyring TUI v0.1.0",

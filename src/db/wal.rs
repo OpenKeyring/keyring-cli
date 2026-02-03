@@ -111,9 +111,9 @@ mod tests {
     fn test_get_wal_size() {
         let (_temp_dir, conn) = setup_test_db();
 
-        let wal_size = get_wal_size(&conn).unwrap();
+        let _wal_size = get_wal_size(&conn).unwrap();
         // WAL size should be a valid number (might be 0 for new database)
-        assert!(wal_size >= 0);
+        // The call succeeding is the test assertion
     }
 
     #[test]
@@ -124,8 +124,8 @@ mod tests {
         checkpoint(&mut conn).unwrap();
 
         // After checkpoint, WAL size might be reduced
-        let wal_size = get_wal_size(&conn).unwrap();
-        assert!(wal_size >= 0);
+        let _wal_size = get_wal_size(&conn).unwrap();
+        // The call succeeding is the test assertion
     }
 
     #[test]
@@ -136,9 +136,8 @@ mod tests {
         truncate(&mut conn).unwrap();
 
         // After truncate, WAL should be empty or very small
-        let wal_size = get_wal_size(&conn).unwrap();
-        // WAL might be 0 after truncate
-        assert!(wal_size >= 0);
+        let _wal_size = get_wal_size(&conn).unwrap();
+        // The call succeeding is the test assertion
     }
 
     #[test]
@@ -148,8 +147,8 @@ mod tests {
         // Passive checkpoint should succeed
         checkpoint_passive(&mut conn).unwrap();
 
-        let wal_size = get_wal_size(&conn).unwrap();
-        assert!(wal_size >= 0);
+        let _wal_size = get_wal_size(&conn).unwrap();
+        // The call succeeding is the test assertion
     }
 
     #[test]
@@ -159,8 +158,8 @@ mod tests {
         // Full checkpoint should succeed
         checkpoint_full(&mut conn).unwrap();
 
-        let wal_size = get_wal_size(&conn).unwrap();
-        assert!(wal_size >= 0);
+        let _wal_size = get_wal_size(&conn).unwrap();
+        // The call succeeding is the test assertion
     }
 
     #[test]
@@ -170,8 +169,8 @@ mod tests {
         // Restart checkpoint should succeed
         checkpoint_restart(&mut conn).unwrap();
 
-        let wal_size = get_wal_size(&conn).unwrap();
-        assert!(wal_size >= 0);
+        let _wal_size = get_wal_size(&conn).unwrap();
+        // The call succeeding is the test assertion
     }
 
     #[test]
@@ -260,8 +259,8 @@ mod tests {
         checkpoint_restart(&mut conn).unwrap();
 
         // Should still work
-        let wal_size = get_wal_size(&conn).unwrap();
-        assert!(wal_size >= 0);
+        let _wal_size = get_wal_size(&conn).unwrap();
+        // The call succeeding is the test assertion
     }
 
     #[test]
@@ -324,7 +323,7 @@ mod tests {
         checkpoint(&mut conn).unwrap();
 
         // WAL size should still be retrievable
-        let wal_size = get_wal_size(&conn).unwrap();
-        assert!(wal_size >= 0);
+        let _wal_size = get_wal_size(&conn).unwrap();
+        // The call succeeding is the test assertion
     }
 }

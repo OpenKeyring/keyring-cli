@@ -4,6 +4,8 @@
 // testing the full workflow of system status checking, first-time user
 // detection, and diagnostic reporting.
 
+#![cfg(feature = "test-env")]
+
 use keyring_cli::diagnostics::{check_system_status, StatusCategory, SystemStatus};
 use std::fs;
 

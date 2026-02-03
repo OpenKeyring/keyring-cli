@@ -12,7 +12,7 @@ use tempfile::TempDir;
 /// Helper to set up test environment with Passkey
 struct TestEnv {
     _temp_dir: TempDir,
-    db_path: std::path::PathBuf,
+    _db_path: std::path::PathBuf,
     passkey: Passkey,
     passkey_words: Vec<String>,
 }
@@ -41,7 +41,7 @@ impl TestEnv {
 
         Self {
             _temp_dir: temp_dir,
-            db_path,
+            _db_path: db_path,
             passkey,
             passkey_words,
         }
@@ -221,7 +221,7 @@ fn test_recover_handles_invalid_current_password() {
     let invalid_words: Vec<String> = vec!["abandon".to_string(); 24];
     let passkey_str = invalid_words.join(" ");
 
-    let args = RecoverArgs {
+    let _args = RecoverArgs {
         passkey: Some(passkey_str),
     };
 

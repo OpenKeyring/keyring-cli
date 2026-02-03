@@ -20,8 +20,195 @@
 //! app.handle_input('\n');
 //! seq.step("after_enter", render_snapshot(80, 24, |f| app.render(f)));
 //! ```
+//!
+//! # Test Environment Setup for Snapshots
+//!
+//! For snapshot tests, use `TestSnapshotEnv` which creates cross-platform temp
+//! directories and provides path normalization:
+//!
+//! ```rust
+//! use crate::tui::testing::TestSnapshotEnv;
+//!
+//! #[test]
+//! fn test_config_display() {
+//!     let _env = TestSnapshotEnv::new();
+//!     // Config paths will be normalized in snapshots
+//!     let app = TuiApp::new();
+//!     insta::assert_snapshot!(app.output_lines);
+//! }
+//! ```
+//!
+//! The `TestSnapshotEnv`:
+//! - Creates temp directories using `tempfile::TempDir` (cross-platform)
+//! - Normalizes paths in snapshot output to show `[CONFIG_PATH]` and `[DATA_PATH]`
+//! - Cleans up automatically on drop
 
 use ratatui::{backend::TestBackend, buffer::Buffer, layout::Rect, widgets::Widget, Terminal};
+use tempfile::TempDir;
+
+/// Test environment for snapshot tests.
+///
+/// Creates temporary directories and normalizes paths in snapshots.
+///
+/// # Example
+///
+/// ```rust
+/// use crate::tui::testing::TestSnapshotEnv;
+///
+/// #[test]
+/// fn test_snapshot() {
+///     let _env = TestSnapshotEnv::new();
+///     let app = TuiApp::new();
+///     // Paths will be normalized when snapshotting
+///     insta::assert_snapshot!(normalize_output_paths(&app.output_lines));
+/// }
+/// ```
+pub struct TestSnapshotEnv {
+    _temp_dir: TempDir,
+    config_dir: std::path::PathBuf,
+    data_dir: std::path::PathBuf,
+}
+
+impl TestSnapshotEnv {
+    /// Create a new test environment with cross-platform temp directories.
+    ///
+    /// Sets `OK_CONFIG_DIR` and `OK_DATA_DIR` environment variables to
+    /// temporary directories that will be automatically cleaned up when
+    /// the `TestSnapshotEnv` is dropped.
+    ///
+    /// Uses a consistent prefix to ensure paths are reproducible across
+    /// test runs for snapshot comparison.
+    pub fn new() -> Self {
+        // Clean up any existing environment variables first
+        std::env::remove_var("OK_CONFIG_DIR");
+        std::env::remove_var("OK_DATA_DIR");
+
+        // Use a consistent prefix for reproducible paths in snapshot tests
+        // The random suffix will still vary, but normalization handles this
+        let temp_dir = TempDir::with_prefix("open-keyring-snapshot-").expect("Failed to create temp dir");
+        let config_dir = temp_dir.path().join("config");
+        let data_dir = temp_dir.path().join("data");
+
+        std::fs::create_dir_all(&config_dir).expect("Failed to create config dir");
+        std::fs::create_dir_all(&data_dir).expect("Failed to create data dir");
+
+        std::env::set_var("OK_CONFIG_DIR", config_dir.to_str().unwrap());
+        std::env::set_var("OK_DATA_DIR", data_dir.to_str().unwrap());
+
+        Self {
+            _temp_dir: temp_dir,
+            config_dir,
+            data_dir,
+        }
+    }
+
+    /// Get the config directory path (for reference in tests).
+    pub fn config_dir(&self) -> &std::path::Path {
+        &self.config_dir
+    }
+
+    /// Get the data directory path (for reference in tests).
+    pub fn data_dir(&self) -> &std::path::Path {
+        &self.data_dir
+    }
+
+    /// Normalize file paths in output for snapshot comparison.
+    ///
+    /// Replaces actual file paths with placeholders to ensure snapshots
+    /// are consistent across different platforms and test runs.
+    /// Returns a Vec<String> to maintain compatibility with existing snapshot format.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let env = TestSnapshotEnv::new();
+    /// let app = TuiApp::new();
+    /// let normalized = env.normalize_paths(&app.output_lines);
+    /// insta::assert_debug_snapshot!(&normalized);
+    /// ```
+    ///
+    /// This transforms paths like:
+    /// - Unix: `/tmp/.tmp123456/data/passwords.db` → `[DATA_PATH]/passwords.db`
+    /// - Windows: `C:\Users\...\AppData\Local\Temp\.tmp123456\data\...` → `[DATA_PATH]/...`
+    pub fn normalize_paths(&self, lines: &[String]) -> Vec<String> {
+        let mut result = Vec::new();
+
+        for line in lines {
+            let mut normalized = line.clone();
+
+            // Replace the full database path with placeholder
+            // The config stores the full path: /var/folders/.../T/.tmpXXX/data/passwords.db
+            // We need to normalize: /var/folders/.../T/.tmpXXX → [TEMP_DIR]
+            // Then normalize: /data/passwords.db → the actual data subpath
+            let db_path = self.data_dir.join("passwords.db");
+            let db_path_str = db_path.to_string_lossy().to_string();
+            let db_path_normalized = db_path_str.replace('\\', "/");
+            normalized = normalized.replace(&db_path_normalized, "[DATA_PATH]/passwords.db");
+            normalized = normalized.replace(&db_path_str, "[DATA_PATH]/passwords.db");
+
+            // Also try to normalize any parent temp directory paths
+            // This handles cases where the path includes the temp dir name
+            let temp_dir_str = self._temp_dir.path().to_string_lossy().to_string();
+            let temp_dir_normalized = temp_dir_str.replace('\\', "/");
+            normalized = normalized.replace(&temp_dir_normalized, "[TEMP_DIR]");
+            normalized = normalized.replace(&temp_dir_str, "[TEMP_DIR]");
+
+            // Replace config directory path with placeholder
+            let config_path_str = self.config_dir.to_string_lossy().to_string();
+            let config_path_normalized = config_path_str.replace('\\', "/");
+            normalized = normalized.replace(&config_path_normalized, "[CONFIG_PATH]");
+            normalized = normalized.replace(&config_path_str, "[CONFIG_PATH]");
+
+            result.push(normalized);
+        }
+
+        result
+    }
+}
+
+impl Drop for TestSnapshotEnv {
+    fn drop(&mut self) {
+        // Clean up environment variables
+        std::env::remove_var("OK_CONFIG_DIR");
+        std::env::remove_var("OK_DATA_DIR");
+    }
+}
+
+/// Normalize file paths in output for snapshot comparison.
+///
+/// Replaces actual file paths with placeholders to ensure snapshots
+/// are consistent across different platforms and test runs.
+///
+/// # Example
+///
+/// ```rust
+/// let output = normalize_output_paths(&app.output_lines);
+/// insta::assert_snapshot!(output);
+/// ```
+///
+/// This transforms paths like:
+/// - Unix: `/tmp/.tmp123456/data/passwords.db` → `[DATA_PATH]/passwords.db`
+/// - Windows: `C:\Users\...\AppData\Local\Temp\.tmp123456\data\...` → `[DATA_PATH]/...`
+pub fn normalize_output_paths(lines: &[String]) -> String {
+    let mut result = Vec::new();
+
+    for line in lines {
+        let normalized = line.clone();
+
+        // Replace config directory path with placeholder
+        if let Ok(config_dir) = std::env::var("OK_CONFIG_DIR") {
+            let normalized = normalized.replace(&config_dir, "[CONFIG_PATH]");
+            // Also handle backslash on Windows
+            let normalized = normalized.replace(&config_dir.replace('\\', "/"), "[CONFIG_PATH]");
+            result.push(normalized);
+        } else {
+            result.push(normalized);
+        }
+    }
+
+    // Join with newlines for snapshot comparison
+    result.join("\n")
+}
 
 /// Snapshot normalizer for handling dynamic content in TUI output.
 ///

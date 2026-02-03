@@ -57,7 +57,7 @@ fn test_devices_command_list_with_no_devices() {
 
     // Create vault
     {
-        let mut vault = Vault::open(&env.db_path, "").unwrap();
+        let _vault = Vault::open(&env.db_path, "").unwrap();
         // No devices registered
     }
 
@@ -170,8 +170,8 @@ fn test_devices_command_remove_device() {
         let mut vault = Vault::open(&env.db_path, "").unwrap();
 
         // First, get the current device ID so we don't use it
-        let current_device_id = vault.get_metadata("device_id").unwrap();
-        let current_device_id = current_device_id.as_deref();
+        let _current_device_id = vault.get_metadata("device_id").unwrap();
+        let _current_device_id = _current_device_id.as_deref();
 
         let trusted_devices = serde_json::json!([
             {

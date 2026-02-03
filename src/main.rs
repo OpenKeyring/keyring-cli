@@ -382,7 +382,7 @@ async fn main() -> Result<()> {
     let skip_status_check = cli
         .command
         .as_ref()
-        .map_or(false, |c| matches!(c, Commands::Wizard));
+        .is_some_and(|c| matches!(c, Commands::Wizard));
 
     if !skip_status_check {
         match diagnostics::check_system_status() {

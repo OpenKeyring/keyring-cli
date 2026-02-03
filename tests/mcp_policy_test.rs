@@ -1,4 +1,4 @@
-use keyring_cli::mcp::policy::{AuthDecision, EnvTag, OperationType, PolicyEngine, RiskTag};
+use keyring_cli::mcp::policy::{AuthDecision, OperationType, PolicyEngine};
 use std::collections::HashSet;
 
 /// Helper function to create a tag set from string slices

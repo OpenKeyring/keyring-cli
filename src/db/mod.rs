@@ -129,8 +129,8 @@ mod tests {
 
         // First open
         manager.open().unwrap();
-        let conn1 = manager.connection().unwrap();
-        drop(conn1);
+        let _conn1 = manager.connection().unwrap();
+        // Connection reference goes out of scope here
 
         // Close and reopen
         manager.close().unwrap();

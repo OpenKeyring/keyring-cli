@@ -1158,9 +1158,9 @@ mod tests {
 
         // The encrypted data contains [1,2,3] which as bytes won't match "test" in encrypted form
         // But the test should at least verify the query runs without error
-        let results = vault.search_records("test").unwrap();
+        let _results = vault.search_records("test").unwrap();
         // May or may not find results depending on encryption
-        assert!(results.len() >= 0);
+        // The search itself succeeding is the test assertion
     }
 
     // Find by name tests

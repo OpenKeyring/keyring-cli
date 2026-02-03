@@ -1,3 +1,5 @@
+#![cfg(feature = "test-env")]
+
 use keyring_cli::onboarding;
 use serial_test::serial;
 use std::env;

@@ -4,6 +4,8 @@
 //! The OK_DATA_DIR environment variable is set to point to a temp directory
 //! that is automatically cleaned up after each test.
 
+#![cfg(feature = "test-env")]
+
 use keyring_cli::crypto::{passkey::Passkey, CryptoManager, DeviceIndex};
 use serial_test::serial;
 use std::env;

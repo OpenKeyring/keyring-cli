@@ -42,8 +42,6 @@ fn test_prompt_user_resolution_returns_strategy() {
 #[test]
 fn test_prompt_user_resolution_different_record_names() {
     let validator = NonceValidator::new();
-    let local_nonce = [1u8; 12];
-    let remote_nonce = [2u8; 12];
 
     // Test with different nonces
     for i in 0..4 {
