@@ -9,21 +9,15 @@ use keyring_cli::clipboard::windows::WindowsClipboard;
 
 use keyring_cli::clipboard::manager::{ClipboardConfig, ClipboardManager};
 use keyring_cli::clipboard::ClipboardService;
-use std::sync::Mutex;
 use std::time::Duration;
 
-/// Global lock to ensure clipboard tests run serially.
-///
-/// Multiple tests accessing the system clipboard simultaneously can cause
-/// conflicts and crashes (SIGSEGV). This lock ensures only one clipboard
-/// test runs at a time, preventing race conditions.
-static CLIPBOARD_LOCK: Mutex<()> = Mutex::new(());
+// Import serial_test for test serialization
+use serial_test::serial;
 
 #[cfg(target_os = "macos")]
+#[serial]
 #[test]
 fn test_macos_clipboard() {
-    let _lock = CLIPBOARD_LOCK.lock().unwrap();
-
     let mut clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     assert!(clipboard.is_supported());
 
@@ -36,6 +30,7 @@ fn test_macos_clipboard() {
 }
 
 #[cfg(target_os = "windows")]
+#[serial]
 #[test]
 fn test_windows_clipboard() {
     let mut clipboard = WindowsClipboard;
@@ -49,6 +44,7 @@ fn test_windows_clipboard() {
 }
 
 #[cfg(target_os = "linux")]
+#[serial]
 #[test]
 fn test_linux_clipboard() {
     // This test will pass if xclip is available
@@ -65,10 +61,9 @@ fn test_linux_clipboard() {
 }
 
 #[cfg(target_os = "macos")]
+#[serial]
 #[test]
 fn test_clipboard_service() {
-    let _lock = CLIPBOARD_LOCK.lock().unwrap();
-
     let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let config = ClipboardConfig {
         timeout_seconds: 60,
@@ -89,10 +84,9 @@ fn test_clipboard_service() {
 }
 
 #[cfg(target_os = "macos")]
+#[serial]
 #[test]
 fn test_content_length_limit() {
-    let _lock = CLIPBOARD_LOCK.lock().unwrap();
-
     let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let config = ClipboardConfig {
         timeout_seconds: 30,
