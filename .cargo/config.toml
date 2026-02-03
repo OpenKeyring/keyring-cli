@@ -9,3 +9,6 @@ linux-arm = "build --target aarch64-unknown-linux-gnu"
 # Combined cross-compilation command (Linux only)
 cross-all = ["build --target x86_64-unknown-linux-gnu",
              "build --target aarch64-unknown-linux-gnu"]
+
+# Test alias with test-env feature enabled
+test = "test --features test-env"
