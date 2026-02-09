@@ -77,7 +77,7 @@ name = "crypto-bench"
 harness = false
 
 [dev-dependencies]
-tempfile = "3.10"
+tempfile = "3.25"
 criterion = "0.5"
 
 [profile.release]
