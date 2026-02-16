@@ -54,8 +54,11 @@ impl ScreenManager for DefaultScreenManager {
         if self.stack.is_empty() {
             None
         } else {
-            let idx = self.stack.len() - 1;
-            Some(self.stack[idx].as_mut())
+            // 获取最后一个元素的可变引用
+            let len = self.stack.len();
+            // SAFETY: len > 0 已经由 is_empty() 检查保证
+            // 直接通过索引获取元素
+            Some(self.stack[len - 1].as_mut())
         }
     }
 

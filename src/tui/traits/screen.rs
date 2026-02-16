@@ -202,7 +202,7 @@ pub trait ScreenManager: Send + Sync {
     fn current(&self) -> Option<&dyn Screen>;
 
     /// 获取当前屏幕（可变）
-    fn current_mut(&mut self) -> Option<&mut dyn Screen>;
+    fn current_mut(&mut self) -> Option<&mut (dyn Screen + '_)>;
 
     /// 检查是否有活动屏幕
     #[must_use]

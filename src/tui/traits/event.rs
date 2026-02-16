@@ -154,6 +154,43 @@ impl Default for Action {
 }
 
 // ============================================================================
+// 事件分发器 Trait
+// ============================================================================
+
+use std::collections::HashMap;
+
+/// 事件分发器 trait
+///
+/// 负责将应用事件分发到正确的处理器，包括全局快捷键处理。
+pub trait EventDispatcher: Send + Sync {
+    /// 分发事件
+    fn dispatch(&mut self, event: AppEvent) -> HandleResult;
+
+    /// 注册全局快捷键
+    fn register_global_keybinding(&mut self, key: KeyEvent, action: Action);
+
+    /// 处理全局快捷键
+    fn handle_global_keybinding(&self, key: KeyEvent) -> Option<Action>;
+
+    /// 添加事件过滤器
+    fn add_filter(&mut self, filter: Box<dyn EventFilter>);
+
+    /// 移除事件过滤器
+    fn remove_filter(&mut self, id: &str);
+}
+
+/// 事件过滤器 trait
+///
+/// 允许在事件分发前对事件进行过滤或转换。
+pub trait EventFilter: Send + Sync {
+    /// 检查事件是否应该被处理
+    fn should_process(&self, event: &AppEvent) -> bool;
+
+    /// 获取过滤器 ID
+    fn id(&self) -> &str;
+}
+
+// ============================================================================
 // 测试辅助函数
 // ============================================================================
 

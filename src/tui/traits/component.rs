@@ -7,6 +7,7 @@ use crate::tui::traits::{ComponentId, AppEvent, HandleResult};
 use crossterm::event::{KeyEvent, MouseEvent};
 use ratatui::layout::Rect;
 use ratatui::buffer::Buffer;
+use std::io;
 
 // ============================================================================
 // Render Trait
@@ -139,6 +140,25 @@ pub trait Container: Component {
 
     /// 获取可变子组件（通过 ID）
     fn get_child_mut(&mut self, id: &ComponentId) -> Option<&mut dyn Component>;
+}
+
+// ============================================================================
+// Application Trait
+// ============================================================================
+
+/// TUI 应用程序 trait
+///
+/// 定义应用程序的运行接口，负责启动和运行主事件循环。
+pub trait Application {
+    /// 运行应用程序
+    ///
+    /// 此方法应该：
+    /// 1. 设置终端（raw mode、alternate screen）
+    /// 2. 启动主事件循环
+    /// 3. 处理用户输入
+    /// 4. 渲染 UI
+    /// 5. 在退出时清理终端状态
+    fn run(&mut self) -> io::Result<()>;
 }
 
 // ============================================================================

@@ -19,7 +19,7 @@ mod secure;
 mod task;
 
 // 重新导出所有公共 trait
-pub use component::{Component, Container, Render, Interactive};
+pub use component::{Component, Container, Render, Interactive, Application};
 pub use layout::{Layout, LayoutConstraints, LayoutResult};
 pub use state::{
     StateManager, ReactiveState, StateValue, StateError, StateKey, StateChange, StateCallback,
@@ -32,7 +32,7 @@ pub use service::{
 };
 pub use theme::{Theme, ColorPalette, ThemeVariant, ThemeName, ThemeManager, DarkTheme, LightTheme};
 pub use notification::{
-    NotificationManager, Notification, NotificationLevel, NotificationId, NotificationPosition,
+    NotificationManager, NotificationManagerExt, Notification, NotificationLevel, NotificationId, NotificationPosition,
 };
 pub use validation::{FormValidator, ValidationResult, Validator, FieldValidation, ValidationTrigger};
 // ValidationRule 是 Validator 的别名（兼容旧代码）
@@ -52,7 +52,7 @@ pub use screen::{
 };
 
 // 重新导出事件类型
-pub use event::{AppEvent, HandleResult, Action, ScreenType, FilterType};
+pub use event::{AppEvent, HandleResult, Action, ScreenType, FilterType, EventDispatcher, EventFilter};
 
 // 重新导出安全类型
 pub use secure::{Sensitivity, SecureString, PasswordField, HoldsSensitiveData};
