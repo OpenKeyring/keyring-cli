@@ -27,7 +27,7 @@ pub use notification::DefaultNotificationManager;
 // 主题实现从 traits 模块重新导出
 pub use crate::tui::traits::{DarkTheme, LightTheme};
 pub use validation::{DefaultFormValidator, SimpleValidationRule};
-pub use password_strength::DefaultPasswordStrengthCalculator;
+pub use password_strength::{DefaultPasswordStrengthCalculator, PasswordStrengthDetails, estimate_crack_time};
 pub use task_manager::TokioTaskManager;
 pub use app::{Application, TuiApp};
 pub use dispatcher::EventDispatcher;

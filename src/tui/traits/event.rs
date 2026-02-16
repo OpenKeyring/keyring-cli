@@ -129,7 +129,7 @@ impl Default for HandleResult {
 /// 操作类型
 ///
 /// 事件处理后可能需要执行的操作。
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     /// 退出应用
     Quit,

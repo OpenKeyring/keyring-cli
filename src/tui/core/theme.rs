@@ -2,7 +2,7 @@
 //!
 //! 实现主题管理器和重新导出主题结构体。
 
-use crate::tui::traits::{Theme, ThemeName, ThemeManager, ColorPalette};
+use crate::tui::traits::{Theme, ThemeName, ThemeManager};
 
 // 重新导出 traits 模块中的主题实现
 pub use crate::tui::traits::{DarkTheme, LightTheme};

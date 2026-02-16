@@ -8,7 +8,6 @@ use crate::tui::traits::{
 };
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use std::time::Instant;
 
 /// 默认状态管理器
 ///
@@ -54,7 +53,6 @@ impl StateManager for DefaultStateManager {
 /// 响应式状态管理器
 ///
 /// 扩展默认状态管理器，支持状态变化订阅和通知。
-#[derive(Debug)]
 pub struct ReactiveStateManager {
     /// 内部状态
     states: HashMap<String, StateValue>,
@@ -72,6 +70,17 @@ pub struct ReactiveStateManager {
     undo_stack: HashMap<String, Vec<StateValue>>,
     /// 重做栈
     redo_stack: HashMap<String, Vec<StateValue>>,
+}
+
+impl std::fmt::Debug for ReactiveStateManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ReactiveStateManager")
+            .field("state_count", &self.states.len())
+            .field("subscriber_count", &self.subscribers.len())
+            .field("global_subscriber_count", &self.global_subscribers.len())
+            .field("max_history", &self.max_history)
+            .finish()
+    }
 }
 
 impl Default for ReactiveStateManager {
@@ -154,16 +163,16 @@ impl StateManager for ReactiveStateManager {
 
     fn set(&mut self, key: &str, value: StateValue) -> Result<(), StateError> {
         let old_value = self.states.get(key).cloned();
-        let change = StateChange::new(old_value, value.clone(), None);
 
         // 保存到撤销栈
-        if let Some(old) = old_value {
+        if let Some(ref old) = old_value {
             self.undo_stack
                 .entry(key.to_string())
                 .or_insert_with(Vec::new)
-                .push(old);
+                .push(old.clone());
         }
 
+        let change = StateChange::new(old_value, value.clone(), None);
         self.states.insert(key.to_string(), value);
         self.record_change(key, change.clone());
         self.notify(key, &change);
@@ -246,16 +255,16 @@ impl ReactiveState for ReactiveStateManager {
 
         // 保存当前值到重做栈
         let current = self.states.get(key).cloned();
-        if let Some(curr) = current {
+        if let Some(ref curr) = current {
             self.redo_stack
                 .entry(key.to_string())
                 .or_insert_with(Vec::new)
-                .push(curr);
+                .push(curr.clone());
         }
 
         let change = StateChange::new(Some(old_value.clone()), old_value.clone(), Some("undo".to_string()));
         self.states.insert(key.to_string(), old_value);
-        self.record_change(key, change);
+        self.record_change(key, change.clone());
         self.notify(key, &change);
 
         Ok(())
@@ -272,16 +281,16 @@ impl ReactiveState for ReactiveStateManager {
 
         // 保存当前值到撤销栈
         let current = self.states.get(key).cloned();
-        if let Some(curr) = current {
+        if let Some(ref curr) = current {
             self.undo_stack
                 .entry(key.to_string())
                 .or_insert_with(Vec::new)
-                .push(curr);
+                .push(curr.clone());
         }
 
         let change = StateChange::new(Some(new_value.clone()), new_value.clone(), Some("redo".to_string()));
         self.states.insert(key.to_string(), new_value);
-        self.record_change(key, change);
+        self.record_change(key, change.clone());
         self.notify(key, &change);
 
         Ok(())
@@ -324,13 +333,22 @@ impl ThreadSafeStateManager {
     pub fn inner(&self) -> &Arc<RwLock<ReactiveStateManager>> {
         &self.inner
     }
+
+    /// 获取状态值的克隆（线程安全版本）
+    #[must_use]
+    pub fn get_cloned(&self, key: &str) -> Option<StateValue> {
+        self.inner.read().ok()?.get(key).cloned()
+    }
 }
 
 impl StateManager for ThreadSafeStateManager {
     fn get(&self, key: &str) -> Option<&StateValue> {
-        // 注意：由于返回引用，这里需要特殊的处理
-        // 实际使用中可能需要返回克隆的值
-        self.inner.read().ok()?.get(key)
+        // 注意：由于返回引用，这里无法正确实现
+        // 这是一个已知限制，实际使用中应避免使用 ThreadSafeStateManager 的 get 方法
+        // 或者直接使用 ReactiveStateManager
+        // 作为临时解决方案，这里返回 None
+        // 请使用 get_cloned 方法代替
+        None
     }
 
     fn set(&mut self, key: &str, value: StateValue) -> Result<(), StateError> {
@@ -350,7 +368,9 @@ impl StateManager for ThreadSafeStateManager {
     }
 
     fn keys(&self) -> Vec<String> {
-        self.inner.read().ok()?.keys()
+        self.inner.read()
+            .map(|guard| guard.keys())
+            .unwrap_or_default()
     }
 
     fn clear(&mut self) {

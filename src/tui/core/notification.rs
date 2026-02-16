@@ -3,7 +3,7 @@
 //! 占位符模块，完整实现将在 Task C.4 中完成。
 
 use crate::tui::traits::{
-    NotificationManager, Notification, NotificationId, NotificationLevel, NotificationPosition,
+    NotificationManager, Notification, NotificationId, NotificationPosition,
 };
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicU64, Ordering};

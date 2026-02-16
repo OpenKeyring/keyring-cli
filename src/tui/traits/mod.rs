@@ -16,6 +16,7 @@ mod ime;
 mod screen;
 mod event;
 mod secure;
+mod task;
 
 // 重新导出所有公共 trait
 pub use component::{Component, Container, Render, Interactive};
@@ -45,13 +46,19 @@ pub use ime::{
     ImeService, ImeMode, CompositionState, ImeState, ImeHandleResult, ImeAware, ImeDetector,
     ImeAwareDispatcher,
 };
-pub use screen::{ScreenManager, Screen, ScreenStack, ScreenTransition};
+pub use screen::{
+    ScreenManager, Screen, ScreenStack, ScreenTransition, ScreenFactory, ScreenResult,
+    WizardFlow, WizardStep, WizardBranch, WizardData,
+};
 
 // 重新导出事件类型
 pub use event::{AppEvent, HandleResult, Action, ScreenType, FilterType};
 
 // 重新导出安全类型
 pub use secure::{Sensitivity, SecureString, PasswordField, HoldsSensitiveData};
+
+// 重新导出任务管理类型
+pub use task::{TaskManager, TaskId, TaskStatus, TaskResult, TaskCallback, TaskProgress};
 
 // ============================================================================
 // 基础类型定义
