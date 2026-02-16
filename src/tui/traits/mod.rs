@@ -20,13 +20,19 @@ mod secure;
 // 重新导出所有公共 trait
 pub use component::{Component, Container, Render, Interactive};
 pub use layout::{Layout, LayoutConstraints, LayoutResult};
-pub use state::{StateManager, ReactiveState};
-pub use focus::{FocusManager, FocusState, FocusStyle};
-pub use service::{ServiceProvider, IdGenerator, BuildContext, Buildable};
-pub use theme::{Theme, ColorPalette, ThemeVariant};
-pub use notification::{NotificationManager, Notification, NotificationLevel};
+pub use state::{StateManager, ReactiveState, StateValue, StateError, StateKey};
+pub use focus::{FocusManager, FocusState, FocusStyle, FocusNavigation, Direction, FocusManagerExt};
+pub use service::{
+    ServiceProvider, IdGenerator, BuildContext, Buildable, ComponentConfig, ServiceContainer,
+    DatabaseService, CryptoService, PasswordService, DefaultIdGenerator,
+};
+pub use theme::{Theme, ColorPalette, ThemeVariant, DarkTheme, LightTheme};
+pub use notification::{
+    NotificationManager, Notification, NotificationLevel, NotificationId, NotificationPosition,
+};
 pub use validation::{FormValidator, ValidationRule, ValidationResult};
-pub use password_strength::{PasswordStrength, PasswordStrengthCalculator};
+pub use password_strength::{PasswordStrength, PasswordStrengthCalculator, StrengthLevel};
+// ClipboardService 和 ClipboardContent 在 clipboard.rs 中定义
 pub use clipboard::{ClipboardService, ClipboardContent};
 pub use ime::{ImeService, ImeMode, CompositionState};
 pub use screen::{ScreenManager, Screen, ScreenStack, ScreenTransition};

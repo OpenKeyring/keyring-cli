@@ -6,6 +6,7 @@
 //! - `error_tests` - Error type tests
 //! - `event_tests` - Event type tests
 //! - `secure_tests` - Secure string tests
+//! - `component_trait_tests` - Component trait tests
 //! - `wizard_snapshot_tests` - Wizard state machine snapshots
 //! - `app_snapshot_tests` - TuiApp state and rendering snapshots
 //! - `visual_regression_tests` - Visual rendering snapshots
@@ -16,6 +17,7 @@
 mod error_tests;
 mod event_tests;
 mod secure_tests;
+mod component_trait_tests;
 
 // ============ 现有测试 ============
 mod app_snapshot_tests;
