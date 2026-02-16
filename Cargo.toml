@@ -53,7 +53,7 @@ reqwest = { version = "0.12", features = ["json"] }
 serde_yaml = "0.9"
 
 # Platform detection
-sysinfo = "0.30"
+sysinfo = "0.38"
 dirs = "5.0"
 
 # System calls for file locking
