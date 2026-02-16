@@ -5,6 +5,7 @@
 //!
 //! ## 模块结构
 //!
+//! - [`error`] - Phase 1.2 错误类型定义
 //! - [`traits`] - Trait 层定义，包含所有核心接口
 //! - [`core`] - 核心实现层，提供默认实现
 //! - [`commands`] - CLI 命令处理
@@ -14,6 +15,7 @@
 //! - [`widgets`] - UI 组件
 
 // ============ Phase 1.2 新模块 ============
+pub mod error;
 pub mod traits;
 pub mod core;
 
@@ -34,8 +36,8 @@ pub mod testing;
 mod tests;
 
 // ============ 公共导出 ============
-pub use app::{run_tui, Screen, TuiApp, TuiError};
+pub use app::{run_tui, Screen, TuiApp, TuiError as LegacyTuiError};
 pub use handler::{AppAction, TuiEventHandler};
 
-/// TUI result type
-pub type TuiResult<T> = std::result::Result<T, TuiError>;
+// Phase 1.2 错误类型导出
+pub use error::{ErrorSeverity, ErrorKind, RecoveryStrategy, TuiError};
