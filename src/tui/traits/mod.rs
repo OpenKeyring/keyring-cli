@@ -14,6 +14,7 @@ mod password_strength;
 mod clipboard;
 mod ime;
 mod screen;
+mod event;
 
 // 重新导出所有公共 trait
 pub use component::{Component, Container, Render, Interactive};
@@ -28,6 +29,9 @@ pub use password_strength::{PasswordStrength, PasswordStrengthCalculator};
 pub use clipboard::{ClipboardService, ClipboardContent};
 pub use ime::{ImeService, ImeMode, CompositionState};
 pub use screen::{ScreenManager, Screen, ScreenStack, ScreenTransition};
+
+// 重新导出事件类型
+pub use event::{AppEvent, HandleResult, Action, ScreenType, FilterType};
 
 // ============================================================================
 // 基础类型定义
