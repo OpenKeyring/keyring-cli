@@ -45,11 +45,12 @@ impl NotificationManager for DefaultNotificationManager {
     }
 
     fn dismiss(&mut self, id: NotificationId) -> bool {
-        self._notifications
-            .iter()
-            .position(|n| n.id == Some(id))
-            .map(|pos| self._notifications.remove(pos).is_some())
-            .unwrap_or(false)
+        if let Some(pos) = self._notifications.iter().position(|n| n.id == Some(id)) {
+            self._notifications.remove(pos);
+            true
+        } else {
+            false
+        }
     }
 
     fn dismiss_all(&mut self) {

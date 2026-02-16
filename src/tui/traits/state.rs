@@ -420,6 +420,7 @@ impl StateSelector for CombinedSelector {
 }
 
 /// ID 生成器（用于订阅 ID）
+#[derive(Debug)]
 pub struct SubscriptionIdGenerator {
     counter: AtomicU64,
 }

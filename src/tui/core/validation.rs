@@ -2,18 +2,20 @@
 //!
 //! 占位符模块，完整实现将在 Task C.6 中完成。
 
-use crate::tui::traits::{FormValidator, ValidationRule, ValidationResult};
+use crate::tui::traits::{FormValidator, ValidationResult, Validator};
+use std::collections::HashMap;
 
 /// 默认表单验证器
 #[derive(Default)]
 pub struct DefaultFormValidator {
-    _rules: Vec<Box<dyn ValidationRule>>,
+    /// 字段验证规则映射
+    field_validations: HashMap<String, Vec<Box<dyn Validator + Send + Sync>>>,
 }
 
 impl std::fmt::Debug for DefaultFormValidator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DefaultFormValidator")
-            .field("rules", &self._rules.len())
+            .field("fields", &self.field_validations.len())
             .finish()
     }
 }
@@ -23,63 +25,146 @@ impl DefaultFormValidator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            _rules: Vec::new(),
+            field_validations: HashMap::new(),
         }
     }
 
-    /// 添加验证规则
-    pub fn add_rule(&mut self, rule: Box<dyn ValidationRule>) {
-        self._rules.push(rule);
+    /// 添加字段验证规则
+    pub fn add_rule(&mut self, field: String, rule: Box<dyn Validator + Send + Sync>) {
+        self.field_validations.entry(field).or_default().push(rule);
+    }
+
+    /// 验证单个字段
+    pub fn validate_field(&self, field: &str, value: &str) -> ValidationResult {
+        if let Some(rules) = self.field_validations.get(field) {
+            for rule in rules {
+                let result = rule.validate(value);
+                if !result.is_valid {
+                    return result;
+                }
+            }
+        }
+        ValidationResult::valid()
     }
 }
 
 impl FormValidator for DefaultFormValidator {
-    fn validate(&self, input: &str) -> ValidationResult {
-        for rule in &self._rules {
-            if !rule.check(input) {
-                return ValidationResult {
-                    _is_valid: false,
-                    _error_message: Some("验证失败".to_string()),
-                };
+    fn register(&mut self, field: String, validation: crate::tui::traits::FieldValidation) {
+        for validator in validation.validators {
+            self.add_rule(field.clone(), Box::new(validator));
+        }
+    }
+
+    fn validate_field(&self, field: &str, value: &str) -> ValidationResult {
+        if let Some(rules) = self.field_validations.get(field) {
+            for rule in rules {
+                let result = rule.validate(value);
+                if !result.is_valid {
+                    return result;
+                }
             }
         }
-        ValidationResult {
-            _is_valid: true,
-            _error_message: None,
+        ValidationResult::valid()
+    }
+
+    fn validate_all(&self, values: &HashMap<String, String>) -> ValidationResult {
+        let mut result = ValidationResult::valid();
+        for (field, value) in values {
+            let r = self.validate_field(field, value);
+            if !r.is_valid {
+                result.is_valid = false;
+                result.errors.extend(r.errors);
+            }
+            result.warnings.extend(r.warnings);
         }
+        result
+    }
+
+    fn is_valid(&self) -> bool {
+        self.field_validations.is_empty()
+    }
+
+    fn get_errors(&self, field: &str) -> Vec<String> {
+        if let Some(rules) = self.field_validations.get(field) {
+            let mut errors = Vec::new();
+            for rule in rules {
+                let r = rule.validate("");
+                errors.extend(r.errors);
+            }
+            errors
+        } else {
+            Vec::new()
+        }
+    }
+
+    fn clear(&mut self) {
+        self.field_validations.clear();
     }
 }
 
 /// 简单验证规则
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct SimpleValidationRule {
-    _min_length: Option<usize>,
-    _max_length: Option<usize>,
+    min_length: Option<usize>,
+    max_length: Option<usize>,
+    error_message: String,
 }
 
 impl SimpleValidationRule {
     /// 创建新的验证规则
     #[must_use]
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
-            _min_length: None,
-            _max_length: None,
+            min_length: None,
+            max_length: None,
+            error_message: "验证失败".to_string(),
         }
+    }
+
+    /// 设置最小长度
+    #[must_use]
+    pub const fn with_min_length(mut self, min: usize) -> Self {
+        self.min_length = Some(min);
+        self
+    }
+
+    /// 设置最大长度
+    #[must_use]
+    pub const fn with_max_length(mut self, max: usize) -> Self {
+        self.max_length = Some(max);
+        self
+    }
+
+    /// 设置错误消息
+    #[must_use]
+    pub fn with_error_message(mut self, msg: String) -> Self {
+        self.error_message = msg;
+        self
     }
 }
 
-impl ValidationRule for SimpleValidationRule {
-    fn check(&self, input: &str) -> bool {
-        if let Some(min) = self._min_length {
+impl Default for SimpleValidationRule {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Validator for SimpleValidationRule {
+    fn validate(&self, input: &str) -> ValidationResult {
+        if let Some(min) = self.min_length {
             if input.len() < min {
-                return false;
+                return ValidationResult::invalid(vec![self.error_message.clone()]);
             }
         }
-        if let Some(max) = self._max_length {
+        if let Some(max) = self.max_length {
             if input.len() > max {
-                return false;
+                return ValidationResult::invalid(vec![self.error_message.clone()]);
             }
         }
-        true
+        ValidationResult::valid()
+    }
+
+    fn name(&self) -> &str {
+        "simple_validation"
     }
 }

@@ -20,21 +20,31 @@ mod secure;
 // 重新导出所有公共 trait
 pub use component::{Component, Container, Render, Interactive};
 pub use layout::{Layout, LayoutConstraints, LayoutResult};
-pub use state::{StateManager, ReactiveState, StateValue, StateError, StateKey};
+pub use state::{
+    StateManager, ReactiveState, StateValue, StateError, StateKey, StateChange, StateCallback,
+    SubscriptionId, SubscriptionIdGenerator,
+};
 pub use focus::{FocusManager, FocusState, FocusStyle, FocusNavigation, Direction, FocusManagerExt};
 pub use service::{
     ServiceProvider, IdGenerator, BuildContext, Buildable, ComponentConfig, ServiceContainer,
     DatabaseService, CryptoService, PasswordService, DefaultIdGenerator,
 };
-pub use theme::{Theme, ColorPalette, ThemeVariant, DarkTheme, LightTheme};
+pub use theme::{Theme, ColorPalette, ThemeVariant, ThemeName, ThemeManager, DarkTheme, LightTheme};
 pub use notification::{
     NotificationManager, Notification, NotificationLevel, NotificationId, NotificationPosition,
 };
-pub use validation::{FormValidator, ValidationRule, ValidationResult};
+pub use validation::{FormValidator, ValidationResult, Validator, FieldValidation, ValidationTrigger};
+// ValidationRule 是 Validator 的别名（兼容旧代码）
+pub use Validator as ValidationRule;
 pub use password_strength::{PasswordStrength, PasswordStrengthCalculator, StrengthLevel};
-// ClipboardService 和 ClipboardContent 在 clipboard.rs 中定义
-pub use clipboard::{ClipboardService, ClipboardContent};
-pub use ime::{ImeService, ImeMode, CompositionState};
+pub use clipboard::{
+    ClipboardService, ClipboardContent, ClipboardState, ClipboardConfig, ClipboardContentType,
+    ClipboardSensitivity, SecureClipboardContent,
+};
+pub use ime::{
+    ImeService, ImeMode, CompositionState, ImeState, ImeHandleResult, ImeAware, ImeDetector,
+    ImeAwareDispatcher,
+};
 pub use screen::{ScreenManager, Screen, ScreenStack, ScreenTransition};
 
 // 重新导出事件类型
