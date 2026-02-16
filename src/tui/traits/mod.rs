@@ -15,6 +15,7 @@ mod clipboard;
 mod ime;
 mod screen;
 mod event;
+mod secure;
 
 // 重新导出所有公共 trait
 pub use component::{Component, Container, Render, Interactive};
@@ -32,6 +33,9 @@ pub use screen::{ScreenManager, Screen, ScreenStack, ScreenTransition};
 
 // 重新导出事件类型
 pub use event::{AppEvent, HandleResult, Action, ScreenType, FilterType};
+
+// 重新导出安全类型
+pub use secure::{Sensitivity, SecureString, PasswordField, HoldsSensitiveData};
 
 // ============================================================================
 // 基础类型定义
