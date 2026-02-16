@@ -1,0 +1,70 @@
+//! TUI Trait 层定义
+//!
+//! 本模块定义了 TUI 框架的所有核心 trait，为组件、状态管理、主题等提供统一的抽象接口。
+
+mod component;
+mod layout;
+mod state;
+mod focus;
+mod service;
+mod theme;
+mod notification;
+mod validation;
+mod password_strength;
+mod clipboard;
+mod ime;
+mod screen;
+
+// 重新导出所有公共 trait
+pub use component::{Component, Container, Render, Interactive};
+pub use layout::{Layout, LayoutConstraints, LayoutResult};
+pub use state::{StateManager, ReactiveState};
+pub use focus::{FocusManager, FocusState, FocusStyle};
+pub use service::{ServiceProvider, IdGenerator, BuildContext, Buildable};
+pub use theme::{Theme, ColorPalette, ThemeVariant};
+pub use notification::{NotificationManager, Notification, NotificationLevel};
+pub use validation::{FormValidator, ValidationRule, ValidationResult};
+pub use password_strength::{PasswordStrength, PasswordStrengthCalculator};
+pub use clipboard::{ClipboardService, ClipboardContent};
+pub use ime::{ImeService, ImeMode, CompositionState};
+pub use screen::{ScreenManager, Screen, ScreenStack, ScreenTransition};
+
+// ============================================================================
+// 基础类型定义
+// ============================================================================
+
+/// 组件唯一标识符
+///
+/// 每个组件都有一个唯一的 ID，用于：
+/// - 焦点管理
+/// - 事件路由
+/// - 状态查找
+/// - 调试追踪
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ComponentId(pub usize);
+
+impl ComponentId {
+    /// 创建新的组件 ID
+    #[must_use]
+    pub const fn new(id: usize) -> Self {
+        Self(id)
+    }
+
+    /// 获取 ID 的数值
+    #[must_use]
+    pub const fn value(&self) -> usize {
+        self.0
+    }
+}
+
+impl Default for ComponentId {
+    fn default() -> Self {
+        Self(0)
+    }
+}
+
+impl std::fmt::Display for ComponentId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ComponentId({})", self.0)
+    }
+}

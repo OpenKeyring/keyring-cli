@@ -2,7 +2,22 @@
 //!
 //! This module provides an interactive TUI mode that displays sensitive information
 //! in alternate screen mode to prevent terminal scrollback leakage.
+//!
+//! ## 模块结构
+//!
+//! - [`traits`] - Trait 层定义，包含所有核心接口
+//! - [`core`] - 核心实现层，提供默认实现
+//! - [`commands`] - CLI 命令处理
+//! - [`handler`] - 事件处理器
+//! - [`keybindings`] - 键盘快捷键管理
+//! - [`screens`] - 各种屏幕界面
+//! - [`widgets`] - UI 组件
 
+// ============ Phase 1.2 新模块 ============
+pub mod traits;
+pub mod core;
+
+// ============ 现有模块 ============
 mod app;
 pub mod commands;
 pub mod handler;
@@ -18,6 +33,7 @@ pub mod testing;
 #[cfg(test)]
 mod tests;
 
+// ============ 公共导出 ============
 pub use app::{run_tui, Screen, TuiApp, TuiError};
 pub use handler::{AppAction, TuiEventHandler};
 
