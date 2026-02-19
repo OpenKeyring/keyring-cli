@@ -44,27 +44,27 @@ impl CryptoService for TuiCryptoService {
         const DIGITS: &[u8] = b"0123456789";
         const SPECIAL: &[u8] = b"!@#$%^&*()_+-=[]{}|;:,.<>?";
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut password = Vec::with_capacity(policy.length as usize);
 
         // 确保每种字符类型的最低数量
         for _ in 0..policy.min_lowercase {
-            let idx = rng.gen_range(0..LOWERCASE.len());
+            let idx = rng.random_range(0..LOWERCASE.len());
             password.push(LOWERCASE[idx]);
         }
 
         for _ in 0..policy.min_uppercase {
-            let idx = rng.gen_range(0..UPPERCASE.len());
+            let idx = rng.random_range(0..UPPERCASE.len());
             password.push(UPPERCASE[idx]);
         }
 
         for _ in 0..policy.min_digits {
-            let idx = rng.gen_range(0..DIGITS.len());
+            let idx = rng.random_range(0..DIGITS.len());
             password.push(DIGITS[idx]);
         }
 
         for _ in 0..policy.min_special {
-            let idx = rng.gen_range(0..SPECIAL.len());
+            let idx = rng.random_range(0..SPECIAL.len());
             password.push(SPECIAL[idx]);
         }
 
@@ -78,7 +78,7 @@ impl CryptoService for TuiCryptoService {
             .collect();
 
         while password.len() < policy.length as usize {
-            let idx = rng.gen_range(0..all_chars.len());
+            let idx = rng.random_range(0..all_chars.len());
             password.push(all_chars[idx]);
         }
 
