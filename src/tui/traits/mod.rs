@@ -28,8 +28,11 @@ pub use state::{
 pub use focus::{FocusManager, FocusState, FocusStyle, FocusNavigation, Direction, FocusManagerExt};
 pub use service::{
     ServiceProvider, IdGenerator, BuildContext, Buildable, ComponentConfig, ServiceContainer,
-    DatabaseService, CryptoService, PasswordService, DefaultIdGenerator,
+    DatabaseService, CryptoService, PasswordService, DefaultIdGenerator, SecureClear,
+    PasswordPolicy, PasswordType,
 };
+// Re-export service::PasswordStrength with an alias to avoid conflict
+pub use service::PasswordStrength as ServicePasswordStrength;
 pub use theme::{Theme, ColorPalette, ThemeVariant, ThemeName, ThemeManager, DarkTheme, LightTheme};
 pub use notification::{
     NotificationManager, NotificationManagerExt, Notification, NotificationLevel, NotificationId, NotificationPosition,
