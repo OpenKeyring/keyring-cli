@@ -12,12 +12,17 @@
 //! - [`handler`] - 事件处理器
 //! - [`keybindings`] - 键盘快捷键管理
 //! - [`screens`] - 各种屏幕界面
+
 //! - [`widgets`] - UI 组件
 
 // ============ Phase 1.2 新模块 ============
 pub mod error;
 pub mod traits;
 pub mod core;
+
+// ============ Phase 1.3 数据层模块 ============
+pub mod models;
+pub mod services;
 
 // ============ 现有模块 ============
 mod app;
