@@ -143,7 +143,7 @@ impl ReactiveStateManager {
 
     /// 记录状态变化
     fn record_change(&mut self, key: &str, change: StateChange) {
-        let history = self.history.entry(key.to_string()).or_insert_with(Vec::new);
+        let history = self.history.entry(key.to_string()).or_default();
         history.push(change);
 
         // 限制历史长度
@@ -168,7 +168,7 @@ impl StateManager for ReactiveStateManager {
         if let Some(ref old) = old_value {
             self.undo_stack
                 .entry(key.to_string())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(old.clone());
         }
 
@@ -208,7 +208,7 @@ impl ReactiveState for ReactiveStateManager {
         let id = self.id_generator.generate();
         self.subscribers
             .entry(key)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push((id, callback));
         id
     }
@@ -217,14 +217,14 @@ impl ReactiveState for ReactiveStateManager {
         // 检查特定键的订阅者
         for subs in self.subscribers.values_mut() {
             if let Some(pos) = subs.iter().position(|(sub_id, _)| *sub_id == id) {
-                subs.remove(pos);
+                let _ = subs.remove(pos);
                 return true;
             }
         }
 
         // 检查全局订阅者
         if let Some(pos) = self.global_subscribers.iter().position(|(sub_id, _)| *sub_id == id) {
-            self.global_subscribers.remove(pos);
+            let _ = self.global_subscribers.remove(pos);
             return true;
         }
 
@@ -258,13 +258,20 @@ impl ReactiveState for ReactiveStateManager {
         if let Some(ref curr) = current {
             self.redo_stack
                 .entry(key.to_string())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(curr.clone());
         }
 
         let change = StateChange::new(Some(old_value.clone()), old_value.clone(), Some("undo".to_string()));
         self.states.insert(key.to_string(), old_value);
-        self.record_change(key, change.clone());
+
+        // 直接记录历史但不调用 record_change（避免清空重做栈）
+        let history = self.history.entry(key.to_string()).or_default();
+        history.push(change.clone());
+        if history.len() > self.max_history {
+            history.remove(0);
+        }
+
         self.notify(key, &change);
 
         Ok(())
@@ -284,13 +291,20 @@ impl ReactiveState for ReactiveStateManager {
         if let Some(ref curr) = current {
             self.undo_stack
                 .entry(key.to_string())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(curr.clone());
         }
 
         let change = StateChange::new(Some(new_value.clone()), new_value.clone(), Some("redo".to_string()));
         self.states.insert(key.to_string(), new_value);
-        self.record_change(key, change.clone());
+
+        // 直接记录历史但不调用 record_change（避免清空重做栈）
+        let history = self.history.entry(key.to_string()).or_default();
+        history.push(change.clone());
+        if history.len() > self.max_history {
+            history.remove(0);
+        }
+
         self.notify(key, &change);
 
         Ok(())
@@ -342,7 +356,7 @@ impl ThreadSafeStateManager {
 }
 
 impl StateManager for ThreadSafeStateManager {
-    fn get(&self, key: &str) -> Option<&StateValue> {
+    fn get(&self, _key: &str) -> Option<&StateValue> {
         // 注意：由于返回引用，这里无法正确实现
         // 这是一个已知限制，实际使用中应避免使用 ThreadSafeStateManager 的 get 方法
         // 或者直接使用 ReactiveStateManager
