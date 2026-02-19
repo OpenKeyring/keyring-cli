@@ -30,14 +30,123 @@ pub trait ServiceProvider: Send + Sync {
 }
 
 // ============================================================================
-// 服务 Trait 定义（占位符）
+// 安全清除 Trait
+// ============================================================================
+
+/// 安全清除 trait
+pub trait SecureClear {
+    /// 清除敏感数据
+    fn clear_sensitive_data(&mut self);
+}
+
+// ============================================================================
+// 服务 Trait 定义
 // ============================================================================
 
 /// 数据库服务 trait
-pub trait DatabaseService: Send + Sync {}
+#[async_trait::async_trait]
+pub trait DatabaseService: Send + Sync + SecureClear {
+    // === CRUD ===
+    /// 根据 ID 获取密码记录
+    async fn get_password(&self, id: &str) -> TuiResult<()>;
+    /// 保存密码记录
+    async fn save_password(&self, record: &()) -> TuiResult<()>;
+    /// 删除密码记录（移入回收站或永久删除）
+    async fn delete_password(&self, id: &str, to_trash: bool) -> TuiResult<()>;
+
+    // === Query ===
+    /// 带过滤和排序的查询
+    async fn query(&self, request: ()) -> TuiResult<()>;
+    /// 获取各过滤条件的计数
+    async fn get_filter_counts(&self) -> TuiResult<std::collections::HashMap<String, usize>>;
+
+    // === Groups ===
+    /// 获取分组树
+    async fn get_group_tree(&self) -> TuiResult<()>;
+    /// 获取单个分组
+    async fn get_group(&self, id: &str) -> TuiResult<()>;
+    /// 保存分组
+    async fn save_group(&self, group: &()) -> TuiResult<()>;
+    /// 删除分组
+    async fn delete_group(&self, id: &str) -> TuiResult<()>;
+
+    // === Trash ===
+    /// 获取回收站中的项目
+    async fn get_trash_items(&self) -> TuiResult<Vec<()>>;
+    /// 从回收站恢复
+    async fn restore_password(&self, id: &str) -> TuiResult<()>;
+    /// 永久删除
+    async fn permanently_delete(&self, id: &str) -> TuiResult<()>;
+    /// 清空回收站
+    async fn empty_trash(&self) -> TuiResult<usize>;
+}
+
+/// 密码类型
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PasswordType {
+    /// 随机密码
+    #[default]
+    Random,
+    /// 易记密码
+    Memorable,
+    /// PIN 码
+    Pin,
+}
+
+/// 密码策略
+#[derive(Debug, Clone)]
+pub struct PasswordPolicy {
+    /// 密码类型
+    pub password_type: PasswordType,
+    /// 密码长度
+    pub length: u8,
+    /// 最少数字数
+    pub min_digits: u8,
+    /// 最少特殊字符数
+    pub min_special: u8,
+    /// 最少小写字母数
+    pub min_lowercase: u8,
+    /// 最少大写字母数
+    pub min_uppercase: u8,
+}
+
+impl Default for PasswordPolicy {
+    fn default() -> Self {
+        Self {
+            password_type: PasswordType::Random,
+            length: 16,
+            min_digits: 2,
+            min_special: 1,
+            min_lowercase: 1,
+            min_uppercase: 1,
+        }
+    }
+}
+
+/// 密码强度（简化版本，用于 CryptoService）
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PasswordStrength {
+    /// 弱
+    Weak,
+    /// 一般
+    Fair,
+    /// 良好
+    Good,
+    /// 强
+    Strong,
+}
 
 /// 加密服务 trait
-pub trait CryptoService: Send + Sync {}
+pub trait CryptoService: Send + Sync {
+    /// 加密数据
+    fn encrypt(&self, data: &[u8]) -> TuiResult<Vec<u8>>;
+    /// 解密数据
+    fn decrypt(&self, data: &[u8]) -> TuiResult<Vec<u8>>;
+    /// 根据策略生成密码
+    fn generate_password(&self, policy: &PasswordPolicy) -> TuiResult<String>;
+    /// 检查密码强度
+    fn check_password_strength(&self, password: &str) -> PasswordStrength;
+}
 
 /// 密码服务 trait
 pub trait PasswordService: Send + Sync {}
@@ -77,7 +186,7 @@ impl IdGenerator for DefaultIdGenerator {
         ComponentId::new(id)
     }
 
-    fn generate_with_prefix(&self, prefix: &str) -> ComponentId {
+    fn generate_with_prefix(&self, _prefix: &str) -> ComponentId {
         // 注意：当前 ComponentId 是 usize 类型，不支持字符串前缀
         // 返回普通 ID，实际使用中可以考虑修改 ComponentId 结构
         self.generate()
