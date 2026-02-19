@@ -1,0 +1,9 @@
+//! TUI 组件实现
+//!
+//! 提供可复用的 UI 组件，实现 Component trait。
+
+// mod status_bar;  // TODO: Task A.1
+// mod text_input;  // TODO: Task A.2
+
+// pub use status_bar::StatusBar;
+// pub use text_input::TextInput;

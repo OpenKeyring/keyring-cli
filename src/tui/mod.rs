@@ -24,6 +24,9 @@ pub mod core;
 pub mod models;
 pub mod services;
 
+// ============ Phase 1.4 组件模块 ============
+pub mod components;
+
 // ============ 现有模块 ============
 mod app;
 pub mod commands;
