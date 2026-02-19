@@ -2,7 +2,6 @@
 //!
 //! 提供在内存中安全存储敏感数据的功能，使用完后自动清零。
 
-use std::ops::{Deref, DerefMut};
 use crate::tui::traits::PasswordStrength;
 
 // ============================================================================
@@ -77,7 +76,7 @@ impl SecureString {
     /// 检查是否为空
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.data.as_ref().map_or(true, |d| d.is_empty())
+        self.data.as_ref().is_none_or(|d| d.is_empty())
     }
 
     /// 暴露内容（仅用于必要操作，调用方负责使用后清除）
@@ -475,7 +474,11 @@ mod tests {
     #[test]
     fn test_password_field_display_text() {
         let mut field = PasswordField::with_content("secret");
-        assert_eq!(field.display_text(), "*******");
+        // content.len() 返回字节数，"secret" 是 6 字节
+        // 但 SecureString::len() 实际上返回 Vec<u8>.len()，即 6
+        let display = field.display_text();
+        assert_eq!(display.len(), field.content.len()); // 验证星号数量等于长度
+        assert!(display.chars().all(|c| c == '*')); // 验证都是星号
 
         field.toggle_visibility();
         assert_eq!(field.display_text(), "secret");

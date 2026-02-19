@@ -2,7 +2,7 @@
 //!
 //! 定义 TUI 剪贴板服务相关的接口，包括敏感数据处理和自动清除功能。
 
-use crate::tui::traits::secure::{Sensitivity, SecureString};
+use crate::tui::traits::secure::SecureString;
 use std::time::{Duration, Instant};
 
 // ============================================================================
@@ -202,7 +202,7 @@ impl ClipboardState {
     /// 检查是否需要清除
     #[must_use]
     pub fn should_clear(&self) -> bool {
-        self.current.as_ref().map_or(false, |c| {
+        self.current.as_ref().is_some_and(|c| {
             if !c.should_auto_clear(&self.config) {
                 return false;
             }
@@ -322,6 +322,6 @@ impl ClipboardContent {
     /// 是否为空
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.text.as_ref().map_or(true, |s| s.is_empty())
+        self.text.as_ref().is_none_or(|s| s.is_empty())
     }
 }
