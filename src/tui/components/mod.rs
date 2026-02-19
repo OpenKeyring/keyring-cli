@@ -2,8 +2,8 @@
 //!
 //! 提供可复用的 UI 组件，实现 Component trait。
 
-// mod status_bar;  // TODO: Task A.1
+mod status_bar;
 // mod text_input;  // TODO: Task A.2
 
-// pub use status_bar::StatusBar;
+pub use status_bar::StatusBar;
 // pub use text_input::TextInput;
