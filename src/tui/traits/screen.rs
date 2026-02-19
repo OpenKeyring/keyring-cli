@@ -241,12 +241,12 @@ pub trait ScreenFactory: Send + Sync {
     fn create_trash_bin(&self, context: &BuildContext) -> TuiResult<Box<dyn Screen>>;
 
     /// 创建设置屏幕
-    fn create_settings(&self, context: &BuildContext) -> TuiResult<Box<dyn Screen>> {
+    fn create_settings(&self, _context: &BuildContext) -> TuiResult<Box<dyn Screen>> {
         self.create_confirm_dialog("设置", "设置功能")
     }
 
     /// 创建主屏幕
-    fn create_main(&self, context: &BuildContext) -> TuiResult<Box<dyn Screen>> {
+    fn create_main(&self, _context: &BuildContext) -> TuiResult<Box<dyn Screen>> {
         self.create_confirm_dialog("主屏幕", "主屏幕功能")
     }
 

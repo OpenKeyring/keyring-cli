@@ -157,7 +157,6 @@ impl Default for Action {
 // 事件分发器 Trait
 // ============================================================================
 
-use std::collections::HashMap;
 
 /// 事件分发器 trait
 ///

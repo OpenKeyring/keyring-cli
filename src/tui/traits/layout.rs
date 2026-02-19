@@ -82,9 +82,9 @@ impl LayoutConstraints {
     #[must_use]
     pub fn satisfies(&self, width: u16, height: u16) -> bool {
         let width_ok = width >= self.min_width
-            && self.max_width.map_or(true, |max| width <= max);
+            && self.max_width.is_none_or(|max| width <= max);
         let height_ok = height >= self.min_height
-            && self.max_height.map_or(true, |max| height <= max);
+            && self.max_height.is_none_or(|max| height <= max);
         width_ok && height_ok
     }
 
