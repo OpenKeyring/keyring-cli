@@ -172,7 +172,7 @@ impl TuiApp {
     }
 
     /// 配置服务
-    pub fn with_service(mut self, service: impl Send + Sync + 'static) -> Self {
+    pub fn with_service(self, _service: impl Send + Sync + 'static) -> Self {
         // 这里可以添加各种服务
         self
     }
@@ -236,7 +236,7 @@ impl TuiApp {
     }
 
     /// 打开屏幕
-    fn open_screen(&mut self, screen_type: ScreenType) -> TuiResult<()> {
+    fn open_screen(&mut self, _screen_type: ScreenType) -> TuiResult<()> {
         // TODO: 使用 ScreenFactory 创建屏幕
         // 这里暂时使用占位符实现
         Ok(())
@@ -248,7 +248,7 @@ impl TuiApp {
         let results = self.task_manager.poll_completed();
         for (id, result) in results {
             match result {
-                crate::tui::traits::TaskResult::Success(data) => {
+                crate::tui::traits::TaskResult::Success(_data) => {
                     log::info!("Task {:?} completed successfully", id);
                 }
                 crate::tui::traits::TaskResult::Failed(error) => {
@@ -284,7 +284,7 @@ impl TuiApp {
             self.render_notifications(frame);
 
             // 渲染屏幕（如果有活动屏幕）
-            if let Some(screen) = self.screen_manager.current() {
+            if let Some(_screen) = self.screen_manager.current() {
                 // TODO: 渲染屏幕
             }
 
@@ -298,7 +298,7 @@ impl TuiApp {
     }
 
     /// 渲染通知
-    fn render_notifications(&self, frame: &mut Frame) {
+    fn render_notifications(&self, _frame: &mut Frame) {
         let notifications = self.notification_manager.active_notifications();
         if !notifications.is_empty() {
             // TODO: 实现通知渲染
@@ -417,16 +417,16 @@ impl Application for TuiApp {
                     Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                         // 处理按键
                         let result = self.handle_key_event(key_event)
-                            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+                            .map_err(|e| io::Error::other(e.to_string()))?;
 
                         // 处理动作
                         if let HandleResult::Action(action) = result {
                             self.handle_action(action)
-                                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+                                .map_err(|e| io::Error::other(e.to_string()))?;
                         } else if let HandleResult::NeedsRender = result {
                             // 需要重新渲染
                             self.render(&mut terminal)
-                                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+                                .map_err(|e| io::Error::other(e.to_string()))?;
                         }
                     }
                     _ => {}
@@ -435,14 +435,14 @@ impl Application for TuiApp {
 
             // 处理单次迭代（异步任务等）
             let should_continue = self.tick()
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+                .map_err(|e| io::Error::other(e.to_string()))?;
             if !should_continue {
                 break;
             }
 
             // 渲染界面
             self.render(&mut terminal)
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+                .map_err(|e| io::Error::other(e.to_string()))?;
         }
 
         // 恢复终端状态
@@ -458,7 +458,7 @@ impl Application for TuiApp {
 // ============================================================================
 
 /// 创建默认的构建上下文
-pub fn create_build_context(app: &TuiApp) -> BuildContext {
+pub fn create_build_context(app: &TuiApp) -> BuildContext<'_> {
     BuildContext::new()
         .with_id_generator(&app.id_generator)
         .with_services(&app.services)

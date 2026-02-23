@@ -2,10 +2,10 @@
 //!
 //! 测试 Component、Container、Render、Interactive 等组件相关 trait。
 
-use crate::tui::traits::{Component, Container, Render, Interactive, ComponentId};
-use crate::tui::error::{TuiError, TuiResult};
-use crate::tui::traits::{AppEvent, HandleResult, Action, ScreenType};
-use crossterm::event::{KeyEvent, MouseEvent, KeyCode, KeyEventKind, KeyModifiers, MouseButton, MouseEventKind};
+use crate::tui::traits::{Component, Render, Interactive, ComponentId};
+use crate::tui::error::TuiResult;
+use crate::tui::traits::{AppEvent, HandleResult, Action};
+use crossterm::event::{KeyEvent, MouseEvent, KeyCode, KeyModifiers, MouseButton, MouseEventKind};
 use ratatui::layout::Rect;
 use ratatui::buffer::Buffer;
 

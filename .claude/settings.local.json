@@ -1,16 +1,22 @@
 {
   "permissions": {
     "allow": [
-      "Bash(gh run view:*)",
-      "Bash(cargo tree:*)",
-      "Bash(cargo metadata:*)",
-      "Bash(cargo check:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(gh run list:*)",
-      "Bash(cargo test:*)",
-      "Skill(ralph-wiggum:ralph-loop)"
+      "Bash(*)",
+      "Edit(*)",
+      "Write(*)",
+      "Read(*)",
+      "MultiEdit(*)",
+      "NotebookEdit(*)",
+      "WebSearch(*)",
+      "WebFetch(*)"
+    ],
+    "deny": [
+      "Bash(rm *)",
+      "Bash(rm\t*)",
+      "Bash(sudo *)",
+      "Bash(rmdir *)",
+      "Bash(* rm *)",
+      "Bash(* sudo *)"
     ]
   }
 }

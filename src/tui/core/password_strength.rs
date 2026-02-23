@@ -3,7 +3,7 @@
 //! 根据参考文档实现完整的密码强度计算逻辑。
 
 use crate::tui::traits::{
-    PasswordStrength, PasswordStrengthCalculator, StrengthLevel, SecureString,
+    PasswordStrength, PasswordStrengthCalculator, StrengthLevel,
 };
 
 // ============================================================================

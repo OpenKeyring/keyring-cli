@@ -2,8 +2,6 @@
 
 use crate::crypto::keystore::KeyStore;
 use crate::error::Result;
-use crate::cli::config::OpenKeyringConfig;
-use std::fs;
 use std::path::Path;
 
 pub fn is_initialized(keystore_path: &Path) -> bool {

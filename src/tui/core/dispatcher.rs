@@ -7,7 +7,6 @@ use crate::tui::core::{DefaultFocusManager, DefaultScreenManager, DefaultNotific
 use crate::tui::traits::{
     AppEvent, HandleResult, Action, EventDispatcher, EventFilter,
     FocusManager, ScreenManager, NotificationManagerExt,
-    Component, ComponentId,
 };
 use crossterm::event::{KeyEvent, KeyModifiers};
 use std::collections::HashMap;
@@ -149,7 +148,7 @@ impl DefaultEventDispatcher {
     /// 注册默认全局快捷键
     fn register_default_keybindings(&mut self) {
         use crossterm::event::KeyCode;
-        use std::collections::hash_map::Entry;
+        
 
         // Ctrl+Q: 退出
         self.global_keybindings.insert(

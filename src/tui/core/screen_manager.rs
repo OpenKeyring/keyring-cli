@@ -75,7 +75,7 @@ impl ScreenManager for DefaultScreenManager {
         self.stack.len()
     }
 
-    fn navigate_to(&mut self, screen_type: ScreenType) -> TuiResult<()> {
+    fn navigate_to(&mut self, _screen_type: ScreenType) -> TuiResult<()> {
         // 占位符实现
         Err(TuiError::invalid_state("导航功能尚未实现"))
     }

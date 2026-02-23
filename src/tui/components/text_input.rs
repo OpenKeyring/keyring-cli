@@ -6,7 +6,7 @@ use crate::tui::error::TuiResult;
 use crate::tui::traits::{
     Component, ComponentId, HandleResult, Interactive, Render,
 };
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, MouseEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -112,8 +112,7 @@ impl TextInput {
             // 找到前一个字符的位置
             let prev_cursor = self.text[..self.cursor]
                 .char_indices()
-                .rev()
-                .next()
+                .next_back()
                 .map(|(i, _)| i)
                 .unwrap_or(0);
             self.text.remove(prev_cursor);
@@ -133,8 +132,7 @@ impl TextInput {
         if self.cursor > 0 {
             let prev_cursor = self.text[..self.cursor]
                 .char_indices()
-                .rev()
-                .next()
+                .next_back()
                 .map(|(i, _)| i)
                 .unwrap_or(0);
             self.cursor = prev_cursor;
@@ -311,7 +309,7 @@ impl Default for TextInput {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tui::traits::{Component, ComponentId, Render, Interactive};
+    use crate::tui::traits::{Component, Render, Interactive};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use ratatui::{buffer::Buffer, layout::Rect};
 

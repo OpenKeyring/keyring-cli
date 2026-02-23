@@ -147,7 +147,7 @@ mod tests {
 
         // 验证深色主题的颜色
         let bg = manager.current().background();
-        let text = manager.current().text_primary();
+        let _text = manager.current().text_primary();  // Using _ prefix to indicate unused variable
 
         // 深色主题应该使用终端默认背景
         assert_eq!(format!("{:?}", bg), "Reset");

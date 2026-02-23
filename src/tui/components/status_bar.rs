@@ -167,7 +167,7 @@ impl Default for StatusBar {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tui::traits::{Component, Render, Interactive};
+    use crate::tui::traits::{Component, Render};
     use ratatui::{buffer::Buffer, layout::Rect};
 
     #[test]
