@@ -101,6 +101,7 @@ impl FilterPanel {
     /// Create default filter items
     fn create_default_items() -> Vec<FilterItem> {
         vec![
+            FilterItem::new(FilterType::All, "All", "📋"),
             FilterItem::new(FilterType::Trash, "Trash", "🗑"),
             FilterItem::new(FilterType::Expired, "Expired", "⏰"),
             FilterItem::new(FilterType::Favorite, "Favorite", "⭐"),
@@ -144,7 +145,7 @@ impl FilterPanel {
     /// Toggle the currently highlighted filter
     fn toggle_highlighted(&mut self, state: &mut FilterState) {
         if let Some(item) = self.items.get(self.highlighted_index) {
-            state.toggle(item.filter_type);
+            state.toggle(item.filter_type.clone());
         }
     }
 
@@ -176,7 +177,7 @@ impl FilterPanel {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(border_style)
-            .title(" Filters ");
+            .title(" 过滤条件 ");
 
         let inner_area = block.inner(area);
         block.render(area, frame.buffer_mut());
@@ -255,7 +256,7 @@ impl Render for FilterPanel {
         // Simplified render without state - just show placeholder
         let block = Block::default()
             .borders(Borders::ALL)
-            .title(" Filters ");
+            .title(" 过滤条件 ");
         let inner = block.inner(area);
         block.render(area, buf);
 
@@ -322,9 +323,11 @@ mod tests {
     #[test]
     fn test_filter_panel_creation() {
         let panel = FilterPanel::new();
-        assert_eq!(panel.items.len(), 3);
+        assert_eq!(panel.items.len(), 4); // All, Trash, Expired, Favorite
         assert_eq!(panel.highlighted_index, 0);
         assert!(!panel.focused);
+        // First item should be All
+        assert!(matches!(panel.items[0].filter_type, FilterType::All));
     }
 
     #[test]
@@ -340,27 +343,31 @@ mod tests {
         let mut panel = FilterPanel::new();
 
         panel.handle_key(KeyEvent::new(KeyCode::Char('j'), crossterm::event::KeyModifiers::empty()));
-        assert_eq!(panel.highlighted_index, 1);
+        assert_eq!(panel.highlighted_index, 1); // All -> Trash
 
         panel.handle_key(KeyEvent::new(KeyCode::Char('j'), crossterm::event::KeyModifiers::empty()));
-        assert_eq!(panel.highlighted_index, 2);
+        assert_eq!(panel.highlighted_index, 2); // Trash -> Expired
+
+        panel.handle_key(KeyEvent::new(KeyCode::Char('j'), crossterm::event::KeyModifiers::empty()));
+        assert_eq!(panel.highlighted_index, 3); // Expired -> Favorite
 
         // Wrap to top
         panel.handle_key(KeyEvent::new(KeyCode::Char('j'), crossterm::event::KeyModifiers::empty()));
-        assert_eq!(panel.highlighted_index, 0);
+        assert_eq!(panel.highlighted_index, 0); // Favorite -> All
     }
 
     #[test]
     fn test_navigation_up() {
         let mut panel = FilterPanel::new();
-        panel.highlighted_index = 1;
+        panel.highlighted_index = 2;
 
         panel.handle_key(KeyEvent::new(KeyCode::Char('k'), crossterm::event::KeyModifiers::empty()));
-        assert_eq!(panel.highlighted_index, 0);
+        assert_eq!(panel.highlighted_index, 1);
 
         // Wrap to bottom
         panel.handle_key(KeyEvent::new(KeyCode::Char('k'), crossterm::event::KeyModifiers::empty()));
-        assert_eq!(panel.highlighted_index, 2);
+        panel.handle_key(KeyEvent::new(KeyCode::Char('k'), crossterm::event::KeyModifiers::empty()));
+        assert_eq!(panel.highlighted_index, 3); // 4 items: indices 0,1,2,3
     }
 
     #[test]
@@ -368,13 +375,13 @@ mod tests {
         let mut panel = FilterPanel::new();
         let mut state = FilterState::new();
 
-        // Toggle first item (Trash)
+        // Toggle first item (All)
         panel.toggle_highlighted(&mut state);
-        assert!(state.is_active(&FilterType::Trash));
+        assert!(state.is_active(&FilterType::All));
 
         // Toggle again to deactivate
         panel.toggle_highlighted(&mut state);
-        assert!(!state.is_active(&FilterType::Trash));
+        assert!(!state.is_active(&FilterType::All));
     }
 
     #[test]
@@ -382,13 +389,13 @@ mod tests {
         let mut panel = FilterPanel::new();
         let mut state = FilterState::new();
 
-        // Toggle with Enter
+        // Toggle with Enter (first item is All)
         let result = panel.handle_key_with_state(
             KeyEvent::new(KeyCode::Enter, crossterm::event::KeyModifiers::empty()),
             &mut state,
         );
         assert!(matches!(result, HandleResult::Consumed));
-        assert!(state.is_active(&FilterType::Trash));
+        assert!(state.is_active(&FilterType::All));
 
         // Navigate down
         let result = panel.handle_key_with_state(
@@ -396,21 +403,23 @@ mod tests {
             &mut state,
         );
         assert!(matches!(result, HandleResult::Consumed));
-        assert_eq!(panel.highlighted_index, 1);
+        assert_eq!(panel.highlighted_index, 1); // Now at Trash
     }
 
     #[test]
     fn test_update_counts() {
         let mut panel = FilterPanel::new();
         panel.update_counts([
+            (FilterType::All, 100),
             (FilterType::Trash, 5),
             (FilterType::Expired, 3),
             (FilterType::Favorite, 10),
         ]);
 
-        assert_eq!(panel.items[0].count, 5);
-        assert_eq!(panel.items[1].count, 3);
-        assert_eq!(panel.items[2].count, 10);
+        assert_eq!(panel.items[0].count, 100); // All
+        assert_eq!(panel.items[1].count, 5);   // Trash
+        assert_eq!(panel.items[2].count, 3);   // Expired
+        assert_eq!(panel.items[3].count, 10);  // Favorite
     }
 
     #[test]
@@ -418,7 +427,8 @@ mod tests {
         let panel = FilterPanel::new();
         let item = panel.highlighted_item();
         assert!(item.is_some());
-        assert_eq!(item.unwrap().filter_type, FilterType::Trash);
+        // First item is now All, not Trash
+        assert!(matches!(item.unwrap().filter_type, FilterType::All));
     }
 
     #[test]

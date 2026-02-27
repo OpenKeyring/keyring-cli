@@ -4,14 +4,18 @@ use crate::tui::models::password::PasswordRecord;
 use std::collections::HashSet;
 
 /// Filter type enum
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum FilterType {
+    /// All passwords (default, no filtering)
+    All,
     /// Trash bin
     Trash,
     /// Expired passwords
     Expired,
     /// Favorites
     Favorite,
+    /// Tag-based filtering
+    Tag(String),
 }
 
 /// Filter condition state
@@ -42,13 +46,22 @@ impl FilterState {
 
     /// Check if an entry matches the current filters
     pub fn matches(&self, entry: &PasswordRecord) -> bool {
-        // Empty filters match all
+        // Empty filters or All filter match all
         if self.active_filters.is_empty() {
+            return true;
+        }
+
+        // If All is active, match everything
+        if self.active_filters.contains(&FilterType::All) {
             return true;
         }
 
         for filter in &self.active_filters {
             match filter {
+                FilterType::All => {
+                    // All matches everything
+                    return true;
+                }
                 FilterType::Trash => {
                     if !entry.is_deleted {
                         return false;
@@ -62,6 +75,11 @@ impl FilterState {
                 }
                 FilterType::Favorite => {
                     if !entry.is_favorite {
+                        return false;
+                    }
+                }
+                FilterType::Tag(tag) => {
+                    if !entry.tags.contains(tag) {
                         return false;
                     }
                 }
