@@ -8,9 +8,10 @@ use crate::onboarding::{initialize_keystore, is_initialized};
 use crate::tui::keybindings::{Action, KeyBindingManager};
 use crate::tui::screens::wizard::{WizardState, WizardStep};
 use crate::tui::screens::{
-    MasterPasswordScreen, PasskeyConfirmScreen, PasskeyGenerateScreen, PasskeyImportScreen,
+    MainScreen, MasterPasswordScreen, PasskeyConfirmScreen, PasskeyGenerateScreen, PasskeyImportScreen,
     SyncScreen, WelcomeScreen,
 };
+use crate::tui::state::AppState;
 use chrono::{DateTime, Utc};
 use ratatui::{
     backend::CrosstermBackend,
@@ -169,6 +170,10 @@ pub struct TuiApp {
     pub master_password_screen: MasterPasswordScreen,
     /// Sync screen
     sync_screen: Option<SyncScreen>,
+    /// Application state (MVP)
+    pub app_state: AppState,
+    /// Main screen (MVP)
+    pub main_screen: MainScreen,
 }
 
 impl Default for TuiApp {
@@ -204,6 +209,8 @@ impl TuiApp {
             passkey_confirm_screen: None,
             master_password_screen: MasterPasswordScreen::new(),
             sync_screen: Some(SyncScreen::new()),
+            app_state: AppState::new(),
+            main_screen: MainScreen::new(),
         }
     }
 
