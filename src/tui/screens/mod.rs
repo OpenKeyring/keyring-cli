@@ -14,6 +14,7 @@ pub mod settings;
 pub mod sync;
 pub mod welcome;
 pub mod wizard;
+pub mod main_screen;
 
 pub use conflict::ConflictResolutionScreen;
 pub use help::{HelpScreen, HelpSection, Shortcut};
@@ -29,3 +30,5 @@ pub use welcome::{WelcomeChoice, WelcomeScreen};
 pub use wizard::{WizardState, WizardStep};
 // TODO: Re-enable after implementing Interactive trait for wizard screens
 // pub use crate::tui::wizard_flow::{WizardScreen, WizardContext};
+
+pub use main_screen::{MainScreen, MainLayout};
