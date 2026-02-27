@@ -4,9 +4,17 @@
 
 mod status_bar;
 mod text_input;
+mod tree;
+mod select;
+mod text_area;
+mod form_example;
 
 pub use status_bar::StatusBar;
 pub use text_input::TextInput;
+pub use tree::TreeComponent;
+pub use select::Select;
+pub use select::SelectItem;
+pub use text_area::TextArea;
 
 #[cfg(test)]
 mod integration_tests {

@@ -27,3 +27,4 @@ pub use settings::{SettingsAction, SettingsItem, SettingsScreen, SettingsSection
 pub use sync::{SyncScreen, SyncStatus};
 pub use welcome::{WelcomeChoice, WelcomeScreen};
 pub use wizard::{WizardState, WizardStep};
+pub use crate::tui::wizard_flow::{WizardScreen, WizardContext};
