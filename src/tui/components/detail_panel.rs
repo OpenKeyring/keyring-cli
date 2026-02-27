@@ -89,34 +89,54 @@ impl DetailPanel {
 
         // Render content based on detail mode
         match &state.detail_mode {
-            DetailMode::Empty => {
-                self.render_empty_state(frame, inner_area);
+            DetailMode::ProjectInfo => {
+                self.render_project_info(frame, inner_area);
             }
             DetailMode::PasswordDetail(_id) => {
                 // In a real implementation, we would fetch the password by ID
                 // For now, we render a placeholder
-                self.render_empty_state(frame, inner_area);
+                self.render_project_info(frame, inner_area);
             }
         }
     }
 
-    /// Render empty state when no password is selected
-    fn render_empty_state(&self, frame: &mut Frame, area: Rect) {
+    /// Render project information when no password is selected
+    fn render_project_info(&self, frame: &mut Frame, area: Rect) {
         let lines = vec![
             Line::from(""),
             Line::from(Span::styled(
-                "No password selected",
+                "OpenKeyring",
                 Style::default()
-                    .fg(Color::DarkGray)
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )),
+            Line::from(Span::styled(
+                "Privacy-first Password Manager",
+                Style::default().fg(Color::Gray),
+            )),
+            Line::from(""),
+            Line::from(Span::styled(
+                "Version: v0.1.0",
+                Style::default().fg(Color::DarkGray),
+            )),
+            Line::from(Span::styled(
+                "License: MIT License",
+                Style::default().fg(Color::DarkGray),
+            )),
+            Line::from(Span::styled(
+                "Website: github.com/open-keyring",
+                Style::default().fg(Color::DarkGray),
+            )),
+            Line::from(""),
+            Line::from(Span::styled(
+                "Press [n] to create your first password",
+                Style::default()
+                    .fg(Color::Yellow)
                     .add_modifier(Modifier::ITALIC),
             )),
             Line::from(""),
             Line::from(Span::styled(
-                "Use j/k to navigate the tree",
-                Style::default().fg(Color::DarkGray),
-            )),
-            Line::from(Span::styled(
-                "Press Enter to select",
+                "Navigation: j/k to move  |  Enter to select  |  1-4 to switch panels",
                 Style::default().fg(Color::DarkGray),
             )),
         ];
@@ -143,7 +163,7 @@ impl DetailPanel {
             lines.push(Self::create_field_line_owned(
                 "Username:",
                 username,
-                "[u] copy",
+                "[c] copy",
             ));
         }
 
@@ -156,7 +176,7 @@ impl DetailPanel {
         lines.push(Self::create_field_line_owned(
             "Password:",
             &password_display,
-            "[p] toggle  [c] copy",
+            "[C] copy  [Space] toggle",
         ));
 
         // URL
@@ -204,6 +224,16 @@ impl DetailPanel {
                 Style::default().fg(Color::Red),
             )));
         }
+
+        // Action hints at bottom (design doc requirement)
+        lines.push(Line::from(""));
+        lines.push(Line::from(vec![
+            Span::styled("[e] Edit", Style::default().fg(Color::DarkGray)),
+            Span::raw("  "),
+            Span::styled("[d] Delete", Style::default().fg(Color::DarkGray)),
+            Span::raw("  "),
+            Span::styled("[Space] Toggle password", Style::default().fg(Color::DarkGray)),
+        ]));
 
         let paragraph = Paragraph::new(lines).wrap(Wrap { trim: true });
         frame.render_widget(paragraph, area);
@@ -254,28 +284,33 @@ impl DetailPanel {
         state: &mut AppState,
         _password: Option<&PasswordRecord>,
     ) -> HandleResult {
+        use crossterm::event::KeyModifiers;
+
         // Only handle press events
         if key.kind == KeyEventKind::Release {
             return HandleResult::Ignored;
         }
 
         match key.code {
-            KeyCode::Char('p') => {
+            // Space: Toggle password visibility (design doc requirement)
+            KeyCode::Char(' ') => {
                 self.toggle_password_visibility();
                 HandleResult::Consumed
             }
+            // c: Copy username (design doc requirement)
             KeyCode::Char('c') => {
-                // Copy password - in real implementation, use clipboard
-                state.add_notification("Password copied to clipboard", crate::tui::traits::NotificationLevel::Info);
+                // Check for Shift modifier (uppercase C) to copy password
+                if key.modifiers.contains(KeyModifiers::SHIFT) {
+                    // C (Shift+c): Copy password
+                    state.add_notification("Password copied to clipboard", crate::tui::traits::NotificationLevel::Info);
+                } else {
+                    // c: Copy username
+                    state.add_notification("Username copied to clipboard", crate::tui::traits::NotificationLevel::Info);
+                }
                 HandleResult::Consumed
             }
-            KeyCode::Char('u') => {
-                // Copy username - in real implementation, use clipboard
-                state.add_notification("Username copied to clipboard", crate::tui::traits::NotificationLevel::Info);
-                HandleResult::Consumed
-            }
+            // o: Open URL (extra feature, not in design doc but useful)
             KeyCode::Char('o') => {
-                // Open URL - in real implementation, use web browser
                 state.add_notification("Opening URL...", crate::tui::traits::NotificationLevel::Info);
                 HandleResult::Consumed
             }
@@ -306,7 +341,7 @@ impl Interactive for DetailPanel {
         }
 
         match key.code {
-            KeyCode::Char('p') => {
+            KeyCode::Char(' ') => {
                 self.toggle_password_visibility();
                 HandleResult::Consumed
             }
@@ -391,7 +426,8 @@ mod tests {
     #[test]
     fn test_handle_key_toggle_password() {
         let mut panel = DetailPanel::new();
-        let key = KeyEvent::new(KeyCode::Char('p'), crossterm::event::KeyModifiers::empty());
+        // Space key toggles password visibility
+        let key = KeyEvent::new(KeyCode::Char(' '), crossterm::event::KeyModifiers::empty());
 
         let result = panel.handle_key(key);
         assert!(matches!(result, HandleResult::Consumed));
@@ -399,14 +435,41 @@ mod tests {
     }
 
     #[test]
-    fn test_handle_key_with_state_copy() {
+    fn test_handle_key_with_state_copy_username() {
         let mut panel = DetailPanel::new();
         let mut state = AppState::new();
 
+        // 'c' (lowercase) copies username
         let key = KeyEvent::new(KeyCode::Char('c'), crossterm::event::KeyModifiers::empty());
         let result = panel.handle_key_with_state(key, &mut state, None);
 
         assert!(matches!(result, HandleResult::Consumed));
         assert_eq!(state.notifications.len(), 1);
+    }
+
+    #[test]
+    fn test_handle_key_with_state_copy_password() {
+        let mut panel = DetailPanel::new();
+        let mut state = AppState::new();
+
+        // 'C' (Shift+c) copies password
+        let key = KeyEvent::new(KeyCode::Char('c'), crossterm::event::KeyModifiers::SHIFT);
+        let result = panel.handle_key_with_state(key, &mut state, None);
+
+        assert!(matches!(result, HandleResult::Consumed));
+        assert_eq!(state.notifications.len(), 1);
+    }
+
+    #[test]
+    fn test_handle_key_with_state_toggle_password() {
+        let mut panel = DetailPanel::new();
+        let mut state = AppState::new();
+
+        // Space toggles password visibility
+        let key = KeyEvent::new(KeyCode::Char(' '), crossterm::event::KeyModifiers::empty());
+        let result = panel.handle_key_with_state(key, &mut state, None);
+
+        assert!(matches!(result, HandleResult::Consumed));
+        assert!(panel.is_password_visible());
     }
 }

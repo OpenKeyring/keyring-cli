@@ -21,9 +21,9 @@ pub enum FocusedPanel {
 /// Detail display mode
 #[derive(Debug, Clone, Default)]
 pub enum DetailMode {
-    /// No selection, show default info
+    /// No selection, show project information
     #[default]
-    Empty,
+    ProjectInfo,
     /// Show password detail
     PasswordDetail(Uuid),
 }
@@ -120,7 +120,7 @@ impl AppState {
     /// Clear selection
     pub fn clear_selection(&mut self) {
         self.selection.clear();
-        self.detail_mode = DetailMode::Empty;
+        self.detail_mode = DetailMode::ProjectInfo;
     }
 }
 
@@ -202,6 +202,6 @@ mod tests {
         state.clear_selection();
 
         assert!(state.selection.selected_password.is_none());
-        assert!(matches!(state.detail_mode, DetailMode::Empty));
+        assert!(matches!(state.detail_mode, DetailMode::ProjectInfo));
     }
 }
