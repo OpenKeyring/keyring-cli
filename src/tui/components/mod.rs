@@ -8,6 +8,7 @@ mod tree;
 mod select;
 mod text_area;
 mod form_example;
+mod filter_panel;
 
 pub use status_bar::StatusBar;
 pub use text_input::TextInput;
@@ -15,6 +16,7 @@ pub use tree::TreeComponent;
 pub use select::Select;
 pub use select::SelectItem;
 pub use text_area::TextArea;
+pub use filter_panel::{FilterPanel, FilterItem};
 
 #[cfg(test)]
 mod integration_tests {

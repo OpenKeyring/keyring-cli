@@ -4,9 +4,10 @@
 //! Left column (35%): Tree panel + Filter panel
 //! Right column (65%): Detail panel + Status area
 
-use crate::tui::state::AppState;
+use crate::tui::components::FilterPanel;
+use crate::tui::state::{AppState, FocusedPanel};
 use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render};
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
@@ -41,6 +42,8 @@ pub struct MainScreen {
     id: ComponentId,
     /// Cached layout
     layout: Option<MainLayout>,
+    /// Filter panel component
+    filter_panel: FilterPanel,
 }
 
 impl MainScreen {
@@ -49,6 +52,7 @@ impl MainScreen {
         Self {
             id: ComponentId::new(100),
             layout: None,
+            filter_panel: FilterPanel::new(),
         }
     }
 
@@ -131,12 +135,28 @@ impl MainScreen {
     pub fn render_frame(&mut self, frame: &mut Frame, area: Rect, state: &AppState) {
         let layout = self.calculate_layout(area);
 
-        // Placeholder rendering for panels
+        // Update filter panel focus state based on AppState
+        self.filter_panel_on_render(state);
+
+        // Render panels
         self.render_placeholder(frame, layout.tree_area, "Tree Panel");
-        self.render_placeholder(frame, layout.filter_area, "Filter Panel");
+        self.filter_panel.render_frame(frame, layout.filter_area, &state.filter);
         self.render_placeholder(frame, layout.detail_area, "Detail Panel");
         self.render_placeholder(frame, layout.status_area, "Status (Reserved)");
         self.render_status_bar(frame, layout.status_bar_area, state);
+    }
+
+    /// Update filter panel focus state during render
+    fn filter_panel_on_render(&mut self, state: &AppState) {
+        // Sync focused state with AppState
+        let should_be_focused = state.focused_panel == FocusedPanel::Filter;
+        if self.filter_panel.is_focused() != should_be_focused {
+            if should_be_focused {
+                let _ = self.filter_panel.on_focus_gain();
+            } else {
+                let _ = self.filter_panel.on_focus_loss();
+            }
+        }
     }
 
     /// Render placeholder block with title
@@ -198,6 +218,48 @@ impl Render for MainScreen {
 impl Interactive for MainScreen {
     fn handle_key(&mut self, _key: KeyEvent) -> HandleResult {
         HandleResult::Ignored
+    }
+}
+
+impl MainScreen {
+    /// Handle key event with state mutation
+    pub fn handle_key_with_state(&mut self, key: KeyEvent, state: &mut AppState) -> HandleResult {
+        // Only handle press events
+        if key.kind == KeyEventKind::Release {
+            return HandleResult::Ignored;
+        }
+
+        // Handle global focus switching (1/2/3)
+        match key.code {
+            KeyCode::Char('1') => {
+                state.set_focus(FocusedPanel::Tree);
+                return HandleResult::Consumed;
+            }
+            KeyCode::Char('2') => {
+                state.set_focus(FocusedPanel::Filter);
+                return HandleResult::Consumed;
+            }
+            KeyCode::Char('3') => {
+                state.set_focus(FocusedPanel::Detail);
+                return HandleResult::Consumed;
+            }
+            KeyCode::Tab => {
+                state.next_panel();
+                return HandleResult::Consumed;
+            }
+            _ => {}
+        }
+
+        // Route to focused panel
+        match state.focused_panel {
+            FocusedPanel::Filter => {
+                self.filter_panel.handle_key_with_state(key, &mut state.filter)
+            }
+            FocusedPanel::Tree | FocusedPanel::Detail => {
+                // TODO: Handle tree and detail panel key events
+                HandleResult::Ignored
+            }
+        }
     }
 }
 
