@@ -126,3 +126,4 @@ device.id
 sync-backups/
 cache/
 CLAUDE.md
+.serena/
