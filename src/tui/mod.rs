@@ -36,6 +36,7 @@ pub mod screens;
 pub mod tags;
 mod utils;
 mod widgets;
+pub mod wizard_flow;
 
 #[cfg(test)]
 pub mod testing;

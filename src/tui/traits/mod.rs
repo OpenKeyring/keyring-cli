@@ -37,7 +37,7 @@ pub use theme::{Theme, ColorPalette, ThemeVariant, ThemeName, ThemeManager, Dark
 pub use notification::{
     NotificationManager, NotificationManagerExt, Notification, NotificationLevel, NotificationId, NotificationPosition,
 };
-pub use validation::{FormValidator, ValidationResult, Validator, FieldValidation, ValidationTrigger};
+pub use validation::{FormValidator, ValidationResult, Validator, FieldValidation, ValidationTrigger, BuiltinValidator};
 // ValidationRule 是 Validator 的别名（兼容旧代码）
 pub use Validator as ValidationRule;
 pub use password_strength::{PasswordStrength, PasswordStrengthCalculator, StrengthLevel};
