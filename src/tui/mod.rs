@@ -20,6 +20,9 @@ pub mod error;
 pub mod traits;
 pub mod core;
 
+// ============ TUI MVP State Module ============
+pub mod state;
+
 // ============ Phase 1.3 数据层模块 ============
 pub mod models;
 pub mod services;
