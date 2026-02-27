@@ -250,7 +250,7 @@ impl TextArea {
             // 删除当前行的字符
             let line = &mut self.lines[self.cursor_row];
             if self.cursor_col < line.len() {
-                let next_col = line[self.cursor_col..]
+                let _next_col = line[self.cursor_col..]
                     .char_indices()
                     .nth(1)
                     .map(|(i, _)| self.cursor_col + i)

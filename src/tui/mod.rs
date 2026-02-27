@@ -39,7 +39,8 @@ pub mod screens;
 pub mod tags;
 mod utils;
 mod widgets;
-pub mod wizard_flow;
+// TODO: Re-enable after implementing Interactive trait for wizard screens
+// pub mod wizard_flow;
 
 #[cfg(test)]
 pub mod testing;
