@@ -9,6 +9,7 @@ mod select;
 mod text_area;
 mod form_example;
 mod filter_panel;
+mod detail_panel;
 
 pub use status_bar::StatusBar;
 pub use text_input::TextInput;
@@ -17,6 +18,7 @@ pub use select::Select;
 pub use select::SelectItem;
 pub use text_area::TextArea;
 pub use filter_panel::{FilterPanel, FilterItem};
+pub use detail_panel::DetailPanel;
 
 #[cfg(test)]
 mod integration_tests {

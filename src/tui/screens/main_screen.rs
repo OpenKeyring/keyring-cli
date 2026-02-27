@@ -4,7 +4,7 @@
 //! Left column (35%): Tree panel + Filter panel
 //! Right column (65%): Detail panel + Status area
 
-use crate::tui::components::FilterPanel;
+use crate::tui::components::{DetailPanel, FilterPanel};
 use crate::tui::state::{AppState, FocusedPanel};
 use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
@@ -44,6 +44,8 @@ pub struct MainScreen {
     layout: Option<MainLayout>,
     /// Filter panel component
     filter_panel: FilterPanel,
+    /// Detail panel component
+    detail_panel: DetailPanel,
 }
 
 impl MainScreen {
@@ -53,6 +55,7 @@ impl MainScreen {
             id: ComponentId::new(100),
             layout: None,
             filter_panel: FilterPanel::new(),
+            detail_panel: DetailPanel::new(),
         }
     }
 
@@ -135,26 +138,36 @@ impl MainScreen {
     pub fn render_frame(&mut self, frame: &mut Frame, area: Rect, state: &AppState) {
         let layout = self.calculate_layout(area);
 
-        // Update filter panel focus state based on AppState
-        self.filter_panel_on_render(state);
+        // Update panel focus states based on AppState
+        self.sync_panel_focus_states(state);
 
         // Render panels
         self.render_placeholder(frame, layout.tree_area, "Tree Panel");
         self.filter_panel.render_frame(frame, layout.filter_area, &state.filter);
-        self.render_placeholder(frame, layout.detail_area, "Detail Panel");
+        self.detail_panel.render_frame(frame, layout.detail_area, state);
         self.render_placeholder(frame, layout.status_area, "Status (Reserved)");
         self.render_status_bar(frame, layout.status_bar_area, state);
     }
 
-    /// Update filter panel focus state during render
-    fn filter_panel_on_render(&mut self, state: &AppState) {
-        // Sync focused state with AppState
-        let should_be_focused = state.focused_panel == FocusedPanel::Filter;
-        if self.filter_panel.is_focused() != should_be_focused {
-            if should_be_focused {
+    /// Sync panel focus states with AppState
+    fn sync_panel_focus_states(&mut self, state: &AppState) {
+        // Sync filter panel focus state
+        let filter_should_be_focused = state.focused_panel == FocusedPanel::Filter;
+        if self.filter_panel.is_focused() != filter_should_be_focused {
+            if filter_should_be_focused {
                 let _ = self.filter_panel.on_focus_gain();
             } else {
                 let _ = self.filter_panel.on_focus_loss();
+            }
+        }
+
+        // Sync detail panel focus state
+        let detail_should_be_focused = state.focused_panel == FocusedPanel::Detail;
+        if self.detail_panel.is_focused() != detail_should_be_focused {
+            if detail_should_be_focused {
+                let _ = self.detail_panel.on_focus_gain();
+            } else {
+                let _ = self.detail_panel.on_focus_loss();
             }
         }
     }
@@ -255,8 +268,11 @@ impl MainScreen {
             FocusedPanel::Filter => {
                 self.filter_panel.handle_key_with_state(key, &mut state.filter)
             }
-            FocusedPanel::Tree | FocusedPanel::Detail => {
-                // TODO: Handle tree and detail panel key events
+            FocusedPanel::Detail => {
+                self.detail_panel.handle_key_with_state(key, state, None)
+            }
+            FocusedPanel::Tree => {
+                // TODO: Handle tree panel key events
                 HandleResult::Ignored
             }
         }
