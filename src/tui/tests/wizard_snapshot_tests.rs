@@ -263,7 +263,25 @@ fn test_wizard_step_transitions() {
     state.set_passkey_choice(WelcomeChoice::GenerateNew);
 
     // Test each step transition using snapshot of step name
+    // New flow: Welcome -> MasterPassword -> MasterPasswordConfirm -> SecurityNotice
+    //          -> PasskeyGenerate -> PasskeyVerify -> PasswordPolicy -> ClipboardTimeout
+    //          -> TrashRetention -> Complete
     assert_eq!(state.step, WizardStep::Welcome);
+    insta::assert_snapshot!(state.step.name());
+
+    state.next();
+    assert_eq!(state.step, WizardStep::MasterPassword);
+    insta::assert_snapshot!(state.step.name());
+
+    state.set_master_password("password123".to_string());
+    state.next();
+    assert_eq!(state.step, WizardStep::MasterPasswordConfirm);
+    insta::assert_snapshot!(state.step.name());
+
+    // Set matching confirmation password to proceed
+    state.master_password_confirm = Some("password123".to_string());
+    state.next();
+    assert_eq!(state.step, WizardStep::SecurityNotice);
     insta::assert_snapshot!(state.step.name());
 
     state.next();
@@ -275,13 +293,10 @@ fn test_wizard_step_transitions() {
     assert_eq!(state.step, WizardStep::PasskeyVerify);
     insta::assert_snapshot!(state.step.name());
 
-    state.toggle_confirmed();
+    // Set up verification state properly
+    state.verify_positions = Some([1, 2, 3]);
+    state.verify_answers = Some(["word".to_string(), "word".to_string(), "word".to_string()]);
     state.next();
-    assert_eq!(state.step, WizardStep::MasterPassword);
-    insta::assert_snapshot!(state.step.name());
-
-    state.set_master_password("password123".to_string());
-    state.next();
-    assert_eq!(state.step, WizardStep::Complete);
+    assert_eq!(state.step, WizardStep::PasswordPolicy);
     insta::assert_snapshot!(state.step.name());
 }

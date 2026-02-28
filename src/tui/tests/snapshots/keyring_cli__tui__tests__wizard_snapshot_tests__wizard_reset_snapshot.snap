@@ -38,6 +38,18 @@ WizardState {
     master_password: Some(
         "password",
     ),
+    master_password_confirm: None,
+    verify_positions: None,
+    verify_answers: None,
+    password_policy: PasswordPolicyConfig {
+        default_type: Random,
+        default_length: 16,
+        min_digits: 2,
+        min_special: 1,
+    },
+    clipboard_timeout: Seconds30,
+    trash_retention: Days30,
+    skip_import: true,
     confirmed: true,
     keystore_path: None,
     error: None,

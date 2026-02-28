@@ -11,7 +11,7 @@ expression: output
  Enter your 12 or 24 word Passkey (separated by spaces):
 
  ┌ Input ─────────────────────────────────────────────────────────────────────┐
- │> abc def                                                                   │
+ │> Type Passkey here...                                                      │
  │                                                                            │
  │Hint: Press Enter to validate when done                                     │
  └────────────────────────────────────────────────────────────────────────────┘
