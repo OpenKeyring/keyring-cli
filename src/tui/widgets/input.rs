@@ -155,7 +155,7 @@ impl CommandInput {
 
         frame.render_widget(paragraph, area);
 
-        // Set cursor position
-        frame.set_cursor_position((area.x + 2 + self.cursor as u16, area.y + 1));
+        // Set cursor position (area.x + 1 for left border, + 2 for "> " prefix, then cursor offset)
+        frame.set_cursor_position((area.x + 3 + self.cursor as u16, area.y + 1));
     }
 }

@@ -225,8 +225,15 @@ impl Render for TextInput {
         if self.focused && area.width > 0 {
             let cursor_x = self.cursor.min(area.width as usize - 1);
             // 光标位置用下划线表示
+            // Note: cursor_x is byte offset, but for ASCII it equals display width
             if self.cursor < self.text.len() {
+                // Cursor within text - underline the character at cursor position
                 buf[(area.x + cursor_x as u16, area.y)]
+                    .set_style(style.add_modifier(Modifier::UNDERLINED));
+            } else {
+                // Cursor at end of text - show underline cursor in empty space
+                buf[(area.x + cursor_x as u16, area.y)]
+                    .set_char(' ')
                     .set_style(style.add_modifier(Modifier::UNDERLINED));
             }
         }
