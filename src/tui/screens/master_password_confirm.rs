@@ -2,7 +2,6 @@
 //!
 //! Second step of password setup - user must re-enter password to confirm
 
-use crate::tui::error::TuiResult;
 use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
@@ -158,6 +157,11 @@ impl Render for MasterPasswordConfirmScreen {
 impl Interactive for MasterPasswordConfirmScreen {
     fn handle_key(&mut self, key: KeyEvent) -> HandleResult {
         match key.code {
+            // Ctrl+U to clear - must come before generic Char handler
+            KeyCode::Char('u') if key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) => {
+                self.clear_input();
+                HandleResult::NeedsRender
+            }
             KeyCode::Char(c) => {
                 if self.input.len() < 128 {
                     self.input.push(c);
@@ -177,11 +181,6 @@ impl Interactive for MasterPasswordConfirmScreen {
                     self.error = Some("Passwords do not match. Please try again.".to_string());
                     HandleResult::NeedsRender
                 }
-            }
-            // Ctrl+U to clear
-            KeyCode::Char('u') if key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) => {
-                self.clear_input();
-                HandleResult::NeedsRender
             }
             _ => HandleResult::Ignored,
         }

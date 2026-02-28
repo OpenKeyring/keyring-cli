@@ -451,12 +451,12 @@ impl WizardState {
     /// Generate random verification positions
     pub fn generate_verify_positions(&mut self) {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut positions = [0usize; 3];
 
         for i in 0..3 {
             loop {
-                let pos = rng.gen_range(1..=24);
+                let pos = rng.random_range(1..=24);
                 if !positions.contains(&pos) {
                     positions[i] = pos;
                     break;
