@@ -9,29 +9,65 @@ use std::path::PathBuf;
 /// Current step in the onboarding wizard
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WizardStep {
+    // === Entry Point ===
     /// Welcome screen - choose generation or import
     Welcome,
+
+    // === New Setup Flow ===
+    /// Master password setup (first input)
+    MasterPassword,
+    /// Master password confirmation (re-enter)
+    MasterPasswordConfirm,
+    /// Security notice about password recovery
+    SecurityNotice,
     /// Passkey generation screen (24-word display)
     PasskeyGenerate,
+    /// Passkey verification (random 3 positions)
+    PasskeyVerify,
+
+    // === Import Flow ===
     /// Passkey import screen
     PasskeyImport,
-    /// Passkey confirmation screen
-    PasskeyConfirm,
-    /// Master password setup screen
-    MasterPassword,
+    /// Master password setup after import
+    MasterPasswordImport,
+    /// Master password confirmation after import
+    MasterPasswordImportConfirm,
+    /// Password hint/tips screen
+    PasswordHint,
+
+    // === Common Configuration Steps ===
+    /// Password generation policy configuration
+    PasswordPolicy,
+    /// Clipboard auto-clear timeout configuration
+    ClipboardTimeout,
+    /// Trash retention days configuration
+    TrashRetention,
+    /// Import existing passwords (optional)
+    ImportPasswords,
+
+    // === Completion ===
     /// Wizard complete
     Complete,
 }
 
 impl WizardStep {
     /// Get display name for this step
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &'static str {
         match self {
             WizardStep::Welcome => "Welcome",
-            WizardStep::PasskeyGenerate => "Generate Passkey",
-            WizardStep::PasskeyImport => "Import Passkey",
-            WizardStep::PasskeyConfirm => "Confirm Passkey",
             WizardStep::MasterPassword => "Master Password",
+            WizardStep::MasterPasswordConfirm => "Confirm Password",
+            WizardStep::SecurityNotice => "Security Notice",
+            WizardStep::PasskeyGenerate => "Generate PassKey",
+            WizardStep::PasskeyVerify => "Verify PassKey",
+            WizardStep::PasskeyImport => "Import PassKey",
+            WizardStep::MasterPasswordImport => "Set Master Password",
+            WizardStep::MasterPasswordImportConfirm => "Confirm Password",
+            WizardStep::PasswordHint => "Password Hint",
+            WizardStep::PasswordPolicy => "Password Policy",
+            WizardStep::ClipboardTimeout => "Clipboard Timeout",
+            WizardStep::TrashRetention => "Trash Retention",
+            WizardStep::ImportPasswords => "Import Passwords",
             WizardStep::Complete => "Complete",
         }
     }
