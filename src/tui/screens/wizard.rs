@@ -73,17 +73,161 @@ impl WizardStep {
     }
 }
 
+// ============================================================================
+// Configuration Types
+// ============================================================================
+
+/// Clipboard auto-clear timeout options
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ClipboardTimeout {
+    /// 10 seconds
+    Seconds10,
+    /// 30 seconds (recommended default)
+    #[default]
+    Seconds30,
+    /// 60 seconds
+    Seconds60,
+}
+
+impl ClipboardTimeout {
+    /// Get timeout in seconds
+    pub fn seconds(&self) -> u64 {
+        match self {
+            Self::Seconds10 => 10,
+            Self::Seconds30 => 30,
+            Self::Seconds60 => 60,
+        }
+    }
+
+    /// Get display label
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Seconds10 => "10 seconds",
+            Self::Seconds30 => "30 seconds (recommended)",
+            Self::Seconds60 => "60 seconds",
+        }
+    }
+}
+
+/// Trash retention period options
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TrashRetention {
+    /// 7 days
+    Days7,
+    /// 30 days (default)
+    #[default]
+    Days30,
+    /// 90 days
+    Days90,
+}
+
+impl TrashRetention {
+    /// Get retention in days
+    pub fn days(&self) -> u32 {
+        match self {
+            Self::Days7 => 7,
+            Self::Days30 => 30,
+            Self::Days90 => 90,
+        }
+    }
+
+    /// Get display label
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Days7 => "7 days",
+            Self::Days30 => "30 days (recommended)",
+            Self::Days90 => "90 days",
+        }
+    }
+}
+
+/// Default password generation type
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PasswordType {
+    /// Random characters
+    #[default]
+    Random,
+    /// Memorable word-based password
+    Memorable,
+    /// PIN code (numbers only)
+    Pin,
+}
+
+impl PasswordType {
+    /// Get display label
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Random => "Random Password",
+            Self::Memorable => "Memorable (Word-based)",
+            Self::Pin => "PIN Code",
+        }
+    }
+}
+
+/// Password generation policy configuration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PasswordPolicyConfig {
+    /// Default password type
+    pub default_type: PasswordType,
+    /// Default password length (8-64)
+    pub default_length: u8,
+    /// Minimum number of digits
+    pub min_digits: u8,
+    /// Minimum number of special characters
+    pub min_special: u8,
+}
+
+impl Default for PasswordPolicyConfig {
+    fn default() -> Self {
+        Self {
+            default_type: PasswordType::default(),
+            default_length: 16,
+            min_digits: 2,
+            min_special: 1,
+        }
+    }
+}
+
+// ============================================================================
+// Wizard State
+// ============================================================================
+
 /// Complete state for the onboarding wizard
 #[derive(Debug, Clone)]
 pub struct WizardState {
+    // === Current Step ===
     /// Current step in the wizard
     pub step: WizardStep,
+
+    // === Passkey Data ===
     /// User's choice for Passkey setup
     pub passkey_choice: Option<WelcomeChoice>,
     /// The generated or imported Passkey words
     pub passkey_words: Option<Vec<String>>,
-    /// Master password input
+
+    // === Master Password ===
+    /// Master password input (first entry)
     pub master_password: Option<String>,
+    /// Master password confirmation (second entry)
+    pub master_password_confirm: Option<String>,
+
+    // === Passkey Verification ===
+    /// 3 random positions to verify (1-indexed)
+    pub verify_positions: Option<[usize; 3]>,
+    /// User's answers for verification
+    pub verify_answers: Option<[String; 3]>,
+
+    // === Configuration ===
+    /// Password generation policy
+    pub password_policy: PasswordPolicyConfig,
+    /// Clipboard auto-clear timeout
+    pub clipboard_timeout: ClipboardTimeout,
+    /// Trash retention period
+    pub trash_retention: TrashRetention,
+    /// Whether to skip password import
+    pub skip_import: bool,
+
+    // === Legacy/Other Fields ===
     /// Whether user confirmed they saved the Passkey
     pub confirmed: bool,
     /// Keystore path for initialization
@@ -100,6 +244,13 @@ impl WizardState {
             passkey_choice: None,
             passkey_words: None,
             master_password: None,
+            master_password_confirm: None,
+            verify_positions: None,
+            verify_answers: None,
+            password_policy: PasswordPolicyConfig::default(),
+            clipboard_timeout: ClipboardTimeout::default(),
+            trash_retention: TrashRetention::default(),
+            skip_import: true,
             confirmed: false,
             keystore_path: None,
             error: None,
@@ -115,102 +266,149 @@ impl WizardState {
     /// Advance to the next step
     pub fn next(&mut self) {
         self.step = match self.step {
+            // === Entry ===
             WizardStep::Welcome => {
-                // Move to generate or import based on choice
+                // New setup starts with master password, import starts with passkey import
                 if let Some(WelcomeChoice::GenerateNew) = self.passkey_choice {
-                    WizardStep::PasskeyGenerate
+                    WizardStep::MasterPassword
                 } else {
                     WizardStep::PasskeyImport
                 }
             }
-            WizardStep::PasskeyGenerate => {
-                // Only proceed if words are set
-                if self.passkey_words.is_some() {
-                    WizardStep::PasskeyConfirm
-                } else {
-                    // Stay on generate screen
-                    WizardStep::PasskeyGenerate
-                }
-            }
-            WizardStep::PasskeyImport => {
-                // Only proceed if words are validated
-                if self.passkey_words.is_some() {
-                    WizardStep::MasterPassword
-                } else {
-                    // Stay on import screen
-                    WizardStep::PasskeyImport
-                }
-            }
-            WizardStep::PasskeyConfirm => {
-                // Only proceed if confirmed
-                if self.confirmed {
-                    WizardStep::MasterPassword
-                } else {
-                    // Stay on confirmation screen
-                    WizardStep::PasskeyConfirm
-                }
-            }
+
+            // === New Setup Flow ===
             WizardStep::MasterPassword => {
-                // Proceed if password is set and valid
-                if self.can_proceed() {
-                    WizardStep::Complete
+                if self.master_password.is_some() {
+                    WizardStep::MasterPasswordConfirm
                 } else {
-                    // Stay on password screen
                     WizardStep::MasterPassword
                 }
             }
-            WizardStep::Complete => WizardStep::Complete, // Stay on complete
+            WizardStep::MasterPasswordConfirm => {
+                if self.passwords_match() {
+                    WizardStep::SecurityNotice
+                } else {
+                    WizardStep::MasterPasswordConfirm
+                }
+            }
+            WizardStep::SecurityNotice => WizardStep::PasskeyGenerate,
+            WizardStep::PasskeyGenerate => {
+                if self.passkey_words.is_some() {
+                    WizardStep::PasskeyVerify
+                } else {
+                    WizardStep::PasskeyGenerate
+                }
+            }
+            WizardStep::PasskeyVerify => {
+                if self.verify_passkey() {
+                    WizardStep::PasswordPolicy
+                } else {
+                    WizardStep::PasskeyVerify
+                }
+            }
+
+            // === Import Flow ===
+            WizardStep::PasskeyImport => {
+                if self.passkey_words.is_some() {
+                    WizardStep::MasterPasswordImport
+                } else {
+                    WizardStep::PasskeyImport
+                }
+            }
+            WizardStep::MasterPasswordImport => {
+                if self.master_password.is_some() {
+                    WizardStep::MasterPasswordImportConfirm
+                } else {
+                    WizardStep::MasterPasswordImport
+                }
+            }
+            WizardStep::MasterPasswordImportConfirm => {
+                if self.passwords_match() {
+                    WizardStep::PasswordHint
+                } else {
+                    WizardStep::MasterPasswordImportConfirm
+                }
+            }
+            WizardStep::PasswordHint => WizardStep::PasswordPolicy,
+
+            // === Common Configuration ===
+            WizardStep::PasswordPolicy => WizardStep::ClipboardTimeout,
+            WizardStep::ClipboardTimeout => WizardStep::TrashRetention,
+            WizardStep::TrashRetention => WizardStep::ImportPasswords,
+            WizardStep::ImportPasswords => WizardStep::Complete,
+
+            // === Completion ===
+            WizardStep::Complete => WizardStep::Complete,
         };
     }
 
     /// Go back to the previous step
     pub fn back(&mut self) {
         self.step = match self.step {
-            WizardStep::Welcome => WizardStep::Welcome, // Already at start
-            WizardStep::PasskeyGenerate => WizardStep::Welcome,
+            // === Entry ===
+            WizardStep::Welcome => WizardStep::Welcome,
+
+            // === New Setup Flow ===
+            WizardStep::MasterPassword => WizardStep::Welcome,
+            WizardStep::MasterPasswordConfirm => WizardStep::MasterPassword,
+            WizardStep::SecurityNotice => WizardStep::MasterPasswordConfirm,
+            WizardStep::PasskeyGenerate => WizardStep::SecurityNotice,
+            WizardStep::PasskeyVerify => WizardStep::PasskeyGenerate,
+
+            // === Import Flow ===
             WizardStep::PasskeyImport => WizardStep::Welcome,
-            WizardStep::PasskeyConfirm => {
-                // If came from import, go to import, otherwise to generate
-                if let Some(WelcomeChoice::ImportExisting) = self.passkey_choice {
-                    WizardStep::PasskeyImport
+            WizardStep::MasterPasswordImport => WizardStep::PasskeyImport,
+            WizardStep::MasterPasswordImportConfirm => WizardStep::MasterPasswordImport,
+            WizardStep::PasswordHint => WizardStep::MasterPasswordImportConfirm,
+
+            // === Common Configuration ===
+            WizardStep::PasswordPolicy => {
+                if let Some(WelcomeChoice::GenerateNew) = self.passkey_choice {
+                    WizardStep::PasskeyVerify
                 } else {
-                    WizardStep::PasskeyGenerate
+                    WizardStep::PasswordHint
                 }
             }
-            WizardStep::MasterPassword => {
-                // If came from import, go to import, otherwise to confirm
-                if let Some(WelcomeChoice::ImportExisting) = self.passkey_choice {
-                    WizardStep::PasskeyImport
-                } else {
-                    WizardStep::PasskeyConfirm
-                }
-            }
-            WizardStep::Complete => WizardStep::MasterPassword,
+            WizardStep::ClipboardTimeout => WizardStep::PasswordPolicy,
+            WizardStep::TrashRetention => WizardStep::ClipboardTimeout,
+            WizardStep::ImportPasswords => WizardStep::TrashRetention,
+
+            // === Completion ===
+            WizardStep::Complete => WizardStep::ImportPasswords,
         };
     }
 
     /// Check if we can proceed to the next step
     pub fn can_proceed(&self) -> bool {
         match self.step {
+            // === Entry ===
             WizardStep::Welcome => self.passkey_choice.is_some(),
-            WizardStep::PasskeyConfirm => self.confirmed,
+
+            // === New Setup Flow ===
             WizardStep::MasterPassword => {
-                self.master_password.is_some()
-                    && self
-                        .master_password
-                        .as_ref()
-                        .map(|p| p.len() >= 8)
-                        .unwrap_or(false)
+                self.master_password.as_ref().map(|p| p.len() >= 8).unwrap_or(false)
             }
+            WizardStep::MasterPasswordConfirm => self.passwords_match(),
+            WizardStep::SecurityNotice => true,
+            WizardStep::PasskeyGenerate => self.passkey_words.is_some(),
+            WizardStep::PasskeyVerify => self.verify_passkey(),
+
+            // === Import Flow ===
+            WizardStep::PasskeyImport => self.passkey_words.is_some(),
+            WizardStep::MasterPasswordImport => {
+                self.master_password.as_ref().map(|p| p.len() >= 8).unwrap_or(false)
+            }
+            WizardStep::MasterPasswordImportConfirm => self.passwords_match(),
+            WizardStep::PasswordHint => true,
+
+            // === Common Configuration ===
+            WizardStep::PasswordPolicy => true,
+            WizardStep::ClipboardTimeout => true,
+            WizardStep::TrashRetention => true,
+            WizardStep::ImportPasswords => true,
+
+            // === Completion ===
             WizardStep::Complete => true,
-            WizardStep::PasskeyGenerate => {
-                // Can proceed after generating words
-                self.passkey_words.is_some()
-            }
-            WizardStep::PasskeyImport => {
-                // Can proceed after validation
-                self.passkey_words.is_some()
-            }
         }
     }
 
@@ -218,6 +416,70 @@ impl WizardState {
     pub fn can_go_back(&self) -> bool {
         !matches!(self.step, WizardStep::Welcome)
     }
+
+    // ========================================================================
+    // Helper Methods
+    // ========================================================================
+
+    /// Check if master password and confirmation match
+    pub fn passwords_match(&self) -> bool {
+        match (&self.master_password, &self.master_password_confirm) {
+            (Some(p1), Some(p2)) => p1 == p2 && p1.len() >= 8,
+            _ => false,
+        }
+    }
+
+    /// Verify passkey answers against expected words
+    pub fn verify_passkey(&self) -> bool {
+        match (&self.verify_positions, &self.verify_answers, &self.passkey_words) {
+            (Some(positions), Some(answers), Some(words)) => {
+                for (i, &pos) in positions.iter().enumerate() {
+                    if i < answers.len() && pos > 0 && pos <= words.len() {
+                        if answers[i].to_lowercase().trim() != words[pos - 1].to_lowercase().trim() {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+                true
+            }
+            _ => false,
+        }
+    }
+
+    /// Generate random verification positions
+    pub fn generate_verify_positions(&mut self) {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        let mut positions = [0usize; 3];
+
+        for i in 0..3 {
+            loop {
+                let pos = rng.gen_range(1..=24);
+                if !positions.contains(&pos) {
+                    positions[i] = pos;
+                    break;
+                }
+            }
+        }
+
+        self.verify_positions = Some(positions);
+        self.verify_answers = Some([String::new(), String::new(), String::new()]);
+    }
+
+    /// Set answer for a verification position
+    pub fn set_verify_answer(&mut self, index: usize, answer: String) {
+        if let Some(answers) = &mut self.verify_answers {
+            if index < 3 {
+                answers[index] = answer;
+            }
+        }
+    }
+
+    // ========================================================================
+    // Setters
+    // ========================================================================
 
     /// Set the passkey choice
     pub fn set_passkey_choice(&mut self, choice: WelcomeChoice) {
@@ -234,6 +496,11 @@ impl WizardState {
         self.master_password = Some(password);
     }
 
+    /// Set the master password confirmation
+    pub fn set_master_password_confirm(&mut self, password: String) {
+        self.master_password_confirm = Some(password);
+    }
+
     /// Set the confirmed state
     pub fn set_confirmed(&mut self, confirmed: bool) {
         self.confirmed = confirmed;
@@ -242,6 +509,26 @@ impl WizardState {
     /// Toggle the confirmed state
     pub fn toggle_confirmed(&mut self) {
         self.confirmed = !self.confirmed;
+    }
+
+    /// Set clipboard timeout
+    pub fn set_clipboard_timeout(&mut self, timeout: ClipboardTimeout) {
+        self.clipboard_timeout = timeout;
+    }
+
+    /// Set trash retention
+    pub fn set_trash_retention(&mut self, retention: TrashRetention) {
+        self.trash_retention = retention;
+    }
+
+    /// Set password policy
+    pub fn set_password_policy(&mut self, policy: PasswordPolicyConfig) {
+        self.password_policy = policy;
+    }
+
+    /// Set skip import flag
+    pub fn set_skip_import(&mut self, skip: bool) {
+        self.skip_import = skip;
     }
 
     /// Set an error message
@@ -254,17 +541,16 @@ impl WizardState {
         self.error = None;
     }
 
+    // ========================================================================
+    // Getters
+    // ========================================================================
+
     /// Check if wizard is complete
     pub fn is_complete(&self) -> bool {
         self.step == WizardStep::Complete
             && self.passkey_choice.is_some()
             && self.passkey_words.is_some()
-            && self.master_password.is_some()
-            && self
-                .master_password
-                .as_ref()
-                .map(|p| p.len() >= 8)
-                .unwrap_or(false)
+            && self.passwords_match()
     }
 
     /// Get the passkey choice
@@ -287,12 +573,43 @@ impl WizardState {
         self.keystore_path.as_ref()
     }
 
+    /// Get clipboard timeout configuration
+    pub fn clipboard_timeout(&self) -> ClipboardTimeout {
+        self.clipboard_timeout
+    }
+
+    /// Get trash retention configuration
+    pub fn trash_retention(&self) -> TrashRetention {
+        self.trash_retention
+    }
+
+    /// Get password policy configuration
+    pub fn password_policy(&self) -> PasswordPolicyConfig {
+        self.password_policy
+    }
+
+    /// Check if import is skipped
+    pub fn skip_import(&self) -> bool {
+        self.skip_import
+    }
+
+    // ========================================================================
+    // Reset
+    // ========================================================================
+
     /// Reset the wizard state (useful for retry)
     pub fn reset(&mut self) {
         self.step = WizardStep::Welcome;
         self.passkey_choice = None;
         self.passkey_words = None;
         self.master_password = None;
+        self.master_password_confirm = None;
+        self.verify_positions = None;
+        self.verify_answers = None;
+        self.password_policy = PasswordPolicyConfig::default();
+        self.clipboard_timeout = ClipboardTimeout::default();
+        self.trash_retention = TrashRetention::default();
+        self.skip_import = true;
         self.confirmed = false;
         self.error = None;
     }
@@ -309,13 +626,41 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_wizard_step_name() {
+    fn test_wizard_step_names() {
         assert_eq!(WizardStep::Welcome.name(), "Welcome");
-        assert_eq!(WizardStep::PasskeyGenerate.name(), "Generate Passkey");
-        assert_eq!(WizardStep::PasskeyImport.name(), "Import Passkey");
-        assert_eq!(WizardStep::PasskeyConfirm.name(), "Confirm Passkey");
         assert_eq!(WizardStep::MasterPassword.name(), "Master Password");
+        assert_eq!(WizardStep::MasterPasswordConfirm.name(), "Confirm Password");
+        assert_eq!(WizardStep::SecurityNotice.name(), "Security Notice");
+        assert_eq!(WizardStep::PasskeyGenerate.name(), "Generate PassKey");
+        assert_eq!(WizardStep::PasskeyVerify.name(), "Verify PassKey");
+        assert_eq!(WizardStep::PasskeyImport.name(), "Import PassKey");
         assert_eq!(WizardStep::Complete.name(), "Complete");
+    }
+
+    #[test]
+    fn test_config_defaults() {
+        assert_eq!(ClipboardTimeout::default(), ClipboardTimeout::Seconds30);
+        assert_eq!(TrashRetention::default(), TrashRetention::Days30);
+        assert_eq!(PasswordType::default(), PasswordType::Random);
+
+        let policy = PasswordPolicyConfig::default();
+        assert_eq!(policy.default_length, 16);
+        assert_eq!(policy.min_digits, 2);
+        assert_eq!(policy.min_special, 1);
+    }
+
+    #[test]
+    fn test_clipboard_timeout_seconds() {
+        assert_eq!(ClipboardTimeout::Seconds10.seconds(), 10);
+        assert_eq!(ClipboardTimeout::Seconds30.seconds(), 30);
+        assert_eq!(ClipboardTimeout::Seconds60.seconds(), 60);
+    }
+
+    #[test]
+    fn test_trash_retention_days() {
+        assert_eq!(TrashRetention::Days7.days(), 7);
+        assert_eq!(TrashRetention::Days30.days(), 30);
+        assert_eq!(TrashRetention::Days90.days(), 90);
     }
 
     #[test]
@@ -323,6 +668,8 @@ mod tests {
         let state = WizardState::new();
         assert_eq!(state.step, WizardStep::Welcome);
         assert!(!state.can_proceed());
+        assert!(state.master_password.is_none());
+        assert!(state.master_password_confirm.is_none());
     }
 
     #[test]
@@ -333,80 +680,135 @@ mod tests {
     }
 
     #[test]
-    fn test_wizard_state_next_flow() {
+    fn test_passwords_match() {
+        let mut state = WizardState::new();
+        assert!(!state.passwords_match());
+
+        state.set_master_password("password123".to_string());
+        assert!(!state.passwords_match());
+
+        state.set_master_password_confirm("password123".to_string());
+        assert!(state.passwords_match());
+
+        state.set_master_password_confirm("different".to_string());
+        assert!(!state.passwords_match());
+    }
+
+    #[test]
+    fn test_new_setup_flow() {
         let mut state = WizardState::new();
         state.set_passkey_choice(WelcomeChoice::GenerateNew);
 
-        // Welcome -> Generate
+        // Welcome -> MasterPassword
+        state.next();
+        assert_eq!(state.step, WizardStep::MasterPassword);
+
+        // Need password to proceed
+        state.set_master_password("longenough".to_string());
+        state.next();
+        assert_eq!(state.step, WizardStep::MasterPasswordConfirm);
+
+        // Need matching confirmation
+        state.set_master_password_confirm("longenough".to_string());
+        state.next();
+        assert_eq!(state.step, WizardStep::SecurityNotice);
+
+        // SecurityNotice -> PasskeyGenerate
         state.next();
         assert_eq!(state.step, WizardStep::PasskeyGenerate);
 
-        // Stay on Generate until words set
-        state.next();
-        assert_eq!(state.step, WizardStep::PasskeyGenerate);
-
-        // Add words, now can proceed
+        // Need passkey words
         state.set_passkey_words(vec!["word".to_string(); 24]);
         state.next();
-        assert_eq!(state.step, WizardStep::PasskeyConfirm);
+        assert_eq!(state.step, WizardStep::PasskeyVerify);
     }
 
     #[test]
-    fn test_wizard_state_import_flow() {
+    fn test_import_flow() {
         let mut state = WizardState::new();
         state.set_passkey_choice(WelcomeChoice::ImportExisting);
 
+        // Welcome -> PasskeyImport
         state.next();
         assert_eq!(state.step, WizardStep::PasskeyImport);
 
-        // Import -> Password (no confirmation needed)
+        // Need words to proceed
         state.set_passkey_words(vec!["word".to_string(); 24]);
         state.next();
-        assert_eq!(state.step, WizardStep::MasterPassword);
+        assert_eq!(state.step, WizardStep::MasterPasswordImport);
+
+        // Set password
+        state.set_master_password("longenough".to_string());
+        state.next();
+        assert_eq!(state.step, WizardStep::MasterPasswordImportConfirm);
+
+        // Confirm password
+        state.set_master_password_confirm("longenough".to_string());
+        state.next();
+        assert_eq!(state.step, WizardStep::PasswordHint);
+
+        // Continue through config steps
+        state.next();
+        assert_eq!(state.step, WizardStep::PasswordPolicy);
+        state.next();
+        assert_eq!(state.step, WizardStep::ClipboardTimeout);
+        state.next();
+        assert_eq!(state.step, WizardStep::TrashRetention);
+        state.next();
+        assert_eq!(state.step, WizardStep::ImportPasswords);
+        state.next();
+        assert_eq!(state.step, WizardStep::Complete);
     }
 
     #[test]
-    fn test_wizard_state_password_validation() {
+    fn test_password_validation() {
         let mut state = WizardState::new();
         state.step = WizardStep::MasterPassword;
 
-        // Can't proceed with short password
+        // Short password fails
         state.set_master_password("short".to_string());
         assert!(!state.can_proceed());
 
-        // Can proceed with 8+ char password
+        // Long enough password passes
         state.set_master_password("longenough".to_string());
         assert!(state.can_proceed());
     }
 
     #[test]
-    fn test_wizard_state_back_flow() {
+    fn test_back_flow() {
         let mut state = WizardState::new();
         state.set_passkey_choice(WelcomeChoice::GenerateNew);
-        state.set_passkey_words(vec!["word".to_string(); 24]);
-        state.confirmed = true;
+        state.step = WizardStep::PasskeyVerify;
 
-        state.step = WizardStep::MasterPassword;
         state.back();
-        assert_eq!(state.step, WizardStep::PasskeyConfirm);
+        assert_eq!(state.step, WizardStep::PasskeyGenerate);
+
+        state.back();
+        assert_eq!(state.step, WizardStep::SecurityNotice);
+
+        state.back();
+        assert_eq!(state.step, WizardStep::MasterPasswordConfirm);
     }
 
     #[test]
-    fn test_wizard_state_complete() {
+    fn test_reset() {
         let mut state = WizardState::new();
-        state.passkey_choice = Some(WelcomeChoice::GenerateNew);
-        state.passkey_words = Some(vec!["word".to_string(); 24]);
-        state.master_password = Some("securepassword".to_string());
-        state.step = WizardStep::Complete;
+        state.set_passkey_choice(WelcomeChoice::GenerateNew);
+        state.set_master_password("password".to_string());
+        state.set_master_password_confirm("password".to_string());
+        state.step = WizardStep::PasskeyVerify;
 
-        assert!(state.is_complete());
+        state.reset();
+        assert_eq!(state.step, WizardStep::Welcome);
+        assert!(state.passkey_choice.is_none());
+        assert!(state.master_password.is_none());
+        assert!(state.master_password_confirm.is_none());
     }
 
     #[test]
     fn test_wizard_state_with_keystore_path() {
         let path = PathBuf::from("/test/path");
         let state = WizardState::new().with_keystore_path(path.clone());
-
         assert_eq!(state.require_keystore_path(), Some(&path));
     }
 }
