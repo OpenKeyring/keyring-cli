@@ -1,10 +1,16 @@
 //! Screen Snapshot Tests
 //!
 //! These tests provide snapshot coverage for individual screen components
-//! including PasskeyGenerate, PasskeyImport, and PasskeyConfirm screens.
+//! including PasskeyGenerate, PasskeyImport, and PasskeyVerify screens.
 
-use crate::tui::screens::{PasskeyConfirmScreen, PasskeyGenerateScreen, PasskeyImportScreen};
+use crate::tui::screens::{PasskeyGenerateScreen, PasskeyImportScreen, PasskeyVerifyScreen};
 use crate::tui::testing::{render_snapshot, SnapshotSequence};
+use crossterm::event::{KeyCode, KeyEvent};
+use ratatui::layout::Rect;
+
+use crate::tui::traits::{Interactive, Render};
+
+use crate::tui::tests::mock_screen::MockScreen;
 
 #[test]
 fn test_passkey_generate_initial_state() {
@@ -29,35 +35,8 @@ fn test_passkey_generate_render_initial() {
 }
 
 #[test]
-fn test_passkey_generate_render_with_words() {
-    let mut screen = PasskeyGenerateScreen::new();
-    screen.set_words(vec![
-        "abandon".to_string(),
-        "ability".to_string(),
-        "able".to_string(),
-        "about".to_string(),
-        "above".to_string(),
-        "absent".to_string(),
-        "absorb".to_string(),
-        "abstract".to_string(),
-        "absurd".to_string(),
-        "abuse".to_string(),
-        "access".to_string(),
-        "accident".to_string(),
-        "account".to_string(),
-        "accuse".to_string(),
-        "achieve".to_string(),
-        "acid".to_string(),
-        "acoustic".to_string(),
-        "acquire".to_string(),
-        "across".to_string(),
-        "act".to_string(),
-        "action".to_string(),
-        "actor".to_string(),
-        "actress".to_string(),
-        "actual".to_string(),
-    ]);
-
+fn test_passkey_generate_with_24_words() {
+    let screen = PasskeyGenerateScreen::with_word_count(24);
     let output = render_snapshot(80, 24, |frame| {
         screen.render(frame, frame.area());
     });
@@ -66,44 +45,13 @@ fn test_passkey_generate_render_with_words() {
 }
 
 #[test]
-fn test_passkey_generate_render_confirmed() {
-    let mut screen = PasskeyGenerateScreen::new();
-    screen.set_words(vec!["word".to_string(); 24]);
-    screen.set_confirmed(true);
-
+fn test_passkey_generate_with_12_words_render() {
+    let screen = PasskeyGenerateScreen::with_word_count(12);
     let output = render_snapshot(80, 24, |frame| {
         screen.render(frame, frame.area());
     });
 
     insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_passkey_generate_confirmation_sequence() {
-    let mut screen = PasskeyGenerateScreen::new();
-    let mut seq = SnapshotSequence::new("generate_confirmation_flow");
-
-    // Initial state
-    let initial = render_snapshot(80, 24, |frame| {
-        screen.render(frame, frame.area());
-    });
-    seq.step("initial", initial);
-
-    // After generating words
-    screen.set_words(vec!["word".to_string(); 24]);
-    let with_words = render_snapshot(80, 24, |frame| {
-        screen.render(frame, frame.area());
-    });
-    seq.step("with_words", with_words);
-
-    // After confirmation
-    screen.toggle_confirm();
-    let confirmed = render_snapshot(80, 24, |frame| {
-        screen.render(frame, frame.area());
-    });
-    seq.step("confirmed", confirmed);
-
-    insta::assert_snapshot!(seq.to_string());
 }
 
 #[test]
@@ -113,17 +61,7 @@ fn test_passkey_import_initial_state() {
 }
 
 #[test]
-fn test_passkey_import_with_input() {
-    let mut screen = PasskeyImportScreen::new();
-    screen.handle_char('a');
-    screen.handle_char('b');
-    screen.handle_char('c');
-
-    insta::assert_debug_snapshot!(screen);
-}
-
-#[test]
-fn test_passkey_import_render_initial() {
+fn test_passkey_import_render() {
     let screen = PasskeyImportScreen::new();
     let output = render_snapshot(80, 24, |frame| {
         screen.render(frame, frame.area());
@@ -133,11 +71,16 @@ fn test_passkey_import_render_initial() {
 }
 
 #[test]
-fn test_passkey_import_render_with_input() {
+fn test_passkey_import_with_input() {
     let mut screen = PasskeyImportScreen::new();
-    for c in "abandon ability able about".chars() {
-        screen.handle_char(c);
-    }
+    screen.handle_char('a');
+    screen.handle_char('b');
+    screen.handle_char('c');
+    screen.handle_char(' ');
+    screen.handle_char('d');
+    screen.handle_char('e');
+    screen.handle_char('f');
+    screen.handle_char(' ');
 
     let output = render_snapshot(80, 24, |frame| {
         screen.render(frame, frame.area());
@@ -147,81 +90,73 @@ fn test_passkey_import_render_with_input() {
 }
 
 #[test]
-fn test_passkey_import_render_validated() {
+fn test_passkey_import_backspace() {
     let mut screen = PasskeyImportScreen::new();
-    // Set valid 12-word BIP39 mnemonic (using known valid words)
-    let valid_words = "abandon ability able about above absent absorb abstract absurd abuse access accident account accuse act";
-    for c in valid_words.chars() {
-        screen.handle_char(c);
-    }
-    let _ = screen.validate();
-
-    let output = render_snapshot(80, 24, |frame| {
-        screen.render(frame, frame.area());
-    });
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_passkey_import_render_error() {
-    let mut screen = PasskeyImportScreen::new();
-    // Type insufficient words
-    for c in "one two three".chars() {
-        screen.handle_char(c);
-    }
-    let _ = screen.validate();
-
-    let output = render_snapshot(80, 24, |frame| {
-        screen.render(frame, frame.area());
-    });
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_passkey_import_input_sequence() {
-    let mut screen = PasskeyImportScreen::new();
-    let mut seq = SnapshotSequence::new("import_input_sequence");
-
-    // Type some words
-    for c in "abandon ability able about".chars() {
-        screen.handle_char(c);
-    }
-
-    let with_input = render_snapshot(80, 24, |frame| {
-        screen.render(frame, frame.area());
-    });
-    seq.step("with_partial_input", with_input);
-
-    // Backspace
+    screen.handle_char('a');
+    screen.handle_char('b');
+    screen.handle_char('c');
     screen.handle_backspace();
-    let after_backspace = render_snapshot(80, 24, |frame| {
-        screen.render(frame, frame.area());
-    });
-    seq.step("after_backspace", after_backspace);
-
-    insta::assert_snapshot!(seq.to_string());
+    assert_eq!(screen.current_word(), "ab");
 }
 
 #[test]
-fn test_passkey_confirm_initial_state() {
+fn test_passkey_import_complete_flow() {
+    let mut screen = PasskeyImportScreen::new();
+    // Enter 24 words
+    for i in 0..24 {
+        screen.handle_char('w');
+        screen.handle_char('o');
+        screen.handle_char('r');
+        screen.handle_char('d');
+        if i < 23 {
+            screen.handle_char(' ');
+        }
+    }
+    // Should be validated
+    assert!(screen.is_validated());
+    let words = screen.words().unwrap();
+    assert_eq!(words.len(), 24);
+    assert!(words.iter().all(|w| w == "word"));
+}
+
+// === PasskeyVerifyScreen Tests ===
+
+#[test]
+fn test_passkey_verify_initial_state() {
     let words = vec!["word".to_string(); 24];
-    let screen = PasskeyConfirmScreen::new(words);
-    insta::assert_debug_snapshot!(screen);
+    let screen = PasskeyVerifyScreen::with_positions(words, [1, 12, 24]);
+    assert_eq!(screen.positions(), [1, 12, 24]);
+    assert_eq!(screen.focused(), 0);
 }
 
 #[test]
-fn test_passkey_confirm_confirmed_state() {
+fn test_passkey_verify_with_input() {
     let words = vec!["word".to_string(); 24];
-    let mut screen = PasskeyConfirmScreen::new(words);
-    screen.toggle();
-
-    insta::assert_debug_snapshot!(screen);
+    let mut screen = PasskeyVerifyScreen::with_positions(words, [1, 12, 24]);
+    screen.handle_key(KeyEvent::from(KeyCode::Char('a')));
+    assert_eq!(screen.inputs(), ["a".to_string(), "".to_string(), "".to_string()]);
 }
 
 #[test]
-fn test_passkey_confirm_render_initial() {
+fn test_passkey_verify_navigation() {
+    let words = vec!["word".to_string(); 24];
+    let mut screen = PasskeyVerifyScreen::with_positions(words, [1, 12, 24]);
+    // Tab to switch fields
+    assert_eq!(screen.focused(), 0);
+    screen.handle_key(KeyEvent::from(KeyCode::Tab));
+    assert_eq!(screen.focused(), 1);
+    screen.handle_key(KeyEvent::from(KeyCode::Tab));
+    assert_eq!(screen.focused(), 2);
+    screen.handle_key(KeyEvent::from(KeyCode::Tab));
+    assert_eq!(screen.focused(), 0);
+
+    // Backtab should also work
+    screen.handle_key(KeyEvent::from(KeyCode::BackTab));
+    assert_eq!(screen.focused(), 2);
+}
+
+#[test]
+fn test_passkey_verify_render() {
     let words = vec![
         "abandon".to_string(),
         "ability".to_string(),
@@ -248,71 +183,10 @@ fn test_passkey_confirm_render_initial() {
         "actress".to_string(),
         "actual".to_string(),
     ];
-    let screen = PasskeyConfirmScreen::new(words);
-
+    let screen = PasskeyVerifyScreen::with_positions(words, [1, 12, 24]);
     let output = render_snapshot(80, 24, |frame| {
-        screen.render(frame, frame.area());
+        screen.render(frame.area(), frame.buffer_mut());
     });
-
     insta::assert_snapshot!(output);
 }
 
-#[test]
-fn test_passkey_confirm_render_confirmed() {
-    let words = vec![
-        "abandon".to_string(),
-        "ability".to_string(),
-        "able".to_string(),
-        "about".to_string(),
-        "above".to_string(),
-        "absent".to_string(),
-        "absorb".to_string(),
-        "abstract".to_string(),
-        "absurd".to_string(),
-        "abuse".to_string(),
-        "access".to_string(),
-        "accident".to_string(),
-        "account".to_string(),
-        "accuse".to_string(),
-        "achieve".to_string(),
-        "acid".to_string(),
-        "acoustic".to_string(),
-        "acquire".to_string(),
-        "across".to_string(),
-        "act".to_string(),
-        "action".to_string(),
-        "actor".to_string(),
-        "actress".to_string(),
-        "actual".to_string(),
-    ];
-    let mut screen = PasskeyConfirmScreen::new(words);
-    screen.toggle();
-
-    let output = render_snapshot(80, 24, |frame| {
-        screen.render(frame, frame.area());
-    });
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_passkey_confirm_toggle_sequence() {
-    let words = vec!["word".to_string(); 24];
-    let mut screen = PasskeyConfirmScreen::new(words);
-    let mut seq = SnapshotSequence::new("confirm_toggle_flow");
-
-    // Initial state
-    let initial = render_snapshot(80, 24, |frame| {
-        screen.render(frame, frame.area());
-    });
-    seq.step("initial", initial);
-
-    // After toggle
-    screen.toggle();
-    let confirmed = render_snapshot(80, 24, |frame| {
-        screen.render(frame, frame.area());
-    });
-    seq.step("confirmed", confirmed);
-
-    insta::assert_snapshot!(seq.to_string());
-}

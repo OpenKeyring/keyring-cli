@@ -66,7 +66,7 @@ fn test_wizard_generate_flow_snapshots() {
     // Snapshot: After setting words, still on PasskeyGenerate
     insta::assert_debug_snapshot!(state);
 
-    // Snapshot: PasskeyGenerate -> PasskeyConfirm
+    // Snapshot: PasskeyGenerate -> PasskeyVerify
     state.next();
     insta::assert_debug_snapshot!(state);
 
@@ -76,7 +76,7 @@ fn test_wizard_generate_flow_snapshots() {
     // Snapshot: After confirmation
     insta::assert_debug_snapshot!(state);
 
-    // Snapshot: PasskeyConfirm -> MasterPassword
+    // Snapshot: PasskeyVerify -> MasterPassword
     state.next();
     insta::assert_debug_snapshot!(state);
 
@@ -158,11 +158,11 @@ fn test_wizard_back_navigation_snapshots() {
     // Snapshot: Current state on MasterPassword
     insta::assert_debug_snapshot!(state);
 
-    // Snapshot: MasterPassword -> PasskeyConfirm (going back)
+    // Snapshot: MasterPassword -> PasskeyVerify (going back)
     state.back();
     insta::assert_debug_snapshot!(state);
 
-    // Snapshot: PasskeyConfirm -> PasskeyGenerate
+    // Snapshot: PasskeyVerify -> PasskeyGenerate
     state.back();
     insta::assert_debug_snapshot!(state);
 
@@ -272,7 +272,7 @@ fn test_wizard_step_transitions() {
 
     state.set_passkey_words(vec!["word".to_string(); 24]);
     state.next();
-    assert_eq!(state.step, WizardStep::PasskeyConfirm);
+    assert_eq!(state.step, WizardStep::PasskeyVerify);
     insta::assert_snapshot!(state.step.name());
 
     state.toggle_confirmed();

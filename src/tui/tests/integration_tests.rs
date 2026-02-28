@@ -5,7 +5,7 @@
 
 use crate::tui::screens::welcome::WelcomeChoice;
 use crate::tui::screens::wizard::{WizardState, WizardStep};
-use crate::tui::screens::PasskeyConfirmScreen;
+use crate::tui::screens::PasskeyVerifyScreen;
 use crate::tui::testing::{render_snapshot, SnapshotSequence};
 use crate::tui::{Screen, TuiApp};
 
@@ -44,7 +44,7 @@ fn test_wizard_generate_flow_integration() {
     if let Some(state) = &mut app.wizard_state {
         state.next();
     }
-    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec!["word".to_string(); 24]));
+    app.passkey_verify_screen = Some(PasskeyVerifyScreen::new(vec!["word".to_string(); 24]));
 
     let confirm_screen = render_snapshot(80, 24, |frame| {
         app.render(frame);
@@ -126,7 +126,7 @@ fn test_wizard_back_navigation_flow() {
         state.step = WizardStep::MasterPassword;
         state.set_master_password("password123".to_string());
     }
-    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec!["word".to_string(); 24]));
+    app.passkey_verify_screen = Some(PasskeyVerifyScreen::new(vec!["word".to_string(); 24]));
 
     // At MasterPassword
     let at_password = render_snapshot(80, 24, |frame| {
@@ -134,7 +134,7 @@ fn test_wizard_back_navigation_flow() {
     });
     seq.step("at_master_password", at_password);
 
-    // Go back to PasskeyConfirm
+    // Go back to PasskeyVerify
     if let Some(state) = &mut app.wizard_state {
         state.back();
     }
@@ -191,7 +191,7 @@ fn test_complete_onboarding_flow_snapshots() {
     if let Some(state) = &mut app.wizard_state {
         state.next();
     }
-    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec!["word".to_string(); 24]));
+    app.passkey_verify_screen = Some(PasskeyVerifyScreen::new(vec!["word".to_string(); 24]));
     let confirm = render_snapshot(80, 24, |frame| {
         app.render(frame);
     });
@@ -268,7 +268,7 @@ fn test_screen_sizes_integration() {
         state.set_passkey_words(vec!["word".to_string(); 24]);
         state.next();
     }
-    app.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(vec!["word".to_string(); 24]));
+    app.passkey_verify_screen = Some(PasskeyVerifyScreen::new(vec!["word".to_string(); 24]));
 
     let mut seq = SnapshotSequence::new("screen_sizes");
 

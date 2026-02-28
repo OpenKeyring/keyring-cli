@@ -8,8 +8,9 @@ use crate::onboarding::{initialize_keystore, is_initialized};
 use crate::tui::keybindings::{Action, KeyBindingManager};
 use crate::tui::screens::wizard::{WizardState, WizardStep};
 use crate::tui::screens::{
-    MainScreen, MasterPasswordScreen, PasskeyConfirmScreen, PasskeyGenerateScreen, PasskeyImportScreen,
-    SyncScreen, WelcomeScreen,
+    ClipboardTimeoutScreen, MainScreen, MasterPasswordScreen, PasskeyGenerateScreen,
+    PasskeyImportScreen, PasskeyVerifyScreen, PasswordPolicyScreen, SecurityNoticeScreen,
+    SyncScreen, TrashRetentionScreen, WelcomeScreen,
 };
 use crate::tui::state::AppState;
 use chrono::{DateTime, Utc};
@@ -164,8 +165,16 @@ pub struct TuiApp {
     pub passkey_generate_screen: PasskeyGenerateScreen,
     /// Passkey import screen (wizard step 2 alt)
     pub passkey_import_screen: PasskeyImportScreen,
-    /// Passkey confirmation screen (wizard step 3)
-    pub passkey_confirm_screen: Option<PasskeyConfirmScreen>,
+    /// Passkey verification screen (wizard step - verify 3 random positions)
+    pub passkey_verify_screen: Option<PasskeyVerifyScreen>,
+    /// Security notice screen
+    pub security_notice_screen: SecurityNoticeScreen,
+    /// Password policy screen
+    pub password_policy_screen: PasswordPolicyScreen,
+    /// Clipboard timeout screen
+    pub clipboard_timeout_screen: ClipboardTimeoutScreen,
+    /// Trash retention screen
+    pub trash_retention_screen: TrashRetentionScreen,
     /// Master password screen (wizard step 4)
     pub master_password_screen: MasterPasswordScreen,
     /// Sync screen
@@ -206,7 +215,11 @@ impl TuiApp {
             welcome_screen: WelcomeScreen::new(),
             passkey_generate_screen: PasskeyGenerateScreen::new(),
             passkey_import_screen: PasskeyImportScreen::new(),
-            passkey_confirm_screen: None,
+            passkey_verify_screen: None,
+            security_notice_screen: SecurityNoticeScreen::new(),
+            password_policy_screen: PasswordPolicyScreen::new(),
+            clipboard_timeout_screen: ClipboardTimeoutScreen::new(),
+            trash_retention_screen: TrashRetentionScreen::new(),
             master_password_screen: MasterPasswordScreen::new(),
             sync_screen: Some(SyncScreen::new()),
             app_state: AppState::new(),
@@ -279,7 +292,7 @@ impl TuiApp {
 
             // Clear wizard state
             self.wizard_state = None;
-            self.passkey_confirm_screen = None;
+            self.passkey_verify_screen = None;
             self.current_screen = Screen::Main;
 
             self.output_lines.push("✓ Initialization complete".to_string());
@@ -315,10 +328,10 @@ impl TuiApp {
                 if state.can_proceed() {
                     state.next();
 
-                    // Handle special cases
-                    if state.step == WizardStep::PasskeyConfirm {
+                    // Handle special cases - initialize screens for new steps
+                    if state.step == WizardStep::PasskeyVerify {
                         if let Some(words) = state.passkey_words.clone() {
-                            self.passkey_confirm_screen = Some(PasskeyConfirmScreen::new(words));
+                            self.passkey_verify_screen = Some(PasskeyVerifyScreen::new(words));
                         }
                     }
 
@@ -331,12 +344,11 @@ impl TuiApp {
                 }
             }
             KeyCode::Char(' ') => {
-                // Space to toggle confirmation
-                if state.step == WizardStep::PasskeyConfirm {
-                    state.toggle_confirmed();
-                    if let Some(screen) = &mut self.passkey_confirm_screen {
-                        screen.toggle();
-                    }
+                // Space to toggle security notice acknowledgment
+                if state.step == WizardStep::SecurityNotice {
+                    use crate::tui::traits::Interactive;
+                    self.security_notice_screen
+                        .handle_key(crossterm::event::KeyEvent::from(KeyCode::Char(' ')));
                 }
             }
             KeyCode::Up | KeyCode::Down => {
@@ -885,23 +897,77 @@ impl TuiApp {
 
     /// Render the wizard screen
     fn render_wizard(&self, frame: &mut Frame, area: Rect, state: &WizardState) {
+        use crate::tui::traits::Render;
+
         match state.step {
             WizardStep::Welcome => {
                 self.welcome_screen.render(frame, area);
             }
+            WizardStep::MasterPassword => {
+                self.master_password_screen.render(frame, area);
+            }
+            WizardStep::MasterPasswordConfirm => {
+                // Use MasterPasswordScreen's confirm mode or separate screen
+                self.master_password_screen.render(frame, area);
+            }
+            WizardStep::SecurityNotice => {
+                self.security_notice_screen.render(area, frame.buffer_mut());
+            }
             WizardStep::PasskeyGenerate => {
                 self.passkey_generate_screen.render(frame, area);
+            }
+            WizardStep::PasskeyVerify => {
+                if let Some(screen) = &self.passkey_verify_screen {
+                    screen.render(area, frame.buffer_mut());
+                }
             }
             WizardStep::PasskeyImport => {
                 self.passkey_import_screen.render(frame, area);
             }
-            WizardStep::PasskeyConfirm => {
-                if let Some(screen) = &self.passkey_confirm_screen {
-                    screen.render(frame, area);
-                }
-            }
-            WizardStep::MasterPassword => {
+            WizardStep::MasterPasswordImport => {
                 self.master_password_screen.render(frame, area);
+            }
+            WizardStep::MasterPasswordImportConfirm => {
+                self.master_password_screen.render(frame, area);
+            }
+            WizardStep::PasswordHint => {
+                // Simple hint screen - render as paragraph
+                let paragraph = Paragraph::new(vec![
+                    Line::from(""),
+                    Line::from("💡 Password Hint"),
+                    Line::from(""),
+                    Line::from("Your PassKey has been imported successfully."),
+                    Line::from(""),
+                    Line::from("Make sure to remember your master password."),
+                    Line::from(""),
+                    Line::from("Press Enter to continue..."),
+                ])
+                .alignment(Alignment::Center)
+                .block(Block::default().borders(Borders::ALL));
+                frame.render_widget(paragraph, area);
+            }
+            WizardStep::PasswordPolicy => {
+                self.password_policy_screen.render(area, frame.buffer_mut());
+            }
+            WizardStep::ClipboardTimeout => {
+                self.clipboard_timeout_screen.render(area, frame.buffer_mut());
+            }
+            WizardStep::TrashRetention => {
+                self.trash_retention_screen.render(area, frame.buffer_mut());
+            }
+            WizardStep::ImportPasswords => {
+                // Optional import screen - for now just show message
+                let paragraph = Paragraph::new(vec![
+                    Line::from(""),
+                    Line::from("📥 Import Existing Passwords"),
+                    Line::from(""),
+                    Line::from("This step is optional."),
+                    Line::from(""),
+                    Line::from("Press Enter to skip or provide import file..."),
+                ])
+                .alignment(Alignment::Center)
+                .block(Block::default().borders(Borders::ALL));
+                frame.render_widget(paragraph, area);
             }
             WizardStep::Complete => {
                 // Show completion message

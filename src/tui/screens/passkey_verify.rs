@@ -14,6 +14,7 @@ use ratatui::{
 };
 
 /// Passkey verification screen
+#[derive(Debug)]
 pub struct PasskeyVerifyScreen {
     /// The 24-word passkey
     passkey_words: Vec<String>,
