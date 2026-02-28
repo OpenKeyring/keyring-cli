@@ -5,6 +5,7 @@
 pub mod conflict;
 pub mod help;
 pub mod master_password;
+pub mod master_password_confirm;
 pub mod passkey_confirm;
 pub mod passkey_generate;
 pub mod passkey_import;
@@ -19,6 +20,7 @@ pub mod main_screen;
 pub use conflict::ConflictResolutionScreen;
 pub use help::{HelpScreen, HelpSection, Shortcut};
 pub use master_password::{MasterPasswordScreen, PasswordStrength};
+pub use master_password_confirm::MasterPasswordConfirmScreen;
 pub use passkey_confirm::PasskeyConfirmScreen;
 pub use passkey_generate::PasskeyGenerateScreen;
 pub use passkey_import::PasskeyImportScreen;
@@ -27,7 +29,7 @@ pub use provider_select::{Provider, ProviderSelectScreen};
 pub use settings::{SettingsAction, SettingsItem, SettingsScreen, SettingsSection};
 pub use sync::{SyncScreen, SyncStatus};
 pub use welcome::{WelcomeChoice, WelcomeScreen};
-pub use wizard::{WizardState, WizardStep};
+pub use wizard::{ClipboardTimeout, PasswordPolicyConfig, PasswordType, TrashRetention, WizardState, WizardStep};
 // TODO: Re-enable after implementing Interactive trait for wizard screens
 // pub use crate::tui::wizard_flow::{WizardScreen, WizardContext};
 
