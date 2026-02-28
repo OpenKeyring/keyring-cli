@@ -1,0 +1,511 @@
+//! Tree Panel Component
+//!
+//! Displays a tree view of password groups and entries.
+//! Supports Vim-style navigation (j/k/g/G) and expand/collapse (h/l).
+
+use crate::tui::error::TuiResult;
+use crate::tui::state::{AppState, TreeState, TreeNodeId, NodeType};
+use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
+use ratatui::{
+    buffer::Buffer,
+    layout::Rect,
+    prelude::Widget,
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
+    widgets::{Block, Borders, Paragraph},
+    Frame,
+};
+use uuid::Uuid;
+
+/// Tree panel component
+///
+/// Displays a hierarchical tree of groups and password entries.
+/// Uses TreeState for all state management (no internal state).
+pub struct TreePanel {
+    /// Component ID
+    id: ComponentId,
+    /// Whether the panel has focus
+    focused: bool,
+}
+
+impl TreePanel {
+    /// Create a new tree panel
+    pub fn new() -> Self {
+        Self {
+            id: ComponentId::new(0),
+            focused: false,
+        }
+    }
+
+    /// Set component ID
+    #[must_use]
+    pub fn with_id(mut self, id: ComponentId) -> Self {
+        self.id = id;
+        self
+    }
+
+    /// Check if the panel is currently focused
+    pub fn is_focused(&self) -> bool {
+        self.focused
+    }
+
+    /// Render to frame (preferred method)
+    ///
+    /// Renders the tree using TreeState's visible_nodes list.
+    /// Shows folder icons, expand/collapse indicators, and selection highlight.
+    pub fn render_frame(&self, frame: &mut Frame, area: Rect, state: &TreeState) {
+        if area.height < 3 {
+            // Not enough space to render
+            return;
+        }
+
+        // Create border block with focus-aware styling
+        let border_style = if self.focused {
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Color::DarkGray)
+        };
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_style(border_style)
+            .title(" Groups ");
+
+        let inner_area = block.inner(area);
+        block.render(area, frame.buffer_mut());
+
+        // Render visible nodes
+        self.render_nodes(frame, inner_area, state);
+    }
+
+    /// Render the list of visible nodes
+    fn render_nodes(&self, frame: &mut Frame, area: Rect, state: &TreeState) {
+        if state.visible_nodes.is_empty() {
+            // Show empty state
+            let empty_text = Paragraph::new("No entries")
+                .style(Style::default().fg(Color::DarkGray));
+            frame.render_widget(empty_text, area);
+            return;
+        }
+
+        // Calculate how many rows we can display
+        let max_rows = area.height as usize;
+        let start_row = self.calculate_scroll_offset(state, max_rows);
+
+        // Render visible nodes
+        for (i, node) in state.visible_nodes.iter().skip(start_row).enumerate() {
+            if i >= max_rows {
+                break;
+            }
+
+            let y = area.y + i as u16;
+            let row_area = Rect::new(area.x, y, area.width, 1);
+
+            let is_highlighted = (start_row + i) == state.highlighted_index && self.focused;
+            let is_expanded = if let TreeNodeId::Group(id) = node.id {
+                state.is_expanded(&id)
+            } else {
+                false
+            };
+
+            let line = self.format_node_line(node, is_highlighted, is_expanded);
+            let paragraph = Paragraph::new(line);
+            paragraph.render(row_area, frame.buffer_mut());
+        }
+    }
+
+    /// Calculate scroll offset to keep highlighted item visible
+    fn calculate_scroll_offset(&self, state: &TreeState, max_rows: usize) -> usize {
+        if state.highlighted_index < max_rows.saturating_sub(1) {
+            return 0;
+        }
+        state.highlighted_index.saturating_sub(max_rows.saturating_sub(2))
+    }
+
+    /// Format a single node line for display
+    fn format_node_line(&self, node: &crate::tui::state::VisibleNode, is_highlighted: bool, is_expanded: bool) -> Line<'static> {
+        // Build indent string based on level
+        let indent = "  ".repeat(node.level as usize);
+
+        // Build icon based on node type and expansion state
+        let icon = match node.node_type {
+            NodeType::Folder => {
+                if is_expanded {
+                    "[-]"
+                } else {
+                    "[+]"
+                }
+            }
+            NodeType::Password => " • ",
+        };
+
+        // Build count indicator for folders
+        let count_str = if node.child_count > 0 && matches!(node.node_type, NodeType::Folder) {
+            format!(" ({})", node.child_count)
+        } else {
+            String::new()
+        };
+
+        // Determine style based on highlight state
+        let style = if is_highlighted {
+            Style::default()
+                .fg(Color::Yellow)
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Color::White)
+        };
+
+        // Combine all parts
+        let text = format!("{}{} {}{}", indent, icon, node.label, count_str);
+        Line::from(Span::styled(text, style))
+    }
+
+    /// Handle key event with state mutation
+    ///
+    /// Navigation:
+    /// - j/Down: Move to next node
+    /// - k/Up: Move to previous node
+    /// - g: Move to first node
+    /// - G: Move to last node
+    ///
+    /// Expand/Collapse:
+    /// - l/Right: Expand folder
+    /// - h/Left: Collapse folder
+    /// - Space/Enter: Toggle expand or select
+    ///
+    /// Selection:
+    /// - Enter: Select password and update AppState
+    pub fn handle_key_with_state(
+        &mut self,
+        key: KeyEvent,
+        state: &mut AppState,
+    ) -> HandleResult {
+        // Only handle press events
+        if key.kind == KeyEventKind::Release {
+            return HandleResult::Ignored;
+        }
+
+        match key.code {
+            // Navigation: j/down - move down
+            KeyCode::Char('j') | KeyCode::Down => {
+                state.tree.move_down();
+                HandleResult::Consumed
+            }
+            // Navigation: k/up - move up
+            KeyCode::Char('k') | KeyCode::Up => {
+                state.tree.move_up();
+                HandleResult::Consumed
+            }
+            // Navigation: g - move to top
+            KeyCode::Char('g') => {
+                state.tree.move_to_top();
+                HandleResult::Consumed
+            }
+            // Navigation: G (Shift+g) - move to bottom
+            KeyCode::Char('G') => {
+                state.tree.move_to_bottom();
+                HandleResult::Consumed
+            }
+            // Expand: l/right - expand current folder
+            KeyCode::Char('l') | KeyCode::Right => {
+                if let Some(node) = state.tree.current_node() {
+                    if let TreeNodeId::Group(id) = node.id {
+                        let id = id; // Copy the id
+                        if !state.tree.is_expanded(&id) {
+                            state.tree.toggle_expand(id);
+                        }
+                    }
+                }
+                HandleResult::Consumed
+            }
+            // Collapse: h/left - collapse current folder
+            KeyCode::Char('h') | KeyCode::Left => {
+                if let Some(node) = state.tree.current_node() {
+                    if let TreeNodeId::Group(id) = node.id {
+                        let id = id; // Copy the id
+                        if state.tree.is_expanded(&id) {
+                            state.tree.toggle_expand(id);
+                        }
+                    }
+                }
+                HandleResult::Consumed
+            }
+            // Toggle expand or select
+            KeyCode::Char(' ') => {
+                if let Some(node) = state.tree.current_node() {
+                    match node.id {
+                        TreeNodeId::Group(id) => {
+                            state.tree.toggle_expand(id);
+                        }
+                        TreeNodeId::Password(id) => {
+                            state.select_password(id);
+                        }
+                    }
+                }
+                HandleResult::Consumed
+            }
+            // Select: Enter - select password or toggle folder
+            KeyCode::Enter => {
+                if let Some(node) = state.tree.current_node() {
+                    match node.id {
+                        TreeNodeId::Group(id) => {
+                            state.tree.toggle_expand(id);
+                        }
+                        TreeNodeId::Password(id) => {
+                            state.select_password(id);
+                        }
+                    }
+                }
+                HandleResult::Consumed
+            }
+            _ => HandleResult::Ignored,
+        }
+    }
+
+    /// Get the currently selected password ID (if any)
+    pub fn get_selected_password(&self, state: &TreeState) -> Option<Uuid> {
+        state.current_node().and_then(|node| {
+            if let TreeNodeId::Password(id) = node.id {
+                Some(id)
+            } else {
+                None
+            }
+        })
+    }
+}
+
+impl Default for TreePanel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Render for TreePanel {
+    fn render(&self, area: Rect, buf: &mut Buffer) {
+        // Simplified render without state - just show placeholder
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(" Groups ");
+        block.render(area, buf);
+    }
+}
+
+impl Interactive for TreePanel {
+    fn handle_key(&mut self, key: KeyEvent) -> HandleResult {
+        // Only handle press events
+        if key.kind == KeyEventKind::Release {
+            return HandleResult::Ignored;
+        }
+
+        // Without state, we can only acknowledge key presses
+        match key.code {
+            KeyCode::Char('j') | KeyCode::Char('k') | KeyCode::Up | KeyCode::Down => {
+                HandleResult::Consumed
+            }
+            _ => HandleResult::Ignored,
+        }
+    }
+}
+
+impl Component for TreePanel {
+    fn id(&self) -> ComponentId {
+        self.id
+    }
+
+    fn can_focus(&self) -> bool {
+        true
+    }
+
+    fn on_focus_gain(&mut self) -> TuiResult<()> {
+        self.focused = true;
+        Ok(())
+    }
+
+    fn on_focus_loss(&mut self) -> TuiResult<()> {
+        self.focused = false;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tui::state::VisibleNode;
+
+    fn create_visible_node(id: TreeNodeId, level: u8, node_type: NodeType, label: &str) -> VisibleNode {
+        VisibleNode {
+            id,
+            level,
+            node_type,
+            label: label.to_string(),
+            child_count: 0,
+        }
+    }
+
+    #[test]
+    fn test_tree_panel_creation() {
+        let panel = TreePanel::new();
+        assert!(!panel.focused);
+        assert!(panel.can_focus());
+    }
+
+    #[test]
+    fn test_focus_state() {
+        let mut panel = TreePanel::new();
+        assert!(!panel.is_focused());
+
+        panel.on_focus_gain().unwrap();
+        assert!(panel.is_focused());
+
+        panel.on_focus_loss().unwrap();
+        assert!(!panel.is_focused());
+    }
+
+    #[test]
+    fn test_navigation_j_k() {
+        let mut panel = TreePanel::new();
+        let mut state = AppState::new();
+
+        // Create some test nodes
+        state.tree.set_visible_nodes(vec![
+            create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Root"),
+            create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Child 1"),
+            create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Child 2"),
+        ]);
+
+        // Initial index should be 0
+        assert_eq!(state.tree.highlighted_index, 0);
+
+        // Press 'j' to move down
+        let result = panel.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('j'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert!(matches!(result, HandleResult::Consumed));
+        assert_eq!(state.tree.highlighted_index, 1);
+
+        // Press 'k' to move up
+        let result = panel.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('k'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert!(matches!(result, HandleResult::Consumed));
+        assert_eq!(state.tree.highlighted_index, 0);
+    }
+
+    #[test]
+    fn test_navigation_g_g() {
+        let mut panel = TreePanel::new();
+        let mut state = AppState::new();
+
+        // Create some test nodes
+        state.tree.set_visible_nodes(vec![
+            create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Root"),
+            create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Child 1"),
+            create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Child 2"),
+        ]);
+        state.tree.highlighted_index = 1;
+
+        // Press 'g' to move to top
+        let result = panel.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('g'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert!(matches!(result, HandleResult::Consumed));
+        assert_eq!(state.tree.highlighted_index, 0);
+
+        // Press 'G' to move to bottom
+        let result = panel.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('G'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert!(matches!(result, HandleResult::Consumed));
+        assert_eq!(state.tree.highlighted_index, 2);
+    }
+
+    #[test]
+    fn test_expand_collapse_folder() {
+        let mut panel = TreePanel::new();
+        let mut state = AppState::new();
+
+        let group_id = Uuid::new_v4();
+        state.tree.set_visible_nodes(vec![
+            create_visible_node(TreeNodeId::Group(group_id), 0, NodeType::Folder, "Root"),
+        ]);
+
+        // Initially not expanded
+        assert!(!state.tree.is_expanded(&group_id));
+
+        // Press 'l' to expand
+        let result = panel.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('l'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert!(matches!(result, HandleResult::Consumed));
+        assert!(state.tree.is_expanded(&group_id));
+
+        // Press 'h' to collapse
+        let result = panel.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('h'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert!(matches!(result, HandleResult::Consumed));
+        assert!(!state.tree.is_expanded(&group_id));
+    }
+
+    #[test]
+    fn test_select_password() {
+        let mut panel = TreePanel::new();
+        let mut state = AppState::new();
+
+        let password_id = Uuid::new_v4();
+        state.tree.set_visible_nodes(vec![
+            create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Root"),
+            create_visible_node(TreeNodeId::Password(password_id), 1, NodeType::Password, "Entry"),
+        ]);
+        state.tree.highlighted_index = 1;
+
+        // Initially no selection
+        assert!(state.selection.selected_password.is_none());
+
+        // Press Enter to select
+        let result = panel.handle_key_with_state(
+            KeyEvent::new(KeyCode::Enter, crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert!(matches!(result, HandleResult::Consumed));
+        assert_eq!(state.selection.selected_password, Some(password_id));
+    }
+
+    #[test]
+    fn test_get_selected_password() {
+        let panel = TreePanel::new();
+        let mut state = AppState::new();
+
+        let password_id = Uuid::new_v4();
+        state.tree.set_visible_nodes(vec![
+            create_visible_node(TreeNodeId::Password(password_id), 0, NodeType::Password, "Entry"),
+        ]);
+
+        let selected = panel.get_selected_password(&state.tree);
+        assert_eq!(selected, Some(password_id));
+    }
+
+    #[test]
+    fn test_get_selected_password_when_folder() {
+        let panel = TreePanel::new();
+        let mut state = AppState::new();
+
+        let group_id = Uuid::new_v4();
+        state.tree.set_visible_nodes(vec![
+            create_visible_node(TreeNodeId::Group(group_id), 0, NodeType::Folder, "Folder"),
+        ]);
+
+        let selected = panel.get_selected_password(&state.tree);
+        assert!(selected.is_none());
+    }
+}
