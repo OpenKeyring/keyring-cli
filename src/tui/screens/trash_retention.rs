@@ -113,19 +113,11 @@ impl Interactive for TrashRetentionScreen {
     fn handle_key(&mut self, key: KeyEvent) -> HandleResult {
         match key.code {
             KeyCode::Up => {
-                self.retention = match self.retention {
-                    TrashRetention::Days7 => TrashRetention::Days90,
-                    TrashRetention::Days30 => TrashRetention::Days7,
-                    TrashRetention::Days90 => TrashRetention::Days30,
-                };
+                self.retention = self.retention.prev();
                 HandleResult::NeedsRender
             }
             KeyCode::Down => {
-                self.retention = match self.retention {
-                    TrashRetention::Days7 => TrashRetention::Days30,
-                    TrashRetention::Days30 => TrashRetention::Days90,
-                    TrashRetention::Days90 => TrashRetention::Days7,
-                };
+                self.retention = self.retention.next();
                 HandleResult::NeedsRender
             }
             KeyCode::Enter => HandleResult::Consumed,

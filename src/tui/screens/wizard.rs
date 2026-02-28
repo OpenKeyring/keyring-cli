@@ -107,6 +107,25 @@ impl ClipboardTimeout {
             Self::Seconds60 => "60 seconds",
         }
     }
+
+    /// Get all variants for iteration
+    pub const fn values() -> &'static [Self] {
+        &[Self::Seconds10, Self::Seconds30, Self::Seconds60]
+    }
+
+    /// Move to next option (down navigation)
+    pub fn next(&self) -> Self {
+        let values = Self::values();
+        let pos = values.iter().position(|&v| v == *self).unwrap_or(0);
+        values[(pos + 1) % values.len()]
+    }
+
+    /// Move to previous option (up navigation)
+    pub fn prev(&self) -> Self {
+        let values = Self::values();
+        let pos = values.iter().position(|&v| v == *self).unwrap_or(0);
+        values[(pos + values.len() - 1) % values.len()]
+    }
 }
 
 /// Trash retention period options
@@ -138,6 +157,25 @@ impl TrashRetention {
             Self::Days30 => "30 days (recommended)",
             Self::Days90 => "90 days",
         }
+    }
+
+    /// Get all variants for iteration
+    pub const fn values() -> &'static [Self] {
+        &[Self::Days7, Self::Days30, Self::Days90]
+    }
+
+    /// Move to next option (down navigation)
+    pub fn next(&self) -> Self {
+        let values = Self::values();
+        let pos = values.iter().position(|&v| v == *self).unwrap_or(0);
+        values[(pos + 1) % values.len()]
+    }
+
+    /// Move to previous option (up navigation)
+    pub fn prev(&self) -> Self {
+        let values = Self::values();
+        let pos = values.iter().position(|&v| v == *self).unwrap_or(0);
+        values[(pos + values.len() - 1) % values.len()]
     }
 }
 

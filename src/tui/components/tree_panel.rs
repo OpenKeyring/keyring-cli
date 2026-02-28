@@ -125,10 +125,13 @@ impl TreePanel {
         state.highlighted_index.saturating_sub(max_rows.saturating_sub(2))
     }
 
+    /// Pre-computed indentation strings for tree levels
+    const INDENTS: [&str; 10] = ["", "  ", "    ", "      ", "        ", "          ", "            ", "              ", "                ", "                  "];
+
     /// Format a single node line for display
     fn format_node_line(&self, node: &crate::tui::state::VisibleNode, is_highlighted: bool, is_expanded: bool) -> Line<'static> {
-        // Build indent string based on level
-        let indent = "  ".repeat(node.level as usize);
+        // Use pre-computed indentation to avoid per-frame allocations
+        let indent = Self::INDENTS.get(node.level as usize).unwrap_or(&"");
 
         // Build icon based on node type and expansion state
         let icon = match node.node_type {
@@ -142,13 +145,6 @@ impl TreePanel {
             NodeType::Password => " • ",
         };
 
-        // Build count indicator for folders
-        let count_str = if node.child_count > 0 && matches!(node.node_type, NodeType::Folder) {
-            format!(" ({})", node.child_count)
-        } else {
-            String::new()
-        };
-
         // Determine style based on highlight state
         let style = if is_highlighted {
             Style::default()
@@ -159,9 +155,19 @@ impl TreePanel {
             Style::default().fg(Color::White)
         };
 
-        // Combine all parts
-        let text = format!("{}{} {}{}", indent, icon, node.label, count_str);
-        Line::from(Span::styled(text, style))
+        // Build the line efficiently
+        let mut spans = Vec::with_capacity(4);
+        spans.push(Span::styled(*indent, style));
+        spans.push(Span::styled(icon, style));
+        spans.push(Span::styled(" ", style));
+        spans.push(Span::styled(node.label.clone(), style));
+
+        // Add count only if needed (avoids empty String allocation)
+        if node.child_count > 0 && matches!(node.node_type, NodeType::Folder) {
+            spans.push(Span::styled(format!(" ({})", node.child_count), style));
+        }
+
+        Line::from(spans)
     }
 
     /// Handle key event with state mutation
@@ -189,6 +195,9 @@ impl TreePanel {
             return HandleResult::Ignored;
         }
 
+        // Pre-fetch current node once for operations that need it
+        let current_node = state.tree.current_node();
+
         match key.code {
             // Navigation: j/down - move down
             KeyCode::Char('j') | KeyCode::Down => {
@@ -212,9 +221,8 @@ impl TreePanel {
             }
             // Expand: l/right - expand current folder
             KeyCode::Char('l') | KeyCode::Right => {
-                if let Some(node) = state.tree.current_node() {
+                if let Some(node) = current_node {
                     if let TreeNodeId::Group(id) = node.id {
-                        let id = id; // Copy the id
                         if !state.tree.is_expanded(&id) {
                             state.tree.toggle_expand(id);
                         }
@@ -224,9 +232,8 @@ impl TreePanel {
             }
             // Collapse: h/left - collapse current folder
             KeyCode::Char('h') | KeyCode::Left => {
-                if let Some(node) = state.tree.current_node() {
+                if let Some(node) = current_node {
                     if let TreeNodeId::Group(id) = node.id {
-                        let id = id; // Copy the id
                         if state.tree.is_expanded(&id) {
                             state.tree.toggle_expand(id);
                         }
@@ -236,7 +243,7 @@ impl TreePanel {
             }
             // Toggle expand or select
             KeyCode::Char(' ') => {
-                if let Some(node) = state.tree.current_node() {
+                if let Some(node) = current_node {
                     match node.id {
                         TreeNodeId::Group(id) => {
                             state.tree.toggle_expand(id);
@@ -250,7 +257,7 @@ impl TreePanel {
             }
             // Select: Enter - select password or toggle folder
             KeyCode::Enter => {
-                if let Some(node) = state.tree.current_node() {
+                if let Some(node) = current_node {
                     match node.id {
                         TreeNodeId::Group(id) => {
                             state.tree.toggle_expand(id);

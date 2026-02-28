@@ -109,19 +109,11 @@ impl Interactive for ClipboardTimeoutScreen {
     fn handle_key(&mut self, key: KeyEvent) -> HandleResult {
         match key.code {
             KeyCode::Up => {
-                self.timeout = match self.timeout {
-                    ClipboardTimeout::Seconds10 => ClipboardTimeout::Seconds60,
-                    ClipboardTimeout::Seconds30 => ClipboardTimeout::Seconds10,
-                    ClipboardTimeout::Seconds60 => ClipboardTimeout::Seconds30,
-                };
+                self.timeout = self.timeout.prev();
                 HandleResult::NeedsRender
             }
             KeyCode::Down => {
-                self.timeout = match self.timeout {
-                    ClipboardTimeout::Seconds10 => ClipboardTimeout::Seconds30,
-                    ClipboardTimeout::Seconds30 => ClipboardTimeout::Seconds60,
-                    ClipboardTimeout::Seconds60 => ClipboardTimeout::Seconds10,
-                };
+                self.timeout = self.timeout.next();
                 HandleResult::NeedsRender
             }
             KeyCode::Enter => HandleResult::Consumed,

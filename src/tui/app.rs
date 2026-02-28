@@ -131,6 +131,11 @@ impl SyncStatus {
     }
 }
 
+/// Maximum history entries to keep
+const MAX_HISTORY: usize = 1000;
+/// Maximum output lines to display
+const MAX_OUTPUT_LINES: usize = 500;
+
 /// TUI Application State
 pub struct TuiApp {
     /// Running state
@@ -227,6 +232,22 @@ impl TuiApp {
         }
     }
 
+    /// Add an output line, trimming old lines if exceeding MAX_OUTPUT_LINES
+    pub fn add_output(&mut self, line: String) {
+        if self.output_lines.len() >= MAX_OUTPUT_LINES {
+            let excess = self.output_lines.len() - MAX_OUTPUT_LINES + 1;
+            self.output_lines.drain(0..excess);
+        }
+        self.output_lines.push(line);
+    }
+
+    /// Add multiple output lines, trimming if necessary
+    pub fn add_outputs(&mut self, lines: Vec<String>) {
+        for line in lines {
+            self.add_output(line);
+        }
+    }
+
     /// Get the current screen
     pub fn current_screen(&self) -> Screen {
         self.current_screen
@@ -295,7 +316,7 @@ impl TuiApp {
             self.passkey_verify_screen = None;
             self.current_screen = Screen::Main;
 
-            self.output_lines.push("✓ Initialization complete".to_string());
+            self.add_output("✓ Initialization complete".to_string());
             Ok(())
         } else {
             Err(KeyringError::InvalidInput {
@@ -777,6 +798,10 @@ impl TuiApp {
         }
 
         let cmd = self.input_buffer.clone();
+        // Limit history size
+        if self.history.len() >= MAX_HISTORY {
+            self.history.remove(0);
+        }
         self.history.push(cmd.clone());
         self.history_index = self.history.len();
         self.input_buffer.clear();
@@ -789,7 +814,7 @@ impl TuiApp {
     pub(crate) fn process_command(&mut self, cmd: &str) {
         use crate::tui::commands::{config, delete, health, list, new, search, show, update};
 
-        self.output_lines.push(format!("> {}", cmd));
+        self.add_output(format!("> {}", cmd));
 
         let parts: Vec<&str> = cmd.splitn(2, ' ').collect();
         let command = parts[0];
