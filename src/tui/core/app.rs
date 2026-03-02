@@ -402,6 +402,9 @@ impl Default for TuiApp {
 
 impl Application for TuiApp {
     fn run(&mut self) -> io::Result<()> {
+        // Install panic hook FIRST to ensure terminal recovery on panic
+        crate::tui::panic_hook::install_panic_hook();
+
         // 设置终端
         enable_raw_mode()?;
         let mut stdout = io::stdout();

@@ -1134,6 +1134,9 @@ pub fn restore_terminal(mut terminal: Terminal<CrosstermBackend<Stdout>>) -> Tui
 pub fn run_tui() -> Result<()> {
     use crossterm::event;
 
+    // Install panic hook FIRST to ensure terminal recovery on panic
+    crate::tui::panic_hook::install_panic_hook();
+
     let mut terminal =
         init_terminal().map_err(|e| KeyringError::IoError(format!("Failed to init TUI: {}", e)))?;
 
@@ -1152,7 +1155,8 @@ pub fn run_tui() -> Result<()> {
             match event::read()
                 .map_err(|e| KeyringError::IoError(format!("Event read failed: {}", e)))?
             {
-                event::Event::Key(key) => {
+                // Filter to only handle Press events to avoid duplicate key handling on Windows
+                event::Event::Key(key) if key.kind == event::KeyEventKind::Press => {
                     use crossterm::event::KeyCode;
 
                     // Route wizard events

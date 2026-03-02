@@ -7,7 +7,7 @@ use keyring_cli::tui::models::tree::{TreeNode, TreeNodeItem};
 use keyring_cli::tui::traits::{HandleResult, Render, Interactive};
 use std::io;
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -139,8 +139,10 @@ fn run_demo() -> io::Result<()> {
 
         // 处理事件
         if event::poll(std::time::Duration::from_millis(16))? {
+            // Filter to only handle Press events to avoid duplicate key handling on Windows
             if let Event::Key(key_event) = event::read()? {
-                match key_event.code {
+                if key_event.kind == KeyEventKind::Press {
+                    match key_event.code {
                     // 退出程序
                     KeyCode::Char('q') => running = false,
                     KeyCode::Esc => running = false,
@@ -183,6 +185,9 @@ fn run_demo() -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
+    // Install panic hook FIRST to ensure terminal recovery on panic
+    keyring_cli::tui::panic_hook::install_panic_hook();
+
     println!("Tree Component 演示程序");
     println!("使用 Vim 风格导航:");
     println!("  - j/k 或 ↑/↓ : 上下移动");

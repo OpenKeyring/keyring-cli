@@ -17,6 +17,7 @@
 
 // ============ Phase 1.2 新模块 ============
 pub mod error;
+pub mod panic_hook;
 pub mod traits;
 pub mod core;
 
