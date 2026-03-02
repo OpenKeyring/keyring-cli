@@ -878,7 +878,7 @@ impl TuiApp {
     }
 
     /// Render the TUI
-    pub fn render(&self, frame: &mut Frame) {
+    pub fn render(&mut self, frame: &mut Frame) {
         let size = frame.area();
 
         // Handle wizard screens differently
@@ -897,7 +897,14 @@ impl TuiApp {
             }
         }
 
-        // Split screen into output area, input area, and statusline
+        // Handle main screen with dual-column layout
+        if self.current_screen == Screen::Main {
+            self.main_screen.render_frame(frame, size, &self.app_state);
+            return;
+        }
+
+        // Fallback: Split screen into output area, input area, and statusline
+        // (for any other screens not yet migrated)
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints(
