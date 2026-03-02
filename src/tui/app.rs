@@ -1169,6 +1169,20 @@ pub fn run_tui() -> Result<()> {
                     // Route wizard events
                     if app.current_screen == Screen::Wizard {
                         app.handle_wizard_key_event(key);
+                    } else if app.current_screen == Screen::Main {
+                        // Route main screen events to MainScreen handler
+                        use crate::tui::traits::HandleResult;
+                        match app.main_screen.handle_key_with_state(key, &mut app.app_state) {
+                            HandleResult::Consumed => {}
+                            HandleResult::Ignored => {
+                                // Fallback: handle global shortcuts
+                                if key.code == KeyCode::Char('q') {
+                                    app.quit();
+                                }
+                            }
+                            HandleResult::Action(_) => {}
+                            HandleResult::NeedsRender => {}
+                        }
                     } else {
                         // Check for keyboard shortcuts first (Ctrl keys)
                         if key.modifiers.contains(event::KeyModifiers::CONTROL) {
