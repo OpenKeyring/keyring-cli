@@ -177,7 +177,7 @@ impl FilterPanel {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(border_style)
-            .title(" 过滤条件 ");
+            .title(" [2] Filters ");
 
         let inner_area = block.inner(area);
         block.render(area, frame.buffer_mut());
@@ -256,7 +256,7 @@ impl Render for FilterPanel {
         // Simplified render without state - just show placeholder
         let block = Block::default()
             .borders(Borders::ALL)
-            .title(" 过滤条件 ");
+            .title(" [2] Filters ");
         let inner = block.inner(area);
         block.render(area, buf);
 

@@ -8,7 +8,7 @@ use crate::tui::{Screen, TuiApp};
 
 #[test]
 fn test_tuiapp_initial_render() {
-    let app = TuiApp::new();
+    let mut app = TuiApp::new();
     let output = render_snapshot(80, 24, |frame| {
         app.render(frame);
     });
@@ -18,7 +18,7 @@ fn test_tuiapp_initial_render() {
 
 #[test]
 fn test_tuiapp_initial_render_narrow() {
-    let app = TuiApp::new();
+    let mut app = TuiApp::new();
     let output = render_snapshot(40, 24, |frame| {
         app.render(frame);
     });
@@ -212,7 +212,7 @@ fn test_tuiapp_very_narrow_render() {
 
 #[test]
 fn test_tuiapp_very_wide_render() {
-    let app = TuiApp::new();
+    let mut app = TuiApp::new();
 
     let output = render_snapshot(120, 24, |frame| {
         app.render(frame);
@@ -223,7 +223,7 @@ fn test_tuiapp_very_wide_render() {
 
 #[test]
 fn test_tuiapp_short_terminal_render() {
-    let app = TuiApp::new();
+    let mut app = TuiApp::new();
 
     let output = render_snapshot(80, 10, |frame| {
         app.render(frame);

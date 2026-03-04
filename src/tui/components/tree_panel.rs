@@ -1,7 +1,7 @@
 //! Tree Panel Component
 //!
 //! Displays a tree view of password groups and entries.
-//! Supports Vim-style navigation (j/k/g/G) and expand/collapse (h/l).
+//! Supports Vim-style navigation (j/k/g/G/gg) and expand/collapse (h/l).
 
 use crate::tui::error::TuiResult;
 use crate::tui::state::{AppState, TreeState, TreeNodeId, NodeType};
@@ -16,17 +16,25 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
+use std::time::Instant;
 use uuid::Uuid;
+
+/// Maximum time between gg key presses (in milliseconds)
+const GG_TIMEOUT_MS: u128 = 500;
 
 /// Tree panel component
 ///
 /// Displays a hierarchical tree of groups and password entries.
-/// Uses TreeState for all state management (no internal state).
+/// Uses TreeState for navigation state, tracks gg double-key internally.
 pub struct TreePanel {
     /// Component ID
     id: ComponentId,
     /// Whether the panel has focus
     focused: bool,
+    /// Track pending 'g' key for gg double-key sequence
+    pending_g: bool,
+    /// Time of last 'g' key press
+    last_g_time: Option<Instant>,
 }
 
 impl TreePanel {
@@ -35,6 +43,8 @@ impl TreePanel {
         Self {
             id: ComponentId::new(0),
             focused: false,
+            pending_g: false,
+            last_g_time: None,
         }
     }
 
@@ -72,7 +82,7 @@ impl TreePanel {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(border_style)
-            .title(" Groups ");
+            .title(" [1] Groups ");
 
         let inner_area = block.inner(area);
         block.render(area, frame.buffer_mut());
@@ -201,30 +211,60 @@ impl TreePanel {
         match key.code {
             // Navigation: j/down - move down
             KeyCode::Char('j') | KeyCode::Down => {
+                self.pending_g = false;
                 state.tree.move_down();
                 HandleResult::Consumed
             }
             // Navigation: k/up - move up
             KeyCode::Char('k') | KeyCode::Up => {
+                self.pending_g = false;
                 state.tree.move_up();
                 HandleResult::Consumed
             }
-            // Navigation: g - move to top
+            // Navigation: g - move to top (or first of gg sequence)
             KeyCode::Char('g') => {
-                state.tree.move_to_top();
+                let now = Instant::now();
+
+                // Check if this is second 'g' in gg sequence
+                if self.pending_g {
+                    if let Some(last_time) = self.last_g_time {
+                        let elapsed = now.duration_since(last_time).as_millis();
+                        if elapsed < u128::from(GG_TIMEOUT_MS) {
+                            // Second 'g' within timeout - execute gg jump to top
+                            self.pending_g = false;
+                            self.last_g_time = None;
+                            state.tree.move_to_top();
+                        } else {
+                            // Timeout expired, treat as new first 'g'
+                            self.pending_g = true;
+                            self.last_g_time = Some(now);
+                        }
+                    } else {
+                        // No pending state, treat as first 'g'
+                        self.pending_g = true;
+                        self.last_g_time = Some(now);
+                    }
+                } else {
+                    // No previous key time, start new sequence
+                    self.pending_g = true;
+                    self.last_g_time = Some(now);
+                }
                 HandleResult::Consumed
             }
             // Navigation: G (Shift+g) - move to bottom
             KeyCode::Char('G') => {
+                self.pending_g = false;
                 state.tree.move_to_bottom();
                 HandleResult::Consumed
             }
             // Expand: l/right - expand current folder
             KeyCode::Char('l') | KeyCode::Right => {
+                self.pending_g = false;
                 if let Some(node) = current_node {
                     if let TreeNodeId::Group(id) = node.id {
                         if !state.tree.is_expanded(&id) {
                             state.tree.toggle_expand(id);
+                            state.apply_filter();
                         }
                     }
                 }
@@ -232,10 +272,12 @@ impl TreePanel {
             }
             // Collapse: h/left - collapse current folder
             KeyCode::Char('h') | KeyCode::Left => {
+                self.pending_g = false;
                 if let Some(node) = current_node {
                     if let TreeNodeId::Group(id) = node.id {
                         if state.tree.is_expanded(&id) {
                             state.tree.toggle_expand(id);
+                            state.apply_filter();
                         }
                     }
                 }
@@ -243,10 +285,12 @@ impl TreePanel {
             }
             // Toggle expand or select
             KeyCode::Char(' ') => {
+                self.pending_g = false;
                 if let Some(node) = current_node {
                     match node.id {
                         TreeNodeId::Group(id) => {
                             state.tree.toggle_expand(id);
+                            state.apply_filter();
                         }
                         TreeNodeId::Password(id) => {
                             state.select_password(id);
@@ -257,10 +301,12 @@ impl TreePanel {
             }
             // Select: Enter - select password or toggle folder
             KeyCode::Enter => {
+                self.pending_g = false;
                 if let Some(node) = current_node {
                     match node.id {
                         TreeNodeId::Group(id) => {
                             state.tree.toggle_expand(id);
+                            state.apply_filter();
                         }
                         TreeNodeId::Password(id) => {
                             state.select_password(id);
@@ -269,7 +315,11 @@ impl TreePanel {
                 }
                 HandleResult::Consumed
             }
-            _ => HandleResult::Ignored,
+            _ => {
+                // Any other key clears pending_g
+                self.pending_g = false;
+                HandleResult::Ignored
+            }
         }
     }
 
@@ -296,7 +346,7 @@ impl Render for TreePanel {
         // Simplified render without state - just show placeholder
         let block = Block::default()
             .borders(Borders::ALL)
-            .title(" Groups ");
+            .title(" [1] Groups ");
         block.render(area, buf);
     }
 }
@@ -417,15 +467,29 @@ mod tests {
         ]);
         state.tree.highlighted_index = 1;
 
-        // Press 'g' to move to top
+        // Press 'g' once - should NOT move yet, just set pending_g
         let result = panel.handle_key_with_state(
             KeyEvent::new(KeyCode::Char('g'), crossterm::event::KeyModifiers::empty()),
             &mut state,
         );
         assert!(matches!(result, HandleResult::Consumed));
-        assert_eq!(state.tree.highlighted_index, 0);
+        // Single 'g' should not move, index stays at same
+        assert_eq!(state.tree.highlighted_index, 1);
+        assert!(panel.pending_g);
 
-        // Press 'G' to move to bottom
+        // Press 'g' again quickly - should move to top (gg sequence)
+        let result = panel.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('g'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert!(matches!(result, HandleResult::Consumed));
+        assert_eq!(state.tree.highlighted_index, 0);  // Now at top
+        assert!(!panel.pending_g);  // pending_g cleared
+
+        // Move to middle for next test
+        state.tree.highlighted_index = 1;
+
+        // Press 'G' (Shift+g) to move to bottom
         let result = panel.handle_key_with_state(
             KeyEvent::new(KeyCode::Char('G'), crossterm::event::KeyModifiers::empty()),
             &mut state,
@@ -439,10 +503,20 @@ mod tests {
         let mut panel = TreePanel::new();
         let mut state = AppState::new();
 
-        let group_id = Uuid::new_v4();
-        state.tree.set_visible_nodes(vec![
-            create_visible_node(TreeNodeId::Group(group_id), 0, NodeType::Folder, "Root"),
-        ]);
+        // Initialize visible_nodes from MockVault (contains real group IDs)
+        state.apply_filter();
+
+        // Get the first group ID from visible nodes
+        let group_id = match state.tree.current_node() {
+            Some(node) => {
+                if let TreeNodeId::Group(id) = node.id {
+                    id
+                } else {
+                    panic!("Expected first node to be a group");
+                }
+            }
+            None => panic!("No visible nodes available"),
+        };
 
         // Initially not expanded
         assert!(!state.tree.is_expanded(&group_id));

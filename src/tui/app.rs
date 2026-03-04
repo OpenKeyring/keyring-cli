@@ -199,6 +199,10 @@ impl Default for TuiApp {
 impl TuiApp {
     /// Create a new TUI application
     pub fn new() -> Self {
+        // Initialize app state and load mock data
+        let mut app_state = AppState::new();
+        app_state.apply_filter();  // Load initial visible nodes from mock vault
+
         Self {
             running: true,
             input_buffer: String::new(),
@@ -227,7 +231,7 @@ impl TuiApp {
             trash_retention_screen: TrashRetentionScreen::new(),
             master_password_screen: MasterPasswordScreen::new(),
             sync_screen: Some(SyncScreen::new()),
-            app_state: AppState::new(),
+            app_state,
             main_screen: MainScreen::new(),
         }
     }
@@ -1148,6 +1152,21 @@ pub fn run_tui() -> Result<()> {
         init_terminal().map_err(|e| KeyringError::IoError(format!("Failed to init TUI: {}", e)))?;
 
     let mut app = TuiApp::new();
+
+    // Check onboarding status - show wizard if keystore doesn't exist
+    let keystore_path = crate::cli::config::ConfigManager::new()
+        .map(|cm| cm.get_keystore_path())
+        .unwrap_or_else(|_| {
+            // Fallback to default path if config manager fails
+            dirs::config_dir()
+                .unwrap_or_else(|| std::path::PathBuf::from("."))
+                .join("open-keyring")
+                .join("keystore.json")
+        });
+    if !is_initialized(&keystore_path) {
+        app.wizard_state = Some(WizardState::new().with_keystore_path(keystore_path));
+        app.current_screen = Screen::Wizard;
+    }
 
     // Main event loop
     while app.is_running() {

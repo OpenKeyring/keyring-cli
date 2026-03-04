@@ -11,6 +11,8 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Style},
+    text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Widget},
     Frame,
 };
@@ -148,7 +150,7 @@ impl MainScreen {
         self.tree_panel.render_frame(frame, layout.tree_area, &state.tree);
         self.filter_panel.render_frame(frame, layout.filter_area, &state.filter);
         self.detail_panel.render_frame(frame, layout.detail_area, state);
-        self.render_placeholder(frame, layout.status_area, "Status (Reserved)");
+        self.render_status_panel(frame, layout.status_area, state);
         self.render_status_bar(frame, layout.status_bar_area, state);
     }
 
@@ -185,12 +187,32 @@ impl MainScreen {
         }
     }
 
-    /// Render placeholder block with title
-    fn render_placeholder(&self, frame: &mut Frame, area: Rect, title: &str) {
+    /// Render status panel with placeholder content
+    fn render_status_panel(&self, frame: &mut Frame, area: Rect, _state: &AppState) {
+        let border_style = Style::default().fg(Color::DarkGray);
+
         let block = Block::default()
             .borders(Borders::ALL)
-            .title(title);
-        frame.render_widget(block, area);
+            .title(" [4] Status ")
+            .border_style(border_style);
+
+        let inner = block.inner(area);
+        block.render(area, frame.buffer_mut());
+
+        // Placeholder content
+        let lines = vec![
+            Line::from(Span::styled(
+                "OpenKeyring v0.1.0",
+                Style::default().fg(Color::DarkGray),
+            )),
+            Line::from(Span::styled(
+                "Stats: Coming soon",
+                Style::default().fg(Color::DarkGray),
+            )),
+        ];
+
+        let paragraph = Paragraph::new(lines);
+        frame.render_widget(paragraph, inner);
     }
 
     /// Render status bar
@@ -203,7 +225,10 @@ impl MainScreen {
             FocusedPanel::Detail => "Detail",
         };
 
-        let text = format!("Focus: {} | Press 1/2/3 to switch | q to quit", focus_text);
+        let text = format!(
+            "Focus: {} | [1-3] Switch | [j/k] Navigate | [q] Quit",
+            focus_text
+        );
         let paragraph = Paragraph::new(text);
         frame.render_widget(paragraph, area);
     }

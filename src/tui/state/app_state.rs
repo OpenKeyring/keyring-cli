@@ -2,7 +2,8 @@
 
 use super::{FilterState, TreeState, SelectionState};
 use crate::tui::traits::{Notification, NotificationLevel, NotificationId};
-use std::collections::VecDeque;
+use crate::tui::mock::MockVault;
+use std::collections::{HashSet, VecDeque};
 use std::time::Instant;
 use uuid::Uuid;
 
@@ -45,6 +46,8 @@ pub struct AppState {
     pub focused_panel: FocusedPanel,
     /// Notification ID counter
     notification_counter: u64,
+    /// Mock vault for UI development (Phase 0)
+    pub mock_vault: MockVault,
 }
 
 impl Default for AppState {
@@ -57,6 +60,7 @@ impl Default for AppState {
             notifications: VecDeque::new(),
             focused_panel: FocusedPanel::default(),
             notification_counter: 0,
+            mock_vault: MockVault::new(),
         }
     }
 }
@@ -121,6 +125,30 @@ impl AppState {
     pub fn clear_selection(&mut self) {
         self.selection.clear();
         self.detail_mode = DetailMode::ProjectInfo;
+    }
+
+    /// Apply current filter and update visible nodes from mock vault
+    pub fn apply_filter(&mut self) {
+        // Convert expanded groups from Uuid HashSet to String HashSet
+        let expanded: HashSet<String> = self.tree.expanded_groups.iter()
+            .map(|id| id.to_string())
+            .collect();
+
+        // Get visible nodes from mock vault
+        let nodes = self.mock_vault.get_visible_nodes(&expanded);
+        self.tree.set_visible_nodes(nodes);
+    }
+
+    /// Get password name by ID (for UI display)
+    pub fn get_password_name(&self, id: Uuid) -> String {
+        self.mock_vault.get_password(&id.to_string())
+            .map(|p| p.name.clone())
+            .unwrap_or_else(|| "Unknown".to_string())
+    }
+
+    /// Get password record by ID
+    pub fn get_password(&self, id: Uuid) -> Option<&crate::tui::models::password::PasswordRecord> {
+        self.mock_vault.get_password(&id.to_string())
     }
 }
 

@@ -82,7 +82,7 @@ impl DetailPanel {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(border_style)
-            .title(" Details ");
+            .title(" [3] Details ");
 
         let inner_area = block.inner(area);
         block.render(area, frame.buffer_mut());
@@ -92,10 +92,14 @@ impl DetailPanel {
             DetailMode::ProjectInfo => {
                 self.render_project_info(frame, inner_area);
             }
-            DetailMode::PasswordDetail(_id) => {
-                // In a real implementation, we would fetch the password by ID
-                // For now, we render a placeholder
-                self.render_project_info(frame, inner_area);
+            DetailMode::PasswordDetail(id) => {
+                // Fetch password from mock vault and render details
+                if let Some(password) = state.get_password(*id) {
+                    self.render_password(frame, inner_area, password);
+                } else {
+                    // Password not found, show placeholder
+                    self.render_project_info(frame, inner_area);
+                }
             }
         }
     }
@@ -133,11 +137,6 @@ impl DetailPanel {
                 Style::default()
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::ITALIC),
-            )),
-            Line::from(""),
-            Line::from(Span::styled(
-                "Navigation: j/k to move  |  Enter to select  |  1-4 to switch panels",
-                Style::default().fg(Color::DarkGray),
             )),
         ];
 
@@ -329,7 +328,7 @@ impl Render for DetailPanel {
     fn render(&self, area: Rect, buf: &mut Buffer) {
         let block = Block::default()
             .borders(Borders::ALL)
-            .title(" Details ");
+            .title(" [3] Details ");
         block.render(area, buf);
     }
 }
