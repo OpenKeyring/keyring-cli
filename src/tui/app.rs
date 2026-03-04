@@ -1174,6 +1174,9 @@ pub fn run_tui() -> Result<()> {
             .draw(|f| app.render(f))
             .map_err(|e| KeyringError::IoError(format!("Failed to draw: {}", e)))?;
 
+        // Cleanup expired notifications (3-second auto-dismiss for Info/Success)
+        app.app_state.cleanup_notifications();
+
         // Poll for events with timeout
         if event::poll(Duration::from_millis(100))
             .map_err(|e| KeyringError::IoError(format!("Event poll failed: {}", e)))?

@@ -152,6 +152,9 @@ impl MainScreen {
         self.detail_panel.render_frame(frame, layout.detail_area, state);
         self.render_status_panel(frame, layout.status_area, state);
         self.render_status_bar(frame, layout.status_bar_area, state);
+
+        // Render toast notifications on top (after all other panels)
+        self.render_notifications(frame, area, state);
     }
 
     /// Sync panel focus states with AppState
@@ -231,6 +234,60 @@ impl MainScreen {
         );
         let paragraph = Paragraph::new(text);
         frame.render_widget(paragraph, area);
+    }
+
+    /// Render toast notifications
+    fn render_notifications(&self, frame: &mut Frame, area: Rect, state: &AppState) {
+        use crate::tui::traits::NotificationLevel;
+
+        if state.notifications.is_empty() {
+            return;
+        }
+
+        // Only render the most recent notification (as per Task 5 requirement)
+        if let Some(notification) = state.notifications.back() {
+            // Determine style based on notification level
+            let style = match notification.level {
+                NotificationLevel::Info => Style::default()
+                    .fg(Color::Blue)
+                    .bg(Color::Reset),
+                NotificationLevel::Success => Style::default()
+                    .fg(Color::Green)
+                    .bg(Color::Reset),
+                NotificationLevel::Warning => Style::default()
+                    .fg(Color::Yellow)
+                    .bg(Color::Reset),
+                NotificationLevel::Error => Style::default()
+                    .fg(Color::Red)
+                    .bg(Color::Reset),
+            };
+
+            // Add icon prefix based on level
+            let icon = match notification.level {
+                NotificationLevel::Info => "ℹ ",
+                NotificationLevel::Success => "✓ ",
+                NotificationLevel::Warning => "⚠ ",
+                NotificationLevel::Error => "✖ ",
+            };
+
+            // Create the notification text with padding
+            let text = format!("  {}{}  ", icon, notification.message);
+            let paragraph = Paragraph::new(text).style(style);
+
+            // Render at the bottom of the content area, above status bar
+            // Use a fixed height of 1 line for the toast
+            let toast_area = Rect::new(
+                area.x,
+                area.y + area.height.saturating_sub(2),
+                area.width,
+                1,
+            );
+
+            // Only render if there's enough space
+            if toast_area.height > 0 && toast_area.width > 4 {
+                frame.render_widget(paragraph, toast_area);
+            }
+        }
     }
 
     /// Get current layout (if calculated)
@@ -343,6 +400,7 @@ impl MainScreen {
 mod tests {
     use super::*;
     use crate::tui::state::filter_state::FilterType;
+    use crate::tui::traits::NotificationLevel;
 
     #[test]
     fn test_main_screen_creation() {
@@ -579,5 +637,94 @@ mod tests {
             &mut state,
         );
         assert_eq!(state.focused_panel, FocusedPanel::Tree);
+    }
+
+    // ========== Toast Notification Tests ==========
+
+    #[test]
+    fn test_notification_queue_management() {
+        let mut state = AppState::new();
+
+        // Add notification
+        state.add_notification("Test message", NotificationLevel::Info);
+        assert_eq!(state.notifications.len(), 1);
+
+        // Add another notification
+        state.add_notification("Second message", NotificationLevel::Success);
+        assert_eq!(state.notifications.len(), 2);
+    }
+
+    #[test]
+    fn test_notification_level_styles() {
+        let mut state = AppState::new();
+
+        // Add notifications of different levels
+        state.add_notification("Info", NotificationLevel::Info);
+        state.add_notification("Success", NotificationLevel::Success);
+        state.add_notification("Warning", NotificationLevel::Warning);
+        state.add_notification("Error", NotificationLevel::Error);
+
+        assert_eq!(state.notifications.len(), 4);
+
+        // Verify levels are correct
+        let levels: Vec<_> = state.notifications.iter().map(|n| n.level).collect();
+        assert!(levels.contains(&NotificationLevel::Info));
+        assert!(levels.contains(&NotificationLevel::Success));
+        assert!(levels.contains(&NotificationLevel::Warning));
+        assert!(levels.contains(&NotificationLevel::Error));
+    }
+
+    #[test]
+    fn test_notification_queue_limit() {
+        let mut state = AppState::new();
+
+        // Add more than the limit (5)
+        for i in 0..10 {
+            state.add_notification(&format!("Message {}", i), NotificationLevel::Info);
+        }
+
+        // Should be limited to 5
+        assert_eq!(state.notifications.len(), 5);
+
+        // The oldest messages should have been removed
+        let messages: Vec<_> = state.notifications.iter().map(|n| n.message.as_str()).collect();
+        assert!(!messages.contains(&"Message 0"));
+        assert!(!messages.contains(&"Message 4"));
+        assert!(messages.contains(&"Message 5"));
+        assert!(messages.contains(&"Message 9"));
+    }
+
+    #[test]
+    fn test_notification_auto_dismiss() {
+        use std::time::Duration;
+
+        let mut state = AppState::new();
+
+        // Add a notification
+        state.add_notification("Test", NotificationLevel::Info);
+
+        // Verify it's there
+        assert_eq!(state.notifications.len(), 1);
+
+        // The notification should have a default duration of 3 seconds for Info
+        let notification = state.notifications.front().unwrap();
+        assert_eq!(notification.effective_duration(), Duration::from_secs(3));
+
+        // Error notifications don't auto-dismiss (duration = 0)
+        state.add_notification("Error test", NotificationLevel::Error);
+        let error_notification = state.notifications.back().unwrap();
+        assert_eq!(error_notification.effective_duration(), Duration::from_secs(0));
+    }
+
+    #[test]
+    fn test_notification_cleanup_expired() {
+        let mut state = AppState::new();
+
+        // Add notification with very short duration
+        state.add_notification("Test", NotificationLevel::Info);
+
+        // Since we just created it, it shouldn't be expired
+        state.cleanup_notifications();
+        assert_eq!(state.notifications.len(), 1);
     }
 }
