@@ -65,6 +65,11 @@ impl TreePanel {
     /// Renders the tree using TreeState's visible_nodes list.
     /// Shows folder icons, expand/collapse indicators, and selection highlight.
     pub fn render_frame(&self, frame: &mut Frame, area: Rect, state: &TreeState) {
+        self.render_frame_with_context(frame, area, state, false)
+    }
+
+    /// Render to frame with filter context for better empty state messages
+    pub fn render_frame_with_context(&self, frame: &mut Frame, area: Rect, state: &TreeState, has_active_filters: bool) {
         if area.height < 3 {
             // Not enough space to render
             return;
@@ -87,17 +92,48 @@ impl TreePanel {
         let inner_area = block.inner(area);
         block.render(area, frame.buffer_mut());
 
-        // Render visible nodes
-        self.render_nodes(frame, inner_area, state);
+        // Render visible nodes with filter context
+        self.render_nodes_with_context(frame, inner_area, state, has_active_filters);
     }
 
     /// Render the list of visible nodes
     fn render_nodes(&self, frame: &mut Frame, area: Rect, state: &TreeState) {
+        self.render_nodes_with_context(frame, area, state, false);
+    }
+
+    /// Render the list of visible nodes with filter context
+    fn render_nodes_with_context(&self, frame: &mut Frame, area: Rect, state: &TreeState, has_active_filters: bool) {
         if state.visible_nodes.is_empty() {
-            // Show empty state
-            let empty_text = Paragraph::new("No entries")
-                .style(Style::default().fg(Color::DarkGray));
-            frame.render_widget(empty_text, area);
+            // Show context-aware empty state
+            let lines = if has_active_filters {
+                vec![
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        "No matching entries",
+                        Style::default().fg(Color::Yellow),
+                    )),
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        "Try adjusting your filters",
+                        Style::default().fg(Color::DarkGray),
+                    )),
+                ]
+            } else {
+                vec![
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        "No passwords yet",
+                        Style::default().fg(Color::DarkGray),
+                    )),
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        "Press [n] to create one",
+                        Style::default().fg(Color::Cyan),
+                    )),
+                ]
+            };
+            let paragraph = Paragraph::new(lines);
+            frame.render_widget(paragraph, area);
             return;
         }
 

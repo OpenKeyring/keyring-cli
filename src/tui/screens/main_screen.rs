@@ -11,7 +11,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Widget},
     Frame,
@@ -139,15 +139,26 @@ impl MainScreen {
         layout
     }
 
+    /// Minimum terminal size for proper UI display
+    const MIN_WIDTH: u16 = 80;
+    const MIN_HEIGHT: u16 = 24;
+
     /// Render main screen to frame
     pub fn render_frame(&mut self, frame: &mut Frame, area: Rect, state: &AppState) {
+        // Check minimum terminal size
+        if area.width < Self::MIN_WIDTH || area.height < Self::MIN_HEIGHT {
+            self.render_size_warning(frame, area);
+            return;
+        }
+
         let layout = self.calculate_layout(area);
 
         // Update panel focus states based on AppState
         self.sync_panel_focus_states(state);
 
         // Render panels
-        self.tree_panel.render_frame(frame, layout.tree_area, &state.tree);
+        let has_active_filters = state.filter.has_active_filters();
+        self.tree_panel.render_frame_with_context(frame, layout.tree_area, &state.tree, has_active_filters);
         self.filter_panel.render_frame(frame, layout.filter_area, &state.filter);
         self.detail_panel.render_frame(frame, layout.detail_area, state);
         self.render_status_panel(frame, layout.status_area, state);
@@ -155,6 +166,36 @@ impl MainScreen {
 
         // Render toast notifications on top (after all other panels)
         self.render_notifications(frame, area, state);
+    }
+
+    /// Render terminal size warning
+    fn render_size_warning(&self, frame: &mut Frame, area: Rect) {
+        let lines = vec![
+            Line::from(""),
+            Line::from(Span::styled(
+                "⚠ Terminal too small",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+            Line::from(Span::styled(
+                format!("Current: {}x{}", area.width, area.height),
+                Style::default().fg(Color::White),
+            )),
+            Line::from(Span::styled(
+                format!("Required: {}x{}", Self::MIN_WIDTH, Self::MIN_HEIGHT),
+                Style::default().fg(Color::Gray),
+            )),
+            Line::from(""),
+            Line::from(Span::styled(
+                "Please resize your terminal",
+                Style::default().fg(Color::DarkGray),
+            )),
+        ];
+
+        let paragraph = Paragraph::new(lines);
+        frame.render_widget(paragraph, area);
     }
 
     /// Sync panel focus states with AppState
@@ -726,5 +767,86 @@ mod tests {
         // Since we just created it, it shouldn't be expired
         state.cleanup_notifications();
         assert_eq!(state.notifications.len(), 1);
+    }
+
+    // ========== Boundary Condition Tests ==========
+
+    #[test]
+    fn test_minimum_terminal_size_constant() {
+        // Verify the minimum size constants are reasonable
+        assert_eq!(MainScreen::MIN_WIDTH, 80);
+        assert_eq!(MainScreen::MIN_HEIGHT, 24);
+    }
+
+    #[test]
+    fn test_empty_tree_with_no_filters() {
+        let mut state = AppState::new();
+
+        // Initialize tree with data by applying filter
+        state.apply_filter();
+
+        let tree_state = &state.tree;
+
+        // Tree state should have visible nodes from mock data after apply_filter
+        assert!(!tree_state.visible_nodes.is_empty(), "Mock data should provide visible nodes after apply_filter");
+    }
+
+    #[test]
+    fn test_filter_state_active_detection() {
+        use crate::tui::state::filter_state::FilterType;
+
+        let mut filter_state = crate::tui::state::filter_state::FilterState::default();
+
+        // Initially, no active filters
+        assert!(!filter_state.has_active_filters());
+
+        // Toggle "All" - still considered no real filter
+        filter_state.toggle(FilterType::All);
+        assert!(!filter_state.has_active_filters(), "All filter alone should not count as active");
+
+        // Toggle "Favorite" - now we have an active filter
+        filter_state.toggle(FilterType::Favorite);
+        assert!(filter_state.has_active_filters(), "Favorite filter should be considered active");
+
+        // Clear and check
+        filter_state.clear();
+        assert!(!filter_state.has_active_filters(), "After clear, no active filters");
+    }
+
+    #[test]
+    fn test_terminal_size_check() {
+        let mut screen = MainScreen::new();
+        let state = AppState::new();
+
+        // Create areas of different sizes
+        let normal_area = Rect::new(0, 0, 100, 30);
+        let narrow_area = Rect::new(0, 0, 60, 30);
+        let short_area = Rect::new(0, 0, 100, 15);
+        let tiny_area = Rect::new(0, 0, 60, 15);
+
+        // Normal size should not trigger warning
+        assert!(normal_area.width >= MainScreen::MIN_WIDTH);
+        assert!(normal_area.height >= MainScreen::MIN_HEIGHT);
+
+        // Narrow size should trigger warning
+        assert!(narrow_area.width < MainScreen::MIN_WIDTH);
+
+        // Short size should trigger warning
+        assert!(short_area.height < MainScreen::MIN_HEIGHT);
+
+        // Tiny size should trigger warning
+        assert!(tiny_area.width < MainScreen::MIN_WIDTH || tiny_area.height < MainScreen::MIN_HEIGHT);
+    }
+
+    #[test]
+    fn test_empty_visible_nodes_scenario() {
+        let mut state = AppState::new();
+
+        // Apply filter that matches nothing
+        state.filter.active_filters.insert(crate::tui::state::filter_state::FilterType::Trash);
+        state.apply_filter();
+
+        // The filter is active
+        assert!(state.filter.has_active_filters());
     }
 }

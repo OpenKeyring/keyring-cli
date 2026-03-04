@@ -93,6 +93,20 @@ impl FilterState {
         self.active_filters.contains(filter)
     }
 
+    /// Check if any non-default filters are active
+    pub fn has_active_filters(&self) -> bool {
+        // Consider filters active if there are any filters set
+        // that are not just "All" (which is the default)
+        if self.active_filters.is_empty() {
+            return false;
+        }
+        // If only "All" is active, that's not really a filter
+        if self.active_filters.len() == 1 && self.active_filters.contains(&FilterType::All) {
+            return false;
+        }
+        true
+    }
+
     /// Clear all filters
     pub fn clear(&mut self) {
         self.active_filters.clear();

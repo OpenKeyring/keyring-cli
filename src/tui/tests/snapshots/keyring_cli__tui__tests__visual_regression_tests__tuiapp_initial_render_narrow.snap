@@ -2,27 +2,10 @@
 source: src/tui/tests/visual_regression_tests.rs
 expression: output
 ---
-┌ [1] Groups ┐┌ [3] Details ───────────┐
-│[+] Work (5)││                        │
-│[+] Personal││OpenKeyring             │
-│[+] Others (││Privacy-first Password  │
-│            ││Manager                 │
-│            ││                        │
-│            ││Version: v0.1.0         │
-│            ││License: MIT License    │
-│            ││Website:                │
-│            ││github.com/open-keyring │
-│            ││                        │
-│            ││Press [n] to create your│
-│            ││first password          │
-│            ││                        │
-│            ││                        │
-└────────────┘│                        │
-┌ [2] Filters┐│                        │
-│[ ] 📋  All  │└────────────────────────┘
-│[ ] 🗑 Trash │┌ [4] Status ────────────┐
-│[ ] ⏰  Expir││OpenKeyring v0.1.0      │
-│[ ] ⭐  Favor││Stats: Coming soon      │
-│            ││                        │
-└────────────┘└────────────────────────┘
-Focus: Tree | [1-3] Switch | [j/k] Navig
+
+⚠ Terminal too small
+
+Current: 40x24
+Required: 80x24
+
+Please resize your terminal
