@@ -134,8 +134,8 @@ impl AppState {
             .map(|id| id.to_string())
             .collect();
 
-        // Get visible nodes from mock vault
-        let nodes = self.mock_vault.get_visible_nodes(&expanded);
+        // Get filtered visible nodes from mock vault
+        let nodes = self.mock_vault.get_filtered_visible_nodes(&expanded, Some(&self.filter));
         self.tree.set_visible_nodes(nodes);
     }
 

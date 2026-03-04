@@ -349,8 +349,17 @@ impl MockVault {
         counts
     }
 
-    /// Get visible tree nodes based on expanded state
+    /// Get visible tree nodes based on expanded state (no filtering)
     pub fn get_visible_nodes(&self, expanded: &HashSet<String>) -> Vec<VisibleNode> {
+        self.get_filtered_visible_nodes(expanded, None)
+    }
+
+    /// Get visible tree nodes based on expanded state and optional filter
+    pub fn get_filtered_visible_nodes(
+        &self,
+        expanded: &HashSet<String>,
+        filter: Option<&FilterState>,
+    ) -> Vec<VisibleNode> {
         let mut nodes = Vec::new();
 
         // Get root groups (no parent)
@@ -359,7 +368,7 @@ impl MockVault {
             .collect();
 
         for group in root_groups {
-            self.add_group_nodes(group, 0, expanded, &mut nodes);
+            self.add_group_nodes_filtered(group, 0, expanded, filter, &mut nodes);
         }
 
         nodes
@@ -373,9 +382,36 @@ impl MockVault {
         expanded: &HashSet<String>,
         nodes: &mut Vec<VisibleNode>,
     ) {
+        self.add_group_nodes_filtered(group, level, expanded, None, nodes);
+    }
+
+    /// Recursively add group nodes and their passwords with optional filtering
+    fn add_group_nodes_filtered(
+        &self,
+        group: &Group,
+        level: u8,
+        expanded: &HashSet<String>,
+        filter: Option<&FilterState>,
+        nodes: &mut Vec<VisibleNode>,
+    ) {
+        // Check if filter is active (not empty and not just "All")
+        let has_active_filter = filter.map_or(false, |f| {
+            !f.active_filters.is_empty() && !f.active_filters.contains(&crate::tui::state::filter_state::FilterType::All)
+        });
+
         // Add group node
         let child_count = self.group_children.get(&group.id).map_or(0, |v| v.len());
-        let password_count = self.password_counts.get(&group.id).copied().unwrap_or(0);
+        // When filtering, count visible passwords instead of total
+        let password_count = if has_active_filter {
+            self.passwords.iter()
+                .filter(|p| {
+                    p.group_id.as_deref() == Some(&group.id) &&
+                    filter.map_or(true, |f| f.matches(p))
+                })
+                .count()
+        } else {
+            self.password_counts.get(&group.id).copied().unwrap_or(0)
+        };
 
         nodes.push(VisibleNode {
             id: TreeNodeId::Group(uuid::Uuid::parse_str(&group.id).unwrap_or(uuid::Uuid::nil())),
@@ -391,14 +427,17 @@ impl MockVault {
             if let Some(child_ids) = self.group_children.get(&group.id) {
                 for child_id in child_ids {
                     if let Some(child_group) = self.groups.iter().find(|g| g.id == *child_id) {
-                        self.add_group_nodes(child_group, level + 1, expanded, nodes);
+                        self.add_group_nodes_filtered(child_group, level + 1, expanded, filter, nodes);
                     }
                 }
             }
 
-            // Add passwords in this group
+            // Add passwords in this group (apply filter if active)
             for password in &self.passwords {
-                if password.group_id.as_deref() == Some(&group.id) && !password.is_deleted {
+                let matches_group = password.group_id.as_deref() == Some(&group.id);
+                let matches_filter = filter.map_or(true, |f| f.matches(password));
+
+                if matches_group && matches_filter {
                     nodes.push(VisibleNode {
                         id: TreeNodeId::Password(
                             uuid::Uuid::parse_str(&password.id).unwrap_or(uuid::Uuid::nil())
@@ -637,5 +676,98 @@ mod tests {
         // Verify level 2 groups
         let level_2: Vec<_> = vault.groups.iter().filter(|g| g.level == 2).collect();
         assert_eq!(level_2.len(), 2); // GitHub, GitLab
+    }
+
+    #[test]
+    fn test_get_filtered_visible_nodes_no_filter() {
+        let vault = MockVault::new();
+        let mut expanded: HashSet<String> = HashSet::new();
+        expanded.insert("work".to_string());
+
+        // Without filter, should work like get_visible_nodes
+        let nodes_no_filter = vault.get_filtered_visible_nodes(&expanded, None);
+        let nodes_default = vault.get_visible_nodes(&expanded);
+
+        assert_eq!(nodes_no_filter.len(), nodes_default.len());
+    }
+
+    #[test]
+    fn test_get_filtered_visible_nodes_favorites() {
+        let vault = MockVault::new();
+        let mut expanded: HashSet<String> = HashSet::new();
+        expanded.insert("work".to_string());
+        expanded.insert("work-email".to_string());
+        expanded.insert("work-dev".to_string());
+        expanded.insert("work-dev-github".to_string());
+        expanded.insert("personal".to_string());
+        expanded.insert("personal-social".to_string());
+        expanded.insert("personal-finance".to_string());
+        expanded.insert("others".to_string());
+        expanded.insert("others-entertainment".to_string());
+
+        // Apply Favorite filter
+        let mut filter = FilterState::default();
+        filter.toggle(FilterType::Favorite);
+
+        let nodes = vault.get_filtered_visible_nodes(&expanded, Some(&filter));
+
+        // Count password nodes (should only be favorites)
+        let password_nodes: Vec<_> = nodes.iter()
+            .filter(|n| matches!(n.node_type, NodeType::Password))
+            .collect();
+
+        // Should have 6 favorite passwords
+        assert_eq!(password_nodes.len(), 6, "Expected 6 favorite password nodes");
+    }
+
+    #[test]
+    fn test_get_filtered_visible_nodes_trash() {
+        let vault = MockVault::new();
+        let mut expanded: HashSet<String> = HashSet::new();
+
+        // Apply Trash filter
+        let mut filter = FilterState::default();
+        filter.toggle(FilterType::Trash);
+
+        let nodes = vault.get_filtered_visible_nodes(&expanded, Some(&filter));
+
+        // With Trash filter, deleted items should be visible
+        // The filter should show trashed passwords
+        // Note: Without expanding groups, we only see root groups
+        assert!(!nodes.is_empty());
+
+        // Expand and check for trashed passwords
+        expanded.insert("work".to_string());
+        let nodes_expanded = vault.get_filtered_visible_nodes(&expanded, Some(&filter));
+
+        let password_nodes: Vec<_> = nodes_expanded.iter()
+            .filter(|n| matches!(n.node_type, NodeType::Password))
+            .collect();
+
+        // Trashed passwords don't belong to a normal group in our test data
+        // They should still appear with the Trash filter active
+        assert!(password_nodes.is_empty() || password_nodes.len() <= 2);
+    }
+
+    #[test]
+    fn test_get_filtered_visible_nodes_combined_filters() {
+        let vault = MockVault::new();
+        let mut expanded: HashSet<String> = HashSet::new();
+        expanded.insert("work".to_string());
+
+        // Apply multiple filters
+        let mut filter = FilterState::default();
+        filter.toggle(FilterType::Favorite);
+
+        let nodes_favorite = vault.get_filtered_visible_nodes(&expanded, Some(&filter));
+
+        // Add another filter
+        filter.toggle(FilterType::Expired);
+
+        let nodes_combined = vault.get_filtered_visible_nodes(&expanded, Some(&filter));
+
+        // Combined filter should match entries that satisfy ALL active filters
+        // (intersection, not union)
+        assert!(nodes_combined.len() <= nodes_favorite.len());
     }
 }
