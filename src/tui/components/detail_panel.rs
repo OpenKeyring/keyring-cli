@@ -471,4 +471,81 @@ mod tests {
         assert!(matches!(result, HandleResult::Consumed));
         assert!(panel.is_password_visible());
     }
+
+    #[test]
+    fn test_data_binding_password_detail() {
+        use crate::tui::mock::vault::mock_ids;
+        use uuid::Uuid;
+
+        let panel = DetailPanel::new();
+        let state = AppState::new();
+
+        // Initially, detail mode should be ProjectInfo
+        assert!(matches!(state.detail_mode, DetailMode::ProjectInfo));
+
+        // Get a valid password ID from mock vault
+        let password_id = Uuid::parse_str(mock_ids::PWD_GMAIL_WORK).unwrap();
+
+        // Verify the password exists in mock vault
+        let password = state.get_password(password_id);
+        assert!(password.is_some(), "Password should exist in mock vault");
+
+        let password = password.unwrap();
+        assert_eq!(password.name, "Gmail Work");
+        assert!(password.is_favorite);
+        assert!(password.username.is_some());
+        assert!(password.url.is_some());
+    }
+
+    #[test]
+    fn test_render_password_from_state() {
+        use crate::tui::mock::vault::mock_ids;
+        use uuid::Uuid;
+
+        let mut state = AppState::new();
+        let panel = DetailPanel::new();
+
+        // Select a password using its UUID
+        let password_id = Uuid::parse_str(mock_ids::PWD_GMAIL_WORK).unwrap();
+        state.select_password(password_id);
+
+        // Verify detail mode is updated
+        assert!(matches!(state.detail_mode, DetailMode::PasswordDetail(id) if id == password_id));
+
+        // Verify the password can be retrieved
+        let password = state.get_password(password_id);
+        assert!(password.is_some());
+    }
+
+    #[test]
+    fn test_full_password_detail_flow() {
+        use crate::tui::mock::vault::mock_ids;
+        use uuid::Uuid;
+
+        let mut state = AppState::new();
+
+        // Initialize tree with data
+        state.apply_filter();
+
+        // Get the first password node from visible nodes
+        let password_id = Uuid::parse_str(mock_ids::PWD_GMAIL_WORK).unwrap();
+
+        // Select the password
+        state.select_password(password_id);
+
+        // Verify all password detail fields are accessible
+        let password = state.get_password(password_id);
+        assert!(password.is_some());
+
+        let password = password.unwrap();
+        assert_eq!(password.name, "Gmail Work");
+        assert!(password.username.is_some());
+        assert!(password.url.is_some());
+        assert!(!password.tags.is_empty());
+        assert!(password.is_favorite);
+
+        // Verify created_at and modified_at are set
+        assert!(password.created_at.timestamp_micros() > 0);
+        assert!(password.modified_at.timestamp_micros() > 0);
+    }
 }
