@@ -1190,7 +1190,7 @@ pub fn run_tui() -> Result<()> {
                         app.handle_wizard_key_event(key);
                     } else if app.current_screen == Screen::Main {
                         // Route main screen events to MainScreen handler
-                        use crate::tui::traits::HandleResult;
+                        use crate::tui::traits::{HandleResult, Action, ScreenType};
                         match app.main_screen.handle_key_with_state(key, &mut app.app_state) {
                             HandleResult::Consumed => {}
                             HandleResult::Ignored => {
@@ -1199,7 +1199,44 @@ pub fn run_tui() -> Result<()> {
                                     app.quit();
                                 }
                             }
-                            HandleResult::Action(_) => {}
+                            HandleResult::Action(action) => {
+                                match action {
+                                    Action::Quit => {
+                                        app.quit();
+                                    }
+                                    Action::OpenScreen(screen_type) => {
+                                        match screen_type {
+                                            ScreenType::Help => {
+                                                app.show_help();
+                                            }
+                                            ScreenType::Settings => {
+                                                app.navigate_to(Screen::Settings);
+                                            }
+                                            _ => {
+                                                // For other screens, show a placeholder message
+                                                app.output_lines.push(format!(
+                                                    "Screen {:?} not yet implemented",
+                                                    screen_type
+                                                ));
+                                            }
+                                        }
+                                    }
+                                    Action::ShowToast(message) => {
+                                        app.output_lines.push(message);
+                                    }
+                                    Action::CloseScreen => {
+                                        // Return to main screen
+                                        app.navigate_to(Screen::Main);
+                                    }
+                                    Action::CopyToClipboard(content) => {
+                                        app.output_lines.push(format!("Copied: {}", content));
+                                    }
+                                    Action::Refresh => {
+                                        app.output_lines.push("Refreshed".to_string());
+                                    }
+                                    Action::None => {}
+                                }
+                            }
                             HandleResult::NeedsRender => {}
                         }
                     } else {

@@ -6,7 +6,7 @@
 
 use crate::tui::components::{DetailPanel, FilterPanel, TreePanel};
 use crate::tui::state::{AppState, FocusedPanel};
-use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render};
+use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render, Action, ScreenType};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
@@ -280,8 +280,21 @@ impl MainScreen {
             return HandleResult::Ignored;
         }
 
-        // Handle global focus switching (1/2/3)
+        // Global shortcuts (take priority over panel-specific handling)
         match key.code {
+            // Quit application
+            KeyCode::Char('q') => {
+                return HandleResult::Action(Action::Quit);
+            }
+            // Show help
+            KeyCode::Char('?') => {
+                return HandleResult::Action(Action::OpenScreen(ScreenType::Help));
+            }
+            // Start search (placeholder - search is Phase 2)
+            KeyCode::Char('/') => {
+                return HandleResult::Action(Action::ShowToast("Search: Coming in Phase 2".to_string()));
+            }
+            // Panel switching with number keys
             KeyCode::Char('1') => {
                 state.set_focus(FocusedPanel::Tree);
                 return HandleResult::Consumed;
@@ -294,8 +307,13 @@ impl MainScreen {
                 state.set_focus(FocusedPanel::Detail);
                 return HandleResult::Consumed;
             }
+            // Tab navigation
             KeyCode::Tab => {
                 state.next_panel();
+                return HandleResult::Consumed;
+            }
+            KeyCode::BackTab => {
+                state.prev_panel();
                 return HandleResult::Consumed;
             }
             _ => {}
@@ -427,5 +445,139 @@ mod tests {
 
         // Verify Trash filter is active
         assert!(state.filter.is_active(&FilterType::Trash));
+    }
+
+    // ========== Global Shortcuts Tests ==========
+
+    #[test]
+    fn test_global_quit_shortcut() {
+        let mut screen = MainScreen::new();
+        let mut state = AppState::new();
+
+        // Press 'q' should return Quit action
+        let result = screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('q'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+
+        assert!(matches!(result, HandleResult::Action(Action::Quit)));
+    }
+
+    #[test]
+    fn test_global_help_shortcut() {
+        let mut screen = MainScreen::new();
+        let mut state = AppState::new();
+
+        // Press '?' should return OpenScreen(Help) action
+        let result = screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('?'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+
+        assert!(matches!(result, HandleResult::Action(Action::OpenScreen(ScreenType::Help))));
+    }
+
+    #[test]
+    fn test_global_search_shortcut() {
+        let mut screen = MainScreen::new();
+        let mut state = AppState::new();
+
+        // Press '/' should return ShowToast action (placeholder)
+        let result = screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('/'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+
+        assert!(matches!(result, HandleResult::Action(Action::ShowToast(_))));
+    }
+
+    #[test]
+    fn test_panel_switch_with_numbers() {
+        let mut screen = MainScreen::new();
+        let mut state = AppState::new();
+
+        // Press '1' - switch to Tree
+        let result = screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('1'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert!(matches!(result, HandleResult::Consumed));
+        assert_eq!(state.focused_panel, FocusedPanel::Tree);
+
+        // Press '2' - switch to Filter
+        let result = screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('2'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert!(matches!(result, HandleResult::Consumed));
+        assert_eq!(state.focused_panel, FocusedPanel::Filter);
+
+        // Press '3' - switch to Detail
+        let result = screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('3'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert!(matches!(result, HandleResult::Consumed));
+        assert_eq!(state.focused_panel, FocusedPanel::Detail);
+    }
+
+    #[test]
+    fn test_tab_navigation() {
+        let mut screen = MainScreen::new();
+        let mut state = AppState::new();
+
+        // Start at Tree
+        assert_eq!(state.focused_panel, FocusedPanel::Tree);
+
+        // Tab - next panel
+        screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Tab, crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert_eq!(state.focused_panel, FocusedPanel::Filter);
+
+        // Tab - next panel
+        screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Tab, crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert_eq!(state.focused_panel, FocusedPanel::Detail);
+
+        // Tab - wrap around to Tree
+        screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Tab, crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert_eq!(state.focused_panel, FocusedPanel::Tree);
+    }
+
+    #[test]
+    fn test_shift_tab_navigation() {
+        let mut screen = MainScreen::new();
+        let mut state = AppState::new();
+
+        // Start at Tree
+        assert_eq!(state.focused_panel, FocusedPanel::Tree);
+
+        // Shift+Tab (BackTab) - go to Detail (reverse direction)
+        screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::BackTab, crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert_eq!(state.focused_panel, FocusedPanel::Detail);
+
+        // Shift+Tab - go to Filter
+        screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::BackTab, crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert_eq!(state.focused_panel, FocusedPanel::Filter);
+
+        // Shift+Tab - go to Tree
+        screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::BackTab, crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+        assert_eq!(state.focused_panel, FocusedPanel::Tree);
     }
 }

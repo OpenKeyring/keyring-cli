@@ -85,6 +85,15 @@ impl AppState {
         };
     }
 
+    /// Switch to previous panel
+    pub fn prev_panel(&mut self) {
+        self.focused_panel = match self.focused_panel {
+            FocusedPanel::Tree => FocusedPanel::Detail,
+            FocusedPanel::Filter => FocusedPanel::Tree,
+            FocusedPanel::Detail => FocusedPanel::Filter,
+        };
+    }
+
     /// Add a notification
     pub fn add_notification(&mut self, message: &str, level: NotificationLevel) {
         self.notification_counter += 1;
@@ -188,6 +197,22 @@ mod tests {
         assert_eq!(state.focused_panel, FocusedPanel::Detail);
 
         state.next_panel();
+        assert_eq!(state.focused_panel, FocusedPanel::Tree);
+    }
+
+    #[test]
+    fn test_prev_panel() {
+        let mut state = AppState::default();
+
+        assert_eq!(state.focused_panel, FocusedPanel::Tree);
+
+        state.prev_panel();
+        assert_eq!(state.focused_panel, FocusedPanel::Detail);
+
+        state.prev_panel();
+        assert_eq!(state.focused_panel, FocusedPanel::Filter);
+
+        state.prev_panel();
         assert_eq!(state.focused_panel, FocusedPanel::Tree);
     }
 
