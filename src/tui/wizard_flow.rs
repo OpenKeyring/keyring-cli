@@ -380,9 +380,27 @@ struct CompletionScreen {
 
 impl CompletionScreen {
     fn new() -> Self {
-        Self {
-            message: "Setup complete!\n\nYour OpenKeyring is ready to use.\n\nPress Enter to finish.".to_string(),
-        }
+        let message = r#"Setup Complete!
+
+Your OpenKeyring is ready to use.
+
+Quick Start Guide:
+
+  [n]        Create a new password
+  [j/k]      Navigate through your passwords
+  [Enter]    View password details
+  [c]        Copy username to clipboard
+  [C]        Copy password to clipboard
+  [e]        Edit selected password
+  [d]        Delete password (move to trash)
+  [Space]    Show/hide password
+  [/]        Search passwords
+  [1-5]      Switch between filters (All/Personal/Work/Finance/Trash)
+  [?]        Show this help
+
+Press [Enter] to start using OpenKeyring"#.to_string();
+
+        Self { message }
     }
 }
 

@@ -70,6 +70,10 @@ pub enum Screen {
     Sync,
     /// Onboarding wizard screen
     Wizard,
+    /// New password screen
+    NewPassword,
+    /// Edit password screen
+    EditPassword,
 }
 
 impl Screen {
@@ -84,6 +88,8 @@ impl Screen {
             Screen::ConflictResolution => "Conflict Resolution",
             Screen::Sync => "Sync",
             Screen::Wizard => "Onboarding Wizard",
+            Screen::NewPassword => "New Password",
+            Screen::EditPassword => "Edit Password",
         }
     }
 }
@@ -1214,6 +1220,12 @@ pub fn run_tui() -> Result<()> {
                                             }
                                             ScreenType::Settings => {
                                                 app.navigate_to(Screen::Settings);
+                                            }
+                                            ScreenType::NewPassword => {
+                                                app.navigate_to(Screen::NewPassword);
+                                            }
+                                            ScreenType::EditPassword(_) => {
+                                                app.navigate_to(Screen::EditPassword);
                                             }
                                             _ => {
                                                 // For other screens, show a placeholder message

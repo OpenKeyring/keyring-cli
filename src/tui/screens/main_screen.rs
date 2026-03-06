@@ -392,6 +392,10 @@ impl MainScreen {
             KeyCode::Char('/') => {
                 return HandleResult::Action(Action::ShowToast("Search: Coming in Phase 2".to_string()));
             }
+            // Create new password
+            KeyCode::Char('n') => {
+                return HandleResult::Action(Action::OpenScreen(ScreenType::NewPassword));
+            }
             // Panel switching with number keys
             KeyCode::Char('1') => {
                 state.set_focus(FocusedPanel::Tree);

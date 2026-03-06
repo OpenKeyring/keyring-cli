@@ -143,27 +143,28 @@ fn run_demo() -> io::Result<()> {
             if let Event::Key(key_event) = event::read()? {
                 if key_event.kind == KeyEventKind::Press {
                     match key_event.code {
-                    // 退出程序
-                    KeyCode::Char('q') => running = false,
-                    KeyCode::Esc => running = false,
+                        // 退出程序
+                        KeyCode::Char('q') => running = false,
+                        KeyCode::Esc => running = false,
 
-                    // 将键盘事件传递给 TreeComponent
-                    _ => {
-                        let result = tree_component.handle_key(key_event);
+                        // 将键盘事件传递给 TreeComponent
+                        _ => {
+                            let result = tree_component.handle_key(key_event);
 
-                        // 根据需要处理结果
-                        match result {
-                            HandleResult::Consumed => {
-                                // 事件已被消费，无需额外处理
-                            }
-                            HandleResult::Ignored => {
-                                // 事件未被处理，可以做其他事情
-                            }
-                            HandleResult::NeedsRender => {
-                                // 组件请求重新渲染，我们会在下次循环中渲染
-                            }
-                            HandleResult::Action(_) => {
-                                // 执行特定动作，这里不做处理
+                            // 根据需要处理结果
+                            match result {
+                                HandleResult::Consumed => {
+                                    // 事件已被消费，无需额外处理
+                                }
+                                HandleResult::Ignored => {
+                                    // 事件未被处理，可以做其他事情
+                                }
+                                HandleResult::NeedsRender => {
+                                    // 组件请求重新渲染，我们会在下次循环中渲染
+                                }
+                                HandleResult::Action(_) => {
+                                    // 执行特定动作，这里不做处理
+                                }
                             }
                         }
                     }
