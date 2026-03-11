@@ -2,6 +2,7 @@
 //!
 //! 测试 AppEvent、HandleResult、Action、ScreenType 等事件相关类型。
 
+use crate::tui::components::ConfirmAction;
 use crate::tui::traits::{Action, AppEvent, FilterType, HandleResult, ScreenType, ComponentId};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent, MouseButton, MouseEventKind};
 
@@ -148,8 +149,8 @@ fn test_screen_type_edit_password() {
 
 #[test]
 fn test_screen_type_confirm_dialog() {
-    let screen = ScreenType::ConfirmDialog;
-    assert_eq!(screen, ScreenType::ConfirmDialog);
+    let screen = ScreenType::ConfirmDialog(ConfirmAction::Generic);
+    assert_eq!(screen, ScreenType::ConfirmDialog(ConfirmAction::Generic));
 }
 
 #[test]

@@ -215,11 +215,21 @@ impl DefaultEventDispatcher {
             Action::CopyToClipboard(_text) => {
                 self.notification_manager.info("已复制到剪贴板");
             }
-            Action::ConfirmDialog(confirmed) => {
-                if confirmed {
-                    self.notification_manager.info("操作已确认");
-                } else {
-                    self.notification_manager.info("操作已取消");
+            Action::ConfirmDialog(action) => {
+                // Handle confirmed action
+                match action {
+                    crate::tui::components::ConfirmAction::DeletePassword { password_id: _, password_name } => {
+                        self.notification_manager.info(&format!("已删除: {}", password_name));
+                    }
+                    crate::tui::components::ConfirmAction::PermanentDelete(_) => {
+                        self.notification_manager.info("已永久删除");
+                    }
+                    crate::tui::components::ConfirmAction::EmptyTrash => {
+                        self.notification_manager.info("已清空回收站");
+                    }
+                    crate::tui::components::ConfirmAction::Generic => {
+                        self.notification_manager.info("操作已确认");
+                    }
                 }
             }
             Action::None => {}

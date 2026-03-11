@@ -4,9 +4,9 @@
 //! Left column (35%): Tree panel + Filter panel
 //! Right column (65%): Detail panel + Status area
 
-use crate::tui::components::{DetailPanel, FilterPanel, TreePanel};
-use crate::tui::state::{AppState, FocusedPanel};
+use crate::tui::components::{ConfirmAction, DetailPanel, FilterPanel, TreePanel};
 use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render, Action, ScreenType};
+use crate::tui::state::{AppState, FocusedPanel};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
@@ -395,6 +395,31 @@ impl MainScreen {
             // Create new password
             KeyCode::Char('n') => {
                 return HandleResult::Action(Action::OpenScreen(ScreenType::NewPassword));
+            }
+            // Edit selected password
+            KeyCode::Char('e') => {
+                if let Some(password_id) = state.selection.selected_password {
+                    let id_str = password_id.to_string();
+                    return HandleResult::Action(Action::OpenScreen(ScreenType::EditPassword(id_str)));
+                } else {
+                    return HandleResult::Action(Action::ShowToast("No password selected".to_string()));
+                }
+            }
+            // Delete selected password (move to trash)
+            KeyCode::Char('d') => {
+                if let Some(password_id) = state.selection.selected_password {
+                    let id_str = password_id.to_string();
+                    // Get password name for confirmation dialog
+                    let password_name = state.mock_vault.get_password(&id_str)
+                        .map(|p| p.name.clone())
+                        .unwrap_or_else(|| "Unknown".to_string());
+                    // Show confirmation dialog
+                    return HandleResult::Action(Action::OpenScreen(ScreenType::ConfirmDialog(
+                        ConfirmAction::DeletePassword { password_id: id_str, password_name }
+                    )));
+                } else {
+                    return HandleResult::Action(Action::ShowToast("No password selected".to_string()));
+                }
             }
             // Panel switching with number keys
             KeyCode::Char('1') => {

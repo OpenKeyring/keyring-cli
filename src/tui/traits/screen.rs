@@ -2,6 +2,7 @@
 //!
 //! 定义 TUI 屏幕管理相关的接口，包括屏幕、屏幕管理器和屏幕工厂。
 
+use crate::tui::components::ConfirmAction;
 use crate::tui::error::{TuiError, TuiResult};
 use crate::tui::traits::{Component, BuildContext, Action, ScreenType};
 use ratatui::layout::Rect;
@@ -235,24 +236,24 @@ pub trait ScreenFactory: Send + Sync {
     fn create_edit_password(&self, context: &BuildContext, id: &str) -> TuiResult<Box<dyn Screen>>;
 
     /// 创建确认对话框
-    fn create_confirm_dialog(&self, title: &str, message: &str) -> TuiResult<Box<dyn Screen>>;
+    fn create_confirm_dialog(&self, action: ConfirmAction) -> TuiResult<Box<dyn Screen>>;
 
     /// 创建回收箱屏幕
     fn create_trash_bin(&self, context: &BuildContext) -> TuiResult<Box<dyn Screen>>;
 
     /// 创建设置屏幕
     fn create_settings(&self, _context: &BuildContext) -> TuiResult<Box<dyn Screen>> {
-        self.create_confirm_dialog("设置", "设置功能")
+        self.create_confirm_dialog(ConfirmAction::Generic)
     }
 
     /// 创建主屏幕
     fn create_main(&self, _context: &BuildContext) -> TuiResult<Box<dyn Screen>> {
-        self.create_confirm_dialog("主屏幕", "主屏幕功能")
+        self.create_confirm_dialog(ConfirmAction::Generic)
     }
 
     /// 创建帮助屏幕
     fn create_help(&self) -> TuiResult<Box<dyn Screen>> {
-        self.create_confirm_dialog("帮助", "帮助信息")
+        self.create_confirm_dialog(ConfirmAction::Generic)
     }
 
     /// 根据屏幕类型创建屏幕
@@ -261,7 +262,7 @@ pub trait ScreenFactory: Send + Sync {
             ScreenType::Wizard => self.create_wizard(context),
             ScreenType::NewPassword => self.create_new_password(context),
             ScreenType::EditPassword(id) => self.create_edit_password(context, id),
-            ScreenType::ConfirmDialog => self.create_confirm_dialog("确认", "确定要执行此操作吗？"),
+            ScreenType::ConfirmDialog(action) => self.create_confirm_dialog(action.clone()),
             ScreenType::TrashBin => self.create_trash_bin(context),
             ScreenType::Help => self.create_help(),
             ScreenType::Settings => self.create_settings(context),

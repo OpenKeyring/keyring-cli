@@ -5,7 +5,7 @@
 
 use crate::tui::services::TuiCryptoService;
 use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render, PasswordPolicy, PasswordType, AppEvent, CryptoService};
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -103,6 +103,26 @@ pub struct EditPasswordScreen {
 }
 
 impl EditPasswordScreen {
+    /// Create an empty edit screen (placeholder)
+    pub fn empty() -> Self {
+        Self {
+            password_id: Uuid::nil(),
+            password_name: String::new(),
+            username: String::new(),
+            new_password: None,
+            password_visible: false,
+            url: String::new(),
+            notes: String::new(),
+            tags: String::new(),
+            group: "Personal".to_string(),
+            original_password: String::new(),
+            password_type: PasswordType::Random,
+            password_length: 16,
+            focused_field: 0,
+            id: ComponentId::new(4002),
+        }
+    }
+
     /// Create a new edit screen from existing password data
     pub fn new(
         id: Uuid,
@@ -162,6 +182,7 @@ impl EditPasswordScreen {
     pub fn get_edited_fields(&self) -> EditedPasswordFields {
         EditedPasswordFields {
             id: self.password_id,
+            name: self.password_name.clone(),
             username: if self.username.is_empty() { None } else { Some(self.username.clone()) },
             password: self.new_password.clone(),
             url: if self.url.is_empty() { None } else { Some(self.url.clone()) },
@@ -171,8 +192,13 @@ impl EditPasswordScreen {
             } else {
                 self.tags.split(',').map(|s| s.trim().to_string()).collect()
             },
-            group: self.group.clone(),
+            group_id: if self.group.is_empty() { None } else { Some(self.group.clone()) },
         }
+    }
+
+    /// Get the password name being edited
+    pub fn password_name(&self) -> &str {
+        &self.password_name
     }
 }
 
@@ -180,12 +206,13 @@ impl EditPasswordScreen {
 #[derive(Debug, Clone)]
 pub struct EditedPasswordFields {
     pub id: Uuid,
+    pub name: String,
     pub username: Option<String>,
     pub password: Option<String>,
     pub url: Option<String>,
     pub notes: Option<String>,
     pub tags: Vec<String>,
-    pub group: String,
+    pub group_id: Option<String>,
 }
 
 impl Render for EditPasswordScreen {
@@ -459,6 +486,7 @@ impl Component for EditPasswordScreen {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crossterm::event::KeyModifiers;
     use uuid::Uuid;
 
     #[test]
@@ -542,7 +570,7 @@ mod tests {
         assert_eq!(fields.username, Some("user".to_string()));
         assert_eq!(fields.url, Some("https://example.com".to_string()));
         assert_eq!(fields.notes, Some("notes".to_string()));
-        assert_eq!(fields.group, "Work");
+        assert_eq!(fields.group_id, Some("Work".to_string()));
     }
 
     #[test]

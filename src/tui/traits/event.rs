@@ -3,6 +3,7 @@
 //! 定义 TUI 框架中使用的所有事件类型，包括应用事件、处理结果、操作等。
 
 use crate::tui::traits::ComponentId;
+use crate::tui::components::ConfirmAction;
 use crossterm::event::{KeyEvent, MouseEvent};
 
 // ============================================================================
@@ -86,7 +87,7 @@ pub enum ScreenType {
     /// 编辑密码
     EditPassword(String),
     /// 确认对话框
-    ConfirmDialog,
+    ConfirmDialog(ConfirmAction),
     /// 回收站
     TrashBin,
     /// 设置
@@ -144,7 +145,7 @@ pub enum Action {
     /// 刷新显示
     Refresh,
     /// 确认对话框结果 (true = confirmed, false = cancelled)
-    ConfirmDialog(bool),
+    ConfirmDialog(ConfirmAction),
     /// 无操作
     None,
 }

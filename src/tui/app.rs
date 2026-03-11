@@ -5,6 +5,7 @@
 use crate::db::vault::Vault;
 use crate::error::{KeyringError, Result};
 use crate::onboarding::{initialize_keystore, is_initialized};
+use crate::tui::components::ConfirmAction;
 use crate::tui::keybindings::{Action, KeyBindingManager};
 use crate::tui::screens::wizard::{WizardState, WizardStep};
 use crate::tui::screens::{
@@ -196,6 +197,8 @@ pub struct TuiApp {
     pub main_screen: MainScreen,
     /// New password screen
     pub new_password_screen: NewPasswordScreen,
+    /// Edit password screen
+    pub edit_password_screen: EditPasswordScreen,
 }
 
 impl Default for TuiApp {
@@ -242,6 +245,7 @@ impl TuiApp {
             app_state,
             main_screen: MainScreen::new(),
             new_password_screen: NewPasswordScreen::new(),
+            edit_password_screen: EditPasswordScreen::empty(),
         }
     }
 
@@ -454,6 +458,27 @@ impl TuiApp {
                     }
                     // Reset screen for next use
                     self.new_password_screen = NewPasswordScreen::new();
+                    self.return_to_main();
+                }
+                crate::tui::traits::HandleResult::NeedsRender => {
+                    // Screen will be re-rendered on next frame
+                }
+                _ => {}
+            }
+            return;
+        }
+
+        // Handle EditPassword screen specially
+        if self.current_screen == Screen::EditPassword {
+            let result = self.edit_password_screen.handle_key(event);
+            match result {
+                crate::tui::traits::HandleResult::Action(crate::tui::traits::Action::CloseScreen) => {
+                    // Get the edited fields and update the password
+                    let fields = self.edit_password_screen.get_edited_fields();
+                    // TODO: Update password in MockVault (FT-3)
+                    self.add_output(format!("✓ Password '{}' updated", fields.name));
+                    // Reset screen for next use
+                    self.edit_password_screen = EditPasswordScreen::empty();
                     self.return_to_main();
                 }
                 crate::tui::traits::HandleResult::NeedsRender => {
@@ -939,6 +964,13 @@ impl TuiApp {
             return;
         }
 
+        // Handle edit password screen
+        if self.current_screen == Screen::EditPassword {
+            use crate::tui::traits::Render;
+            self.edit_password_screen.render(size, frame.buffer_mut());
+            return;
+        }
+
         // Handle main screen with dual-column layout
         if self.current_screen == Screen::Main {
             self.main_screen.render_frame(frame, size, &self.app_state);
@@ -1287,8 +1319,29 @@ pub fn run_tui() -> Result<()> {
                                             ScreenType::NewPassword => {
                                                 app.navigate_to(Screen::NewPassword);
                                             }
-                                            ScreenType::EditPassword(_) => {
-                                                app.navigate_to(Screen::EditPassword);
+                                            ScreenType::EditPassword(id_str) => {
+                                                // Get password data from MockVault
+                                                if let Some(record) = app.app_state.mock_vault.get_password(&id_str) {
+                                                    // Create EditPasswordScreen with existing data
+                                                    // Convert String ID to Uuid
+                                                    if let Ok(uuid) = uuid::Uuid::parse_str(&record.id) {
+                                                            app.edit_password_screen = EditPasswordScreen::new(
+                                                                uuid,
+                                                                &record.name,
+                                                                record.username.as_deref(),
+                                                                &record.password,
+                                                                record.url.as_deref(),
+                                                                record.notes.as_deref(),
+                                                                &record.tags,
+                                                                record.group_id.as_deref(),
+                                                            );
+                                                        } else {
+                                                            app.output_lines.push(format!("Invalid UUID in record: {}", record.id));
+                                                        }
+                                                        app.navigate_to(Screen::EditPassword);
+                                                    } else {
+                                                        app.output_lines.push(format!("Password not found: {}", id_str));
+                                                    }
                                             }
                                             _ => {
                                                 // For other screens, show a placeholder message
@@ -1312,11 +1365,28 @@ pub fn run_tui() -> Result<()> {
                                     Action::Refresh => {
                                         app.output_lines.push("Refreshed".to_string());
                                     }
-                                    Action::ConfirmDialog(confirmed) => {
-                                        if confirmed {
-                                            app.output_lines.push("Action confirmed".to_string());
-                                        } else {
-                                            app.output_lines.push("Action cancelled".to_string());
+                                    Action::ConfirmDialog(action) => {
+                                        // Handle the confirmed action (user clicked confirm)
+                                        match action {
+                                            ConfirmAction::DeletePassword { password_id, password_name } => {
+                                                // Delete the password (move to trash)
+                                                if app.app_state.mock_vault.move_to_trash(&password_id) {
+                                                    app.output_lines.push(format!("Deleted \"{}\"", password_name));
+                                                } else {
+                                                    app.output_lines.push(format!("Failed to delete password {}", password_id));
+                                                }
+                                            }
+                                            ConfirmAction::PermanentDelete(id) => {
+                                                // TODO: Permanently delete
+                                                app.output_lines.push(format!("Permanently delete password: {} (not implemented)", id));
+                                            }
+                                            ConfirmAction::EmptyTrash => {
+                                                // TODO: Empty trash
+                                                app.output_lines.push("Empty trash (not implemented)".to_string());
+                                            }
+                                            ConfirmAction::Generic => {
+                                                app.output_lines.push("Action confirmed".to_string());
+                                            }
                                         }
                                     }
                                     Action::None => {}

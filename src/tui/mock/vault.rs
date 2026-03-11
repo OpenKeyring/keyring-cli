@@ -544,6 +544,42 @@ impl Default for MockVault {
     }
 }
 
+// ============================================================
+// Mutation Operations
+// ============================================================
+
+impl MockVault {
+    /// Move password to trash (soft delete)
+    pub fn move_to_trash(&mut self, id: &str) -> bool {
+        if let Some(password) = self.passwords.iter_mut().find(|p| p.id == id) {
+            password.is_deleted = true;
+            password.deleted_at = Some(Utc::now());
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Restore password from trash
+    pub fn restore_password(&mut self, id: &str) -> bool {
+        if let Some(password) = self.passwords.iter_mut().find(|p| p.id == id) {
+            if password.is_deleted {
+                password.is_deleted = false;
+                password.deleted_at = None;
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Permanently delete password
+    pub fn delete_permanently(&mut self, id: &str) -> bool {
+        let initial_len = self.passwords.len();
+        self.passwords.retain(|p| p.id != id);
+        self.passwords.len() < initial_len
+    }
+}
+
 /// Filter counts for UI display
 #[derive(Debug, Clone, Default)]
 pub struct FilterCounts {
@@ -553,6 +589,8 @@ pub struct FilterCounts {
     pub favorite: usize,
     pub by_tag: HashMap<String, usize>,
 }
+
+#[cfg(test)]
 
 #[cfg(test)]
 mod tests {

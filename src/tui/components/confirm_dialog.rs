@@ -18,7 +18,7 @@ use ratatui::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConfirmAction {
     /// Delete password (move to trash)
-    DeletePassword(String),
+    DeletePassword { password_id: String, password_name: String },
     /// Permanently delete
     PermanentDelete(String),
     /// Empty trash
@@ -75,7 +75,7 @@ impl ConfirmDialog {
             confirm_label: "Delete".to_string(),
             cancel_label: "Cancel".to_string(),
             focused_on_confirm: false,
-            action: ConfirmAction::DeletePassword(password_id.to_string()),
+            action: ConfirmAction::DeletePassword { password_id: password_id.to_string(), password_name: password_name.to_string() },
             visible: true,
         }
     }
@@ -276,19 +276,25 @@ impl Interactive for ConfirmDialog {
             }
             // Enter: Confirm action (based on current focus)
             KeyCode::Enter => {
-                HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(self.focused_on_confirm))
+                if self.focused_on_confirm {
+                    // User confirmed - return the action to execute
+                    HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(self.action.clone()))
+                } else {
+                    // User cancelled - close dialog without action
+                    HandleResult::Action(crate::tui::traits::Action::CloseScreen)
+                }
             }
             // Escape: Cancel
             KeyCode::Esc => {
-                HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(false))
+                HandleResult::Action(crate::tui::traits::Action::CloseScreen)
             }
             // y/Y: Confirm
             KeyCode::Char('y') | KeyCode::Char('Y') => {
-                HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(true))
+                HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(self.action.clone()))
             }
             // n/N: Cancel
             KeyCode::Char('n') | KeyCode::Char('N') => {
-                HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(false))
+                HandleResult::Action(crate::tui::traits::Action::CloseScreen)
             }
             _ => HandleResult::Ignored,
         }
@@ -329,7 +335,7 @@ mod tests {
         let dialog = ConfirmDialog::delete_confirmation("My Password", "id-123");
         assert!(dialog.is_visible());
         assert_eq!(dialog.title, "⚠️  Confirm Delete");
-        assert!(matches!(dialog.action, ConfirmAction::DeletePassword(id) if id == "id-123"));
+        assert!(matches!(dialog.action, ConfirmAction::DeletePassword { password_id, .. } if password_id == "id-123"));
     }
 
     #[test]
@@ -388,7 +394,7 @@ mod tests {
 
         let key = KeyEvent::new(KeyCode::Esc, crossterm::event::KeyModifiers::empty());
         let result = dialog.handle_key(key);
-        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(false))));
+        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::CloseScreen)));
     }
 
     #[test]
@@ -399,7 +405,8 @@ mod tests {
 
         let key = KeyEvent::new(KeyCode::Enter, crossterm::event::KeyModifiers::empty());
         let result = dialog.handle_key(key);
-        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(true))));
+        // When confirmed (focused on confirm button), returns the action
+        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(_))));
     }
 
     #[test]
@@ -409,7 +416,8 @@ mod tests {
 
         let key = KeyEvent::new(KeyCode::Char('y'), crossterm::event::KeyModifiers::empty());
         let result = dialog.handle_key(key);
-        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(true))));
+        // Y key confirms, returns the action
+        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(_))));
     }
 
     #[test]
@@ -419,6 +427,7 @@ mod tests {
 
         let key = KeyEvent::new(KeyCode::Char('n'), crossterm::event::KeyModifiers::empty());
         let result = dialog.handle_key(key);
-        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(false))));
+        // N key cancels, closes screen
+        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::CloseScreen)));
     }
 }
