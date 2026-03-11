@@ -8,9 +8,9 @@ use crate::onboarding::{initialize_keystore, is_initialized};
 use crate::tui::keybindings::{Action, KeyBindingManager};
 use crate::tui::screens::wizard::{WizardState, WizardStep};
 use crate::tui::screens::{
-    ClipboardTimeoutScreen, MainScreen, MasterPasswordScreen, PasskeyGenerateScreen,
-    PasskeyImportScreen, PasskeyVerifyScreen, PasswordPolicyScreen, SecurityNoticeScreen,
-    SyncScreen, TrashRetentionScreen, WelcomeScreen,
+    ClipboardTimeoutScreen, EditPasswordScreen, MainScreen, MasterPasswordScreen, NewPasswordScreen,
+    PasskeyGenerateScreen, PasskeyImportScreen, PasskeyVerifyScreen, PasswordPolicyScreen,
+    SecurityNoticeScreen, SyncScreen, TrashRetentionScreen, WelcomeScreen,
 };
 use crate::tui::state::AppState;
 use chrono::{DateTime, Utc};
@@ -194,6 +194,8 @@ pub struct TuiApp {
     pub app_state: AppState,
     /// Main screen (MVP)
     pub main_screen: MainScreen,
+    /// New password screen
+    pub new_password_screen: NewPasswordScreen,
 }
 
 impl Default for TuiApp {
@@ -239,6 +241,7 @@ impl TuiApp {
             sync_screen: Some(SyncScreen::new()),
             app_state,
             main_screen: MainScreen::new(),
+            new_password_screen: NewPasswordScreen::new(),
         }
     }
 
@@ -437,7 +440,29 @@ impl TuiApp {
 
     /// Handle keyboard shortcut events
     pub fn handle_key_event(&mut self, event: crossterm::event::KeyEvent) {
+        use crate::tui::traits::Interactive;
         use crossterm::event::KeyCode;
+
+        // Handle NewPassword screen specially
+        if self.current_screen == Screen::NewPassword {
+            let result = self.new_password_screen.handle_key(event);
+            match result {
+                crate::tui::traits::HandleResult::Action(crate::tui::traits::Action::CloseScreen) => {
+                    // Check if the form was successfully validated
+                    if self.new_password_screen.get_password_record().is_some() {
+                        self.add_output("✓ Password created successfully".to_string());
+                    }
+                    // Reset screen for next use
+                    self.new_password_screen = NewPasswordScreen::new();
+                    self.return_to_main();
+                }
+                crate::tui::traits::HandleResult::NeedsRender => {
+                    // Screen will be re-rendered on next frame
+                }
+                _ => {}
+            }
+            return;
+        }
 
         // Handle screen navigation keys first
         match event.code {
@@ -907,6 +932,13 @@ impl TuiApp {
             }
         }
 
+        // Handle new password screen
+        if self.current_screen == Screen::NewPassword {
+            use crate::tui::traits::Render;
+            self.new_password_screen.render(size, frame.buffer_mut());
+            return;
+        }
+
         // Handle main screen with dual-column layout
         if self.current_screen == Screen::Main {
             self.main_screen.render_frame(frame, size, &self.app_state);
@@ -1012,12 +1044,13 @@ impl TuiApp {
                 frame.render_widget(paragraph, area);
             }
             WizardStep::Complete => {
-                // Show completion message
+                // Show completion message with quick start guide
                 let paragraph = Paragraph::new(vec![
+                    Line::from(""),
                     Line::from(vec![
-                        Span::styled("✓ ", Style::default().fg(Color::Green)),
+                        Span::styled("🎉 ", Style::default()),
                         Span::styled(
-                            "Initialization Complete!",
+                            "Setup Complete!",
                             Style::default()
                                 .fg(Color::Green)
                                 .add_modifier(Modifier::BOLD),
@@ -1025,12 +1058,42 @@ impl TuiApp {
                     ]),
                     Line::from(""),
                     Line::from(Span::styled(
-                        "Press any key to return to main screen...",
+                        "Quick Start Guide:",
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD),
+                    )),
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        "  [n] Create a new password",
+                        Style::default().fg(Color::White),
+                    )),
+                    Line::from(Span::styled(
+                        "  [j/k] Navigate through your passwords",
+                        Style::default().fg(Color::White),
+                    )),
+                    Line::from(Span::styled(
+                        "  [Enter] View password details",
+                        Style::default().fg(Color::White),
+                    )),
+                    Line::from(Span::styled(
+                        "  [c] Copy username  |  [C] Copy password",
+                        Style::default().fg(Color::White),
+                    )),
+                    Line::from(Span::styled(
+                        "  [?] Show help anytime",
+                        Style::default().fg(Color::White),
+                    )),
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        "Press [Enter] to start using OpenKeyring",
                         Style::default().fg(Color::Gray),
                     )),
                 ])
                 .alignment(Alignment::Center)
-                .block(Block::default().borders(Borders::ALL));
+                .block(Block::default()
+                    .borders(Borders::ALL)
+                    .title(" Welcome to OpenKeyring "));
 
                 frame.render_widget(paragraph, area);
             }
@@ -1248,6 +1311,13 @@ pub fn run_tui() -> Result<()> {
                                     }
                                     Action::Refresh => {
                                         app.output_lines.push("Refreshed".to_string());
+                                    }
+                                    Action::ConfirmDialog(confirmed) => {
+                                        if confirmed {
+                                            app.output_lines.push("Action confirmed".to_string());
+                                        } else {
+                                            app.output_lines.push("Action cancelled".to_string());
+                                        }
                                     }
                                     Action::None => {}
                                 }

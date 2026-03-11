@@ -143,6 +143,8 @@ pub enum Action {
     CopyToClipboard(String),
     /// 刷新显示
     Refresh,
+    /// 确认对话框结果 (true = confirmed, false = cancelled)
+    ConfirmDialog(bool),
     /// 无操作
     None,
 }

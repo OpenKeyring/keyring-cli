@@ -4,6 +4,7 @@
 
 pub mod clipboard_timeout;
 pub mod conflict;
+pub mod edit_password_screen;
 pub mod help;
 pub mod master_password;
 pub mod master_password_confirm;
@@ -25,6 +26,7 @@ pub mod main_screen;
 
 pub use clipboard_timeout::ClipboardTimeoutScreen;
 pub use conflict::ConflictResolutionScreen;
+pub use edit_password_screen::{EditFormField, EditPasswordScreen, EditedPasswordFields};
 pub use help::{HelpScreen, HelpSection, Shortcut};
 pub use master_password::{MasterPasswordScreen, PasswordStrength};
 pub use master_password_confirm::MasterPasswordConfirmScreen;

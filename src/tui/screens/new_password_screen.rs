@@ -3,16 +3,14 @@
 //!
 //! Form for creating a new password entry
 
-use crate::tui::screens::wizard::{PasswordPolicyConfig, PasswordType};
-use crate::tui::services::crypto::TuiCryptoService;
-use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render, Action};
-use crate::tui::traits::password::PasswordPolicy;
+use crate::tui::services::TuiCryptoService;
+use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render, Action, PasswordPolicy, PasswordType, AppEvent, CryptoService};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Rect},
+    layout::Rect,
     style::{Color, Modifier, Style},
-    text::{Line, Span},
+    text::Span,
     widgets::{Block, Borders, Paragraph, Widget},
 };
 use std::collections::HashMap;
@@ -65,7 +63,7 @@ impl FormField {
         }
     }
 
-    static fn from_index(idx: usize) -> Option<Self> {
+    fn from_index(idx: usize) -> Option<Self> {
         match idx {
             0 => Some(Self::Name),
             1 => Some(Self::Username),
@@ -248,7 +246,7 @@ impl Render for NewPasswordScreen {
                 Style::default().fg(Color::White)
             };
 
-            let field_width = inner.width - 4;
+            let _field_width = inner.width - 4;
 
             // Render based on field type
             match field {
@@ -568,7 +566,7 @@ impl Component for NewPasswordScreen {
         true
     }
 
-    fn on_event(&mut self, _event: &crate::tui::traits::event::AppEvent) -> HandleResult {
+    fn on_event(&mut self, _event: &AppEvent) -> HandleResult {
         HandleResult::Ignored
     }
 }

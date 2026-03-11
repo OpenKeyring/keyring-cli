@@ -215,6 +215,13 @@ impl DefaultEventDispatcher {
             Action::CopyToClipboard(_text) => {
                 self.notification_manager.info("已复制到剪贴板");
             }
+            Action::ConfirmDialog(confirmed) => {
+                if confirmed {
+                    self.notification_manager.info("操作已确认");
+                } else {
+                    self.notification_manager.info("操作已取消");
+                }
+            }
             Action::None => {}
         }
         Ok(())

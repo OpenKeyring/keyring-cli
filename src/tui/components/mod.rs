@@ -11,6 +11,7 @@ mod form_example;
 mod filter_panel;
 mod detail_panel;
 mod tree_panel;
+mod confirm_dialog;
 
 pub use status_bar::StatusBar;
 pub use text_input::TextInput;
@@ -21,6 +22,7 @@ pub use text_area::TextArea;
 pub use filter_panel::{FilterPanel, FilterItem};
 pub use detail_panel::DetailPanel;
 pub use tree_panel::TreePanel;
+pub use confirm_dialog::{ConfirmDialog, ConfirmAction};
 
 #[cfg(test)]
 mod integration_tests {

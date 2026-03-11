@@ -93,6 +93,17 @@ pub enum PasswordType {
     Pin,
 }
 
+impl PasswordType {
+    /// Get display label
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Random => "Random Password",
+            Self::Memorable => "Memorable (Word-based)",
+            Self::Pin => "PIN Code",
+        }
+    }
+}
+
 /// 密码策略
 #[derive(Debug, Clone)]
 pub struct PasswordPolicy {
