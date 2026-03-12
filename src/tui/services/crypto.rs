@@ -1,18 +1,56 @@
 //! TUI 加密服务适配器
 //!
 //! 封装现有 crypto 模块实现，提供 TUI 层所需的加密接口。
+//! 集成真实的 AES-256-GCM 加密（通过 crypto::CryptoManager）。
 
-use crate::tui::error::TuiResult;
+use crate::crypto::CryptoManager;
+use crate::tui::error::{ErrorKind, TuiError, TuiResult};
 use crate::tui::traits::{CryptoService, PasswordPolicy, PasswordStrengthCalculator, ServicePasswordStrength as PasswordStrength};
 use crate::tui::core::DefaultPasswordStrengthCalculator;
+use std::sync::{Arc, Mutex};
 
 /// TUI 加密服务
-pub struct TuiCryptoService {}
+///
+/// 包装 CryptoManager，为 TUI 层提供加密服务。
+/// 注意：加密数据格式为 [nonce(12 bytes) || ciphertext]
+pub struct TuiCryptoService {
+    /// CryptoManager 实例（需要 mut，使用 Mutex 包装）
+    crypto: Arc<Mutex<CryptoManager>>,
+}
+
+impl std::fmt::Debug for TuiCryptoService {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TuiCryptoService")
+            .field("crypto", &"Arc<Mutex<CryptoManager>>")
+            .finish()
+    }
+}
 
 impl TuiCryptoService {
-    /// 创建新的加密服务
+    /// 创建新的加密服务（未初始化状态）
     pub fn new() -> Self {
-        Self {}
+        Self {
+            crypto: Arc::new(Mutex::new(CryptoManager::new())),
+        }
+    }
+
+    /// 使用已初始化的 CryptoManager 创建服务
+    pub fn with_crypto_manager(crypto: Arc<Mutex<CryptoManager>>) -> Self {
+        Self { crypto }
+    }
+
+    /// 初始化加密服务（使用主密码）
+    pub fn initialize(&self, password: &str) -> TuiResult<()> {
+        let mut crypto = self.crypto.lock().map_err(|_| TuiError::new(ErrorKind::InvalidState("Crypto lock failed".into())))?;
+        crypto.initialize(password)
+            .map_err(|_e| TuiError::new(ErrorKind::KeyDerivationFailed))
+    }
+
+    /// 检查是否已初始化
+    pub fn is_initialized(&self) -> bool {
+        self.crypto.lock()
+            .map(|c| c.is_initialized())
+            .unwrap_or(false)
     }
 }
 
@@ -24,15 +62,42 @@ impl Default for TuiCryptoService {
 
 impl CryptoService for TuiCryptoService {
     /// 加密数据
-    fn encrypt(&self, _data: &[u8]) -> TuiResult<Vec<u8>> {
-        // TODO: 调用 crypto::aes256gcm::encrypt
-        todo!("Implement with crypto module integration")
+    ///
+    /// 返回格式: [nonce(12 bytes) || ciphertext]
+    fn encrypt(&self, data: &[u8]) -> TuiResult<Vec<u8>> {
+        let crypto = self.crypto.lock().map_err(|_| TuiError::new(ErrorKind::InvalidState("Crypto lock failed".into())))?;
+
+        // 调用 CryptoManager::encrypt
+        let (ciphertext, nonce) = crypto.encrypt(data)
+            .map_err(|e| TuiError::new(ErrorKind::EncryptionFailed).with_details(e.to_string()))?;
+
+        // 组合 nonce 和 ciphertext: [nonce || ciphertext]
+        let mut result = Vec::with_capacity(12 + ciphertext.len());
+        result.extend_from_slice(&nonce);
+        result.extend_from_slice(&ciphertext);
+
+        Ok(result)
     }
 
     /// 解密数据
-    fn decrypt(&self, _data: &[u8]) -> TuiResult<Vec<u8>> {
-        // TODO: 调用 crypto::aes256gcm::decrypt
-        todo!("Implement with crypto module integration")
+    ///
+    /// 输入格式: [nonce(12 bytes) || ciphertext]
+    fn decrypt(&self, data: &[u8]) -> TuiResult<Vec<u8>> {
+        let crypto = self.crypto.lock().map_err(|_| TuiError::new(ErrorKind::InvalidState("Crypto lock failed".into())))?;
+
+        // 分离 nonce 和 ciphertext
+        if data.len() < 12 {
+            return Err(TuiError::new(ErrorKind::DecryptionFailed).with_message("Invalid encrypted data: too short"));
+        }
+
+        let nonce: [u8; 12] = data[0..12]
+            .try_into()
+            .map_err(|_| TuiError::new(ErrorKind::DecryptionFailed).with_message("Invalid nonce"))?;
+        let ciphertext = &data[12..];
+
+        // 调用 CryptoManager::decrypt
+        crypto.decrypt(ciphertext, &nonce)
+            .map_err(|e| TuiError::new(ErrorKind::DecryptionFailed).with_details(e.to_string()))
     }
 
     /// 根据策略生成密码

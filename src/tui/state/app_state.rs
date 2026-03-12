@@ -3,7 +3,10 @@
 use super::{FilterState, TreeState, SelectionState};
 use crate::tui::traits::{Notification, NotificationLevel, NotificationId};
 use crate::tui::mock::MockVault;
+use crate::tui::services::{TuiDatabaseService, TuiClipboardService, TuiCryptoService};
+use crate::tui::config::TuiConfig;
 use std::collections::{HashSet, VecDeque};
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use uuid::Uuid;
 
@@ -29,6 +32,16 @@ pub enum DetailMode {
     PasswordDetail(Uuid),
 }
 
+/// Data source mode for AppState
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DataSourceMode {
+    /// Use mock data (for development/testing)
+    #[default]
+    Mock,
+    /// Use real vault (for production)
+    Vault,
+}
+
 /// Application global state
 #[derive(Debug)]
 pub struct AppState {
@@ -47,7 +60,20 @@ pub struct AppState {
     /// Notification ID counter
     notification_counter: u64,
     /// Mock vault for UI development (Phase 0)
+    /// TODO(phase-3): Remove after full Vault integration
     pub mock_vault: MockVault,
+
+    // === Phase 3: Real Services ===
+    /// Data source mode (mock or vault)
+    pub data_source: DataSourceMode,
+    /// Database service (optional, for vault mode)
+    db_service: Option<Arc<Mutex<TuiDatabaseService>>>,
+    /// Clipboard service
+    clipboard_service: Option<TuiClipboardService>,
+    /// Crypto service
+    crypto_service: Option<TuiCryptoService>,
+    /// TUI configuration
+    pub config: TuiConfig,
 }
 
 impl Default for AppState {
@@ -61,6 +87,11 @@ impl Default for AppState {
             focused_panel: FocusedPanel::default(),
             notification_counter: 0,
             mock_vault: MockVault::new(),
+            data_source: DataSourceMode::default(),
+            db_service: None,
+            clipboard_service: None,
+            crypto_service: None,
+            config: TuiConfig::default(),
         }
     }
 }

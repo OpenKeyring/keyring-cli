@@ -27,6 +27,7 @@ pub mod state;
 // ============ Phase 1.3 数据层模块 ============
 pub mod models;
 pub mod services;
+pub mod config;
 
 // ============ Mock 数据层 (Phase 0) ============
 pub mod mock;

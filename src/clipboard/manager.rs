@@ -14,7 +14,7 @@ pub struct ClipboardConfig {
     pub max_content_length: usize,
 }
 
-pub trait ClipboardManager {
+pub trait ClipboardManager: Send + Sync {
     fn set_content(&mut self, content: &str) -> Result<(), KeyringError>;
     fn get_content(&mut self) -> Result<String, KeyringError>;
     fn clear(&mut self) -> Result<(), KeyringError>;
@@ -45,7 +45,15 @@ impl<T: ClipboardManager> ClipboardService<T> {
 
 // Wrapper for Box<dyn ClipboardManager>
 pub struct BoxClipboardManager {
-    inner: Box<dyn ClipboardManager>,
+    inner: Box<dyn ClipboardManager + Send + Sync>,
+}
+
+impl std::fmt::Debug for BoxClipboardManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BoxClipboardManager")
+            .field("inner", &"Box<dyn ClipboardManager>")
+            .finish()
+    }
 }
 
 impl ClipboardManager for BoxClipboardManager {
@@ -70,8 +78,8 @@ impl ClipboardManager for BoxClipboardManager {
     }
 }
 
-impl From<Box<dyn ClipboardManager>> for BoxClipboardManager {
-    fn from(inner: Box<dyn ClipboardManager>) -> Self {
+impl From<Box<dyn ClipboardManager + Send + Sync>> for BoxClipboardManager {
+    fn from(inner: Box<dyn ClipboardManager + Send + Sync>) -> Self {
         Self { inner }
     }
 }
@@ -79,17 +87,17 @@ impl From<Box<dyn ClipboardManager>> for BoxClipboardManager {
 pub fn create_platform_clipboard() -> Result<BoxClipboardManager, KeyringError> {
     #[cfg(target_os = "macos")]
     {
-        let clipboard: Box<dyn ClipboardManager> = Box::new(MacOSClipboard::new()?);
+        let clipboard: Box<dyn ClipboardManager + Send + Sync> = Box::new(MacOSClipboard::new()?);
         Ok(BoxClipboardManager::from(clipboard))
     }
     #[cfg(target_os = "linux")]
     {
-        let clipboard: Box<dyn ClipboardManager> = Box::new(LinuxClipboard);
+        let clipboard: Box<dyn ClipboardManager + Send + Sync> = Box::new(LinuxClipboard);
         Ok(BoxClipboardManager::from(clipboard))
     }
     #[cfg(target_os = "windows")]
     {
-        let clipboard: Box<dyn ClipboardManager> = Box::new(WindowsClipboard);
+        let clipboard: Box<dyn ClipboardManager + Send + Sync> = Box::new(WindowsClipboard);
         Ok(BoxClipboardManager::from(clipboard))
     }
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
