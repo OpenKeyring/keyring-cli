@@ -475,8 +475,22 @@ impl TuiApp {
                 crate::tui::traits::HandleResult::Action(crate::tui::traits::Action::CloseScreen) => {
                     // Get the edited fields and update the password
                     let fields = self.edit_password_screen.get_edited_fields();
-                    // TODO: Update password in MockVault (FT-3)
-                    self.add_output(format!("✓ Password '{}' updated", fields.name));
+                    let id_str = fields.id.to_string();
+                    // Update password in MockVault
+                    let updated = self.app_state.mock_vault.update_password(
+                        &id_str,
+                        fields.username.clone(),
+                        fields.password.clone(),
+                        fields.url.clone(),
+                        fields.notes.clone(),
+                        fields.tags.clone(),
+                        fields.group_id.clone(),
+                    );
+                    if updated {
+                        self.add_output(format!("✓ Password '{}' updated", fields.name));
+                    } else {
+                        self.add_output(format!("✗ Failed to update password '{}'", fields.name));
+                    }
                     // Reset screen for next use
                     self.edit_password_screen = EditPasswordScreen::empty();
                     self.return_to_main();

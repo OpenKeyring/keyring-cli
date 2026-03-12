@@ -578,6 +578,34 @@ impl MockVault {
         self.passwords.retain(|p| p.id != id);
         self.passwords.len() < initial_len
     }
+
+    /// Update password fields
+    /// Returns true if password was found and updated
+    pub fn update_password(&mut self, id: &str, username: Option<String>, password: Option<String>, url: Option<String>, notes: Option<String>, tags: Vec<String>, group_id: Option<String>) -> bool {
+        if let Some(pwd) = self.passwords.iter_mut().find(|p| p.id == id) {
+            if let Some(u) = username {
+                pwd.username = Some(u);
+            }
+            if let Some(p) = password {
+                // In real implementation, this would be encrypted
+                pwd.password = p;
+            }
+            if let Some(u) = url {
+                pwd.url = Some(u);
+            }
+            if let Some(n) = notes {
+                pwd.notes = Some(n);
+            }
+            if !tags.is_empty() {
+                pwd.tags = tags;
+            }
+            pwd.group_id = group_id;
+            pwd.modified_at = Utc::now();
+            true
+        } else {
+            false
+        }
+    }
 }
 
 /// Filter counts for UI display
