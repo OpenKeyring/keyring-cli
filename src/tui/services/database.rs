@@ -3,10 +3,12 @@
 //! 封装现有 Vault 实现，提供 TUI 层所需的 DatabaseService trait。
 //! 集成真实的 SQLite 数据库持久化（通过 db::Vault）。
 
-use crate::db::{Vault, models::{DecryptedRecord, RecordType}};
+use crate::db::{Vault, models::{DecryptedRecord, RecordType, StoredRecord}};
 use crate::tui::error::{ErrorKind, TuiError, TuiResult};
 use crate::tui::traits::{DatabaseService, SecureClear};
 use crate::tui::models::password::PasswordRecord;
+use crate::crypto::aes256gcm;
+use crate::crypto::record::RecordPayload;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -212,44 +214,107 @@ impl TuiDatabaseService {
 
     /// 创建新密码记录
     pub async fn create_password(&self, password: &PasswordRecord) -> TuiResult<()> {
-        let _dek = self.dek.as_ref()
+        let dek = self.dek.as_ref()
             .ok_or_else(|| TuiError::new(ErrorKind::InvalidKey))?;
 
-        let _vault = self.vault.lock()
+        let mut vault = self.vault.lock()
             .map_err(|_| TuiError::new(ErrorKind::InvalidState("State lock failed".into())))?;
 
-        // 创建 DecryptedRecord
+        // Parse or generate UUID
         let id = uuid::Uuid::parse_str(&password.id)
             .unwrap_or_else(|_| uuid::Uuid::new_v4());
 
-        let _decrypted = DecryptedRecord {
-            id,
-            record_type: RecordType::Password,
+        // Create RecordPayload for encryption
+        let payload = RecordPayload {
             name: password.name.clone(),
             username: password.username.clone(),
-            password: crate::types::SensitiveString::new(password.password.clone()),
+            password: password.password.clone(),
             url: password.url.clone(),
             notes: password.notes.clone(),
             tags: password.tags.clone(),
-            created_at: password.created_at,
-            updated_at: password.modified_at,
         };
 
-        // 加密并存储（简化实现，实际需要完整的加密流程）
-        // TODO: 调用 Vault 的加密存储方法
+        // Encrypt the payload using DEK
+        let dek_array: [u8; 32] = *dek;
+
+        let json_bytes = serde_json::to_vec(&payload)
+            .map_err(|e| TuiError::new(ErrorKind::EncryptionFailed).with_details(e.to_string()))?;
+
+        let (encrypted_data, nonce) = aes256gcm::encrypt(&json_bytes, &dek_array)
+            .map_err(|e| TuiError::new(ErrorKind::EncryptionFailed).with_details(e.to_string()))?;
+
+        // Create StoredRecord
+        let record = StoredRecord {
+            id,
+            record_type: RecordType::Password,
+            encrypted_data,
+            nonce,
+            tags: password.tags.clone(),
+            created_at: password.created_at,
+            updated_at: password.modified_at,
+            version: 1,
+        };
+
+        // Store in vault
+        vault.add_record(&record)
+            .map_err(|e| TuiError::new(ErrorKind::IoError(e.to_string())))?;
 
         Ok(())
     }
 
     /// 更新密码记录
-    pub async fn update_password(&self, _password: &PasswordRecord) -> TuiResult<()> {
-        let _dek = self.dek.as_ref()
+    pub async fn update_password(&self, password: &PasswordRecord) -> TuiResult<()> {
+        let dek = self.dek.as_ref()
             .ok_or_else(|| TuiError::new(ErrorKind::InvalidKey))?;
 
-        let _vault = self.vault.lock()
+        let mut vault = self.vault.lock()
             .map_err(|_| TuiError::new(ErrorKind::InvalidState("State lock failed".into())))?;
 
-        // TODO: 实现更新逻辑
+        // Parse UUID
+        let id = uuid::Uuid::parse_str(&password.id)
+            .map_err(|_| TuiError::new(ErrorKind::InvalidInput {
+                field: "id".to_string(),
+                reason: "Invalid UUID format".to_string(),
+            }))?;
+
+        // Get existing record to preserve created_at and version
+        let existing = vault.get_record(&password.id)
+            .map_err(|e| TuiError::new(ErrorKind::IoError(e.to_string())))?;
+
+        // Create RecordPayload for encryption
+        let payload = RecordPayload {
+            name: password.name.clone(),
+            username: password.username.clone(),
+            password: password.password.clone(),
+            url: password.url.clone(),
+            notes: password.notes.clone(),
+            tags: password.tags.clone(),
+        };
+
+        // Encrypt the payload using DEK
+        let dek_array: [u8; 32] = *dek;
+
+        let json_bytes = serde_json::to_vec(&payload)
+            .map_err(|e| TuiError::new(ErrorKind::EncryptionFailed).with_details(e.to_string()))?;
+
+        let (encrypted_data, nonce) = aes256gcm::encrypt(&json_bytes, &dek_array)
+            .map_err(|e| TuiError::new(ErrorKind::EncryptionFailed).with_details(e.to_string()))?;
+
+        // Create StoredRecord with updated data
+        let record = StoredRecord {
+            id,
+            record_type: RecordType::Password,
+            encrypted_data,
+            nonce,
+            tags: password.tags.clone(),
+            created_at: existing.created_at, // Preserve original created_at
+            updated_at: chrono::Utc::now(),
+            version: existing.version, // Version will be incremented by vault.update_record
+        };
+
+        // Update in vault
+        vault.update_record(&record)
+            .map_err(|e| TuiError::new(ErrorKind::IoError(e.to_string())))?;
 
         Ok(())
     }
