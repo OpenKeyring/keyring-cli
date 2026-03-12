@@ -2,10 +2,10 @@
 
 use super::{FilterState, TreeState, SelectionState};
 use crate::tui::traits::{Notification, NotificationLevel, NotificationId};
-use crate::tui::mock::MockVault;
+use crate::tui::models::password::PasswordRecord;
 use crate::tui::services::{TuiDatabaseService, TuiClipboardService, TuiCryptoService};
 use crate::tui::config::TuiConfig;
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use uuid::Uuid;
@@ -59,9 +59,12 @@ pub struct AppState {
     pub focused_panel: FocusedPanel,
     /// Notification ID counter
     notification_counter: u64,
-    /// Mock vault for UI development (Phase 0)
-    /// TODO(phase-3): Remove after full Vault integration
-    pub mock_vault: MockVault,
+
+    // === Phase 3: Password Cache ===
+    /// Password cache for UI display (id -> record)
+    password_cache: HashMap<String, PasswordRecord>,
+    /// All passwords list (for list view)
+    password_list: Vec<PasswordRecord>,
 
     // === Phase 3: Real Services ===
     /// Data source mode (mock or vault)
@@ -69,9 +72,9 @@ pub struct AppState {
     /// Database service (optional, for vault mode)
     db_service: Option<Arc<Mutex<TuiDatabaseService>>>,
     /// Clipboard service
-    clipboard_service: Option<TuiClipboardService>,
+    pub clipboard_service: Option<TuiClipboardService>,
     /// Crypto service
-    crypto_service: Option<TuiCryptoService>,
+    pub crypto_service: Option<TuiCryptoService>,
     /// TUI configuration
     pub config: TuiConfig,
 }
@@ -86,7 +89,8 @@ impl Default for AppState {
             notifications: VecDeque::new(),
             focused_panel: FocusedPanel::default(),
             notification_counter: 0,
-            mock_vault: MockVault::new(),
+            password_cache: HashMap::new(),
+            password_list: Vec::new(),
             data_source: DataSourceMode::default(),
             db_service: None,
             clipboard_service: None,
@@ -167,28 +171,125 @@ impl AppState {
         self.detail_mode = DetailMode::ProjectInfo;
     }
 
-    /// Apply current filter and update visible nodes from mock vault
+    /// Apply current filter and update visible nodes
     pub fn apply_filter(&mut self) {
-        // Convert expanded groups from Uuid HashSet to String HashSet
-        let expanded: HashSet<String> = self.tree.expanded_groups.iter()
-            .map(|id| id.to_string())
+        use crate::tui::state::tree_state::{VisibleNode, TreeNodeId, NodeType};
+
+        // Build visible nodes from password cache
+        let nodes: Vec<VisibleNode> = self.password_list
+            .iter()
+            .filter(|p| {
+                // Apply search filter if set
+                if let Some(ref query) = self.filter.search_query {
+                    if !query.is_empty() {
+                        let query_lower = query.to_lowercase();
+                        return p.name.to_lowercase().contains(&query_lower) ||
+                               p.username.as_ref().map(|u| u.to_lowercase().contains(&query_lower)).unwrap_or(false);
+                    }
+                }
+                true
+            })
+            .map(|p| VisibleNode {
+                id: TreeNodeId::Password(Uuid::parse_str(&p.id).unwrap_or_else(|_| Uuid::nil())),
+                level: 1,
+                node_type: NodeType::Password,
+                label: p.name.clone(),
+                child_count: 0,
+            })
             .collect();
 
-        // Get filtered visible nodes from mock vault
-        let nodes = self.mock_vault.get_filtered_visible_nodes(&expanded, Some(&self.filter));
         self.tree.set_visible_nodes(nodes);
     }
 
     /// Get password name by ID (for UI display)
     pub fn get_password_name(&self, id: Uuid) -> String {
-        self.mock_vault.get_password(&id.to_string())
+        self.password_cache
+            .get(&id.to_string())
             .map(|p| p.name.clone())
             .unwrap_or_else(|| "Unknown".to_string())
     }
 
     /// Get password record by ID
-    pub fn get_password(&self, id: Uuid) -> Option<&crate::tui::models::password::PasswordRecord> {
-        self.mock_vault.get_password(&id.to_string())
+    pub fn get_password(&self, id: Uuid) -> Option<&PasswordRecord> {
+        self.password_cache.get(&id.to_string())
+    }
+
+    /// Get password record by ID string
+    pub fn get_password_by_str(&self, id: &str) -> Option<&PasswordRecord> {
+        self.password_cache.get(id)
+    }
+
+    // === Phase 3: Cache Management ===
+
+    /// Refresh password cache from loaded data
+    pub fn refresh_password_cache(&mut self, passwords: Vec<PasswordRecord>) {
+        // Clear and rebuild cache
+        self.password_cache.clear();
+        for p in &passwords {
+            self.password_cache.insert(p.id.clone(), p.clone());
+        }
+        self.password_list = passwords;
+
+        // Reapply filter to update visible nodes
+        self.apply_filter();
+    }
+
+    /// Set database service
+    pub fn set_db_service(&mut self, service: Arc<Mutex<TuiDatabaseService>>) {
+        self.db_service = Some(service);
+    }
+
+    /// Set clipboard service
+    pub fn set_clipboard_service(&mut self, service: TuiClipboardService) {
+        self.clipboard_service = Some(service);
+    }
+
+    /// Set crypto service
+    pub fn set_crypto_service(&mut self, service: TuiCryptoService) {
+        self.crypto_service = Some(service);
+    }
+
+    /// Get database service
+    pub fn db_service(&self) -> Option<&Arc<Mutex<TuiDatabaseService>>> {
+        self.db_service.as_ref()
+    }
+
+    /// Get mutable reference to clipboard service
+    pub fn clipboard_service_mut(&mut self) -> Option<&mut TuiClipboardService> {
+        self.clipboard_service.as_mut()
+    }
+
+    /// Update a password in cache (after successful db update)
+    pub fn update_password_in_cache(&mut self, password: PasswordRecord) {
+        if let Some(existing) = self.password_cache.get_mut(&password.id) {
+            *existing = password.clone();
+        } else {
+            self.password_cache.insert(password.id.clone(), password.clone());
+        }
+
+        // Update in list
+        if let Some(pos) = self.password_list.iter().position(|p| p.id == password.id) {
+            self.password_list[pos] = password;
+        }
+    }
+
+    /// Remove a password from cache (after successful db delete)
+    pub fn remove_password_from_cache(&mut self, id: &str) {
+        self.password_cache.remove(id);
+        self.password_list.retain(|p| p.id != id);
+        self.apply_filter();
+    }
+
+    /// Add a password to cache (after successful db create)
+    pub fn add_password_to_cache(&mut self, password: PasswordRecord) {
+        self.password_cache.insert(password.id.clone(), password.clone());
+        self.password_list.push(password);
+        self.apply_filter();
+    }
+
+    /// Get all passwords (for iteration)
+    pub fn all_passwords(&self) -> &[PasswordRecord] {
+        &self.password_list
     }
 }
 

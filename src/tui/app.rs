@@ -475,22 +475,30 @@ impl TuiApp {
                 crate::tui::traits::HandleResult::Action(crate::tui::traits::Action::CloseScreen) => {
                     // Get the edited fields and update the password
                     let fields = self.edit_password_screen.get_edited_fields();
-                    let id_str = fields.id.to_string();
-                    // Update password in MockVault
-                    let updated = self.app_state.mock_vault.update_password(
-                        &id_str,
-                        fields.username.clone(),
-                        fields.password.clone(),
-                        fields.url.clone(),
-                        fields.notes.clone(),
-                        fields.tags.clone(),
-                        fields.group_id.clone(),
-                    );
-                    if updated {
-                        self.add_output(format!("✓ Password '{}' updated", fields.name));
-                    } else {
-                        self.add_output(format!("✗ Failed to update password '{}'", fields.name));
-                    }
+
+                    // Build updated PasswordRecord
+                    let existing = self.app_state.get_password_by_str(&fields.id.to_string());
+                    let updated_record = crate::tui::models::password::PasswordRecord {
+                        id: fields.id.to_string(),
+                        name: fields.name.clone(),
+                        username: fields.username.clone(),
+                        password: fields.password.clone().unwrap_or_default(),
+                        url: fields.url.clone(),
+                        notes: fields.notes.clone(),
+                        tags: fields.tags.clone(),
+                        group_id: fields.group_id.clone(),
+                        created_at: existing.map(|p| p.created_at).unwrap_or_else(chrono::Utc::now),
+                        modified_at: chrono::Utc::now(),
+                        expires_at: existing.and_then(|p| p.expires_at),
+                        is_favorite: existing.map(|p| p.is_favorite).unwrap_or(false),
+                        is_deleted: false,
+                        deleted_at: None,
+                    };
+
+                    // Update in cache
+                    self.app_state.update_password_in_cache(updated_record);
+                    self.add_output(format!("✓ Password '{}' updated", fields.name));
+
                     // Reset screen for next use
                     self.edit_password_screen = EditPasswordScreen::empty();
                     self.return_to_main();
@@ -1334,8 +1342,8 @@ pub fn run_tui() -> Result<()> {
                                                 app.navigate_to(Screen::NewPassword);
                                             }
                                             ScreenType::EditPassword(id_str) => {
-                                                // Get password data from MockVault
-                                                if let Some(record) = app.app_state.mock_vault.get_password(&id_str) {
+                                                // Get password data from cache
+                                                if let Some(record) = app.app_state.get_password_by_str(&id_str).cloned() {
                                                     // Create EditPasswordScreen with existing data
                                                     // Convert String ID to Uuid
                                                     if let Ok(uuid) = uuid::Uuid::parse_str(&record.id) {
@@ -1383,12 +1391,9 @@ pub fn run_tui() -> Result<()> {
                                         // Handle the confirmed action (user clicked confirm)
                                         match action {
                                             ConfirmAction::DeletePassword { password_id, password_name } => {
-                                                // Delete the password (move to trash)
-                                                if app.app_state.mock_vault.move_to_trash(&password_id) {
-                                                    app.output_lines.push(format!("Deleted \"{}\"", password_name));
-                                                } else {
-                                                    app.output_lines.push(format!("Failed to delete password {}", password_id));
-                                                }
+                                                // Delete the password (remove from cache)
+                                                app.app_state.remove_password_from_cache(&password_id);
+                                                app.output_lines.push(format!("Deleted \"{}\"", password_name));
                                             }
                                             ConfirmAction::PermanentDelete(id) => {
                                                 // TODO: Permanently delete

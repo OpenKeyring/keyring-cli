@@ -3,10 +3,10 @@ source: src/tui/tests/visual_regression_tests.rs
 expression: output
 ---
 ┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
-│[+] Work (5)              ││                                                  │
-│[+] Personal (4)          ││OpenKeyring                                       │
-│[+] Others (2)            ││Privacy-first Password Manager                    │
 │                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
 │                          ││Version: v0.1.0                                   │
 │                          ││License: MIT License                              │
 │                          ││Website: github.com/open-keyring                  │

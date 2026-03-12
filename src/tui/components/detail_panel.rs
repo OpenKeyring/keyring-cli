@@ -303,7 +303,7 @@ impl DetailPanel {
                 if key.modifiers.contains(KeyModifiers::SHIFT) {
                     // C (Shift+c): Copy password
                     if let crate::tui::state::DetailMode::PasswordDetail(id) = state.detail_mode {
-                        if let Some(record) = state.mock_vault.get_password(&id.to_string()) {
+                        if let Some(record) = state.get_password_by_str(&id.to_string()).cloned() {
                             let password = record.password.clone();
                             match Clipboard::new() {
                                 Ok(mut clipboard) => {
@@ -334,7 +334,7 @@ impl DetailPanel {
                 } else {
                     // c: Copy username
                     if let crate::tui::state::DetailMode::PasswordDetail(id) = state.detail_mode {
-                        if let Some(record) = state.mock_vault.get_password(&id.to_string()) {
+                        if let Some(record) = state.get_password_by_str(&id.to_string()).cloned() {
                             if let Some(ref username) = record.username {
                                 match Clipboard::new() {
                                     Ok(mut clipboard) => {
@@ -498,14 +498,21 @@ mod tests {
 
     #[test]
     fn test_handle_key_with_state_copy_username() {
-        use crate::tui::mock::vault::mock_ids;
         use uuid::Uuid;
+        use crate::tui::models::password::PasswordRecord;
 
         let mut panel = DetailPanel::new();
         let mut state = AppState::new();
 
-        // Set detail mode to a valid password that has a username
-        let id = Uuid::parse_str(mock_ids::PWD_GITHUB_PERSONAL).unwrap();
+        // Create test password and add to cache
+        let id = Uuid::new_v4();
+        let test_password = PasswordRecord::new(
+            id.to_string(),
+            "Test Password",
+            "secret123"
+        ).with_username("testuser@example.com".to_string());
+
+        state.refresh_password_cache(vec![test_password]);
         state.detail_mode = DetailMode::PasswordDetail(id);
 
         // 'c' (lowercase) copies username
@@ -519,14 +526,21 @@ mod tests {
 
     #[test]
     fn test_handle_key_with_state_copy_password() {
-        use crate::tui::mock::vault::mock_ids;
         use uuid::Uuid;
+        use crate::tui::models::password::PasswordRecord;
 
         let mut panel = DetailPanel::new();
         let mut state = AppState::new();
 
-        // Set detail mode to a valid password
-        let id = Uuid::parse_str(mock_ids::PWD_GITHUB_PERSONAL).unwrap();
+        // Create test password and add to cache
+        let id = Uuid::new_v4();
+        let test_password = PasswordRecord::new(
+            id.to_string(),
+            "Test Password",
+            "secret123"
+        );
+
+        state.refresh_password_cache(vec![test_password]);
         state.detail_mode = DetailMode::PasswordDetail(id);
 
         // 'C' (Shift+c) copies password
@@ -553,21 +567,30 @@ mod tests {
 
     #[test]
     fn test_data_binding_password_detail() {
-        use crate::tui::mock::vault::mock_ids;
         use uuid::Uuid;
+        use crate::tui::models::password::PasswordRecord;
 
-        let panel = DetailPanel::new();
-        let state = AppState::new();
+        let mut state = AppState::new();
+
+        // Create a test password and add to cache
+        let password_id = Uuid::new_v4();
+        let test_password = PasswordRecord::new(
+            password_id.to_string(),
+            "Gmail Work",
+            "secret123"
+        )
+        .with_username("user@gmail.com".to_string())
+        .with_url("https://gmail.com".to_string())
+        .with_favorite(true);
+
+        state.refresh_password_cache(vec![test_password.clone()]);
 
         // Initially, detail mode should be ProjectInfo
         assert!(matches!(state.detail_mode, DetailMode::ProjectInfo));
 
-        // Get a valid password ID from mock vault
-        let password_id = Uuid::parse_str(mock_ids::PWD_GMAIL_WORK).unwrap();
-
-        // Verify the password exists in mock vault
+        // Verify the password exists in cache
         let password = state.get_password(password_id);
-        assert!(password.is_some(), "Password should exist in mock vault");
+        assert!(password.is_some(), "Password should exist in cache");
 
         let password = password.unwrap();
         assert_eq!(password.name, "Gmail Work");
@@ -578,14 +601,23 @@ mod tests {
 
     #[test]
     fn test_render_password_from_state() {
-        use crate::tui::mock::vault::mock_ids;
         use uuid::Uuid;
+        use crate::tui::models::password::PasswordRecord;
 
         let mut state = AppState::new();
         let panel = DetailPanel::new();
 
-        // Select a password using its UUID
-        let password_id = Uuid::parse_str(mock_ids::PWD_GMAIL_WORK).unwrap();
+        // Create a test password and add to cache
+        let password_id = Uuid::new_v4();
+        let test_password = PasswordRecord::new(
+            password_id.to_string(),
+            "Test Password",
+            "secret123"
+        );
+
+        state.refresh_password_cache(vec![test_password.clone()]);
+
+        // Select the password
         state.select_password(password_id);
 
         // Verify detail mode is updated
@@ -598,16 +630,27 @@ mod tests {
 
     #[test]
     fn test_full_password_detail_flow() {
-        use crate::tui::mock::vault::mock_ids;
         use uuid::Uuid;
+        use crate::tui::models::password::PasswordRecord;
 
         let mut state = AppState::new();
 
+        // Create a test password and add to cache
+        let password_id = Uuid::new_v4();
+        let test_password = PasswordRecord::new(
+            password_id.to_string(),
+            "Gmail Work",
+            "secret123"
+        )
+        .with_username("user@gmail.com".to_string())
+        .with_url("https://gmail.com".to_string())
+        .with_tags(vec!["email".to_string(), "work".to_string()])
+        .with_favorite(true);
+
+        state.refresh_password_cache(vec![test_password.clone()]);
+
         // Initialize tree with data
         state.apply_filter();
-
-        // Get the first password node from visible nodes
-        let password_id = Uuid::parse_str(mock_ids::PWD_GMAIL_WORK).unwrap();
 
         // Select the password
         state.select_password(password_id);

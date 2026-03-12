@@ -410,7 +410,7 @@ impl MainScreen {
                 if let Some(password_id) = state.selection.selected_password {
                     let id_str = password_id.to_string();
                     // Get password name for confirmation dialog
-                    let password_name = state.mock_vault.get_password(&id_str)
+                    let password_name = state.get_password_by_str(&id_str)
                         .map(|p| p.name.clone())
                         .unwrap_or_else(|| "Unknown".to_string());
                     // Show confirmation dialog
@@ -811,13 +811,27 @@ mod tests {
     fn test_empty_tree_with_no_filters() {
         let mut state = AppState::new();
 
-        // Initialize tree with data by applying filter
+        // With empty cache, apply_filter produces empty visible_nodes
         state.apply_filter();
 
         let tree_state = &state.tree;
 
-        // Tree state should have visible nodes from mock data after apply_filter
-        assert!(!tree_state.visible_nodes.is_empty(), "Mock data should provide visible nodes after apply_filter");
+        // Tree state should be empty with no data in cache
+        assert!(tree_state.visible_nodes.is_empty(), "Empty cache should produce empty visible nodes");
+
+        // Now add some data and verify it appears
+        use crate::tui::models::password::PasswordRecord;
+        use uuid::Uuid;
+
+        let test_password = PasswordRecord::new(
+            Uuid::new_v4().to_string(),
+            "Test Password",
+            "secret123"
+        );
+        state.refresh_password_cache(vec![test_password]);
+
+        // Tree state should now have visible nodes
+        assert!(!state.tree.visible_nodes.is_empty(), "Cache with data should produce visible nodes");
     }
 
     #[test]

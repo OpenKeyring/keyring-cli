@@ -7,10 +7,10 @@ Sequence: command_execution_render
 Step 1: initial
 ──────────────
 ┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
-│[+] Work (5)              ││                                                  │
-│[+] Personal (4)          ││OpenKeyring                                       │
-│[+] Others (2)            ││Privacy-first Password Manager                    │
 │                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
 │                          ││Version: v0.1.0                                   │
 │                          ││License: MIT License                              │
 │                          ││Website: github.com/open-keyring                  │
@@ -34,10 +34,10 @@ Focus: Tree | [1-3] Switch | [j/k] Navigate | [q] Quit
 Step 2: typed_help
 ─────────────────
 ┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
-│[+] Work (5)              ││                                                  │
-│[+] Personal (4)          ││OpenKeyring                                       │
-│[+] Others (2)            ││Privacy-first Password Manager                    │
 │                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
 │                          ││Version: v0.1.0                                   │
 │                          ││License: MIT License                              │
 │                          ││Website: github.com/open-keyring                  │
@@ -61,10 +61,10 @@ Focus: Tree | [1-3] Switch | [j/k] Navigate | [q] Quit
 Step 3: submitted_help
 ─────────────────────
 ┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
-│[+] Work (5)              ││                                                  │
-│[+] Personal (4)          ││OpenKeyring                                       │
-│[+] Others (2)            ││Privacy-first Password Manager                    │
 │                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
 │                          ││Version: v0.1.0                                   │
 │                          ││License: MIT License                              │
 │                          ││Website: github.com/open-keyring                  │
@@ -88,10 +88,10 @@ Focus: Tree | [1-3] Switch | [j/k] Navigate | [q] Quit
 Step 4: typed_config
 ───────────────────
 ┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
-│[+] Work (5)              ││                                                  │
-│[+] Personal (4)          ││OpenKeyring                                       │
-│[+] Others (2)            ││Privacy-first Password Manager                    │
 │                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
 │                          ││Version: v0.1.0                                   │
 │                          ││License: MIT License                              │
 │                          ││Website: github.com/open-keyring                  │
@@ -115,10 +115,10 @@ Focus: Tree | [1-3] Switch | [j/k] Navigate | [q] Quit
 Step 5: submitted_config
 ───────────────────────
 ┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
-│[+] Work (5)              ││                                                  │
-│[+] Personal (4)          ││OpenKeyring                                       │
-│[+] Others (2)            ││Privacy-first Password Manager                    │
 │                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
 │                          ││Version: v0.1.0                                   │
 │                          ││License: MIT License                              │
 │                          ││Website: github.com/open-keyring                  │

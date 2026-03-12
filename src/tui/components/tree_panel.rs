@@ -536,14 +536,32 @@ mod tests {
 
     #[test]
     fn test_expand_collapse_folder() {
+        use crate::tui::models::password::PasswordRecord;
+
         let mut panel = TreePanel::new();
         let mut state = AppState::new();
 
-        // Initialize visible_nodes from MockVault (contains real group IDs)
-        state.apply_filter();
+        // Create test data
+        let group_id = Uuid::new_v4();
+        let password_id = Uuid::new_v4();
+        let test_password = PasswordRecord::new(
+            password_id.to_string(),
+            "Test Password",
+            "secret123"
+        ).with_group(group_id.to_string());
 
-        // Get the first group ID from visible nodes
-        let group_id = match state.tree.current_node() {
+        // Add to cache so apply_filter produces data
+        state.refresh_password_cache(vec![test_password]);
+
+        // Manually set visible nodes with a group for testing expand/collapse
+        // (refresh_password_cache generates password nodes, we need a group node to test)
+        state.tree.set_visible_nodes(vec![
+            create_visible_node(TreeNodeId::Group(group_id), 0, NodeType::Folder, "Test Group"),
+            create_visible_node(TreeNodeId::Password(password_id), 1, NodeType::Password, "Test Password"),
+        ]);
+
+        // Get the group ID from visible nodes
+        let test_group_id = match state.tree.current_node() {
             Some(node) => {
                 if let TreeNodeId::Group(id) = node.id {
                     id
@@ -555,7 +573,7 @@ mod tests {
         };
 
         // Initially not expanded
-        assert!(!state.tree.is_expanded(&group_id));
+        assert!(!state.tree.is_expanded(&test_group_id));
 
         // Press 'l' to expand
         let result = panel.handle_key_with_state(
@@ -563,7 +581,14 @@ mod tests {
             &mut state,
         );
         assert!(matches!(result, HandleResult::Consumed));
-        assert!(state.tree.is_expanded(&group_id));
+        assert!(state.tree.is_expanded(&test_group_id));
+
+        // Reset visible nodes (simulate re-rendering after expand)
+        state.tree.set_visible_nodes(vec![
+            create_visible_node(TreeNodeId::Group(group_id), 0, NodeType::Folder, "Test Group"),
+            create_visible_node(TreeNodeId::Password(password_id), 1, NodeType::Password, "Test Password"),
+        ]);
+        state.tree.highlighted_index = 0; // Keep focus on group
 
         // Press 'h' to collapse
         let result = panel.handle_key_with_state(
@@ -571,7 +596,7 @@ mod tests {
             &mut state,
         );
         assert!(matches!(result, HandleResult::Consumed));
-        assert!(!state.tree.is_expanded(&group_id));
+        assert!(!state.tree.is_expanded(&test_group_id));
     }
 
     #[test]

@@ -7,10 +7,10 @@ Sequence: app_to_wizard_transition
 Step 1: main_screen
 ──────────────────
 ┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
-│[+] Work (5)              ││                                                  │
-│[+] Personal (4)          ││OpenKeyring                                       │
-│[+] Others (2)            ││Privacy-first Password Manager                    │
 │                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
 │                          ││Version: v0.1.0                                   │
 │                          ││License: MIT License                              │
 │                          ││Website: github.com/open-keyring                  │
@@ -61,10 +61,10 @@ Step 2: wizard_screen
 Step 3: back_to_main
 ───────────────────
 ┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
-│[+] Work (5)              ││                                                  │
-│[+] Personal (4)          ││OpenKeyring                                       │
-│[+] Others (2)            ││Privacy-first Password Manager                    │
 │                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
 │                          ││Version: v0.1.0                                   │
 │                          ││License: MIT License                              │
 │                          ││Website: github.com/open-keyring                  │
