@@ -320,17 +320,48 @@ impl CompletionScreen {
 
     /// Render the completion screen
     pub fn render(&self, frame: &mut ratatui::Frame, area: Rect) {
+        use ratatui::text::{Line, Span};
+        use ratatui::layout::Alignment;
+
         let block = Block::default()
-            .title("Setup Complete!")
+            .title("🎉 Setup Complete!")
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::Green).add_modifier(Modifier::BOLD));
 
-        let paragraph = Paragraph::new(self.message.clone())
-            .block(block)
-            .style(Style::default().fg(Color::Green))
+        let inner = block.inner(area);
+        block.render(area, frame.buffer_mut());
+
+        // Create the quick start guide content
+        let lines = vec![
+            Line::from(""),
+            Line::from(Span::styled(
+                "Your OpenKeyring is ready to use!",
+                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+            Line::from(Span::styled(
+                "Quick Start Guide:",
+                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+            Line::from(Span::raw("  [n] Create a new password")),
+            Line::from(Span::raw("  [j/k] Navigate through your passwords")),
+            Line::from(Span::raw("  [Enter] View password details")),
+            Line::from(Span::raw("  [c] Copy username | [C] Copy password")),
+            Line::from(Span::raw("  [Space] Toggle password visibility")),
+            Line::from(Span::raw("  [?] Show help anytime")),
+            Line::from(""),
+            Line::from(Span::styled(
+                "Press [Enter] to start using OpenKeyring",
+                Style::default().fg(Color::Yellow),
+            )),
+        ];
+
+        let paragraph = Paragraph::new(lines)
+            .alignment(Alignment::Center)
             .wrap(ratatui::widgets::Wrap { trim: false });
 
-        frame.render_widget(paragraph, area);
+        frame.render_widget(paragraph, inner);
     }
 }
 
