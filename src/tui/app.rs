@@ -199,6 +199,8 @@ pub struct TuiApp {
     pub new_password_screen: NewPasswordScreen,
     /// Edit password screen
     pub edit_password_screen: EditPasswordScreen,
+    /// Config directory path for persisting TUI settings
+    config_dir: std::path::PathBuf,
 }
 
 impl Default for TuiApp {
@@ -208,11 +210,29 @@ impl Default for TuiApp {
 }
 
 impl TuiApp {
-    /// Create a new TUI application
+    /// Create a new TUI application with default settings
     pub fn new() -> Self {
-        // Initialize app state and load mock data
+        Self::new_with_config_dir(None)
+    }
+
+    /// Create a new TUI application with a specific config directory
+    pub fn new_with_config_dir(config_dir: Option<std::path::PathBuf>) -> Self {
+        use std::path::PathBuf;
+
+        // Determine config directory
+        let config_dir = config_dir.unwrap_or_else(|| {
+            dirs::config_dir()
+                .map(|p| p.join("open-keyring"))
+                .unwrap_or_else(|| PathBuf::from(".open-keyring"))
+        });
+
+        // Load TUI config from disk
+        let config = crate::tui::config::TuiConfig::load(&config_dir).unwrap_or_default();
+
+        // Initialize app state with loaded config
         let mut app_state = AppState::new();
-        app_state.apply_filter();  // Load initial visible nodes from mock vault
+        app_state.config = config;
+        app_state.apply_filter();
 
         Self {
             running: true,
@@ -246,7 +266,18 @@ impl TuiApp {
             main_screen: MainScreen::new(),
             new_password_screen: NewPasswordScreen::new(),
             edit_password_screen: EditPasswordScreen::empty(),
+            config_dir,
         }
+    }
+
+    /// Get the config directory path
+    pub fn config_dir(&self) -> &std::path::Path {
+        &self.config_dir
+    }
+
+    /// Save current TUI configuration to disk
+    pub fn save_config(&self) -> std::io::Result<()> {
+        self.app_state.config.save(&self.config_dir)
     }
 
     /// Add an output line, trimming old lines if exceeding MAX_OUTPUT_LINES
@@ -721,6 +752,10 @@ impl TuiApp {
 
     /// Stop the application
     pub fn quit(&mut self) {
+        // Save config before quitting
+        if let Err(e) = self.save_config() {
+            eprintln!("Warning: Failed to save TUI config: {}", e);
+        }
         self.running = false;
     }
 
