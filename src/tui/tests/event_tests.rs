@@ -154,9 +154,9 @@ fn test_screen_type_confirm_dialog() {
 }
 
 #[test]
-fn test_screen_type_trash_bin() {
-    let screen = ScreenType::TrashBin;
-    assert_eq!(screen, ScreenType::TrashBin);
+fn test_screen_type_trash() {
+    let screen = ScreenType::Trash;
+    assert_eq!(screen, ScreenType::Trash);
 }
 
 #[test]

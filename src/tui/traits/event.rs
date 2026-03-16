@@ -89,7 +89,7 @@ pub enum ScreenType {
     /// 确认对话框
     ConfirmDialog(ConfirmAction),
     /// 回收站
-    TrashBin,
+    Trash,
     /// 设置
     Settings,
     /// 帮助

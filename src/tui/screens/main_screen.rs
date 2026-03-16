@@ -402,6 +402,10 @@ impl MainScreen {
             KeyCode::Char('?') => {
                 return HandleResult::Action(Action::OpenScreen(ScreenType::Help));
             }
+            // Open trash screen (Shift+T)
+            KeyCode::Char('T') => {
+                return HandleResult::Action(Action::OpenScreen(ScreenType::Trash));
+            }
             // Start search
             KeyCode::Char('/') => {
                 self.search_bar.show();
@@ -654,6 +658,20 @@ mod tests {
         );
 
         assert!(matches!(result, HandleResult::Action(Action::OpenScreen(ScreenType::Help))));
+    }
+
+    #[test]
+    fn test_global_trash_shortcut() {
+        let mut screen = MainScreen::new();
+        let mut state = AppState::new();
+
+        // Press 'T' (Shift+T) should return OpenScreen(Trash) action
+        let result = screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('T'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+
+        assert!(matches!(result, HandleResult::Action(Action::OpenScreen(ScreenType::Trash))));
     }
 
     #[test]

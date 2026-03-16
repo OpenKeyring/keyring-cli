@@ -263,7 +263,7 @@ pub trait ScreenFactory: Send + Sync {
             ScreenType::NewPassword => self.create_new_password(context),
             ScreenType::EditPassword(id) => self.create_edit_password(context, id),
             ScreenType::ConfirmDialog(action) => self.create_confirm_dialog(action.clone()),
-            ScreenType::TrashBin => self.create_trash_bin(context),
+            ScreenType::Trash => self.create_trash_bin(context),
             ScreenType::Help => self.create_help(),
             ScreenType::Settings => self.create_settings(context),
             ScreenType::Main => self.create_main(context),

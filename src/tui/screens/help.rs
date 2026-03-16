@@ -58,6 +58,10 @@ impl HelpScreen {
                         keys: ":".to_string(),
                         action: "Enter command mode".to_string(),
                     },
+                    Shortcut {
+                        keys: "Shift+T".to_string(),
+                        action: "Open trash screen".to_string(),
+                    },
                 ],
             },
             HelpSection {
