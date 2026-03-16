@@ -600,9 +600,32 @@ impl TuiApp {
 
     /// Load all passwords from vault into cache
     fn load_passwords_from_vault(&mut self) {
-        // For now, just clear the cache - async loading will be done separately
-        // This is a placeholder that can be enhanced later
-        self.app_state.refresh_password_cache(vec![]);
+        // Use block_in_place to run async code in sync context
+        let passwords = tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(async {
+                if let Some(db_service) = self.app_state.db_service() {
+                    match db_service.lock() {
+                        Ok(service) => {
+                            match service.list_passwords().await {
+                                Ok(passwords) => passwords,
+                                Err(e) => {
+                                    eprintln!("Failed to load passwords: {}", e);
+                                    vec![]
+                                }
+                            }
+                        }
+                        Err(_) => {
+                            eprintln!("Failed to lock db_service");
+                            vec![]
+                        }
+                    }
+                } else {
+                    vec![]
+                }
+            })
+        });
+
+        self.app_state.refresh_password_cache(passwords);
     }
     pub fn handle_key_event(&mut self, event: crossterm::event::KeyEvent) {
         use crate::tui::traits::Interactive;
@@ -1458,8 +1481,12 @@ pub fn run_tui() -> Result<()> {
                 .join("keystore.json")
         });
     if !is_initialized(&keystore_path) {
+        // User not initialized - show wizard for first-time setup
         app.wizard_state = Some(WizardState::new().with_keystore_path(keystore_path));
         app.current_screen = Screen::Wizard;
+    } else {
+        // User already initialized - show unlock screen to enter master password
+        app.current_screen = Screen::Unlock;
     }
 
     // Main event loop
