@@ -204,10 +204,58 @@ impl TagEditor {
         }
     }
 
-    fn render_suggestions(&self, frame: &mut Frame, _area: Rect) {
-        // TODO: Render suggestions popup above the input
-        // For now, suggestions are just shown as part of the UI state
-        let _ = self.suggestions;
+    fn render_suggestions(&self, frame: &mut Frame, area: Rect) {
+        // Render suggestions popup above the input
+        if self.suggestions.is_empty() {
+            return;
+        }
+
+        // Calculate popup dimensions
+        let popup_height = self.suggestions.len().min(5) as u16 + 2; // +2 for borders
+        let popup_width = self
+            .suggestions
+            .iter()
+            .map(|s| s.len() as u16)
+            .max()
+            .unwrap_or(10)
+            .max(10)
+            + 4; // +4 for borders and padding
+
+        // Position popup above the input area
+        let popup_y = if area.y > popup_height {
+            area.y - popup_height
+        } else {
+            // Not enough space above, show below
+            area.y + area.height
+        };
+
+        let popup_area = Rect::new(area.x, popup_y, popup_width, popup_height);
+
+        // Build popup content
+        let mut lines = Vec::new();
+        for (i, suggestion) in self.suggestions.iter().enumerate() {
+            let is_selected = self.selected_suggestion == Some(i);
+            let style = if is_selected {
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::White)
+            };
+
+            let prefix = if is_selected { "> " } else { "  " };
+            lines.push(Line::styled(format!("{}{}", prefix, suggestion), style));
+        }
+
+        let popup = Paragraph::new(lines).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::DarkGray))
+                .title(" Suggestions "),
+        );
+
+        frame.render_widget(popup, popup_area);
     }
 }
 

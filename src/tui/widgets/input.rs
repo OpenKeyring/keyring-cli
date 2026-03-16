@@ -2,6 +2,11 @@
 //!
 //! Interactive command input with autocomplete support.
 
+/// Check if a byte is a word boundary (whitespace or punctuation)
+fn is_word_boundary(byte: u8) -> bool {
+    byte.is_ascii_whitespace() || byte == b'/' || byte == b'-' || byte == b'_'
+}
+
 use ratatui::{
     layout::Rect,
     style::{Color, Modifier, Style},
@@ -113,17 +118,45 @@ impl CommandInput {
     }
 
     /// Apply selected suggestion
+    ///
+    /// Smart replacement based on cursor position:
+    /// - Finds the word boundary before the cursor
+    /// - Replaces only the partial word with the suggestion
     pub fn apply_suggestion(&mut self) -> Option<String> {
         self.selected_suggestion.and_then(|idx| {
             self.suggestions.get(idx).cloned().map(|suggestion| {
-                // TODO: Implement smart replacement based on cursor position
-                self.buffer = suggestion;
-                self.cursor = self.buffer.len();
+                // Find the start of the current word (for smart replacement)
+                let word_start = self.find_word_start_before_cursor();
+
+                // Replace the partial word with the suggestion
+                let before = &self.buffer[..word_start];
+                let after = &self.buffer[self.cursor..];
+
+                self.buffer = format!("{}{}{}", before, suggestion, after);
+                self.cursor = word_start + suggestion.len();
                 self.suggestions.clear();
                 self.selected_suggestion = None;
                 self.buffer.clone()
             })
         })
+    }
+
+    /// Find the start position of the word before the cursor
+    fn find_word_start_before_cursor(&self) -> usize {
+        if self.cursor == 0 {
+            return 0;
+        }
+
+        // Find the start of the current word
+        let bytes = self.buffer.as_bytes();
+        let mut pos = self.cursor;
+
+        // Skip backward to find word boundary
+        while pos > 0 && !is_word_boundary(bytes[pos - 1]) {
+            pos -= 1;
+        }
+
+        pos
     }
 
     /// Render the command input
