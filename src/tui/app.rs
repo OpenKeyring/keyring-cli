@@ -11,7 +11,7 @@ use crate::tui::screens::wizard::{WizardState, WizardStep};
 use crate::tui::screens::{
     ClipboardTimeoutScreen, EditPasswordScreen, MainScreen, MasterPasswordScreen, NewPasswordScreen,
     PasskeyGenerateScreen, PasskeyImportScreen, PasskeyVerifyScreen, PasswordPolicyScreen,
-    SecurityNoticeScreen, SyncScreen, TrashRetentionScreen, UnlockScreen, WelcomeScreen,
+    SecurityNoticeScreen, SyncScreen, TrashRetentionScreen, TrashScreen, UnlockScreen, WelcomeScreen,
 };
 use crate::tui::state::AppState;
 use chrono::{DateTime, Utc};
@@ -69,6 +69,8 @@ pub enum Screen {
     ConflictResolution,
     /// Sync screen
     Sync,
+    /// Trash screen (deleted passwords)
+    Trash,
     /// Onboarding wizard screen
     Wizard,
     /// Unlock screen (enter master password)
@@ -90,6 +92,7 @@ impl Screen {
             Screen::Help => "Help",
             Screen::ConflictResolution => "Conflict Resolution",
             Screen::Sync => "Sync",
+            Screen::Trash => "Trash",
             Screen::Wizard => "Onboarding Wizard",
             Screen::Unlock => "Unlock",
             Screen::NewPassword => "New Password",
@@ -204,6 +207,8 @@ pub struct TuiApp {
     pub new_password_screen: NewPasswordScreen,
     /// Edit password screen
     pub edit_password_screen: EditPasswordScreen,
+    /// Trash screen (deleted passwords)
+    pub trash_screen: TrashScreen,
     /// Config directory path for persisting TUI settings
     config_dir: std::path::PathBuf,
 }
@@ -272,6 +277,7 @@ impl TuiApp {
             main_screen: MainScreen::new(),
             new_password_screen: NewPasswordScreen::new(),
             edit_password_screen: EditPasswordScreen::empty(),
+            trash_screen: TrashScreen::new(),
             config_dir,
         }
     }
@@ -912,6 +918,49 @@ impl TuiApp {
         self.running = false;
     }
 
+    /// Show a confirmation dialog for the given action
+    pub fn show_confirm_dialog(&mut self, action: ConfirmAction) {
+        // For now, just push to output lines as a placeholder
+        // In a full implementation, this would open a confirmation dialog screen
+        match &action {
+            ConfirmAction::PermanentDelete(id) => {
+                self.output_lines.push(format!("Confirm permanent delete: {}", id));
+            }
+            ConfirmAction::EmptyTrash => {
+                self.output_lines.push("Confirm empty trash".to_string());
+            }
+            ConfirmAction::DeletePassword { password_name, .. } => {
+                self.output_lines.push(format!("Confirm delete: {}", password_name));
+            }
+            ConfirmAction::Generic => {
+                self.output_lines.push("Confirm action?".to_string());
+            }
+        }
+        // Immediately handle the confirmed action
+        // In a real implementation, we'd show a dialog and wait for user confirmation
+        match action {
+            ConfirmAction::PermanentDelete(id) => {
+                // Permanently delete from cache
+                self.app_state.remove_password_from_cache(&id);
+                self.output_lines.push("Password permanently deleted".to_string());
+            }
+            ConfirmAction::EmptyTrash => {
+                // Remove all deleted passwords from cache
+                let deleted_ids: Vec<String> = self.app_state
+                    .all_passwords()
+                    .iter()
+                    .filter(|p| p.is_deleted)
+                    .map(|p| p.id.clone())
+                    .collect();
+                for id in deleted_ids {
+                    self.app_state.remove_password_from_cache(&id);
+                }
+                self.output_lines.push("Trash emptied".to_string());
+            }
+            _ => {}
+        }
+    }
+
     /// Handle input character
     pub fn handle_char(&mut self, c: char) {
         match c {
@@ -1184,6 +1233,12 @@ impl TuiApp {
         if self.current_screen == Screen::EditPassword {
             use crate::tui::traits::Render;
             self.edit_password_screen.render(size, frame.buffer_mut());
+            return;
+        }
+
+        // Handle trash screen
+        if self.current_screen == Screen::Trash {
+            self.trash_screen.render_frame(frame, size, &self.app_state);
             return;
         }
 
@@ -1515,6 +1570,24 @@ pub fn run_tui() -> Result<()> {
                     } else if app.current_screen == Screen::Unlock {
                         // Route unlock screen events
                         app.handle_unlock_key_event(key);
+                    } else if app.current_screen == Screen::Trash {
+                        // Route trash screen events
+                        use crate::tui::traits::{HandleResult, Action, ScreenType};
+                        let result = app.trash_screen.handle_key_with_state(key, &mut app.app_state);
+                        match result {
+                            HandleResult::Action(Action::CloseScreen) => {
+                                app.navigate_to(Screen::Main);
+                            }
+                            HandleResult::Action(Action::OpenScreen(screen_type)) => {
+                                match screen_type {
+                                    ScreenType::ConfirmDialog(action) => {
+                                        app.show_confirm_dialog(action);
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            _ => {}
+                        }
                     } else if app.current_screen == Screen::Main {
                         // Route main screen events to MainScreen handler
                         use crate::tui::traits::{HandleResult, Action, ScreenType};

@@ -13,6 +13,7 @@ mod detail_panel;
 mod tree_panel;
 mod confirm_dialog;
 mod search_bar;
+mod tag_editor;
 
 pub use status_bar::StatusBar;
 pub use text_input::TextInput;
@@ -25,6 +26,7 @@ pub use detail_panel::DetailPanel;
 pub use tree_panel::TreePanel;
 pub use confirm_dialog::{ConfirmDialog, ConfirmAction};
 pub use search_bar::SearchBar;
+pub use tag_editor::TagEditor;
 
 #[cfg(test)]
 mod integration_tests {
