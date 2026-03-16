@@ -8,6 +8,7 @@ use crate::onboarding::{initialize_keystore, is_initialized};
 use crate::tui::components::ConfirmAction;
 use crate::tui::keybindings::{Action, KeyBindingManager};
 use crate::tui::screens::wizard::{WizardState, WizardStep};
+use crate::tui::traits::DatabaseService;
 use crate::tui::screens::{
     ClipboardTimeoutScreen, EditPasswordScreen, MainScreen, MasterPasswordScreen, NewPasswordScreen,
     PasskeyGenerateScreen, PasskeyImportScreen, PasskeyVerifyScreen, PasswordPolicyScreen,
@@ -643,8 +644,53 @@ impl TuiApp {
             match result {
                 crate::tui::traits::HandleResult::Action(crate::tui::traits::Action::CloseScreen) => {
                     // Check if the form was successfully validated
-                    if self.new_password_screen.get_password_record().is_some() {
-                        self.add_output("✓ Password created successfully".to_string());
+                    if let Some(record) = self.new_password_screen.get_password_record() {
+                        // Convert NewPasswordRecord to PasswordRecord
+                        let mut password = crate::tui::models::password::PasswordRecord::new(
+                            record.id.to_string(),
+                            record.name.clone(),
+                            record.password.clone(),
+                        );
+
+                        // Apply optional fields
+                        if let Some(username) = &record.username {
+                            password = password.with_username(username.clone());
+                        }
+                        if let Some(url) = &record.url {
+                            password = password.with_url(url.clone());
+                        }
+                        if let Some(notes) = &record.notes {
+                            password = password.with_notes(notes.clone());
+                        }
+                        password = password.with_tags(record.tags.clone());
+                        if !record.group.is_empty() {
+                            password = password.with_group(record.group.clone());
+                        }
+
+                        // Save to database
+                        let saved = if let Some(db_service) = self.app_state.db_service() {
+                            let db = db_service.clone();
+                            let password_clone = password.clone();
+                            tokio::task::block_in_place(|| {
+                                tokio::runtime::Handle::current().block_on(async {
+                                    if let Ok(service) = db.lock() {
+                                        service.create_password(&password_clone).await.is_ok()
+                                    } else {
+                                        false
+                                    }
+                                })
+                            })
+                        } else {
+                            false
+                        };
+
+                        if saved {
+                            // Add to cache after successful database save
+                            self.app_state.add_password_to_cache(password);
+                            self.add_output(format!("✓ Password '{}' created and saved", record.name));
+                        } else {
+                            self.add_output(format!("✗ Failed to save password '{}'", record.name));
+                        }
                     }
                     // Reset screen for next use
                     self.new_password_screen = NewPasswordScreen::new();
@@ -685,9 +731,30 @@ impl TuiApp {
                         deleted_at: None,
                     };
 
-                    // Update in cache
-                    self.app_state.update_password_in_cache(updated_record);
-                    self.add_output(format!("✓ Password '{}' updated", fields.name));
+                    // Save to database first
+                    let saved = if let Some(db_service) = self.app_state.db_service() {
+                        let db = db_service.clone();
+                        let record_clone = updated_record.clone();
+                        tokio::task::block_in_place(|| {
+                            tokio::runtime::Handle::current().block_on(async {
+                                if let Ok(service) = db.lock() {
+                                    service.update_password(&record_clone).await.is_ok()
+                                } else {
+                                    false
+                                }
+                            })
+                        })
+                    } else {
+                        false
+                    };
+
+                    if saved {
+                        // Update in cache after successful database save
+                        self.app_state.update_password_in_cache(updated_record);
+                        self.add_output(format!("✓ Password '{}' updated and saved", fields.name));
+                    } else {
+                        self.add_output(format!("✗ Failed to update password '{}'", fields.name));
+                    }
 
                     // Reset screen for next use
                     self.edit_password_screen = EditPasswordScreen::empty();
@@ -1665,25 +1732,106 @@ pub fn run_tui() -> Result<()> {
                                         // Handle the confirmed action (user clicked confirm)
                                         match action {
                                             ConfirmAction::DeletePassword { password_id, password_name } => {
-                                                // Delete the password (remove from cache)
-                                                app.app_state.remove_password_from_cache(&password_id);
-                                                app.output_lines.push(format!("Deleted \"{}\"", password_name));
+                                                // Delete from database first
+                                                let deleted = if let Some(db_service) = app.app_state.db_service() {
+                                                    let db = db_service.clone();
+                                                    let id = password_id.clone();
+                                                    tokio::task::block_in_place(|| {
+                                                        tokio::runtime::Handle::current().block_on(async {
+                                                            if let Ok(service) = db.lock() {
+                                                                service.delete_password(&id, true).await.is_ok()
+                                                            } else {
+                                                                false
+                                                            }
+                                                        })
+                                                    })
+                                                } else {
+                                                    false
+                                                };
+
+                                                if deleted {
+                                                    app.app_state.remove_password_from_cache(&password_id);
+                                                    app.output_lines.push(format!("Deleted \"{}\"", password_name));
+                                                } else {
+                                                    app.output_lines.push(format!("Failed to delete \"{}\"", password_name));
+                                                }
                                             }
                                             ConfirmAction::PermanentDelete(id) => {
-                                                // Permanently delete the password
                                                 let password_name = app.app_state.get_password_by_str(&id)
                                                     .map(|p| p.name.clone())
                                                     .unwrap_or_else(|| id.clone());
-                                                if app.app_state.permanent_delete_password(&id) {
+
+                                                // Permanently delete from database first
+                                                let deleted = if let Some(db_service) = app.app_state.db_service() {
+                                                    let db = db_service.clone();
+                                                    let id_clone = id.clone();
+                                                    tokio::task::block_in_place(|| {
+                                                        tokio::runtime::Handle::current().block_on(async {
+                                                            if let Ok(service) = db.lock() {
+                                                                service.permanently_delete(&id_clone).await.is_ok()
+                                                            } else {
+                                                                false
+                                                            }
+                                                        })
+                                                    })
+                                                } else {
+                                                    false
+                                                };
+
+                                                if deleted {
+                                                    app.app_state.permanent_delete_password(&id);
                                                     app.output_lines.push(format!("Permanently deleted \"{}\"", password_name));
                                                 } else {
-                                                    app.output_lines.push(format!("Password not found: {}", id));
+                                                    app.output_lines.push(format!("Failed to permanently delete \"{}\"", password_name));
                                                 }
                                             }
                                             ConfirmAction::EmptyTrash => {
-                                                // Empty trash - permanently delete all trashed passwords
-                                                let count = app.app_state.empty_trash();
-                                                app.output_lines.push(format!("Emptied trash ({} passwords permanently deleted)", count));
+                                                // Get all deleted password IDs before emptying
+                                                let deleted_ids: Vec<String> = app.app_state.all_passwords()
+                                                    .iter()
+                                                    .filter(|p| p.is_deleted)
+                                                    .map(|p| p.id.clone())
+                                                    .collect();
+
+                                                let mut success_count = 0;
+                                                let mut fail_count = 0;
+
+                                                // Permanently delete each from database
+                                                if let Some(db_service) = app.app_state.db_service() {
+                                                    let db = db_service.clone();
+                                                    for id in deleted_ids {
+                                                        let db_clone = db.clone();
+                                                        let result = tokio::task::block_in_place(|| {
+                                                            tokio::runtime::Handle::current().block_on(async {
+                                                                if let Ok(service) = db_clone.lock() {
+                                                                    service.permanently_delete(&id).await.is_ok()
+                                                                } else {
+                                                                    false
+                                                                }
+                                                            })
+                                                        });
+                                                        if result {
+                                                            success_count += 1;
+                                                        } else {
+                                                            fail_count += 1;
+                                                        }
+                                                    }
+                                                }
+
+                                                // Empty trash in cache
+                                                app.app_state.empty_trash();
+
+                                                if fail_count > 0 {
+                                                    app.output_lines.push(format!(
+                                                        "Emptied trash ({} deleted, {} failed)",
+                                                        success_count, fail_count
+                                                    ));
+                                                } else {
+                                                    app.output_lines.push(format!(
+                                                        "Emptied trash ({} passwords permanently deleted)",
+                                                        success_count
+                                                    ));
+                                                }
                                             }
                                             ConfirmAction::Generic => {
                                                 app.output_lines.push("Action confirmed".to_string());
