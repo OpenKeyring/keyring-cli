@@ -12,7 +12,8 @@ use crate::tui::traits::DatabaseService;
 use crate::tui::screens::{
     ClipboardTimeoutScreen, EditPasswordScreen, MainScreen, MasterPasswordScreen, NewPasswordScreen,
     PasskeyGenerateScreen, PasskeyImportScreen, PasskeyVerifyScreen, PasswordPolicyScreen,
-    SecurityNoticeScreen, SyncScreen, TrashRetentionScreen, TrashScreen, UnlockScreen, WelcomeScreen,
+    SecurityNoticeScreen, SettingsScreen, SyncScreen, TrashRetentionScreen, TrashScreen,
+    UnlockScreen, WelcomeScreen,
 };
 use crate::tui::state::AppState;
 use chrono::{DateTime, Utc};
@@ -210,6 +211,8 @@ pub struct TuiApp {
     pub edit_password_screen: EditPasswordScreen,
     /// Trash screen (deleted passwords)
     pub trash_screen: TrashScreen,
+    /// Settings screen
+    pub settings_screen: SettingsScreen,
     /// Config directory path for persisting TUI settings
     config_dir: std::path::PathBuf,
 }
@@ -279,6 +282,7 @@ impl TuiApp {
             new_password_screen: NewPasswordScreen::new(),
             edit_password_screen: EditPasswordScreen::empty(),
             trash_screen: TrashScreen::new(),
+            settings_screen: SettingsScreen::new(),
             config_dir,
         }
     }
@@ -372,12 +376,46 @@ impl TuiApp {
 
             // TODO: Store Passkey seed wrapped with master password
 
+            // Apply wizard configuration to TuiConfig
+            let clipboard_seconds = state.clipboard_timeout.seconds();
+            let trash_days = state.trash_retention.days();
+
+            self.app_state.config.clipboard_timeout_seconds = clipboard_seconds;
+            self.app_state.config.trash_retention_days = trash_days;
+
+            // Apply password policy from wizard
+            self.app_state.config.default_password_policy = crate::tui::config::PasswordPolicyConfig {
+                length: state.password_policy.default_length,
+                min_digits: state.password_policy.min_digits,
+                min_special: state.password_policy.min_special,
+                min_lowercase: 1, // Default
+                min_uppercase: 1, // Default
+                password_type: match state.password_policy.default_type {
+                    crate::tui::screens::wizard::PasswordType::Random => {
+                        crate::tui::config::PasswordTypeConfig::Random
+                    }
+                    crate::tui::screens::wizard::PasswordType::Memorable => {
+                        crate::tui::config::PasswordTypeConfig::Memorable
+                    }
+                    crate::tui::screens::wizard::PasswordType::Pin => {
+                        crate::tui::config::PasswordTypeConfig::Pin
+                    }
+                },
+            };
+
+            // Save configuration to disk
+            if let Err(e) = self.save_config() {
+                eprintln!("Warning: Failed to save TUI config: {}", e);
+            }
+
             // Clear wizard state
             self.wizard_state = None;
             self.passkey_verify_screen = None;
             self.current_screen = Screen::Main;
 
             self.add_output("✓ Initialization complete".to_string());
+            self.add_output(format!("  Clipboard timeout: {}s", clipboard_seconds));
+            self.add_output(format!("  Trash retention: {} days", trash_days));
             Ok(())
         } else {
             Err(KeyringError::InvalidInput {
@@ -866,7 +904,14 @@ impl TuiApp {
                 self.output_lines.push("Refreshing view...".to_string());
             }
             Action::SaveConfig => {
-                self.output_lines.push("✓ Configuration saved".to_string());
+                match self.save_config() {
+                    Ok(()) => {
+                        self.output_lines.push("✓ Configuration saved".to_string());
+                    }
+                    Err(e) => {
+                        self.output_lines.push(format!("✗ Failed to save configuration: {}", e));
+                    }
+                }
             }
             Action::DisableSync => {
                 self.output_lines.push("✓ Sync disabled".to_string());
@@ -1306,6 +1351,12 @@ impl TuiApp {
         // Handle trash screen
         if self.current_screen == Screen::Trash {
             self.trash_screen.render_frame(frame, size, &self.app_state);
+            return;
+        }
+
+        // Handle settings screen
+        if self.current_screen == Screen::Settings {
+            self.settings_screen.render(frame, size);
             return;
         }
 
