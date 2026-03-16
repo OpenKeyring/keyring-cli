@@ -113,6 +113,38 @@ impl FilterState {
         self.selected_tags.clear();
         self.search_query = None;
     }
+
+    /// Check if an entry matches the current search query
+    pub fn matches_search(&self, entry: &PasswordRecord) -> bool {
+        match &self.search_query {
+            Some(query) if !query.is_empty() => {
+                let query_lower = query.to_lowercase();
+                // Search in name, username, url, notes, tags
+                entry.name.to_lowercase().contains(&query_lower)
+                    || entry.username.as_ref().map_or(false, |u| {
+                        u.to_lowercase().contains(&query_lower)
+                    })
+                    || entry.url.as_ref().map_or(false, |u| {
+                        u.to_lowercase().contains(&query_lower)
+                    })
+                    || entry.notes.as_ref().map_or(false, |n| {
+                        n.to_lowercase().contains(&query_lower)
+                    })
+                    || entry.tags.iter().any(|t| t.to_lowercase().contains(&query_lower))
+            }
+            _ => true, // No search query = match all
+        }
+    }
+
+    /// Set search query
+    pub fn set_search_query(&mut self, query: String) {
+        self.search_query = Some(query);
+    }
+
+    /// Clear search query
+    pub fn clear_search(&mut self) {
+        self.search_query = None;
+    }
 }
 
 #[cfg(test)]
@@ -183,5 +215,48 @@ mod tests {
         assert!(state.active_filters.is_empty());
         assert!(state.selected_tags.is_empty());
         assert!(state.search_query.is_none());
+    }
+
+    #[test]
+    fn test_matches_search() {
+        let mut state = FilterState::default();
+        let mut entry = PasswordRecord::new("test-1", "Gmail Account", "password123");
+        entry.username = Some("user@gmail.com".to_string());
+        entry.url = Some("https://gmail.com".to_string());
+        entry.tags = vec!["email".to_string()];
+
+        // No search query - matches all
+        assert!(state.matches_search(&entry));
+
+        // Search by name
+        state.search_query = Some("gmail".to_string());
+        assert!(state.matches_search(&entry));
+
+        // Search by username
+        state.search_query = Some("user@".to_string());
+        assert!(state.matches_search(&entry));
+
+        // Search by url
+        state.search_query = Some("https".to_string());
+        assert!(state.matches_search(&entry));
+
+        // Search by tag
+        state.search_query = Some("email".to_string());
+        assert!(state.matches_search(&entry));
+
+        // Non-matching search
+        state.search_query = Some("xyz123notfound".to_string());
+        assert!(!state.matches_search(&entry));
+    }
+
+    #[test]
+    fn test_set_and_clear_search() {
+        let mut state = FilterState::default();
+
+        state.set_search_query("test".to_string());
+        assert_eq!(state.search_query, Some("test".to_string()));
+
+        state.clear_search();
+        assert_eq!(state.search_query, None);
     }
 }

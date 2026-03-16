@@ -4,7 +4,7 @@
 //! Left column (35%): Tree panel + Filter panel
 //! Right column (65%): Detail panel + Status area
 
-use crate::tui::components::{ConfirmAction, DetailPanel, FilterPanel, TreePanel};
+use crate::tui::components::{ConfirmAction, DetailPanel, FilterPanel, SearchBar, TreePanel};
 use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render, Action, ScreenType};
 use crate::tui::state::{AppState, FocusedPanel};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
@@ -50,6 +50,8 @@ pub struct MainScreen {
     filter_panel: FilterPanel,
     /// Detail panel component
     detail_panel: DetailPanel,
+    /// Search bar component
+    search_bar: SearchBar,
 }
 
 impl MainScreen {
@@ -61,6 +63,7 @@ impl MainScreen {
             tree_panel: TreePanel::new(),
             filter_panel: FilterPanel::new(),
             detail_panel: DetailPanel::new(),
+            search_bar: SearchBar::new(),
         }
     }
 
@@ -163,6 +166,17 @@ impl MainScreen {
         self.detail_panel.render_frame(frame, layout.detail_area, state);
         self.render_status_panel(frame, layout.status_area, state);
         self.render_status_bar(frame, layout.status_bar_area, state);
+
+        // Render search bar (overlay at top, before notifications)
+        if self.search_bar.is_visible() {
+            let search_area = Rect::new(
+                area.x + area.width.saturating_sub(60) / 2,
+                area.y + 1,
+                60.min(area.width),
+                3,
+            );
+            self.search_bar.render_frame(frame, search_area);
+        }
 
         // Render toast notifications on top (after all other panels)
         self.render_notifications(frame, area, state);
@@ -388,9 +402,10 @@ impl MainScreen {
             KeyCode::Char('?') => {
                 return HandleResult::Action(Action::OpenScreen(ScreenType::Help));
             }
-            // Start search (placeholder - search is Phase 2)
+            // Start search
             KeyCode::Char('/') => {
-                return HandleResult::Action(Action::ShowToast("Search: Coming in Phase 2".to_string()));
+                self.search_bar.show();
+                return HandleResult::Consumed;
             }
             // Create new password
             KeyCode::Char('n') => {
@@ -421,6 +436,31 @@ impl MainScreen {
                     return HandleResult::Action(Action::ShowToast("No password selected".to_string()));
                 }
             }
+            // Toggle favorite
+            KeyCode::Char('f') | KeyCode::Char('*') => {
+                if let Some(password_id) = state.selection.selected_password {
+                    if let Some(password) = state.get_password(password_id).cloned() {
+                        let mut updated = password.clone();
+                        updated.is_favorite = !updated.is_favorite;
+
+                        // Store the new favorite state before moving
+                        let is_now_favorite = updated.is_favorite;
+
+                        // Update in cache
+                        state.update_password_in_cache(updated);
+
+                        // Show notification
+                        let message = if is_now_favorite {
+                            "Added to favorites"
+                        } else {
+                            "Removed from favorites"
+                        };
+                        state.add_notification(message, crate::tui::traits::NotificationLevel::Success);
+                        return HandleResult::Consumed;
+                    }
+                }
+                return HandleResult::Action(Action::ShowToast("No password selected".to_string()));
+            }
             // Panel switching with number keys
             KeyCode::Char('1') => {
                 state.set_focus(FocusedPanel::Tree);
@@ -444,6 +484,17 @@ impl MainScreen {
                 return HandleResult::Consumed;
             }
             _ => {}
+        }
+
+        // Route to search bar if visible (takes priority over panel handling)
+        if self.search_bar.is_visible() {
+            let result = self.search_bar.handle_key(key);
+            if matches!(result, HandleResult::NeedsRender) {
+                // Update filter with search query and reapply
+                state.filter.set_search_query(self.search_bar.query().to_string());
+                state.apply_filter();
+            }
+            return result;
         }
 
         // Route to focused panel
@@ -610,13 +661,14 @@ mod tests {
         let mut screen = MainScreen::new();
         let mut state = AppState::new();
 
-        // Press '/' should return ShowToast action (placeholder)
+        // Press '/' should show search bar
         let result = screen.handle_key_with_state(
             KeyEvent::new(KeyCode::Char('/'), crossterm::event::KeyModifiers::empty()),
             &mut state,
         );
 
-        assert!(matches!(result, HandleResult::Action(Action::ShowToast(_))));
+        assert!(matches!(result, HandleResult::Consumed));
+        assert!(screen.search_bar.is_visible());
     }
 
     #[test]
@@ -891,5 +943,63 @@ mod tests {
 
         // The filter is active
         assert!(state.filter.has_active_filters());
+    }
+
+    #[test]
+    fn test_toggle_favorite_shortcut() {
+        use crate::tui::models::password::PasswordRecord;
+        use uuid::Uuid;
+
+        let mut screen = MainScreen::new();
+        let mut state = AppState::new();
+
+        let id = Uuid::new_v4();
+        let password = PasswordRecord::new(id.to_string(), "Test Password", "secret123");
+        state.refresh_password_cache(vec![password]);
+        state.select_password(id);
+
+        // Verify not favorite initially
+        assert!(!state.get_password(id).unwrap().is_favorite);
+
+        // Press 'f' to toggle favorite on
+        let result = screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('f'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+
+        assert!(matches!(result, HandleResult::Consumed));
+        assert!(state.get_password(id).unwrap().is_favorite);
+
+        // Press 'f' again to toggle favorite off
+        let result = screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('f'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+
+        assert!(matches!(result, HandleResult::Consumed));
+        assert!(!state.get_password(id).unwrap().is_favorite);
+
+        // Test '*' shortcut also works
+        let result = screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('*'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+
+        assert!(matches!(result, HandleResult::Consumed));
+        assert!(state.get_password(id).unwrap().is_favorite);
+    }
+
+    #[test]
+    fn test_toggle_favorite_no_selection() {
+        let mut screen = MainScreen::new();
+        let mut state = AppState::new();
+
+        // No password selected - should show toast
+        let result = screen.handle_key_with_state(
+            KeyEvent::new(KeyCode::Char('f'), crossterm::event::KeyModifiers::empty()),
+            &mut state,
+        );
+
+        assert!(matches!(result, HandleResult::Action(Action::ShowToast(_))));
     }
 }
