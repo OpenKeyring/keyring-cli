@@ -291,6 +291,39 @@ impl AppState {
     pub fn all_passwords(&self) -> &[PasswordRecord] {
         &self.password_list
     }
+
+    /// Permanently delete a password from cache
+    /// This removes the password completely (cannot be restored)
+    pub fn permanent_delete_password(&mut self, id: &str) -> bool {
+        if self.password_cache.contains_key(id) {
+            self.password_cache.remove(id);
+            self.password_list.retain(|p| p.id != id);
+            self.apply_filter();
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Empty trash - permanently delete all passwords marked as deleted
+    /// Returns the number of passwords deleted
+    pub fn empty_trash(&mut self) -> usize {
+        let deleted_ids: Vec<String> = self.password_list
+            .iter()
+            .filter(|p| p.is_deleted)
+            .map(|p| p.id.clone())
+            .collect();
+
+        let count = deleted_ids.len();
+
+        for id in &deleted_ids {
+            self.password_cache.remove(id);
+        }
+        self.password_list.retain(|p| !p.is_deleted);
+        self.apply_filter();
+
+        count
+    }
 }
 
 #[cfg(test)]
@@ -388,5 +421,53 @@ mod tests {
 
         assert!(state.selection.selected_password.is_none());
         assert!(matches!(state.detail_mode, DetailMode::ProjectInfo));
+    }
+
+    #[test]
+    fn test_permanent_delete_password() {
+        let mut state = AppState::default();
+        let mut p1 = PasswordRecord::new("id1", "Password 1", "pass1");
+        p1.is_deleted = true;
+
+        state.refresh_password_cache(vec![p1.clone()]);
+
+        assert_eq!(state.all_passwords().len(), 1);
+
+        // Permanent delete
+        let result = state.permanent_delete_password("id1");
+        assert!(result);
+        assert!(state.all_passwords().is_empty());
+
+        // Delete non-existent
+        let result = state.permanent_delete_password("nonexistent");
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_empty_trash() {
+        let mut state = AppState::default();
+
+        let mut p1 = PasswordRecord::new("id1", "Password 1", "pass1");
+        p1.is_deleted = true;
+
+        let p2 = PasswordRecord::new("id2", "Password 2", "pass2"); // not deleted
+
+        let mut p3 = PasswordRecord::new("id3", "Password 3", "pass3");
+        p3.is_deleted = true;
+
+        state.refresh_password_cache(vec![p1, p2, p3]);
+
+        assert_eq!(state.all_passwords().len(), 3);
+
+        // Empty trash
+        let count = state.empty_trash();
+        assert_eq!(count, 2);
+        assert_eq!(state.all_passwords().len(), 1);
+        assert_eq!(state.all_passwords()[0].id, "id2");
+
+        // Empty again (should do nothing)
+        let count = state.empty_trash();
+        assert_eq!(count, 0);
+        assert_eq!(state.all_passwords().len(), 1);
     }
 }

@@ -1670,12 +1670,20 @@ pub fn run_tui() -> Result<()> {
                                                 app.output_lines.push(format!("Deleted \"{}\"", password_name));
                                             }
                                             ConfirmAction::PermanentDelete(id) => {
-                                                // TODO: Permanently delete
-                                                app.output_lines.push(format!("Permanently delete password: {} (not implemented)", id));
+                                                // Permanently delete the password
+                                                let password_name = app.app_state.get_password_by_str(&id)
+                                                    .map(|p| p.name.clone())
+                                                    .unwrap_or_else(|| id.clone());
+                                                if app.app_state.permanent_delete_password(&id) {
+                                                    app.output_lines.push(format!("Permanently deleted \"{}\"", password_name));
+                                                } else {
+                                                    app.output_lines.push(format!("Password not found: {}", id));
+                                                }
                                             }
                                             ConfirmAction::EmptyTrash => {
-                                                // TODO: Empty trash
-                                                app.output_lines.push("Empty trash (not implemented)".to_string());
+                                                // Empty trash - permanently delete all trashed passwords
+                                                let count = app.app_state.empty_trash();
+                                                app.output_lines.push(format!("Emptied trash ({} passwords permanently deleted)", count));
                                             }
                                             ConfirmAction::Generic => {
                                                 app.output_lines.push("Action confirmed".to_string());
