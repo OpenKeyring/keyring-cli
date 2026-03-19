@@ -54,7 +54,7 @@ pub mod testing;
 mod tests;
 
 // ============ 公共导出 ============
-pub use app::{run_tui, Screen, TuiApp, TuiError as LegacyTuiError};
+pub use app::{run_tui, Screen, SyncStatus, TuiApp, TuiError as LegacyTuiError};
 pub use handler::{AppAction, TuiEventHandler};
 
 // Phase 1.2 错误类型导出
