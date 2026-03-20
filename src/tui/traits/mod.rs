@@ -17,6 +17,7 @@ mod screen;
 mod event;
 mod secure;
 mod task;
+mod wizard_step;
 
 // 重新导出所有公共 trait
 pub use component::{Component, Container, Render, Interactive, Application};
@@ -35,7 +36,9 @@ pub use service::{
 pub use service::PasswordStrength as ServicePasswordStrength;
 pub use theme::{Theme, ColorPalette, ThemeVariant, ThemeName, ThemeManager, DarkTheme, LightTheme};
 pub use notification::{
-    NotificationManager, NotificationManagerExt, Notification, NotificationLevel, NotificationId, NotificationPosition,
+    NotificationManager, NotificationManagerExt, Notification, NotificationLevel, NotificationId,
+    NotificationPosition, NotificationConfig, NotificationQueue, NotificationFilter, LevelFilter,
+    NotificationRenderer, DefaultNotificationRenderer,
 };
 pub use validation::{FormValidator, ValidationResult, Validator, FieldValidation, ValidationTrigger, BuiltinValidator};
 // ValidationRule 是 Validator 的别名（兼容旧代码）
@@ -62,6 +65,9 @@ pub use secure::{Sensitivity, SecureString, PasswordField, HoldsSensitiveData};
 
 // 重新导出任务管理类型
 pub use task::{TaskManager, TaskId, TaskStatus, TaskResult, TaskCallback, TaskProgress};
+
+// 重新导出向导步骤验证类型
+pub use wizard_step::{WizardStepValidator, WizardStepScreen};
 
 // ============================================================================
 // 基础类型定义
