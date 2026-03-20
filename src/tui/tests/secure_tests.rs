@@ -2,7 +2,7 @@
 //!
 //! 测试 SecureString、Sensitivity、PasswordField 等安全相关类型。
 
-use crate::tui::traits::{PasswordField, SecureString, Sensitivity, PasswordStrength};
+use crate::tui::traits::{PasswordField, PasswordStrength, SecureString, Sensitivity};
 
 // ============================================================================
 // Sensitivity 测试
@@ -214,9 +214,7 @@ fn test_password_field_strength() {
 fn test_password_field_strength_cache() {
     let mut field = PasswordField::with_content("strongpass123");
 
-    let calculator = |_: &str| -> PasswordStrength {
-        PasswordStrength::VeryStrong
-    };
+    let calculator = |_: &str| -> PasswordStrength { PasswordStrength::VeryStrong };
 
     // 首次计算（无缓存）
     let strength1 = field.strength(&calculator);
@@ -293,9 +291,8 @@ fn test_secure_string_drop_zeroizes() {
         let _s = SecureString::sensitive("sensitive_data");
     } // Drop 时应调用 zeroize
 
-    // 如果使用 valgrind 或 AddressSanitizer，可以验证内存被清零
-    // 在单元测试中我们只能验证编译通过
-    assert!(true);
+    // If using valgrind or AddressSanitizer, you can verify memory is zeroed
+    // In unit tests we can only verify compilation passes
 }
 
 #[test]
@@ -303,6 +300,4 @@ fn test_password_field_drop_zeroizes() {
     {
         let _field = PasswordField::with_content("password123");
     } // Drop 时 SecureString 应被零化
-
-    assert!(true);
 }

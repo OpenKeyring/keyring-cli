@@ -68,7 +68,7 @@ fn test_search_filters_by_type() {
 
     // Verify by checking vault directly (since search_records only prints)
     let results = vault.search_records("test").unwrap();
-    assert!(results.len() >= 1, "Should have at least one result");
+    assert!(!results.is_empty(), "Should have at least one result");
 }
 
 #[serial]

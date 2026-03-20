@@ -29,7 +29,6 @@
 //! ```rust
 //! use crate::tui::testing::TestSnapshotEnv;
 //!
-//! #[test]
 //! fn test_config_display() {
 //!     let _env = TestSnapshotEnv::new();
 //!     // Config paths will be normalized in snapshots
@@ -55,7 +54,6 @@ use tempfile::TempDir;
 /// ```rust
 /// use crate::tui::testing::TestSnapshotEnv;
 ///
-/// #[test]
 /// fn test_snapshot() {
 ///     let _env = TestSnapshotEnv::new();
 ///     let app = TuiApp::new();
@@ -67,6 +65,12 @@ pub struct TestSnapshotEnv {
     _temp_dir: TempDir,
     config_dir: std::path::PathBuf,
     data_dir: std::path::PathBuf,
+}
+
+impl Default for TestSnapshotEnv {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TestSnapshotEnv {
@@ -85,7 +89,8 @@ impl TestSnapshotEnv {
 
         // Use a consistent prefix for reproducible paths in snapshot tests
         // The random suffix will still vary, but normalization handles this
-        let temp_dir = TempDir::with_prefix("open-keyring-snapshot-").expect("Failed to create temp dir");
+        let temp_dir =
+            TempDir::with_prefix("open-keyring-snapshot-").expect("Failed to create temp dir");
         let config_dir = temp_dir.path().join("config");
         let data_dir = temp_dir.path().join("data");
 

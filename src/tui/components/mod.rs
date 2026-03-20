@@ -2,36 +2,36 @@
 //!
 //! 提供可复用的 UI 组件，实现 Component trait。
 
+mod confirm_dialog;
+mod detail_panel;
+mod filter_panel;
+mod form_example;
+mod search_bar;
+mod select;
 mod status_bar;
+mod tag_editor;
+mod text_area;
 mod text_input;
 mod tree;
-mod select;
-mod text_area;
-mod form_example;
-mod filter_panel;
-mod detail_panel;
 mod tree_panel;
-mod confirm_dialog;
-mod search_bar;
-mod tag_editor;
 
-pub use status_bar::StatusBar;
-pub use text_input::TextInput;
-pub use tree::TreeComponent;
+pub use confirm_dialog::{ConfirmAction, ConfirmDialog};
+pub use detail_panel::DetailPanel;
+pub use filter_panel::{FilterItem, FilterPanel};
+pub use search_bar::SearchBar;
 pub use select::Select;
 pub use select::SelectItem;
-pub use text_area::TextArea;
-pub use filter_panel::{FilterPanel, FilterItem};
-pub use detail_panel::DetailPanel;
-pub use tree_panel::TreePanel;
-pub use confirm_dialog::{ConfirmDialog, ConfirmAction};
-pub use search_bar::SearchBar;
+pub use status_bar::StatusBar;
 pub use tag_editor::TagEditor;
+pub use text_area::TextArea;
+pub use text_input::TextInput;
+pub use tree::TreeComponent;
+pub use tree_panel::TreePanel;
 
 #[cfg(test)]
 mod integration_tests {
     use super::*;
-    use crate::tui::traits::{Component, Render, Interactive, HandleResult};
+    use crate::tui::traits::{Component, HandleResult, Interactive, Render};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use ratatui::{buffer::Buffer, layout::Rect};
 
@@ -57,10 +57,7 @@ mod integration_tests {
         bar.render(area, &mut buf);
 
         // 验证渲染输出
-        let content: String = buf.content().iter()
-            .take(5)
-            .map(|c| c.symbol())
-            .collect();
+        let content: String = buf.content().iter().take(5).map(|c| c.symbol()).collect();
         assert_eq!(content, "Ready");
     }
 
@@ -158,9 +155,6 @@ mod integration_tests {
 
         status.render(area, &mut status_buf);
         input.render(area, &mut input_buf);
-
-        // Both components should render without panicking
-        assert!(true); // If we reach this, both rendered without panicking
     }
 
     #[test]
@@ -175,8 +169,5 @@ mod integration_tests {
 
         let _status_result = status.handle_key(key_event);
         let _input_result = input.handle_key(key_event);
-
-        // Status bar should ignore, input should consume
-        assert!(true); // If we reach this, both handled without panicking
     }
 }

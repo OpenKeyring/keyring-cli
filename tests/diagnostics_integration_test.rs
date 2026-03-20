@@ -29,7 +29,10 @@ fn test_first_time_user_workflow() {
 
     // Verify first-time detection
     assert!(status.is_first_time(), "Should detect first-time user");
-    assert!(!status.is_healthy(), "First-time user should not be healthy");
+    assert!(
+        !status.is_healthy(),
+        "First-time user should not be healthy"
+    );
 
     // Verify keystore is missing
     assert_eq!(status.key_items.len(), 1);
@@ -151,6 +154,7 @@ fn test_partial_initialization_scenarios() {
 }
 
 #[test]
+#[allow(clippy::permissions_set_readonly_false)]
 fn test_database_edge_cases() {
     // Test database edge cases
 
@@ -231,8 +235,7 @@ fn test_status_item_completeness() {
 
     // Verify config items
     assert_eq!(status.config_items.len(), 2);
-    let config_item_names: Vec<&str> =
-        status.config_items.iter().map(|item| item.name).collect();
+    let config_item_names: Vec<&str> = status.config_items.iter().map(|item| item.name).collect();
     assert!(config_item_names.contains(&"Config directory"));
     assert!(config_item_names.contains(&"Config file"));
 
@@ -242,8 +245,7 @@ fn test_status_item_completeness() {
 
     // Verify data items
     assert_eq!(status.data_items.len(), 2);
-    let data_item_names: Vec<&str> =
-        status.data_items.iter().map(|item| item.name).collect();
+    let data_item_names: Vec<&str> = status.data_items.iter().map(|item| item.name).collect();
     assert!(data_item_names.contains(&"Data directory"));
     assert!(data_item_names.contains(&"Database file"));
 
@@ -280,10 +282,10 @@ fn test_path_correctness() {
         // For directory items, check exact match
         // For file items, check that parent directory matches
         if item.name.ends_with("directory") {
-            let path_canonical = fs::canonicalize(path)
-                .unwrap_or_else(|_| path.clone());
+            let path_canonical = fs::canonicalize(path).unwrap_or_else(|_| path.clone());
             assert_eq!(
-                path_canonical, config_dir_canonical,
+                path_canonical,
+                config_dir_canonical,
                 "Config directory path mismatch: '{}' vs '{}'",
                 path_canonical.display(),
                 config_dir_canonical.display()
@@ -291,10 +293,11 @@ fn test_path_correctness() {
         } else {
             // File item - check parent directory
             if let Some(parent) = path.parent() {
-                let parent_canonical = fs::canonicalize(parent)
-                    .unwrap_or_else(|_| parent.to_path_buf());
+                let parent_canonical =
+                    fs::canonicalize(parent).unwrap_or_else(|_| parent.to_path_buf());
                 assert_eq!(
-                    parent_canonical, config_dir_canonical,
+                    parent_canonical,
+                    config_dir_canonical,
                     "Config file parent mismatch: '{}' vs '{}'",
                     parent_canonical.display(),
                     config_dir_canonical.display()
@@ -308,10 +311,11 @@ fn test_path_correctness() {
         let path = item.path.as_ref().unwrap();
         // Key items are files - check parent directory
         if let Some(parent) = path.parent() {
-            let parent_canonical = fs::canonicalize(parent)
-                .unwrap_or_else(|_| parent.to_path_buf());
+            let parent_canonical =
+                fs::canonicalize(parent).unwrap_or_else(|_| parent.to_path_buf());
             assert_eq!(
-                parent_canonical, config_dir_canonical,
+                parent_canonical,
+                config_dir_canonical,
                 "Key file parent mismatch: '{}' vs '{}'",
                 parent_canonical.display(),
                 config_dir_canonical.display()
@@ -326,10 +330,10 @@ fn test_path_correctness() {
         // For directory items, check exact match
         // For file items, check that parent directory matches
         if item.name.ends_with("directory") {
-            let path_canonical = fs::canonicalize(path)
-                .unwrap_or_else(|_| path.clone());
+            let path_canonical = fs::canonicalize(path).unwrap_or_else(|_| path.clone());
             assert_eq!(
-                path_canonical, data_dir_canonical,
+                path_canonical,
+                data_dir_canonical,
                 "Data directory path mismatch: '{}' vs '{}'",
                 path_canonical.display(),
                 data_dir_canonical.display()
@@ -337,10 +341,11 @@ fn test_path_correctness() {
         } else {
             // File item - check parent directory
             if let Some(parent) = path.parent() {
-                let parent_canonical = fs::canonicalize(parent)
-                    .unwrap_or_else(|_| parent.to_path_buf());
+                let parent_canonical =
+                    fs::canonicalize(parent).unwrap_or_else(|_| parent.to_path_buf());
                 assert_eq!(
-                    parent_canonical, data_dir_canonical,
+                    parent_canonical,
+                    data_dir_canonical,
                     "Data file parent mismatch: '{}' vs '{}'",
                     parent_canonical.display(),
                     data_dir_canonical.display()

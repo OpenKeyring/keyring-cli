@@ -2,19 +2,16 @@
 //!
 //! 演示如何使用 TreeComponent 实现 Vim 风格导航和树形结构展示
 
-use keyring_cli::tui::components::TreeComponent;
-use keyring_cli::tui::models::tree::{TreeNode, TreeNodeItem};
-use keyring_cli::tui::traits::{HandleResult, Render, Interactive};
-use std::io;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::CrosstermBackend,
-    Terminal,
-};
+use keyring_cli::tui::components::TreeComponent;
+use keyring_cli::tui::models::tree::{TreeNode, TreeNodeItem};
+use keyring_cli::tui::traits::{HandleResult, Interactive, Render};
+use ratatui::{backend::CrosstermBackend, Terminal};
+use std::io;
 
 /// 创建示例树结构
 fn create_sample_tree() -> TreeNode<String> {
@@ -131,7 +128,7 @@ fn run_demo() -> io::Result<()> {
     while running {
         // 渲染界面
         terminal.draw(|f| {
-            let size = f.size();
+            let size = f.area();
 
             // 将 TreeComponent 渲染到全屏区域
             tree_component.render(size, f.buffer_mut());

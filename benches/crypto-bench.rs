@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use keyring_cli::crypto::{aes256gcm, argon2id};
 
 fn bench_argon2id_derive_key(c: &mut Criterion) {

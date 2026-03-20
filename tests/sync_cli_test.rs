@@ -51,9 +51,9 @@ fn test_sync_command_parsing() {
     let args = vec!["sync".to_string()];
     let command = SyncCommand::try_parse_from(&args).unwrap();
     assert_eq!(command.direction, "both");
-    assert_eq!(command.dry_run, false);
-    assert_eq!(command.status, false);
-    assert_eq!(command.config, false);
+    assert!(!command.dry_run);
+    assert!(!command.status);
+    assert!(!command.config);
 }
 
 #[serial]
@@ -66,7 +66,7 @@ fn test_sync_command_with_direction() {
     ];
     let command = SyncCommand::try_parse_from(&args).unwrap();
     assert_eq!(command.direction, "up");
-    assert_eq!(command.dry_run, false);
+    assert!(!command.dry_run);
 }
 
 #[serial]
@@ -75,7 +75,7 @@ fn test_sync_command_with_dry_run() {
     let args = vec!["sync".to_string(), "--dry-run".to_string()];
     let command = SyncCommand::try_parse_from(&args).unwrap();
     assert_eq!(command.direction, "both");
-    assert_eq!(command.dry_run, true);
+    assert!(command.dry_run);
 }
 
 #[serial]
@@ -83,7 +83,7 @@ fn test_sync_command_with_dry_run() {
 fn test_sync_status_command() {
     let args = vec!["sync".to_string(), "--status".to_string()];
     let command = SyncCommand::try_parse_from(&args).unwrap();
-    assert_eq!(command.status, true);
+    assert!(command.status);
 }
 
 #[serial]
@@ -96,7 +96,7 @@ fn test_sync_config_command() {
         "dropbox".to_string(),
     ];
     let command = SyncCommand::try_parse_from(&args).unwrap();
-    assert_eq!(command.config, true);
+    assert!(command.config);
     assert_eq!(command.provider, Some("dropbox".to_string()));
 }
 
@@ -105,7 +105,7 @@ fn test_sync_config_command() {
 fn test_sync_config_without_provider() {
     let args = vec!["sync".to_string(), "--config".to_string()];
     let command = SyncCommand::try_parse_from(&args).unwrap();
-    assert_eq!(command.config, true);
+    assert!(command.config);
     assert_eq!(command.provider, None);
 }
 

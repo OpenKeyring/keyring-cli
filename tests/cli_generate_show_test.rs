@@ -24,7 +24,7 @@ fn cli_generate_then_show_decrypts() {
 
     let ok_bin = env!("CARGO_BIN_EXE_ok");
 
-    let generate_output = Command::new(&ok_bin)
+    let generate_output = Command::new(ok_bin)
         .args(["new", "--name", "github", "--length", "16"])
         .output()
         .expect("failed to run ok new");
@@ -48,15 +48,15 @@ fn cli_generate_then_show_decrypts() {
         .find(|line| line.trim_start().starts_with("Password:"))
         .expect("password line missing from generate output");
     let generated_password = password_line
-        .splitn(2, ':')
-        .nth(1)
+        .split_once(':')
+        .map(|x| x.1)
         .unwrap_or("")
         .trim()
         .to_string();
     assert!(!generated_password.is_empty());
 
     // Run show command with stdin input for confirmation
-    let show_process = Command::new(&ok_bin)
+    let show_process = Command::new(ok_bin)
         .args(["show", "github", "--field", "password"])
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())

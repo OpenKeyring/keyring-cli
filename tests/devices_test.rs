@@ -6,7 +6,6 @@
 
 use keyring_cli::cli::commands::devices::{manage_devices, DevicesArgs};
 use keyring_cli::db::vault::Vault;
-use serde_json;
 use serial_test::serial;
 use tempfile::TempDir;
 

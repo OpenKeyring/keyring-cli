@@ -180,7 +180,7 @@ fn test_generate_pin_format() {
     );
     // Should only use digits 2-9 (no 0 or 1)
     assert!(
-        pin.chars().all(|c| c >= '2' && c <= '9'),
+        pin.chars().all(|c| ('2'..='9').contains(&c)),
         "PIN should only use digits 2-9"
     );
 }

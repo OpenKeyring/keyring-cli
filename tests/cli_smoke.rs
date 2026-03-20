@@ -28,7 +28,7 @@ fn cli_smoke_flow() {
     let ok_bin = env!("CARGO_BIN_EXE_ok");
 
     // Step 1: Generate a password
-    let generate_output = Command::new(&ok_bin)
+    let generate_output = Command::new(ok_bin)
         .args(["new", "--name", "github", "--length", "16"])
         .output()
         .expect("failed to run ok new");
@@ -40,7 +40,7 @@ fn cli_smoke_flow() {
     );
 
     // Step 2: List records
-    let list_output = Command::new(&ok_bin)
+    let list_output = Command::new(ok_bin)
         .args(["list"])
         .output()
         .expect("failed to run ok list");
@@ -59,7 +59,7 @@ fn cli_smoke_flow() {
     );
 
     // Step 3: Show record (check name field)
-    let show_output = Command::new(&ok_bin)
+    let show_output = Command::new(ok_bin)
         .args(["show", "github", "--field", "name"])
         .output()
         .expect("failed to run ok show");
