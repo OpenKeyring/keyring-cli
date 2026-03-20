@@ -294,6 +294,63 @@ impl Default for PasskeyGenerateScreen {
     }
 }
 
+impl crate::tui::traits::Interactive for PasskeyGenerateScreen {
+    fn handle_key(&mut self, key: crossterm::event::KeyEvent) -> crate::tui::traits::HandleResult {
+        use crossterm::event::KeyCode;
+        use crate::tui::traits::HandleResult;
+
+        match key.code {
+            KeyCode::Char(' ') => {
+                self.toggle_confirm();
+                HandleResult::NeedsRender
+            }
+            KeyCode::Enter => {
+                if self.can_proceed() {
+                    HandleResult::Consumed
+                } else {
+                    HandleResult::Ignored
+                }
+            }
+            _ => HandleResult::Ignored,
+        }
+    }
+}
+
+impl crate::tui::traits::WizardStepValidator for PasskeyGenerateScreen {
+    fn validate_step(&self) -> bool {
+        self.can_proceed()
+    }
+
+    fn validation_error(&self) -> Option<String> {
+        if self.words.is_none() {
+            Some("Passkey not generated".to_string())
+        } else if !self.confirmed {
+            Some("Please confirm you have saved the Passkey".to_string())
+        } else {
+            None
+        }
+    }
+
+    fn sync_to_state(&self, state: &mut crate::tui::screens::wizard::WizardState) {
+        if let Some(words) = &self.words {
+            state.set_passkey_words(words.clone());
+        }
+    }
+
+    fn load_from_state(&mut self, state: &crate::tui::screens::wizard::WizardState) {
+        if let Some(words) = state.require_passkey_words() {
+            self.words = Some(words.to_vec());
+        }
+    }
+
+    fn clear_input(&mut self) {
+        self.words = None;
+        self.confirmed = false;
+        self.copied = false;
+        self.error = None;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

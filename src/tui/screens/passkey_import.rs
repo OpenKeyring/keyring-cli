@@ -236,6 +236,62 @@ impl Default for PasskeyImportScreen {
     }
 }
 
+impl crate::tui::traits::Interactive for PasskeyImportScreen {
+    fn handle_key(&mut self, key: crossterm::event::KeyEvent) -> crate::tui::traits::HandleResult {
+        use crossterm::event::KeyCode;
+        use crate::tui::traits::HandleResult;
+
+        match key.code {
+            KeyCode::Char(c) => {
+                self.handle_char(c);
+                HandleResult::NeedsRender
+            }
+            KeyCode::Backspace => {
+                self.handle_backspace();
+                HandleResult::NeedsRender
+            }
+            KeyCode::Enter => {
+                if self.can_proceed() {
+                    HandleResult::Consumed
+                } else {
+                    // Try to validate
+                    let _ = self.validate();
+                    HandleResult::NeedsRender
+                }
+            }
+            _ => HandleResult::Ignored,
+        }
+    }
+}
+
+impl crate::tui::traits::WizardStepValidator for PasskeyImportScreen {
+    fn validate_step(&self) -> bool {
+        self.can_proceed()
+    }
+
+    fn validation_error(&self) -> Option<String> {
+        self.validation_error.clone()
+    }
+
+    fn sync_to_state(&self, state: &mut crate::tui::screens::wizard::WizardState) {
+        if let Some(words) = &self.words {
+            state.set_passkey_words(words.clone());
+        }
+    }
+
+    fn load_from_state(&mut self, state: &crate::tui::screens::wizard::WizardState) {
+        if let Some(words) = state.require_passkey_words() {
+            self.input = words.join(" ");
+            self.words = Some(words.to_vec());
+            self.validated = true;
+        }
+    }
+
+    fn clear_input(&mut self) {
+        self.clear();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
