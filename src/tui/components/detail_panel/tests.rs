@@ -72,12 +72,8 @@ fn test_handle_key_with_state_copy_username() {
     let mut state = AppState::new();
 
     let id = Uuid::new_v4();
-    let test_password = PasswordRecord::new(
-        id.to_string(),
-        "Test Password",
-        "secret123",
-    )
-    .with_username("testuser@example.com".to_string());
+    let test_password = PasswordRecord::new(id.to_string(), "Test Password", "secret123")
+        .with_username("testuser@example.com".to_string());
 
     state.refresh_password_cache(vec![test_password]);
     state.detail_mode = DetailMode::PasswordDetail(id);
@@ -122,14 +118,10 @@ fn test_data_binding_password_detail() {
     let mut state = AppState::new();
 
     let password_id = Uuid::new_v4();
-    let test_password = PasswordRecord::new(
-        password_id.to_string(),
-        "Gmail Work",
-        "secret123",
-    )
-    .with_username("user@gmail.com".to_string())
-    .with_url("https://gmail.com".to_string())
-    .with_favorite(true);
+    let test_password = PasswordRecord::new(password_id.to_string(), "Gmail Work", "secret123")
+        .with_username("user@gmail.com".to_string())
+        .with_url("https://gmail.com".to_string())
+        .with_favorite(true);
 
     state.refresh_password_cache(vec![test_password.clone()]);
 
@@ -148,14 +140,10 @@ fn test_data_binding_password_detail() {
 #[test]
 fn test_render_password_from_state() {
     let mut state = AppState::new();
-    let panel = DetailPanel::new();
+    let _panel = DetailPanel::new();
 
     let password_id = Uuid::new_v4();
-    let test_password = PasswordRecord::new(
-        password_id.to_string(),
-        "Test Password",
-        "secret123",
-    );
+    let test_password = PasswordRecord::new(password_id.to_string(), "Test Password", "secret123");
 
     state.refresh_password_cache(vec![test_password.clone()]);
     state.select_password(password_id);
@@ -174,15 +162,11 @@ fn test_full_password_detail_flow() {
     let mut state = AppState::new();
 
     let password_id = Uuid::new_v4();
-    let test_password = PasswordRecord::new(
-        password_id.to_string(),
-        "Gmail Work",
-        "secret123",
-    )
-    .with_username("user@gmail.com".to_string())
-    .with_url("https://gmail.com".to_string())
-    .with_tags(vec!["email".to_string(), "work".to_string()])
-    .with_favorite(true);
+    let test_password = PasswordRecord::new(password_id.to_string(), "Gmail Work", "secret123")
+        .with_username("user@gmail.com".to_string())
+        .with_url("https://gmail.com".to_string())
+        .with_tags(vec!["email".to_string(), "work".to_string()])
+        .with_favorite(true);
 
     state.refresh_password_cache(vec![test_password.clone()]);
     state.apply_filter();

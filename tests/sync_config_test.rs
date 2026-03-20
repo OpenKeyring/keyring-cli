@@ -23,7 +23,7 @@ fn test_save_load_sync_config() {
 
     let loaded = SyncConfigFile::load(&config_path).unwrap();
     assert_eq!(loaded.provider, "icloud");
-    assert_eq!(loaded.sync_enabled, true);
+    assert!(loaded.sync_enabled);
     assert_eq!(
         loaded.icloud_path,
         Some("~/iCloud/open-keyring".to_string())
@@ -35,11 +35,11 @@ fn test_save_load_sync_config() {
 fn test_default_config() {
     let config = SyncConfigFile::default();
 
-    assert_eq!(config.sync_enabled, false);
+    assert!(!config.sync_enabled);
     assert_eq!(config.provider, "icloud");
     assert_eq!(config.icloud_path, None);
     assert_eq!(config.debounce_delay, 5);
-    assert_eq!(config.auto_sync, false);
+    assert!(!config.auto_sync);
 }
 
 #[test]
@@ -68,14 +68,14 @@ fn test_save_full_config() {
 
     // Load and verify all fields
     let loaded = SyncConfigFile::load(&config_path).unwrap();
-    assert_eq!(loaded.sync_enabled, true);
+    assert!(loaded.sync_enabled);
     assert_eq!(loaded.provider, "dropbox");
     assert_eq!(
         loaded.icloud_path,
         Some("~/iCloud/open-keyring".to_string())
     );
     assert_eq!(loaded.debounce_delay, 10);
-    assert_eq!(loaded.auto_sync, true);
+    assert!(loaded.auto_sync);
 }
 
 #[test]
@@ -146,9 +146,9 @@ fn test_partial_config_update() {
 
     // Verify updates
     let final_config = SyncConfigFile::load(&config_path).unwrap();
-    assert_eq!(final_config.sync_enabled, true);
+    assert!(final_config.sync_enabled);
     assert_eq!(final_config.provider, "icloud"); // unchanged
-    assert_eq!(final_config.auto_sync, true);
+    assert!(final_config.auto_sync);
     assert_eq!(final_config.debounce_delay, 5); // unchanged
 }
 

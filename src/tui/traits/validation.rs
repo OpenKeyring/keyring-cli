@@ -174,10 +174,15 @@ impl Validator for BuiltinValidator {
                 if value.starts_with("http://") || value.starts_with("https://") {
                     ValidationResult::valid()
                 } else {
-                    ValidationResult::invalid(vec!["请输入有效的 URL（以 http:// 或 https:// 开头）".into()])
+                    ValidationResult::invalid(vec![
+                        "请输入有效的 URL（以 http:// 或 https:// 开头）".into(),
+                    ])
                 }
             }
-            Self::Regex { pattern: _, message } => {
+            Self::Regex {
+                pattern: _,
+                message,
+            } => {
                 // 简化实现，实际应使用 regex crate
                 ValidationResult::invalid(vec![message.clone()])
             }

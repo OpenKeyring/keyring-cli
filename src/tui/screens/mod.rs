@@ -48,6 +48,8 @@ pub use trash::TrashScreen;
 pub use trash_retention::TrashRetentionScreen;
 pub use unlock::{UnlockScreen, UnlockState};
 pub use welcome::{WelcomeChoice, WelcomeScreen};
-pub use wizard::{ClipboardTimeout, PasswordPolicyConfig, PasswordType, TrashRetention, WizardState, WizardStep};
+pub use wizard::{
+    ClipboardTimeout, PasswordPolicyConfig, PasswordType, TrashRetention, WizardState, WizardStep,
+};
 // TODO: Re-enable after implementing Interactive trait for wizard screens
 // pub use crate::tui::wizard_flow::{WizardScreen, WizardContext};

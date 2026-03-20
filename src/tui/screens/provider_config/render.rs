@@ -8,7 +8,7 @@ use ratatui::{
     layout::{Alignment, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Paragraph, Wrap},
+    widgets::{Block, Borders, Paragraph},
     Frame,
 };
 
@@ -30,7 +30,7 @@ impl ProviderConfigScreen {
             .margin(1)
             .constraints([
                 ratatui::layout::Constraint::Length(4), // Title
-                ratatui::layout::Constraint::Min(0),   // Form fields
+                ratatui::layout::Constraint::Min(0),    // Form fields
                 ratatui::layout::Constraint::Length(3), // Footer
             ])
             .split(inner);
@@ -38,7 +38,9 @@ impl ProviderConfigScreen {
         // Title
         let title = Paragraph::new(Text::from(vec![Line::from(vec![Span::styled(
             format!("Configure {} Sync", self.provider_name()),
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
         )])]))
         .alignment(Alignment::Center);
         frame.render_widget(title, chunks[0]);

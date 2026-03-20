@@ -2,7 +2,7 @@
 //!
 //! 实现主题管理器和重新导出主题结构体。
 
-use crate::tui::traits::{Theme, ThemeName, ThemeManager};
+use crate::tui::traits::{Theme, ThemeManager, ThemeName};
 
 // 重新导出 traits 模块中的主题实现
 pub use crate::tui::traits::{DarkTheme, LightTheme};
@@ -147,7 +147,7 @@ mod tests {
 
         // 验证深色主题的颜色
         let bg = manager.current().background();
-        let _text = manager.current().text_primary();  // Using _ prefix to indicate unused variable
+        let _text = manager.current().text_primary(); // Using _ prefix to indicate unused variable
 
         // 深色主题应该使用终端默认背景
         assert_eq!(format!("{:?}", bg), "Reset");

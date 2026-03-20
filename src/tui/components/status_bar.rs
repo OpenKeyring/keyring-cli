@@ -2,9 +2,7 @@
 //!
 //! 底部状态栏，显示当前状态信息和快捷键提示。
 
-use crate::tui::traits::{
-    Component, ComponentId, HandleResult, Interactive, Render,
-};
+use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render};
 use crossterm::event::{KeyEvent, MouseEvent};
 use ratatui::{
     buffer::Buffer,
@@ -94,9 +92,7 @@ impl Render for StatusBar {
         }
 
         // 背景样式
-        let bg_style = Style::default()
-            .bg(Color::DarkGray)
-            .fg(Color::White);
+        let bg_style = Style::default().bg(Color::DarkGray).fg(Color::White);
 
         // 消息样式
         let msg_style = bg_style.add_modifier(Modifier::BOLD);
@@ -118,7 +114,8 @@ impl Render for StatusBar {
 
         // 渲染快捷键提示（右侧）
         if !self.shortcuts.is_empty() && area.width > 20 {
-            let shortcuts_text: String = self.shortcuts
+            let shortcuts_text: String = self
+                .shortcuts
                 .iter()
                 .map(|(k, d)| format!("[{}]{}", k, d))
                 .collect::<Vec<_>>()

@@ -39,7 +39,11 @@ pub struct PasswordRecord {
 
 impl PasswordRecord {
     /// 创建新的密码记录
-    pub fn new(id: impl Into<String>, name: impl Into<String>, password: impl Into<String>) -> Self {
+    pub fn new(
+        id: impl Into<String>,
+        name: impl Into<String>,
+        password: impl Into<String>,
+    ) -> Self {
         let now = Utc::now();
         Self {
             id: id.into(),
@@ -419,6 +423,9 @@ mod tests {
         let result = QueryResult::empty().with_filter_counts(counts);
 
         assert_eq!(result.filter_counts.get(&PasswordFilter::All), Some(&10));
-        assert_eq!(result.filter_counts.get(&PasswordFilter::Favorites), Some(&3));
+        assert_eq!(
+            result.filter_counts.get(&PasswordFilter::Favorites),
+            Some(&3)
+        );
     }
 }

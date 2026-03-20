@@ -124,7 +124,11 @@ pub struct StateChange {
 impl StateChange {
     /// 创建新的状态变化记录
     #[must_use]
-    pub fn new(old_value: Option<StateValue>, new_value: StateValue, source: Option<String>) -> Self {
+    pub fn new(
+        old_value: Option<StateValue>,
+        new_value: StateValue,
+        source: Option<String>,
+    ) -> Self {
         Self {
             old_value,
             new_value,
@@ -404,17 +408,17 @@ impl CombinedSelector {
         selectors: Vec<Box<dyn StateSelector>>,
         combiner: fn(Vec<Option<StateValue>>) -> Option<StateValue>,
     ) -> Self {
-        Self { selectors, combiner }
+        Self {
+            selectors,
+            combiner,
+        }
     }
 }
 
 impl StateSelector for CombinedSelector {
     fn select(&self, state: &HashMap<StateKey, StateValue>) -> Option<StateValue> {
-        let values: Vec<Option<StateValue>> = self
-            .selectors
-            .iter()
-            .map(|s| s.select(state))
-            .collect();
+        let values: Vec<Option<StateValue>> =
+            self.selectors.iter().map(|s| s.select(state)).collect();
         (self.combiner)(values)
     }
 }
@@ -493,6 +497,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::approx_constant)]
     fn test_state_value_conversions() {
         let s = StateValue::from("hello");
         assert_eq!(s.as_string(), Some("hello"));

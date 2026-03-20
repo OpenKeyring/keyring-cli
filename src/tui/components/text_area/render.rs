@@ -27,9 +27,7 @@ impl Render for TextArea {
                 .bg(Color::DarkGray)
                 .add_modifier(Modifier::BOLD)
         } else {
-            Style::default()
-                .fg(Color::Gray)
-                .bg(Color::Black)
+            Style::default().fg(Color::Gray).bg(Color::Black)
         };
 
         let block = Block::default()
@@ -83,8 +81,13 @@ impl Render for TextArea {
 
                     // Cursor character or next character
                     if self.cursor_col < line.len() {
-                        let cursor_char = &line
-                            [self.cursor_col..self.cursor_col + line[self.cursor_col..].chars().next().map(|c| c.len_utf8()).unwrap_or(1)];
+                        let cursor_char = &line[self.cursor_col
+                            ..self.cursor_col
+                                + line[self.cursor_col..]
+                                    .chars()
+                                    .next()
+                                    .map(|c| c.len_utf8())
+                                    .unwrap_or(1)];
                         spans.push(Span::styled(
                             cursor_char,
                             Style::default().add_modifier(Modifier::REVERSED),

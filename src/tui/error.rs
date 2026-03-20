@@ -138,7 +138,10 @@ pub enum ErrorKind {
     /// IO 错误
     IoError(String),
     /// 终端太小
-    TerminalTooSmall { required: (u16, u16), actual: (u16, u16) },
+    TerminalTooSmall {
+        required: (u16, u16),
+        actual: (u16, u16),
+    },
     /// 不支持的平台
     UnsupportedPlatform,
 
@@ -184,7 +187,10 @@ impl ErrorKind {
 
             Self::IoError(msg) => format!("IO 错误: {}", msg),
             Self::TerminalTooSmall { required, actual } => {
-                format!("终端太小: 需要 {}x{}, 当前 {}x{}", required.0, required.1, actual.0, actual.1)
+                format!(
+                    "终端太小: 需要 {}x{}, 当前 {}x{}",
+                    required.0, required.1, actual.0, actual.1
+                )
             }
             Self::UnsupportedPlatform => "当前平台不支持".to_string(),
 
@@ -351,14 +357,12 @@ impl std::error::Error for TuiError {}
 
 impl From<std::io::Error> for TuiError {
     fn from(err: std::io::Error) -> Self {
-        Self::new(ErrorKind::IoError(err.to_string()))
-            .with_details(format!("{:?}", err))
+        Self::new(ErrorKind::IoError(err.to_string())).with_details(format!("{:?}", err))
     }
 }
 
 impl From<serde_json::Error> for TuiError {
     fn from(err: serde_json::Error) -> Self {
-        Self::new(ErrorKind::ConfigInvalid(err.to_string()))
-            .with_source("serde_json".to_string())
+        Self::new(ErrorKind::ConfigInvalid(err.to_string())).with_source("serde_json".to_string())
     }
 }

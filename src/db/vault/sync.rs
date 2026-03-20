@@ -3,7 +3,7 @@
 use anyhow::Result;
 use rusqlite::Connection;
 
-use crate::db::models::{SyncState, SyncStatus, StoredRecord, RecordType};
+use crate::db::models::{RecordType, StoredRecord, SyncState, SyncStatus};
 
 /// Get sync state for a record
 pub fn get_sync_state(conn: &Connection, record_id: &str) -> Result<Option<SyncState>> {
@@ -157,16 +157,8 @@ pub fn get_pending_records(conn: &Connection) -> Result<Vec<StoredRecord>> {
 
     let mut records = Vec::new();
     for record in record_iter {
-        let (
-            uuid,
-            record_type_str,
-            encrypted_data,
-            nonce,
-            created_ts,
-            updated_ts,
-            version,
-            tags,
-        ) = record?;
+        let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
+            record?;
 
         records.push(StoredRecord {
             id: uuid,

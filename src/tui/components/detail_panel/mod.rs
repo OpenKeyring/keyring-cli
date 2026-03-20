@@ -18,7 +18,6 @@ use ratatui::{
     layout::Rect,
     prelude::Widget,
     style::{Color, Modifier, Style},
-    text::{Line, Span},
     widgets::{Block, Borders},
     Frame,
 };

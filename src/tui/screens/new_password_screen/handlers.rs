@@ -31,11 +31,19 @@ impl crate::tui::traits::Interactive for NewPasswordScreen {
                 return HandleResult::NeedsRender;
             }
             KeyCode::BackTab => {
-                self.focused_field = if self.focused_field == 0 { 8 } else { self.focused_field - 1 };
+                self.focused_field = if self.focused_field == 0 {
+                    8
+                } else {
+                    self.focused_field - 1
+                };
                 return HandleResult::NeedsRender;
             }
             KeyCode::Up => {
-                self.focused_field = if self.focused_field == 0 { 8 } else { self.focused_field - 1 };
+                self.focused_field = if self.focused_field == 0 {
+                    8
+                } else {
+                    self.focused_field - 1
+                };
                 return HandleResult::NeedsRender;
             }
             KeyCode::Down => {

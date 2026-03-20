@@ -41,7 +41,7 @@ async fn test_audit_log_write_and_read() {
         .expect("Failed to read log file");
 
     let parsed_entry: AuditEntry =
-        serde_json::from_str(&content.trim()).expect("Failed to parse entry");
+        serde_json::from_str(content.trim()).expect("Failed to parse entry");
 
     assert_eq!(parsed_entry.id, entry.id);
     assert_eq!(parsed_entry.tool, "ssh");

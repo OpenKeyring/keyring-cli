@@ -2,7 +2,7 @@
 //!
 //! Contains keyboard handling logic for tree navigation.
 
-use super::{GG_TIMEOUT_MS, TreePanel};
+use super::{TreePanel, GG_TIMEOUT_MS};
 use crate::tui::state::{AppState, TreeNodeId};
 use crate::tui::traits::HandleResult;
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
@@ -34,9 +34,7 @@ pub fn handle_key_with_state(
             HandleResult::Consumed
         }
         // Navigation: g - move to top (or first of gg sequence)
-        KeyCode::Char('g') => {
-            handle_g_key(panel, state)
-        }
+        KeyCode::Char('g') => handle_g_key(panel, state),
         // Navigation: G (Shift+g) - move to bottom
         KeyCode::Char('G') => {
             panel.pending_g = false;

@@ -125,7 +125,10 @@ impl Render for MasterPasswordConfirmScreen {
                 };
                 lines.push(Line::from(""));
                 lines.push(Line::from(vec![
-                    Span::styled(icon, Style::default().fg(color).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        icon,
+                        Style::default().fg(color).add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(" "),
                     Span::styled(msg, Style::default().fg(color)),
                 ]));
@@ -158,7 +161,11 @@ impl Interactive for MasterPasswordConfirmScreen {
     fn handle_key(&mut self, key: KeyEvent) -> HandleResult {
         match key.code {
             // Ctrl+U to clear - must come before generic Char handler
-            KeyCode::Char('u') if key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) => {
+            KeyCode::Char('u')
+                if key
+                    .modifiers
+                    .contains(crossterm::event::KeyModifiers::CONTROL) =>
+            {
                 self.clear_input();
                 HandleResult::NeedsRender
             }

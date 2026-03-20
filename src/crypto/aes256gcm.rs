@@ -122,7 +122,7 @@ mod tests {
         let key = [2u8; 32];
 
         let result = encrypt_with_aad(plaintext, aad, &key).unwrap();
-        assert!(result.ciphertext.len() > 0);
+        assert!(!result.ciphertext.is_empty());
         assert_eq!(result.nonce.len(), 12);
     }
 

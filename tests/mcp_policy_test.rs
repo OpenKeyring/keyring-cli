@@ -504,7 +504,7 @@ fn test_engine_reusable_across_decisions() {
 
 #[test]
 fn test_policy_engine_default() {
-    let engine = PolicyEngine::default();
+    let engine = PolicyEngine;
     let tags = make_tags(&["env:dev", "risk:low"]);
     let decision = engine.decide(&tags, OperationType::Read, "tool");
     assert_eq!(decision, AuthDecision::AutoApprove);

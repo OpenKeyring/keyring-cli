@@ -229,7 +229,7 @@ mod tests {
             .unwrap();
         // NORMAL is 1 in newer SQLite, FULL is 2
         assert!(
-            synchronous >= 1 && synchronous <= 2,
+            (1..=2).contains(&synchronous),
             "synchronous should be NORMAL (1) or FULL (2), got {}",
             synchronous
         );

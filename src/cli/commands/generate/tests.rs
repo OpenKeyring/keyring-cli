@@ -165,7 +165,7 @@ fn test_generate_pin_only_2_to_9() {
     // Should only contain digits 2-9
     assert!(pin
         .chars()
-        .all(|c| c.is_ascii_digit() && c >= '2' && c <= '9'));
+        .all(|c| c.is_ascii_digit() && ('2'..='9').contains(&c)));
     // Should not contain 0 or 1
     assert!(!pin.contains('0'));
     assert!(!pin.contains('1'));

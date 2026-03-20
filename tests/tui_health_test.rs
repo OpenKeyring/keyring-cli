@@ -37,8 +37,7 @@ fn test_health_with_weak_flag_needs_vault() {
             assert!(has_error || output.iter().any(|l| l.contains("No")));
         }
         Err(_) => {
-            // Also acceptable to return an error
-            assert!(true);
+            // Also acceptable to return an error - no assertion needed
         }
     }
 }
@@ -52,7 +51,7 @@ fn test_health_with_duplicate_flag_needs_vault() {
             assert!(!output.is_empty());
         }
         Err(_) => {
-            assert!(true);
+            // Also acceptable to return an error - no assertion needed
         }
     }
 }
@@ -66,7 +65,7 @@ fn test_health_with_leaks_flag_needs_vault() {
             assert!(!output.is_empty());
         }
         Err(_) => {
-            assert!(true);
+            // Also acceptable to return an error - no assertion needed
         }
     }
 }
@@ -80,7 +79,7 @@ fn test_health_with_all_flag_needs_vault() {
             assert!(!output.is_empty());
         }
         Err(_) => {
-            assert!(true);
+            // Also acceptable to return an error - no assertion needed
         }
     }
 }
@@ -94,7 +93,7 @@ fn test_health_with_multiple_flags_needs_vault() {
             assert!(!output.is_empty());
         }
         Err(_) => {
-            assert!(true);
+            // Also acceptable to return an error - no assertion needed
         }
     }
 }

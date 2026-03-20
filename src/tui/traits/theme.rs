@@ -2,8 +2,8 @@
 //!
 //! 定义 TUI 主题和配色方案的接口。
 
-use ratatui::style::{Color, Modifier, Style};
 use crate::tui::traits::password_strength::StrengthLevel;
+use ratatui::style::{Color, Modifier, Style};
 
 /// 主题名称
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -16,7 +16,7 @@ pub enum ThemeName {
 
 impl Default for ThemeName {
     fn default() -> Self {
-        Self::Dark  // TUI 默认使用深色主题
+        Self::Dark // TUI 默认使用深色主题
     }
 }
 
@@ -229,88 +229,184 @@ pub trait Theme: Send + Sync {
 pub struct DarkTheme;
 
 impl Theme for DarkTheme {
-    fn name(&self) -> ThemeName { ThemeName::Dark }
+    fn name(&self) -> ThemeName {
+        ThemeName::Dark
+    }
 
     // 背景色
-    fn background(&self) -> Color { Color::Reset }
-    fn panel_background(&self) -> Color { Color::Rgb(30, 30, 40) }
-    fn input_background(&self) -> Color { Color::Rgb(40, 40, 50) }
-    fn modal_background(&self) -> Color { Color::Rgb(0, 0, 0) }
+    fn background(&self) -> Color {
+        Color::Reset
+    }
+    fn panel_background(&self) -> Color {
+        Color::Rgb(30, 30, 40)
+    }
+    fn input_background(&self) -> Color {
+        Color::Rgb(40, 40, 50)
+    }
+    fn modal_background(&self) -> Color {
+        Color::Rgb(0, 0, 0)
+    }
 
     // 文字颜色
-    fn text_primary(&self) -> Color { Color::Rgb(230, 230, 230) }
-    fn text_secondary(&self) -> Color { Color::Rgb(150, 150, 150) }
-    fn text_disabled(&self) -> Color { Color::Rgb(100, 100, 100) }
+    fn text_primary(&self) -> Color {
+        Color::Rgb(230, 230, 230)
+    }
+    fn text_secondary(&self) -> Color {
+        Color::Rgb(150, 150, 150)
+    }
+    fn text_disabled(&self) -> Color {
+        Color::Rgb(100, 100, 100)
+    }
 
     // 边框颜色
-    fn border(&self) -> Color { Color::Rgb(60, 60, 70) }
-    fn border_focused(&self) -> Color { Color::Cyan }
+    fn border(&self) -> Color {
+        Color::Rgb(60, 60, 70)
+    }
+    fn border_focused(&self) -> Color {
+        Color::Cyan
+    }
 
     // 状态颜色
-    fn success(&self) -> Color { Color::Green }
-    fn warning(&self) -> Color { Color::Yellow }
-    fn error(&self) -> Color { Color::Red }
-    fn info(&self) -> Color { Color::Blue }
+    fn success(&self) -> Color {
+        Color::Green
+    }
+    fn warning(&self) -> Color {
+        Color::Yellow
+    }
+    fn error(&self) -> Color {
+        Color::Red
+    }
+    fn info(&self) -> Color {
+        Color::Blue
+    }
 
     // 强调色
-    fn accent(&self) -> Color { Color::Cyan }
-    fn accent_secondary(&self) -> Color { Color::Magenta }
+    fn accent(&self) -> Color {
+        Color::Cyan
+    }
+    fn accent_secondary(&self) -> Color {
+        Color::Magenta
+    }
 
     // 特殊颜色
-    fn selection_background(&self) -> Color { Color::Rgb(50, 50, 70) }
-    fn highlight(&self) -> Color { Color::Yellow }
-    fn link(&self) -> Color { Color::Cyan }
+    fn selection_background(&self) -> Color {
+        Color::Rgb(50, 50, 70)
+    }
+    fn highlight(&self) -> Color {
+        Color::Yellow
+    }
+    fn link(&self) -> Color {
+        Color::Cyan
+    }
 
     // 密码强度颜色
-    fn strength_very_weak(&self) -> Color { Color::Red }
-    fn strength_weak(&self) -> Color { Color::Rgb(255, 128, 0) }
-    fn strength_fair(&self) -> Color { Color::Yellow }
-    fn strength_strong(&self) -> Color { Color::Green }
-    fn strength_very_strong(&self) -> Color { Color::Rgb(0, 200, 100) }
+    fn strength_very_weak(&self) -> Color {
+        Color::Red
+    }
+    fn strength_weak(&self) -> Color {
+        Color::Rgb(255, 128, 0)
+    }
+    fn strength_fair(&self) -> Color {
+        Color::Yellow
+    }
+    fn strength_strong(&self) -> Color {
+        Color::Green
+    }
+    fn strength_very_strong(&self) -> Color {
+        Color::Rgb(0, 200, 100)
+    }
 }
 
 /// 浅色主题
 pub struct LightTheme;
 
 impl Theme for LightTheme {
-    fn name(&self) -> ThemeName { ThemeName::Light }
+    fn name(&self) -> ThemeName {
+        ThemeName::Light
+    }
 
     // 背景色
-    fn background(&self) -> Color { Color::Rgb(250, 250, 250) }
-    fn panel_background(&self) -> Color { Color::Rgb(240, 240, 245) }
-    fn input_background(&self) -> Color { Color::Rgb(255, 255, 255) }
-    fn modal_background(&self) -> Color { Color::Rgb(200, 200, 200) }
+    fn background(&self) -> Color {
+        Color::Rgb(250, 250, 250)
+    }
+    fn panel_background(&self) -> Color {
+        Color::Rgb(240, 240, 245)
+    }
+    fn input_background(&self) -> Color {
+        Color::Rgb(255, 255, 255)
+    }
+    fn modal_background(&self) -> Color {
+        Color::Rgb(200, 200, 200)
+    }
 
     // 文字颜色
-    fn text_primary(&self) -> Color { Color::Rgb(30, 30, 30) }
-    fn text_secondary(&self) -> Color { Color::Rgb(100, 100, 100) }
-    fn text_disabled(&self) -> Color { Color::Rgb(180, 180, 180) }
+    fn text_primary(&self) -> Color {
+        Color::Rgb(30, 30, 30)
+    }
+    fn text_secondary(&self) -> Color {
+        Color::Rgb(100, 100, 100)
+    }
+    fn text_disabled(&self) -> Color {
+        Color::Rgb(180, 180, 180)
+    }
 
     // 边框颜色
-    fn border(&self) -> Color { Color::Rgb(200, 200, 200) }
-    fn border_focused(&self) -> Color { Color::Rgb(0, 150, 200) }
+    fn border(&self) -> Color {
+        Color::Rgb(200, 200, 200)
+    }
+    fn border_focused(&self) -> Color {
+        Color::Rgb(0, 150, 200)
+    }
 
     // 状态颜色
-    fn success(&self) -> Color { Color::Rgb(0, 150, 0) }
-    fn warning(&self) -> Color { Color::Rgb(200, 150, 0) }
-    fn error(&self) -> Color { Color::Rgb(200, 0, 0) }
-    fn info(&self) -> Color { Color::Rgb(0, 100, 200) }
+    fn success(&self) -> Color {
+        Color::Rgb(0, 150, 0)
+    }
+    fn warning(&self) -> Color {
+        Color::Rgb(200, 150, 0)
+    }
+    fn error(&self) -> Color {
+        Color::Rgb(200, 0, 0)
+    }
+    fn info(&self) -> Color {
+        Color::Rgb(0, 100, 200)
+    }
 
     // 强调色
-    fn accent(&self) -> Color { Color::Rgb(0, 150, 200) }
-    fn accent_secondary(&self) -> Color { Color::Rgb(150, 0, 150) }
+    fn accent(&self) -> Color {
+        Color::Rgb(0, 150, 200)
+    }
+    fn accent_secondary(&self) -> Color {
+        Color::Rgb(150, 0, 150)
+    }
 
     // 特殊颜色
-    fn selection_background(&self) -> Color { Color::Rgb(220, 230, 250) }
-    fn highlight(&self) -> Color { Color::Rgb(200, 150, 0) }
-    fn link(&self) -> Color { Color::Rgb(0, 100, 200) }
+    fn selection_background(&self) -> Color {
+        Color::Rgb(220, 230, 250)
+    }
+    fn highlight(&self) -> Color {
+        Color::Rgb(200, 150, 0)
+    }
+    fn link(&self) -> Color {
+        Color::Rgb(0, 100, 200)
+    }
 
     // 密码强度颜色
-    fn strength_very_weak(&self) -> Color { Color::Rgb(200, 0, 0) }
-    fn strength_weak(&self) -> Color { Color::Rgb(200, 100, 0) }
-    fn strength_fair(&self) -> Color { Color::Rgb(180, 150, 0) }
-    fn strength_strong(&self) -> Color { Color::Rgb(0, 150, 0) }
-    fn strength_very_strong(&self) -> Color { Color::Rgb(0, 120, 60) }
+    fn strength_very_weak(&self) -> Color {
+        Color::Rgb(200, 0, 0)
+    }
+    fn strength_weak(&self) -> Color {
+        Color::Rgb(200, 100, 0)
+    }
+    fn strength_fair(&self) -> Color {
+        Color::Rgb(180, 150, 0)
+    }
+    fn strength_strong(&self) -> Color {
+        Color::Rgb(0, 150, 0)
+    }
+    fn strength_very_strong(&self) -> Color {
+        Color::Rgb(0, 120, 60)
+    }
 }
 
 /// 颜色调色板

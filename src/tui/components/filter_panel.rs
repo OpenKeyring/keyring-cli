@@ -183,7 +183,8 @@ impl FilterPanel {
         block.render(area, frame.buffer_mut());
 
         // Render filter items
-        let items: Vec<ListItem> = self.items
+        let items: Vec<ListItem> = self
+            .items
             .iter()
             .enumerate()
             .map(|(index, item)| {
@@ -221,7 +222,11 @@ impl FilterPanel {
     }
 
     /// Handle key event with state mutation
-    pub fn handle_key_with_state(&mut self, key: KeyEvent, state: &mut FilterState) -> HandleResult {
+    pub fn handle_key_with_state(
+        &mut self,
+        key: KeyEvent,
+        state: &mut FilterState,
+    ) -> HandleResult {
         // Only handle press events
         if key.kind == KeyEventKind::Release {
             return HandleResult::Ignored;
@@ -267,10 +272,7 @@ impl Render for FilterPanel {
             }
             let text = format!("{} {}", item.icon, item.label);
             let paragraph = Paragraph::new(text);
-            paragraph.render(
-                Rect::new(inner.x, inner.y + i as u16, inner.width, 1),
-                buf,
-            );
+            paragraph.render(Rect::new(inner.x, inner.y + i as u16, inner.width, 1), buf);
         }
     }
 }
@@ -342,17 +344,29 @@ mod tests {
     fn test_navigation_down() {
         let mut panel = FilterPanel::new();
 
-        panel.handle_key(KeyEvent::new(KeyCode::Char('j'), crossterm::event::KeyModifiers::empty()));
+        panel.handle_key(KeyEvent::new(
+            KeyCode::Char('j'),
+            crossterm::event::KeyModifiers::empty(),
+        ));
         assert_eq!(panel.highlighted_index, 1); // All -> Trash
 
-        panel.handle_key(KeyEvent::new(KeyCode::Char('j'), crossterm::event::KeyModifiers::empty()));
+        panel.handle_key(KeyEvent::new(
+            KeyCode::Char('j'),
+            crossterm::event::KeyModifiers::empty(),
+        ));
         assert_eq!(panel.highlighted_index, 2); // Trash -> Expired
 
-        panel.handle_key(KeyEvent::new(KeyCode::Char('j'), crossterm::event::KeyModifiers::empty()));
+        panel.handle_key(KeyEvent::new(
+            KeyCode::Char('j'),
+            crossterm::event::KeyModifiers::empty(),
+        ));
         assert_eq!(panel.highlighted_index, 3); // Expired -> Favorite
 
         // Wrap to top
-        panel.handle_key(KeyEvent::new(KeyCode::Char('j'), crossterm::event::KeyModifiers::empty()));
+        panel.handle_key(KeyEvent::new(
+            KeyCode::Char('j'),
+            crossterm::event::KeyModifiers::empty(),
+        ));
         assert_eq!(panel.highlighted_index, 0); // Favorite -> All
     }
 
@@ -361,12 +375,21 @@ mod tests {
         let mut panel = FilterPanel::new();
         panel.highlighted_index = 2;
 
-        panel.handle_key(KeyEvent::new(KeyCode::Char('k'), crossterm::event::KeyModifiers::empty()));
+        panel.handle_key(KeyEvent::new(
+            KeyCode::Char('k'),
+            crossterm::event::KeyModifiers::empty(),
+        ));
         assert_eq!(panel.highlighted_index, 1);
 
         // Wrap to bottom
-        panel.handle_key(KeyEvent::new(KeyCode::Char('k'), crossterm::event::KeyModifiers::empty()));
-        panel.handle_key(KeyEvent::new(KeyCode::Char('k'), crossterm::event::KeyModifiers::empty()));
+        panel.handle_key(KeyEvent::new(
+            KeyCode::Char('k'),
+            crossterm::event::KeyModifiers::empty(),
+        ));
+        panel.handle_key(KeyEvent::new(
+            KeyCode::Char('k'),
+            crossterm::event::KeyModifiers::empty(),
+        ));
         assert_eq!(panel.highlighted_index, 3); // 4 items: indices 0,1,2,3
     }
 
@@ -417,9 +440,9 @@ mod tests {
         ]);
 
         assert_eq!(panel.items[0].count, 100); // All
-        assert_eq!(panel.items[1].count, 5);   // Trash
-        assert_eq!(panel.items[2].count, 3);   // Expired
-        assert_eq!(panel.items[3].count, 10);  // Favorite
+        assert_eq!(panel.items[1].count, 5); // Trash
+        assert_eq!(panel.items[2].count, 3); // Expired
+        assert_eq!(panel.items[3].count, 10); // Favorite
     }
 
     #[test]
@@ -445,9 +468,7 @@ mod tests {
 
     #[test]
     fn test_custom_items() {
-        let items = vec![
-            FilterItem::new(FilterType::Favorite, "Favorites", "★"),
-        ];
+        let items = vec![FilterItem::new(FilterType::Favorite, "Favorites", "★")];
         let panel = FilterPanel::with_items(items);
         assert_eq!(panel.items.len(), 1);
         assert_eq!(panel.items[0].label, "Favorites");

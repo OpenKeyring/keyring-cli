@@ -548,6 +548,16 @@ impl Default for CryptoManager {
     }
 }
 
+// Re-exports for convenience
+pub use aes256gcm::{decrypt, decrypt_with_aad, encrypt, encrypt_with_aad, EncryptedData};
+pub use argon2id::{
+    derive_key, derive_key_with_params, detect_device_capability, generate_salt, hash_password,
+    verify_params_security, verify_password, Argon2Params, DeviceCapability, PasswordHash,
+};
+pub use hkdf::{derive_device_key, DeviceIndex, DeviceKeyDeriver};
+pub use keystore::verify_recovery_key;
+pub use keywrap::{unwrap_key, wrap_key};
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -597,13 +607,3 @@ mod tests {
         assert_ne!(key1.to_vec(), key2.to_vec());
     }
 }
-
-// Re-exports for convenience
-pub use aes256gcm::{decrypt, decrypt_with_aad, encrypt, encrypt_with_aad, EncryptedData};
-pub use argon2id::{
-    derive_key, derive_key_with_params, detect_device_capability, generate_salt, hash_password,
-    verify_params_security, verify_password, Argon2Params, DeviceCapability, PasswordHash,
-};
-pub use hkdf::{derive_device_key, DeviceIndex, DeviceKeyDeriver};
-pub use keystore::verify_recovery_key;
-pub use keywrap::{unwrap_key, wrap_key};

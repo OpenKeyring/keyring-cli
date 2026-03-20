@@ -14,7 +14,9 @@ pub use lock::{with_read_lock, with_write_lock};
 pub use metadata::{delete_metadata, get_metadata, list_metadata_keys, set_metadata};
 pub use record::{add_record, delete_record, get_record, list_records, update_record};
 pub use search::{find_record_by_name, search_records};
-pub use sync::{get_pending_records, get_sync_state, get_sync_stats, mark_record_pending, set_sync_state};
+pub use sync::{
+    get_pending_records, get_sync_state, get_sync_stats, mark_record_pending, set_sync_state,
+};
 
 use anyhow::Result;
 use rusqlite::Connection;

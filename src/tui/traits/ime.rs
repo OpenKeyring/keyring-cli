@@ -250,7 +250,11 @@ impl Default for ImeDetector {
 /// 输入法感知的事件处理器扩展
 pub trait ImeAwareDispatcher: Send + Sync {
     /// 分发事件（带 IME 检测）
-    fn dispatch_with_ime(&mut self, event: crossterm::event::Event, ime_state: &ImeState) -> ImeHandleResult;
+    fn dispatch_with_ime(
+        &mut self,
+        event: crossterm::event::Event,
+        ime_state: &ImeState,
+    ) -> ImeHandleResult;
 
     /// 仅分发到焦点组件
     fn dispatch_to_focused(&mut self, event: crossterm::event::Event) -> ImeHandleResult;

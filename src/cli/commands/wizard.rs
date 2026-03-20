@@ -131,7 +131,11 @@ fn import_passkey() -> Result<Vec<String>> {
     let words: Vec<String> = input.split_whitespace().map(String::from).collect();
 
     if words.len() != 12 && words.len() != 24 {
-        return Err(anyhow!("Passkey must be 12 or 24 words (current: {} words)", words.len()).into());
+        return Err(anyhow!(
+            "Passkey must be 12 or 24 words (current: {} words)",
+            words.len()
+        )
+        .into());
     }
 
     // Validate BIP39 checksum
@@ -221,6 +225,6 @@ mod tests {
 
         let args = WizardArgs::parse_from(&["wizard"]);
         // Just verify it parses
-        drop(args);
+        let _ = args;
     }
 }

@@ -155,7 +155,8 @@ impl TuiApp {
                 self.password_policy_screen.render(area, frame.buffer_mut());
             }
             WizardStep::ClipboardTimeout => {
-                self.clipboard_timeout_screen.render(area, frame.buffer_mut());
+                self.clipboard_timeout_screen
+                    .render(area, frame.buffer_mut());
             }
             WizardStep::TrashRetention => {
                 self.trash_retention_screen.render(area, frame.buffer_mut());
@@ -355,9 +356,6 @@ impl TuiApp {
         frame.render_widget(paragraph, area);
 
         // Set cursor position (area.x + 1 for left border, + 2 for "> " prefix, then cursor offset)
-        frame.set_cursor_position((
-            area.x + 3 + self.input_buffer.len() as u16,
-            area.y + 1,
-        ));
+        frame.set_cursor_position((area.x + 3 + self.input_buffer.len() as u16, area.y + 1));
     }
 }

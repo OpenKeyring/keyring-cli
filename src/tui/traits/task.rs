@@ -121,12 +121,7 @@ pub trait TaskManager: Send + Sync {
     /// 提交异步任务
     ///
     /// 将异步任务提交给 tokio runtime 执行。
-    fn submit<F>(
-        &mut self,
-        name: &str,
-        task: F,
-        callback: Option<TaskCallback>,
-    ) -> TaskId
+    fn submit<F>(&mut self, name: &str, task: F, callback: Option<TaskCallback>) -> TaskId
     where
         F: std::future::Future<Output = TuiResult<Box<dyn Any + Send>>> + Send + 'static;
 

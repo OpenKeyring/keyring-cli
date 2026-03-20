@@ -89,11 +89,11 @@ mod tests {
     #[test]
     fn test_default_values() {
         let config = SyncConfigFile::default();
-        assert_eq!(config.sync_enabled, false);
+        assert!(!config.sync_enabled);
         assert_eq!(config.provider, "icloud");
         assert_eq!(config.icloud_path, None);
         assert_eq!(config.debounce_delay, 5);
-        assert_eq!(config.auto_sync, false);
+        assert!(!config.auto_sync);
     }
 
     #[test]

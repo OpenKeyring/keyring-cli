@@ -157,11 +157,11 @@ fn test_multiple_protection_cycles() {
     for i in 0..5 {
         // Protect
         protect_memory(data.as_mut_ptr(), data.len())
-            .expect(&format!("Iteration {}: protect should succeed", i));
+            .unwrap_or_else(|_| panic!("Iteration {}: protect should succeed", i));
 
         // Unprotect
         unprotect_memory(data.as_mut_ptr(), data.len())
-            .expect(&format!("Iteration {}: unprotect should succeed", i));
+            .unwrap_or_else(|_| panic!("Iteration {}: unprotect should succeed", i));
     }
 }
 
@@ -243,7 +243,7 @@ fn test_page_aligned_protection() {
 
     // Align to page boundary
     let addr = data.as_mut_ptr();
-    let aligned_addr = if addr as usize % page != 0 {
+    let aligned_addr = if !(addr as usize).is_multiple_of(page) {
         ((addr as usize / page + 1) * page) as *mut u8
     } else {
         addr

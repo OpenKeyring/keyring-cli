@@ -4,16 +4,13 @@
 //! Supports Vim-style navigation (j/k/g/G/gg) and expand/collapse (h/l).
 
 use crate::tui::error::TuiResult;
-use crate::tui::state::{AppState, TreeState, TreeNodeId};
+use crate::tui::state::{AppState, TreeNodeId, TreeState};
 use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render};
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
     prelude::Widget,
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders},
     Frame,
 };
 use std::time::Instant;
@@ -78,7 +75,15 @@ impl TreePanel {
         state: &TreeState,
         has_active_filters: bool,
     ) {
-        render::render_frame_with_context(frame, area, state, &render::RenderContext { focused: self.focused }, has_active_filters);
+        render::render_frame_with_context(
+            frame,
+            area,
+            state,
+            &render::RenderContext {
+                focused: self.focused,
+            },
+            has_active_filters,
+        );
     }
 
     /// Handle key event with state mutation
@@ -110,9 +115,7 @@ impl Default for TreePanel {
 
 impl Render for TreePanel {
     fn render(&self, area: Rect, buf: &mut Buffer) {
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .title(" [1] Groups ");
+        let block = Block::default().borders(Borders::ALL).title(" [1] Groups ");
         block.render(area, buf);
     }
 }

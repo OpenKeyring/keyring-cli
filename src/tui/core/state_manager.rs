@@ -3,8 +3,8 @@
 //! 实现状态管理器和响应式状态。
 
 use crate::tui::traits::{
-    StateValue, StateManager, StateError, ReactiveState, StateChange,
-    StateCallback, SubscriptionId, SubscriptionIdGenerator,
+    ReactiveState, StateCallback, StateChange, StateError, StateManager, StateValue,
+    SubscriptionId, SubscriptionIdGenerator,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -223,7 +223,11 @@ impl ReactiveState for ReactiveStateManager {
         }
 
         // 检查全局订阅者
-        if let Some(pos) = self.global_subscribers.iter().position(|(sub_id, _)| *sub_id == id) {
+        if let Some(pos) = self
+            .global_subscribers
+            .iter()
+            .position(|(sub_id, _)| *sub_id == id)
+        {
             let _ = self.global_subscribers.remove(pos);
             return true;
         }
@@ -245,13 +249,14 @@ impl ReactiveState for ReactiveStateManager {
     }
 
     fn undo(&mut self, key: &str) -> Result<(), StateError> {
-        let stack = self.undo_stack.get_mut(key).ok_or_else(|| {
-            StateError::UndoFailed(format!("No undo history for key: {}", key))
-        })?;
+        let stack = self
+            .undo_stack
+            .get_mut(key)
+            .ok_or_else(|| StateError::UndoFailed(format!("No undo history for key: {}", key)))?;
 
-        let old_value = stack.pop().ok_or_else(|| {
-            StateError::UndoFailed(format!("Undo stack empty for key: {}", key))
-        })?;
+        let old_value = stack
+            .pop()
+            .ok_or_else(|| StateError::UndoFailed(format!("Undo stack empty for key: {}", key)))?;
 
         // 保存当前值到重做栈
         let current = self.states.get(key).cloned();
@@ -262,7 +267,11 @@ impl ReactiveState for ReactiveStateManager {
                 .push(curr.clone());
         }
 
-        let change = StateChange::new(Some(old_value.clone()), old_value.clone(), Some("undo".to_string()));
+        let change = StateChange::new(
+            Some(old_value.clone()),
+            old_value.clone(),
+            Some("undo".to_string()),
+        );
         self.states.insert(key.to_string(), old_value);
 
         // 直接记录历史但不调用 record_change（避免清空重做栈）
@@ -278,13 +287,14 @@ impl ReactiveState for ReactiveStateManager {
     }
 
     fn redo(&mut self, key: &str) -> Result<(), StateError> {
-        let stack = self.redo_stack.get_mut(key).ok_or_else(|| {
-            StateError::RedoFailed(format!("No redo history for key: {}", key))
-        })?;
+        let stack = self
+            .redo_stack
+            .get_mut(key)
+            .ok_or_else(|| StateError::RedoFailed(format!("No redo history for key: {}", key)))?;
 
-        let new_value = stack.pop().ok_or_else(|| {
-            StateError::RedoFailed(format!("Redo stack empty for key: {}", key))
-        })?;
+        let new_value = stack
+            .pop()
+            .ok_or_else(|| StateError::RedoFailed(format!("Redo stack empty for key: {}", key)))?;
 
         // 保存当前值到撤销栈
         let current = self.states.get(key).cloned();
@@ -295,7 +305,11 @@ impl ReactiveState for ReactiveStateManager {
                 .push(curr.clone());
         }
 
-        let change = StateChange::new(Some(new_value.clone()), new_value.clone(), Some("redo".to_string()));
+        let change = StateChange::new(
+            Some(new_value.clone()),
+            new_value.clone(),
+            Some("redo".to_string()),
+        );
         self.states.insert(key.to_string(), new_value);
 
         // 直接记录历史但不调用 record_change（避免清空重做栈）
@@ -382,7 +396,8 @@ impl StateManager for ThreadSafeStateManager {
     }
 
     fn keys(&self) -> Vec<String> {
-        self.inner.read()
+        self.inner
+            .read()
             .map(|guard| guard.keys())
             .unwrap_or_default()
     }

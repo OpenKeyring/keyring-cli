@@ -4,22 +4,18 @@
 
 use super::*;
 use crate::tui::state::{AppState, NodeType, TreeNodeId, VisibleNode};
-use crate::tui::traits::{Component, Interactive};
+use crate::tui::traits::Component;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use uuid::Uuid;
 
-fn create_visible_node(
-    id: TreeNodeId,
-    level: u8,
-    node_type: NodeType,
-    label: &str,
-) -> VisibleNode {
+fn create_visible_node(id: TreeNodeId, level: u8, node_type: NodeType, label: &str) -> VisibleNode {
     VisibleNode {
         id,
         level,
         node_type,
         label: label.to_string(),
         child_count: 0,
+        is_favorite: false,
     }
 }
 
@@ -49,9 +45,24 @@ fn test_navigation_j_k() {
 
     // Create some test nodes
     state.tree.set_visible_nodes(vec![
-        create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Root"),
-        create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Child 1"),
-        create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Child 2"),
+        create_visible_node(
+            TreeNodeId::Group(Uuid::new_v4()),
+            0,
+            NodeType::Folder,
+            "Root",
+        ),
+        create_visible_node(
+            TreeNodeId::Group(Uuid::new_v4()),
+            0,
+            NodeType::Folder,
+            "Child 1",
+        ),
+        create_visible_node(
+            TreeNodeId::Group(Uuid::new_v4()),
+            0,
+            NodeType::Folder,
+            "Child 2",
+        ),
     ]);
 
     // Initial index should be 0
@@ -81,9 +92,24 @@ fn test_navigation_g_g() {
 
     // Create some test nodes
     state.tree.set_visible_nodes(vec![
-        create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Root"),
-        create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Child 1"),
-        create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Child 2"),
+        create_visible_node(
+            TreeNodeId::Group(Uuid::new_v4()),
+            0,
+            NodeType::Folder,
+            "Root",
+        ),
+        create_visible_node(
+            TreeNodeId::Group(Uuid::new_v4()),
+            0,
+            NodeType::Folder,
+            "Child 1",
+        ),
+        create_visible_node(
+            TreeNodeId::Group(Uuid::new_v4()),
+            0,
+            NodeType::Folder,
+            "Child 2",
+        ),
     ]);
     state.tree.highlighted_index = 1;
 
@@ -206,7 +232,12 @@ fn test_select_password() {
 
     let password_id = Uuid::new_v4();
     state.tree.set_visible_nodes(vec![
-        create_visible_node(TreeNodeId::Group(Uuid::new_v4()), 0, NodeType::Folder, "Root"),
+        create_visible_node(
+            TreeNodeId::Group(Uuid::new_v4()),
+            0,
+            NodeType::Folder,
+            "Root",
+        ),
         create_visible_node(
             TreeNodeId::Password(password_id),
             1,

@@ -2,72 +2,81 @@
 //!
 //! 本模块定义了 TUI 框架的所有核心 trait，为组件、状态管理、主题等提供统一的抽象接口。
 
-mod component;
-mod layout;
-mod state;
-mod focus;
-mod service;
-mod theme;
-mod notification;
-mod validation;
-mod password_strength;
 mod clipboard;
-mod ime;
-mod screen;
+mod component;
 mod event;
+mod focus;
+mod ime;
+mod layout;
+mod notification;
+mod password_strength;
+mod screen;
 mod secure;
+mod service;
+mod state;
 mod task;
+mod theme;
+mod validation;
 mod wizard_step;
 
 // 重新导出所有公共 trait
-pub use component::{Component, Container, Render, Interactive, Application};
+pub use component::{Application, Component, Container, Interactive, Render};
+pub use focus::{
+    Direction, FocusManager, FocusManagerExt, FocusNavigation, FocusState, FocusStyle,
+};
 pub use layout::{Layout, LayoutConstraints, LayoutResult};
+pub use service::{
+    BuildContext, Buildable, ComponentConfig, CryptoService, DatabaseService, DefaultIdGenerator,
+    IdGenerator, PasswordPolicy, PasswordService, PasswordType, SecureClear, ServiceContainer,
+    ServiceProvider,
+};
 pub use state::{
-    StateManager, ReactiveState, StateValue, StateError, StateKey, StateChange, StateCallback,
+    ReactiveState, StateCallback, StateChange, StateError, StateKey, StateManager, StateValue,
     SubscriptionId, SubscriptionIdGenerator,
 };
-pub use focus::{FocusManager, FocusState, FocusStyle, FocusNavigation, Direction, FocusManagerExt};
-pub use service::{
-    ServiceProvider, IdGenerator, BuildContext, Buildable, ComponentConfig, ServiceContainer,
-    DatabaseService, CryptoService, PasswordService, DefaultIdGenerator, SecureClear,
-    PasswordPolicy, PasswordType,
-};
 // Re-export service::PasswordStrength with an alias to avoid conflict
-pub use service::PasswordStrength as ServicePasswordStrength;
-pub use theme::{Theme, ColorPalette, ThemeVariant, ThemeName, ThemeManager, DarkTheme, LightTheme};
 pub use notification::{
-    NotificationManager, NotificationManagerExt, Notification, NotificationLevel, NotificationId,
-    NotificationPosition, NotificationConfig, NotificationQueue, NotificationFilter, LevelFilter,
-    NotificationRenderer, DefaultNotificationRenderer,
+    DefaultNotificationRenderer, LevelFilter, Notification, NotificationConfig, NotificationFilter,
+    NotificationId, NotificationLevel, NotificationManager, NotificationManagerExt,
+    NotificationPosition, NotificationQueue, NotificationRenderer,
 };
-pub use validation::{FormValidator, ValidationResult, Validator, FieldValidation, ValidationTrigger, BuiltinValidator};
+pub use service::PasswordStrength as ServicePasswordStrength;
+pub use theme::{
+    ColorPalette, DarkTheme, LightTheme, Theme, ThemeManager, ThemeName, ThemeVariant,
+};
+pub use validation::{
+    BuiltinValidator, FieldValidation, FormValidator, ValidationResult, ValidationTrigger,
+    Validator,
+};
 // ValidationRule 是 Validator 的别名（兼容旧代码）
-pub use Validator as ValidationRule;
-pub use password_strength::{PasswordStrength, PasswordStrengthCalculator, StrengthLevel};
 pub use clipboard::{
-    ClipboardService, ClipboardContent, ClipboardState, ClipboardConfig, ClipboardContentType,
-    ClipboardSensitivity, SecureClipboardContent,
+    ClipboardConfig, ClipboardContent, ClipboardContentType, ClipboardSensitivity,
+    ClipboardService, ClipboardState, SecureClipboardContent,
 };
 pub use ime::{
-    ImeService, ImeMode, CompositionState, ImeState, ImeHandleResult, ImeAware, ImeDetector,
-    ImeAwareDispatcher,
+    CompositionState, ImeAware, ImeAwareDispatcher, ImeDetector, ImeHandleResult, ImeMode,
+    ImeService, ImeState,
 };
+pub use password_strength::{PasswordStrength, PasswordStrengthCalculator, StrengthLevel};
 pub use screen::{
-    ScreenManager, Screen, ScreenStack, ScreenTransition, ScreenFactory, ScreenResult,
-    WizardFlow, WizardStep, WizardBranch, WizardData,
+    Screen, ScreenFactory, ScreenManager, ScreenResult, ScreenStack, ScreenTransition,
+    WizardBranch, WizardData, WizardFlow, WizardStep,
 };
+pub use Validator as ValidationRule;
 
 // 重新导出事件类型
-pub use event::{AppEvent, HandleResult, Action, ScreenType, FilterType, EventDispatcher, EventFilter};
+pub use event::{
+    Action, AppEvent, EventDispatcher, EventFilter, FilterType, HandleResult, ScreenType,
+};
 
 // 重新导出安全类型
-pub use secure::{Sensitivity, SecureString, PasswordField, HoldsSensitiveData};
+pub use secure::{HoldsSensitiveData, PasswordField, SecureString, Sensitivity};
 
 // 重新导出任务管理类型
-pub use task::{TaskManager, TaskId, TaskStatus, TaskResult, TaskCallback, TaskProgress};
+pub use task::{TaskCallback, TaskId, TaskManager, TaskProgress, TaskResult, TaskStatus};
 
 // 重新导出向导步骤验证类型
-pub use wizard_step::{WizardStepValidator, WizardStepScreen};
+pub use wizard_step::{WizardStepScreen, WizardStepValidator};
 
 // ============================================================================
 // 基础类型定义

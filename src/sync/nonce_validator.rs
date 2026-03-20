@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn test_validator_default() {
-        let validator = NonceValidator::default();
+        let validator = NonceValidator;
         let _ = validator;
     }
 }

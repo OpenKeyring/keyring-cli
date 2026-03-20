@@ -12,10 +12,10 @@
 //!
 //! TODO(phase-3): Remove this module after integrating with real Vault service.
 
-use crate::tui::models::password::PasswordRecord;
 use crate::tui::models::group::Group;
+use crate::tui::models::password::PasswordRecord;
 use crate::tui::state::filter_state::FilterState;
-use crate::tui::state::tree_state::{TreeNodeId, NodeType, VisibleNode};
+use crate::tui::state::tree_state::{NodeType, TreeNodeId, VisibleNode};
 use chrono::{Duration, Utc};
 use std::collections::{HashMap, HashSet};
 
@@ -134,7 +134,6 @@ impl MockVault {
                 level: 2,
                 created_at: now,
             },
-
             // Personal group with children
             Group {
                 id: GROUP_PERSONAL.to_string(),
@@ -164,7 +163,6 @@ impl MockVault {
                 level: 1,
                 created_at: now,
             },
-
             // Others group
             Group {
                 id: GROUP_OTHERS.to_string(),
@@ -184,6 +182,7 @@ impl MockVault {
     }
 
     /// Create 20+ test password entries
+    #[allow(clippy::vec_init_then_push)]
     fn create_default_passwords(_groups: &[Group]) -> Vec<PasswordRecord> {
         use mock_ids::*;
         let now = Utc::now();
@@ -193,138 +192,182 @@ impl MockVault {
         let mut passwords = Vec::new();
 
         // Work -> Email passwords
-        passwords.push(PasswordRecord::new(PWD_GMAIL_WORK, "Gmail Work", "work-gmail-pass")
-            .with_username("john.doe@company.com")
-            .with_url("https://mail.google.com")
-            .with_tags(vec!["email".to_string(), "important".to_string()])
-            .with_group(GROUP_WORK_EMAIL)
-            .with_favorite(true));
+        passwords.push(
+            PasswordRecord::new(PWD_GMAIL_WORK, "Gmail Work", "work-gmail-pass")
+                .with_username("john.doe@company.com")
+                .with_url("https://mail.google.com")
+                .with_tags(vec!["email".to_string(), "important".to_string()])
+                .with_group(GROUP_WORK_EMAIL)
+                .with_favorite(true),
+        );
 
-        passwords.push(PasswordRecord::new(PWD_OUTLOOK, "Outlook Work", "outlook-pass")
-            .with_username("john.doe@company.com")
-            .with_url("https://outlook.office.com")
-            .with_tags(vec!["email".to_string()])
-            .with_group(GROUP_WORK_EMAIL));
+        passwords.push(
+            PasswordRecord::new(PWD_OUTLOOK, "Outlook Work", "outlook-pass")
+                .with_username("john.doe@company.com")
+                .with_url("https://outlook.office.com")
+                .with_tags(vec!["email".to_string()])
+                .with_group(GROUP_WORK_EMAIL),
+        );
 
         // Work -> Development -> GitHub
-        passwords.push(PasswordRecord::new(PWD_GITHUB_PERSONAL, "GitHub Personal", "github-pass-123")
-            .with_username("johndoe")
-            .with_url("https://github.com")
-            .with_tags(vec!["dev".to_string(), "coding".to_string()])
-            .with_group(GROUP_WORK_DEV_GITHUB)
-            .with_favorite(true));
+        passwords.push(
+            PasswordRecord::new(PWD_GITHUB_PERSONAL, "GitHub Personal", "github-pass-123")
+                .with_username("johndoe")
+                .with_url("https://github.com")
+                .with_tags(vec!["dev".to_string(), "coding".to_string()])
+                .with_group(GROUP_WORK_DEV_GITHUB)
+                .with_favorite(true),
+        );
 
-        passwords.push(PasswordRecord::new(PWD_GITHUB_WORK, "GitHub Work", "github-work-pass")
-            .with_username("john-work")
-            .with_url("https://github.com")
-            .with_tags(vec!["dev".to_string(), "work".to_string()])
-            .with_group(GROUP_WORK_DEV_GITHUB));
+        passwords.push(
+            PasswordRecord::new(PWD_GITHUB_WORK, "GitHub Work", "github-work-pass")
+                .with_username("john-work")
+                .with_url("https://github.com")
+                .with_tags(vec!["dev".to_string(), "work".to_string()])
+                .with_group(GROUP_WORK_DEV_GITHUB),
+        );
 
         // Work -> Development -> GitLab
-        passwords.push(PasswordRecord::new(PWD_GITLAB, "GitLab", "gitlab-pass")
-            .with_username("johndoe")
-            .with_url("https://gitlab.com")
-            .with_tags(vec!["dev".to_string()])
-            .with_group(GROUP_WORK_DEV_GITLAB));
+        passwords.push(
+            PasswordRecord::new(PWD_GITLAB, "GitLab", "gitlab-pass")
+                .with_username("johndoe")
+                .with_url("https://gitlab.com")
+                .with_tags(vec!["dev".to_string()])
+                .with_group(GROUP_WORK_DEV_GITLAB),
+        );
 
         // Work (root level)
-        passwords.push(PasswordRecord::new(PWD_JIRA, "Jira", "jira-pass")
-            .with_username("john.doe")
-            .with_url("https://company.atlassian.net")
-            .with_tags(vec!["project".to_string()])
-            .with_group(GROUP_WORK));
+        passwords.push(
+            PasswordRecord::new(PWD_JIRA, "Jira", "jira-pass")
+                .with_username("john.doe")
+                .with_url("https://company.atlassian.net")
+                .with_tags(vec!["project".to_string()])
+                .with_group(GROUP_WORK),
+        );
 
-        passwords.push(PasswordRecord::new(PWD_CONFLUENCE, "Confluence", "confluence-pass")
-            .with_username("john.doe")
-            .with_url("https://company.atlassian.net/wiki")
-            .with_tags(vec!["docs".to_string()])
-            .with_group(GROUP_WORK));
+        passwords.push(
+            PasswordRecord::new(PWD_CONFLUENCE, "Confluence", "confluence-pass")
+                .with_username("john.doe")
+                .with_url("https://company.atlassian.net/wiki")
+                .with_tags(vec!["docs".to_string()])
+                .with_group(GROUP_WORK),
+        );
 
         // Personal -> Social
-        passwords.push(PasswordRecord::new(PWD_TWITTER, "Twitter", "twitter-pass")
-            .with_username("@johndoe")
-            .with_url("https://twitter.com")
-            .with_tags(vec!["social".to_string()])
-            .with_group(GROUP_PERSONAL_SOCIAL));
+        passwords.push(
+            PasswordRecord::new(PWD_TWITTER, "Twitter", "twitter-pass")
+                .with_username("@johndoe")
+                .with_url("https://twitter.com")
+                .with_tags(vec!["social".to_string()])
+                .with_group(GROUP_PERSONAL_SOCIAL),
+        );
 
-        passwords.push(PasswordRecord::new(PWD_FACEBOOK, "Facebook", "facebook-pass")
-            .with_username("john.doe@email.com")
-            .with_url("https://facebook.com")
-            .with_tags(vec!["social".to_string()])
-            .with_group(GROUP_PERSONAL_SOCIAL));
+        passwords.push(
+            PasswordRecord::new(PWD_FACEBOOK, "Facebook", "facebook-pass")
+                .with_username("john.doe@email.com")
+                .with_url("https://facebook.com")
+                .with_tags(vec!["social".to_string()])
+                .with_group(GROUP_PERSONAL_SOCIAL),
+        );
 
-        passwords.push(PasswordRecord::new(PWD_LINKEDIN, "LinkedIn", "linkedin-pass")
-            .with_username("john.doe@email.com")
-            .with_url("https://linkedin.com")
-            .with_tags(vec!["social".to_string(), "work".to_string()])
-            .with_group(GROUP_PERSONAL_SOCIAL)
-            .with_favorite(true));
+        passwords.push(
+            PasswordRecord::new(PWD_LINKEDIN, "LinkedIn", "linkedin-pass")
+                .with_username("john.doe@email.com")
+                .with_url("https://linkedin.com")
+                .with_tags(vec!["social".to_string(), "work".to_string()])
+                .with_group(GROUP_PERSONAL_SOCIAL)
+                .with_favorite(true),
+        );
 
         // Personal -> Finance
-        passwords.push(PasswordRecord::new(PWD_BOA, "Bank of America", "boa-pass")
-            .with_username("john.doe")
-            .with_url("https://bankofamerica.com")
-            .with_tags(vec!["finance".to_string(), "bank".to_string(), "important".to_string()])
-            .with_group(GROUP_PERSONAL_FINANCE)
-            .with_favorite(true));
+        passwords.push(
+            PasswordRecord::new(PWD_BOA, "Bank of America", "boa-pass")
+                .with_username("john.doe")
+                .with_url("https://bankofamerica.com")
+                .with_tags(vec![
+                    "finance".to_string(),
+                    "bank".to_string(),
+                    "important".to_string(),
+                ])
+                .with_group(GROUP_PERSONAL_FINANCE)
+                .with_favorite(true),
+        );
 
-        passwords.push(PasswordRecord::new(PWD_CHASE, "Chase", "chase-pass")
-            .with_username("john.doe@email.com")
-            .with_url("https://chase.com")
-            .with_tags(vec!["finance".to_string(), "bank".to_string()])
-            .with_group(GROUP_PERSONAL_FINANCE));
+        passwords.push(
+            PasswordRecord::new(PWD_CHASE, "Chase", "chase-pass")
+                .with_username("john.doe@email.com")
+                .with_url("https://chase.com")
+                .with_tags(vec!["finance".to_string(), "bank".to_string()])
+                .with_group(GROUP_PERSONAL_FINANCE),
+        );
 
-        passwords.push(PasswordRecord::new(PWD_PAYPAL, "PayPal", "paypal-pass")
-            .with_username("john.doe@email.com")
-            .with_url("https://paypal.com")
-            .with_tags(vec!["finance".to_string(), "payment".to_string()])
-            .with_group(GROUP_PERSONAL_FINANCE));
+        passwords.push(
+            PasswordRecord::new(PWD_PAYPAL, "PayPal", "paypal-pass")
+                .with_username("john.doe@email.com")
+                .with_url("https://paypal.com")
+                .with_tags(vec!["finance".to_string(), "payment".to_string()])
+                .with_group(GROUP_PERSONAL_FINANCE),
+        );
 
         // Personal -> Shopping
-        passwords.push(PasswordRecord::new(PWD_AMAZON, "Amazon", "amazon-pass")
-            .with_username("john.doe@email.com")
-            .with_url("https://amazon.com")
-            .with_tags(vec!["shopping".to_string()])
-            .with_group(GROUP_PERSONAL_SHOPPING));
+        passwords.push(
+            PasswordRecord::new(PWD_AMAZON, "Amazon", "amazon-pass")
+                .with_username("john.doe@email.com")
+                .with_url("https://amazon.com")
+                .with_tags(vec!["shopping".to_string()])
+                .with_group(GROUP_PERSONAL_SHOPPING),
+        );
 
-        passwords.push(PasswordRecord::new(PWD_EBAY, "eBay", "ebay-pass")
-            .with_username("johndoe_shopper")
-            .with_url("https://ebay.com")
-            .with_tags(vec!["shopping".to_string()])
-            .with_group(GROUP_PERSONAL_SHOPPING));
+        passwords.push(
+            PasswordRecord::new(PWD_EBAY, "eBay", "ebay-pass")
+                .with_username("johndoe_shopper")
+                .with_url("https://ebay.com")
+                .with_tags(vec!["shopping".to_string()])
+                .with_group(GROUP_PERSONAL_SHOPPING),
+        );
 
         // Personal (root level)
-        passwords.push(PasswordRecord::new(PWD_GMAIL_PERSONAL, "Gmail Personal", "gmail-personal-pass")
-            .with_username("john.doe.personal@gmail.com")
-            .with_url("https://mail.google.com")
-            .with_tags(vec!["email".to_string()])
-            .with_group(GROUP_PERSONAL));
+        passwords.push(
+            PasswordRecord::new(PWD_GMAIL_PERSONAL, "Gmail Personal", "gmail-personal-pass")
+                .with_username("john.doe.personal@gmail.com")
+                .with_url("https://mail.google.com")
+                .with_tags(vec!["email".to_string()])
+                .with_group(GROUP_PERSONAL),
+        );
 
         // Others -> Entertainment
-        passwords.push(PasswordRecord::new(PWD_NETFLIX, "Netflix", "netflix-pass")
-            .with_username("john.doe@email.com")
-            .with_url("https://netflix.com")
-            .with_tags(vec!["entertainment".to_string(), "streaming".to_string()])
-            .with_group(GROUP_OTHERS_ENTERTAINMENT)
-            .with_favorite(true));
+        passwords.push(
+            PasswordRecord::new(PWD_NETFLIX, "Netflix", "netflix-pass")
+                .with_username("john.doe@email.com")
+                .with_url("https://netflix.com")
+                .with_tags(vec!["entertainment".to_string(), "streaming".to_string()])
+                .with_group(GROUP_OTHERS_ENTERTAINMENT)
+                .with_favorite(true),
+        );
 
-        passwords.push(PasswordRecord::new(PWD_SPOTIFY, "Spotify", "spotify-pass")
-            .with_username("john.doe@email.com")
-            .with_url("https://spotify.com")
-            .with_tags(vec!["entertainment".to_string(), "music".to_string()])
-            .with_group(GROUP_OTHERS_ENTERTAINMENT));
+        passwords.push(
+            PasswordRecord::new(PWD_SPOTIFY, "Spotify", "spotify-pass")
+                .with_username("john.doe@email.com")
+                .with_url("https://spotify.com")
+                .with_tags(vec!["entertainment".to_string(), "music".to_string()])
+                .with_group(GROUP_OTHERS_ENTERTAINMENT),
+        );
 
-        passwords.push(PasswordRecord::new(PWD_YOUTUBE, "YouTube Premium", "youtube-pass")
-            .with_username("john.doe@email.com")
-            .with_url("https://youtube.com")
-            .with_tags(vec!["entertainment".to_string(), "streaming".to_string()])
-            .with_group(GROUP_OTHERS_ENTERTAINMENT));
+        passwords.push(
+            PasswordRecord::new(PWD_YOUTUBE, "YouTube Premium", "youtube-pass")
+                .with_username("john.doe@email.com")
+                .with_url("https://youtube.com")
+                .with_tags(vec!["entertainment".to_string(), "streaming".to_string()])
+                .with_group(GROUP_OTHERS_ENTERTAINMENT),
+        );
 
         // Others (root level)
-        passwords.push(PasswordRecord::new(PWD_WIFI, "Wifi Home", "wifi-home-pass")
-            .with_notes("Home wifi password")
-            .with_tags(vec!["network".to_string()])
-            .with_group(GROUP_OTHERS));
+        passwords.push(
+            PasswordRecord::new(PWD_WIFI, "Wifi Home", "wifi-home-pass")
+                .with_notes("Home wifi password")
+                .with_tags(vec!["network".to_string()])
+                .with_group(GROUP_OTHERS),
+        );
 
         // Expired password
         let mut expired = PasswordRecord::new(PWD_EXPIRED, "Old Service (Expired)", "old-pass")
@@ -350,18 +393,26 @@ impl MockVault {
         passwords.push(trashed2);
 
         // More favorites for testing
-        passwords.push(PasswordRecord::new(PWD_AWS, "AWS Console", "aws-pass")
-            .with_username("john-work")
-            .with_url("https://aws.amazon.com")
-            .with_tags(vec!["cloud".to_string(), "dev".to_string(), "important".to_string()])
-            .with_group(GROUP_WORK_DEV)
-            .with_favorite(true));
+        passwords.push(
+            PasswordRecord::new(PWD_AWS, "AWS Console", "aws-pass")
+                .with_username("john-work")
+                .with_url("https://aws.amazon.com")
+                .with_tags(vec![
+                    "cloud".to_string(),
+                    "dev".to_string(),
+                    "important".to_string(),
+                ])
+                .with_group(GROUP_WORK_DEV)
+                .with_favorite(true),
+        );
 
-        passwords.push(PasswordRecord::new(PWD_NOTION, "Notion", "notion-pass")
-            .with_username("john.doe@email.com")
-            .with_url("https://notion.so")
-            .with_tags(vec!["productivity".to_string()])
-            .with_group(GROUP_WORK));
+        passwords.push(
+            PasswordRecord::new(PWD_NOTION, "Notion", "notion-pass")
+                .with_username("john.doe@email.com")
+                .with_url("https://notion.so")
+                .with_tags(vec!["productivity".to_string()])
+                .with_group(GROUP_WORK),
+        );
 
         passwords
     }
@@ -372,7 +423,10 @@ impl MockVault {
 
         for group in groups {
             if let Some(parent_id) = &group.parent_id {
-                hierarchy.entry(parent_id.clone()).or_default().push(group.id.clone());
+                hierarchy
+                    .entry(parent_id.clone())
+                    .or_default()
+                    .push(group.id.clone());
             }
         }
 
@@ -408,7 +462,9 @@ impl MockVault {
         let mut nodes = Vec::new();
 
         // Get root groups (no parent)
-        let root_groups: Vec<&Group> = self.groups.iter()
+        let root_groups: Vec<&Group> = self
+            .groups
+            .iter()
             .filter(|g| g.parent_id.is_none())
             .collect();
 
@@ -440,18 +496,21 @@ impl MockVault {
         nodes: &mut Vec<VisibleNode>,
     ) {
         // Check if filter is active (not empty and not just "All")
-        let has_active_filter = filter.map_or(false, |f| {
-            !f.active_filters.is_empty() && !f.active_filters.contains(&crate::tui::state::filter_state::FilterType::All)
+        let has_active_filter = filter.is_some_and(|f| {
+            !f.active_filters.is_empty()
+                && !f
+                    .active_filters
+                    .contains(&crate::tui::state::filter_state::FilterType::All)
         });
 
         // Add group node
         let child_count = self.group_children.get(&group.id).map_or(0, |v| v.len());
         // When filtering, count visible passwords instead of total
         let password_count = if has_active_filter {
-            self.passwords.iter()
+            self.passwords
+                .iter()
                 .filter(|p| {
-                    p.group_id.as_deref() == Some(&group.id) &&
-                    filter.map_or(true, |f| f.matches(p))
+                    p.group_id.as_deref() == Some(&group.id) && filter.is_none_or(|f| f.matches(p))
                 })
                 .count()
         } else {
@@ -464,6 +523,7 @@ impl MockVault {
             node_type: NodeType::Folder,
             label: group.name.clone(),
             child_count: child_count + password_count,
+            is_favorite: false,
         });
 
         // If expanded, add children
@@ -472,7 +532,13 @@ impl MockVault {
             if let Some(child_ids) = self.group_children.get(&group.id) {
                 for child_id in child_ids {
                     if let Some(child_group) = self.groups.iter().find(|g| g.id == *child_id) {
-                        self.add_group_nodes_filtered(child_group, level + 1, expanded, filter, nodes);
+                        self.add_group_nodes_filtered(
+                            child_group,
+                            level + 1,
+                            expanded,
+                            filter,
+                            nodes,
+                        );
                     }
                 }
             }
@@ -480,17 +546,18 @@ impl MockVault {
             // Add passwords in this group (apply filter if active)
             for password in &self.passwords {
                 let matches_group = password.group_id.as_deref() == Some(&group.id);
-                let matches_filter = filter.map_or(true, |f| f.matches(password));
+                let matches_filter = filter.is_none_or(|f| f.matches(password));
 
                 if matches_group && matches_filter {
                     nodes.push(VisibleNode {
                         id: TreeNodeId::Password(
-                            uuid::Uuid::parse_str(&password.id).unwrap_or(uuid::Uuid::nil())
+                            uuid::Uuid::parse_str(&password.id).unwrap_or(uuid::Uuid::nil()),
                         ),
                         level: level + 1,
                         node_type: NodeType::Password,
                         label: password.name.clone(),
                         child_count: 0,
+                        is_favorite: password.is_favorite,
                     });
                 }
             }
@@ -499,7 +566,8 @@ impl MockVault {
 
     /// Filter passwords based on filter state
     pub fn filter_passwords(&self, filter: &FilterState) -> Vec<&PasswordRecord> {
-        self.passwords.iter()
+        self.passwords
+            .iter()
             .filter(|p| filter.matches(p))
             .collect()
     }
@@ -526,7 +594,7 @@ impl MockVault {
             if password.is_favorite {
                 counts.favorite += 1;
             }
-            if password.expires_at.map_or(false, |e| e < Utc::now()) {
+            if password.expires_at.is_some_and(|e| e < Utc::now()) {
                 counts.expired += 1;
             }
             for tag in &password.tags {
@@ -581,7 +649,17 @@ impl MockVault {
 
     /// Update password fields
     /// Returns true if password was found and updated
-    pub fn update_password(&mut self, id: &str, username: Option<String>, password: Option<String>, url: Option<String>, notes: Option<String>, tags: Vec<String>, group_id: Option<String>) -> bool {
+    #[allow(clippy::too_many_arguments)]
+    pub fn update_password(
+        &mut self,
+        id: &str,
+        username: Option<String>,
+        password: Option<String>,
+        url: Option<String>,
+        notes: Option<String>,
+        tags: Vec<String>,
+        group_id: Option<String>,
+    ) -> bool {
         if let Some(pwd) = self.passwords.iter_mut().find(|p| p.id == id) {
             if let Some(u) = username {
                 pwd.username = Some(u);
@@ -617,8 +695,6 @@ pub struct FilterCounts {
     pub favorite: usize,
     pub by_tag: HashMap<String, usize>,
 }
-
-#[cfg(test)]
 
 #[cfg(test)]
 mod tests {
@@ -709,7 +785,7 @@ mod tests {
         assert_eq!(passwords.len(), 1);
 
         for password in passwords {
-            assert!(password.expires_at.map_or(false, |e| e < Utc::now()));
+            assert!(password.expires_at.is_some_and(|e| e < Utc::now()));
         }
     }
 
@@ -823,12 +899,17 @@ mod tests {
         let nodes = vault.get_filtered_visible_nodes(&expanded, Some(&filter));
 
         // Count password nodes (should only be favorites)
-        let password_nodes: Vec<_> = nodes.iter()
+        let password_nodes: Vec<_> = nodes
+            .iter()
             .filter(|n| matches!(n.node_type, NodeType::Password))
             .collect();
 
         // Should have 6 favorite passwords
-        assert_eq!(password_nodes.len(), 6, "Expected 6 favorite password nodes");
+        assert_eq!(
+            password_nodes.len(),
+            6,
+            "Expected 6 favorite password nodes"
+        );
     }
 
     #[test]
@@ -851,7 +932,8 @@ mod tests {
         expanded.insert(mock_ids::GROUP_WORK.to_string());
         let nodes_expanded = vault.get_filtered_visible_nodes(&expanded, Some(&filter));
 
-        let password_nodes: Vec<_> = nodes_expanded.iter()
+        let password_nodes: Vec<_> = nodes_expanded
+            .iter()
             .filter(|n| matches!(n.node_type, NodeType::Password))
             .collect();
 

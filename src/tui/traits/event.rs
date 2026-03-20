@@ -2,8 +2,8 @@
 //!
 //! 定义 TUI 框架中使用的所有事件类型，包括应用事件、处理结果、操作等。
 
-use crate::tui::traits::ComponentId;
 use crate::tui::components::ConfirmAction;
+use crate::tui::traits::ComponentId;
 use crossterm::event::{KeyEvent, MouseEvent};
 
 // ============================================================================
@@ -159,7 +159,6 @@ impl Default for Action {
 // ============================================================================
 // 事件分发器 Trait
 // ============================================================================
-
 
 /// 事件分发器 trait
 ///

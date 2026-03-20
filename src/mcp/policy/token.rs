@@ -91,8 +91,8 @@ impl ConfirmationToken {
             "{}:{}:{}:{}",
             self.nonce, self.credential_name, self.tool, self.session_id
         );
-        let mut mac = HmacSha256::new_from_slice(key).map_err(|_| {
-            KeyringError::Crypto { context: "Invalid HMAC key length".to_string() }
+        let mut mac = HmacSha256::new_from_slice(key).map_err(|_| KeyringError::Crypto {
+            context: "Invalid HMAC key length".to_string(),
         })?;
         mac.update(message.as_bytes());
         Ok(hex::encode(mac.finalize().into_bytes()))
@@ -112,8 +112,8 @@ impl ConfirmationToken {
             signature: &self.signature,
         };
 
-        let json = serde_json::to_string(&token_data).map_err(|e| {
-            KeyringError::Crypto { context: format!("Token serialization failed: {}", e) }
+        let json = serde_json::to_string(&token_data).map_err(|e| KeyringError::Crypto {
+            context: format!("Token serialization failed: {}", e),
         })?;
         Ok(STANDARD.encode(json))
     }
@@ -253,7 +253,8 @@ mod tests {
             "test_tool".to_string(),
             "session".to_string(),
             b"key",
-        ).unwrap();
+        )
+        .unwrap();
         // 16 bytes = 32 hex chars
         assert_eq!(token.nonce.len(), 32);
     }

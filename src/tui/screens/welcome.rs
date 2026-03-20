@@ -195,11 +195,7 @@ impl WelcomeScreen {
                 ),
             ]),
         ])
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Options "),
-        )
+        .block(Block::default().borders(Borders::ALL).title(" Options "))
         .wrap(Wrap { trim: false });
 
         frame.render_widget(choices, chunks[5]);

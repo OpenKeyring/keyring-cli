@@ -233,12 +233,10 @@ impl UnlockScreen {
                 ),
             ]),
             Line::from(""),
-            Line::from(vec![
-                Span::styled(
-                    "Your data is encrypted and stored locally",
-                    Style::default().fg(Color::DarkGray),
-                ),
-            ]),
+            Line::from(vec![Span::styled(
+                "Your data is encrypted and stored locally",
+                Style::default().fg(Color::DarkGray),
+            )]),
         ])
         .wrap(Wrap { trim: true });
 

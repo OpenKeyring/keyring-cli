@@ -1,7 +1,19 @@
 //! Provider Configuration Screen Tests
 
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use keyring_cli::cloud::CloudProvider;
 use keyring_cli::tui::screens::provider_config::ProviderConfigScreen;
+use keyring_cli::tui::traits::HandleResult;
+
+/// Helper to create a key event
+fn key_event(code: KeyCode, modifiers: KeyModifiers) -> KeyEvent {
+    KeyEvent::new(code, modifiers)
+}
+
+/// Helper to create a simple key press
+fn key(code: KeyCode) -> KeyEvent {
+    key_event(code, KeyModifiers::NONE)
+}
 
 #[test]
 fn test_webdav_config_fields() {
@@ -22,14 +34,14 @@ fn test_field_navigation() {
     assert_eq!(screen.get_focused_field_index(), 0);
 
     // Tab to next field
-    screen.handle_tab();
+    screen.handle_key(key(KeyCode::Tab));
     assert_eq!(screen.get_focused_field_index(), 1);
 
     // Enter text
-    screen.handle_char('h');
-    screen.handle_char('t');
-    screen.handle_char('t');
-    screen.handle_char('p');
+    screen.handle_key(key(KeyCode::Char('h')));
+    screen.handle_key(key(KeyCode::Char('t')));
+    screen.handle_key(key(KeyCode::Char('t')));
+    screen.handle_key(key(KeyCode::Char('p')));
 
     assert_eq!(screen.get_field_value(1), Some("http".to_string()));
 }
@@ -52,17 +64,17 @@ fn test_shift_tab_navigation() {
     let mut screen = ProviderConfigScreen::new(CloudProvider::SFTP);
 
     // Move to third field
-    screen.handle_tab();
-    screen.handle_tab();
+    screen.handle_key(key(KeyCode::Tab));
+    screen.handle_key(key(KeyCode::Tab));
     assert_eq!(screen.get_focused_field_index(), 2);
 
     // Shift+Tab back
-    screen.handle_shift_tab();
+    screen.handle_key(key_event(KeyCode::BackTab, KeyModifiers::SHIFT));
     assert_eq!(screen.get_focused_field_index(), 1);
 
     // Can't go below 0
-    screen.handle_shift_tab();
-    screen.handle_shift_tab();
+    screen.handle_key(key_event(KeyCode::BackTab, KeyModifiers::SHIFT));
+    screen.handle_key(key_event(KeyCode::BackTab, KeyModifiers::SHIFT));
     assert_eq!(screen.get_focused_field_index(), 0);
 }
 
@@ -71,21 +83,21 @@ fn test_backspace() {
     let mut screen = ProviderConfigScreen::new(CloudProvider::WebDAV);
 
     // Enter text in first field
-    screen.handle_char('h');
-    screen.handle_char('e');
-    screen.handle_char('l');
-    screen.handle_char('l');
-    screen.handle_char('o');
+    screen.handle_key(key(KeyCode::Char('h')));
+    screen.handle_key(key(KeyCode::Char('e')));
+    screen.handle_key(key(KeyCode::Char('l')));
+    screen.handle_key(key(KeyCode::Char('l')));
+    screen.handle_key(key(KeyCode::Char('o')));
 
     assert_eq!(screen.get_field_value(0), Some("hello".to_string()));
 
     // Backspace
-    screen.handle_backspace();
+    screen.handle_key(key(KeyCode::Backspace));
     assert_eq!(screen.get_field_value(0), Some("hell".to_string()));
 
     // Backspace multiple times
-    screen.handle_backspace();
-    screen.handle_backspace();
+    screen.handle_key(key(KeyCode::Backspace));
+    screen.handle_key(key(KeyCode::Backspace));
     assert_eq!(screen.get_field_value(0), Some("he".to_string()));
 }
 
@@ -94,11 +106,11 @@ fn test_provider_config() {
     let mut screen = ProviderConfigScreen::new(CloudProvider::WebDAV);
 
     // Fill in some values
-    screen.handle_char('u');
-    screen.handle_tab();
-    screen.handle_char('a');
-    screen.handle_tab();
-    screen.handle_char('p');
+    screen.handle_key(key(KeyCode::Char('u')));
+    screen.handle_key(key(KeyCode::Tab));
+    screen.handle_key(key(KeyCode::Char('a')));
+    screen.handle_key(key(KeyCode::Tab));
+    screen.handle_key(key(KeyCode::Char('p')));
 
     let config = screen.get_config();
     assert_eq!(config.provider, CloudProvider::WebDAV);
@@ -113,11 +125,11 @@ fn test_password_field_masking() {
     let fields = screen.get_fields();
 
     // Password field should be marked for masking
-    assert_eq!(fields[2].is_password, true);
+    assert!(fields[2].is_password);
 
     // Other fields should not be password fields
-    assert_eq!(fields[0].is_password, false);
-    assert_eq!(fields[1].is_password, false);
+    assert!(!fields[0].is_password);
+    assert!(!fields[1].is_password);
 }
 
 #[test]
@@ -208,17 +220,17 @@ fn test_upyun_config_fields() {
 #[test]
 fn test_webdav_config_conversion() {
     let mut screen = ProviderConfigScreen::new(CloudProvider::WebDAV);
-    // Use handle_char to input values
+    // Use handle_key to input values
     for c in "https://dav.example.com".chars() {
-        screen.handle_char(c);
+        screen.handle_key(key(KeyCode::Char(c)));
     }
-    screen.handle_tab();
+    screen.handle_key(key(KeyCode::Tab));
     for c in "user".chars() {
-        screen.handle_char(c);
+        screen.handle_key(key(KeyCode::Char(c)));
     }
-    screen.handle_tab();
+    screen.handle_key(key(KeyCode::Tab));
     for c in "pass".chars() {
-        screen.handle_char(c);
+        screen.handle_key(key(KeyCode::Char(c)));
     }
 
     let config = screen.to_cloud_config();
@@ -235,23 +247,23 @@ fn test_webdav_config_conversion() {
 fn test_sftp_config_conversion_with_port() {
     let mut screen = ProviderConfigScreen::new(CloudProvider::SFTP);
     for c in "example.com".chars() {
-        screen.handle_char(c);
+        screen.handle_key(key(KeyCode::Char(c)));
     }
-    screen.handle_tab();
+    screen.handle_key(key(KeyCode::Tab));
     for c in "2222".chars() {
-        screen.handle_char(c);
+        screen.handle_key(key(KeyCode::Char(c)));
     }
-    screen.handle_tab();
+    screen.handle_key(key(KeyCode::Tab));
     for c in "user".chars() {
-        screen.handle_char(c);
+        screen.handle_key(key(KeyCode::Char(c)));
     }
-    screen.handle_tab();
+    screen.handle_key(key(KeyCode::Tab));
     for c in "pass".chars() {
-        screen.handle_char(c);
+        screen.handle_key(key(KeyCode::Char(c)));
     }
-    screen.handle_tab();
+    screen.handle_key(key(KeyCode::Tab));
     for c in "/root".chars() {
-        screen.handle_char(c);
+        screen.handle_key(key(KeyCode::Char(c)));
     }
 
     let config = screen.to_cloud_config();
@@ -270,15 +282,29 @@ fn test_form_validate_rejects_empty_fields() {
 fn test_form_validate_accepts_password_field_empty() {
     let mut screen = ProviderConfigScreen::new(CloudProvider::WebDAV);
     for c in "https://example.com".chars() {
-        screen.handle_char(c);
+        screen.handle_key(key(KeyCode::Char(c)));
     }
-    screen.handle_tab();
+    screen.handle_key(key(KeyCode::Tab));
     for c in "user".chars() {
-        screen.handle_char(c);
+        screen.handle_key(key(KeyCode::Char(c)));
     }
     // Password is empty (not filled)
     // Should validate ok since only non-password fields must be non-empty
     assert!(screen.validate().is_ok());
+}
+
+#[test]
+fn test_escape_key() {
+    let mut screen = ProviderConfigScreen::new(CloudProvider::WebDAV);
+    let result = screen.handle_key(key(KeyCode::Esc));
+    assert!(matches!(result, HandleResult::Action(_)));
+}
+
+#[test]
+fn test_enter_key() {
+    let mut screen = ProviderConfigScreen::new(CloudProvider::WebDAV);
+    let result = screen.handle_key(key(KeyCode::Enter));
+    assert!(matches!(result, HandleResult::Action(_)));
 }
 
 // Tests for connection test functionality
@@ -292,7 +318,7 @@ async fn test_provider_config_test_connection_with_temp_dir() {
     // Create a valid iCloud config
     let mut screen = ProviderConfigScreen::new(CloudProvider::ICloud);
     for c in temp_dir.path().to_string_lossy().chars() {
-        screen.handle_char(c);
+        screen.handle_key(key(KeyCode::Char(c)));
     }
 
     let result = screen.test_connection().await;

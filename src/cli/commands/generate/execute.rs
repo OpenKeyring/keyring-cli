@@ -40,17 +40,17 @@ pub async fn execute(args: NewArgs) -> Result<()> {
     };
     let mut crypto = CryptoManager::new();
     let dek = keystore.get_dek();
-    let dek_array: [u8; 32] = dek.try_into().map_err(|_| {
-        KeyringError::Crypto {
-            context: "Invalid DEK length: expected 32 bytes".to_string(),
-        }
+    let dek_array: [u8; 32] = dek.try_into().map_err(|_| KeyringError::Crypto {
+        context: "Invalid DEK length: expected 32 bytes".to_string(),
     })?;
     crypto.initialize_with_key(dek_array);
 
     // Generate password based on type
     let password_type = args.get_password_type()?;
     let password = match password_type {
-        PasswordType::Random => generators::generate_random(args.length, args.numbers, args.symbols)?,
+        PasswordType::Random => {
+            generators::generate_random(args.length, args.numbers, args.symbols)?
+        }
         PasswordType::Memorable => generators::generate_memorable(args.words)?,
         PasswordType::Pin => generators::generate_pin(args.length)?,
     };

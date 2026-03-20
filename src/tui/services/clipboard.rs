@@ -3,10 +3,12 @@
 //! 封装现有 ClipboardManager 实现，提供 TUI 层所需的剪贴板接口。
 //! 集成真实系统剪贴板（通过 arboard crate）。
 
-use crate::clipboard::{create_platform_clipboard, ClipboardManager as PlatformClipboardManager, BoxClipboardManager};
+use crate::clipboard::{
+    create_platform_clipboard, BoxClipboardManager, ClipboardManager as PlatformClipboardManager,
+};
 use crate::tui::traits::{
-    ClipboardConfig, ClipboardContentType, ClipboardService, ClipboardState, SecureClipboardContent,
-    SecureString,
+    ClipboardConfig, ClipboardContentType, ClipboardService, ClipboardState,
+    SecureClipboardContent, SecureString,
 };
 use std::io;
 
@@ -49,7 +51,9 @@ impl TuiClipboardService {
     /// Check if system clipboard is available
     #[must_use]
     pub fn is_system_clipboard_available(&self) -> bool {
-        self.system_clipboard.as_ref().is_some_and(|cb| cb.is_supported())
+        self.system_clipboard
+            .as_ref()
+            .is_some_and(|cb| cb.is_supported())
     }
 }
 
@@ -61,7 +65,11 @@ impl Default for TuiClipboardService {
 
 impl ClipboardService for TuiClipboardService {
     /// 复制内容（使用 SecureString）
-    fn copy_secure(&mut self, content: SecureString, content_type: ClipboardContentType) -> io::Result<()> {
+    fn copy_secure(
+        &mut self,
+        content: SecureString,
+        content_type: ClipboardContentType,
+    ) -> io::Result<()> {
         // Copy to system clipboard if available (non-fatal if it fails)
         if let Some(ref mut clipboard) = self.system_clipboard {
             if let Some(text) = content.expose() {
@@ -174,7 +182,10 @@ mod tests {
         let result = service.copy_str("my_secret_password", ClipboardContentType::Password);
         assert!(result.is_ok());
         assert!(service.state().has_content());
-        assert_eq!(service.state().content_type(), Some(ClipboardContentType::Password));
+        assert_eq!(
+            service.state().content_type(),
+            Some(ClipboardContentType::Password)
+        );
     }
 
     #[test]
@@ -184,7 +195,10 @@ mod tests {
         let result = service.copy_str("user@example.com", ClipboardContentType::Username);
         assert!(result.is_ok());
         assert!(service.state().has_content());
-        assert_eq!(service.state().content_type(), Some(ClipboardContentType::Username));
+        assert_eq!(
+            service.state().content_type(),
+            Some(ClipboardContentType::Username)
+        );
     }
 
     #[test]
@@ -202,7 +216,9 @@ mod tests {
         let mut service = TuiClipboardService::new();
 
         // 复制一些内容
-        service.copy_str("test", ClipboardContentType::Password).unwrap();
+        service
+            .copy_str("test", ClipboardContentType::Password)
+            .unwrap();
         assert!(service.state().has_content());
 
         // 清除
@@ -216,7 +232,9 @@ mod tests {
         let mut service = TuiClipboardService::new();
 
         // 复制一些内容
-        service.copy_str("secret", ClipboardContentType::Password).unwrap();
+        service
+            .copy_str("secret", ClipboardContentType::Password)
+            .unwrap();
         assert!(service.state().has_content());
 
         // 使用 SecureClear trait 清除
@@ -241,7 +259,9 @@ mod tests {
         assert!(!service.should_clear());
 
         // 复制后（未到时间）也不需要清除
-        service.copy_str("test", ClipboardContentType::Password).unwrap();
+        service
+            .copy_str("test", ClipboardContentType::Password)
+            .unwrap();
         assert!(!service.should_clear());
     }
 
@@ -253,7 +273,9 @@ mod tests {
         assert!(service.tick().is_none());
 
         // 复制后 tick 返回剩余秒数
-        service.copy_str("test", ClipboardContentType::Password).unwrap();
+        service
+            .copy_str("test", ClipboardContentType::Password)
+            .unwrap();
         let remaining = service.tick();
         // 应该有剩余时间（默认 30 秒超时）
         assert!(remaining.is_some());

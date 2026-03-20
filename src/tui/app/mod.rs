@@ -29,10 +29,10 @@ use crate::error::Result;
 use crate::tui::keybindings::KeyBindingManager;
 use crate::tui::screens::wizard::WizardState;
 use crate::tui::screens::{
-    ClipboardTimeoutScreen, EditPasswordScreen, MainScreen, MasterPasswordScreen, NewPasswordScreen,
-    PasskeyGenerateScreen, PasskeyImportScreen, PasskeyVerifyScreen, PasswordPolicyScreen,
-    SecurityNoticeScreen, SettingsScreen, SyncScreen, TrashRetentionScreen, TrashScreen,
-    UnlockScreen, WelcomeScreen,
+    ClipboardTimeoutScreen, EditPasswordScreen, MainScreen, MasterPasswordScreen,
+    NewPasswordScreen, PasskeyGenerateScreen, PasskeyImportScreen, PasskeyVerifyScreen,
+    PasswordPolicyScreen, SecurityNoticeScreen, SettingsScreen, SyncScreen, TrashRetentionScreen,
+    TrashScreen, UnlockScreen, WelcomeScreen,
 };
 use crate::tui::state::AppState;
 

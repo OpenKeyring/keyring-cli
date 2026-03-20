@@ -3,9 +3,7 @@
 //! Core state machine for the onboarding wizard, managing the flow between
 //! different wizard steps and collecting user data.
 
-use super::types::{
-    ClipboardTimeout, PasswordPolicyConfig, TrashRetention, WizardStep,
-};
+use super::types::{ClipboardTimeout, PasswordPolicyConfig, TrashRetention, WizardStep};
 use crate::tui::screens::welcome::WelcomeChoice;
 use std::path::PathBuf;
 
@@ -202,9 +200,11 @@ impl WizardState {
             WizardStep::Welcome => self.passkey_choice.is_some(),
 
             // === New Setup Flow ===
-            WizardStep::MasterPassword => {
-                self.master_password.as_ref().map(|p| p.len() >= 8).unwrap_or(false)
-            }
+            WizardStep::MasterPassword => self
+                .master_password
+                .as_ref()
+                .map(|p| p.len() >= 8)
+                .unwrap_or(false),
             WizardStep::MasterPasswordConfirm => self.passwords_match(),
             WizardStep::SecurityNotice => true,
             WizardStep::PasskeyGenerate => self.passkey_words.is_some(),
@@ -212,9 +212,11 @@ impl WizardState {
 
             // === Import Flow ===
             WizardStep::PasskeyImport => self.passkey_words.is_some(),
-            WizardStep::MasterPasswordImport => {
-                self.master_password.as_ref().map(|p| p.len() >= 8).unwrap_or(false)
-            }
+            WizardStep::MasterPasswordImport => self
+                .master_password
+                .as_ref()
+                .map(|p| p.len() >= 8)
+                .unwrap_or(false),
             WizardStep::MasterPasswordImportConfirm => self.passwords_match(),
             WizardStep::PasswordHint => true,
 
@@ -248,11 +250,16 @@ impl WizardState {
 
     /// Verify passkey answers against expected words
     pub fn verify_passkey(&self) -> bool {
-        match (&self.verify_positions, &self.verify_answers, &self.passkey_words) {
+        match (
+            &self.verify_positions,
+            &self.verify_answers,
+            &self.passkey_words,
+        ) {
             (Some(positions), Some(answers), Some(words)) => {
                 for (i, &pos) in positions.iter().enumerate() {
                     if i < answers.len() && pos > 0 && pos <= words.len() {
-                        if answers[i].to_lowercase().trim() != words[pos - 1].to_lowercase().trim() {
+                        if answers[i].to_lowercase().trim() != words[pos - 1].to_lowercase().trim()
+                        {
                             return false;
                         }
                     } else {

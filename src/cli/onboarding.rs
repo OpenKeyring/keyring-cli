@@ -99,8 +99,8 @@ pub fn unlock_keystore() -> Result<CryptoManager> {
         // Initialize CryptoManager with DEK
         let mut crypto = CryptoManager::new();
         let dek = keystore.get_dek();
-        let dek_array: [u8; 32] = dek.try_into().map_err(|_| {
-            KeyringError::Crypto { context: "Invalid DEK length: expected 32 bytes".to_string() }
+        let dek_array: [u8; 32] = dek.try_into().map_err(|_| KeyringError::Crypto {
+            context: "Invalid DEK length: expected 32 bytes".to_string(),
         })?;
         crypto.initialize_with_key(dek_array);
 

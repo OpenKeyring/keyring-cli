@@ -4,7 +4,7 @@
 
 use crate::tui::components::ConfirmAction;
 use crate::tui::error::{TuiError, TuiResult};
-use crate::tui::traits::{Component, BuildContext, Action, ScreenType};
+use crate::tui::traits::{Action, BuildContext, Component, ScreenType};
 use ratatui::layout::Rect;
 
 // ============================================================================
@@ -257,7 +257,11 @@ pub trait ScreenFactory: Send + Sync {
     }
 
     /// 根据屏幕类型创建屏幕
-    fn create(&self, screen_type: &ScreenType, context: &BuildContext) -> TuiResult<Box<dyn Screen>> {
+    fn create(
+        &self,
+        screen_type: &ScreenType,
+        context: &BuildContext,
+    ) -> TuiResult<Box<dyn Screen>> {
         match screen_type {
             ScreenType::Wizard => self.create_wizard(context),
             ScreenType::NewPassword => self.create_new_password(context),

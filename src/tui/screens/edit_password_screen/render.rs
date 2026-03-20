@@ -17,7 +17,11 @@ impl Render for EditPasswordScreen {
             .title("  Edit Password  ")
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::Cyan))
-            .title_style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD));
+            .title_style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            );
 
         let inner = block.inner(area);
         block.render(area, buf);
@@ -49,7 +53,9 @@ impl Render for EditPasswordScreen {
 
             let is_focused = i == self.focused_field;
             let label_style = if is_focused {
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             };
@@ -191,14 +197,7 @@ impl Render for EditPasswordScreen {
 
 impl EditPasswordScreen {
     /// Render a text field
-    fn render_text_field(
-        &self,
-        buf: &mut Buffer,
-        inner: Rect,
-        y: u16,
-        value: &str,
-        style: Style,
-    ) {
+    fn render_text_field(&self, buf: &mut Buffer, inner: Rect, y: u16, value: &str, style: Style) {
         let content = if value.is_empty() {
             Span::raw("")
         } else {

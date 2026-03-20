@@ -3,8 +3,8 @@
 //! 测试 AppEvent、HandleResult、Action、ScreenType 等事件相关类型。
 
 use crate::tui::components::ConfirmAction;
-use crate::tui::traits::{Action, AppEvent, FilterType, HandleResult, ScreenType, ComponentId};
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent, MouseButton, MouseEventKind};
+use crate::tui::traits::{Action, AppEvent, ComponentId, FilterType, HandleResult, ScreenType};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 
 // ============================================================================
 // AppEvent 测试

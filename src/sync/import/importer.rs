@@ -36,11 +36,12 @@ impl SyncImporter for JsonSyncImporter {
     }
 
     fn sync_record_to_db(&self, sync_record: SyncRecord) -> Result<StoredRecord, KeyringError> {
-        let encrypted_data = STANDARD
-            .decode(sync_record.encrypted_data)
-            .map_err(|e| KeyringError::Crypto {
-                context: format!("Invalid encrypted_data encoding: {}", e),
-            })?;
+        let encrypted_data =
+            STANDARD
+                .decode(sync_record.encrypted_data)
+                .map_err(|e| KeyringError::Crypto {
+                    context: format!("Invalid encrypted_data encoding: {}", e),
+                })?;
 
         let nonce_bytes = STANDARD
             .decode(sync_record.nonce)

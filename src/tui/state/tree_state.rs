@@ -34,6 +34,8 @@ pub struct VisibleNode {
     pub label: String,
     /// Child count
     pub child_count: usize,
+    /// Whether this password is marked as favorite (only for Password nodes)
+    pub is_favorite: bool,
 }
 
 /// Tree component state
@@ -113,9 +115,7 @@ impl TreeState {
 
     /// Update highlighted node reference
     fn update_highlighted_node(&mut self) {
-        self.highlighted_node = self.visible_nodes
-            .get(self.highlighted_index)
-            .map(|n| n.id);
+        self.highlighted_node = self.visible_nodes.get(self.highlighted_index).map(|n| n.id);
     }
 
     /// Get current highlighted node
@@ -141,6 +141,7 @@ mod tests {
             node_type: NodeType::Folder,
             label: "Test".to_string(),
             child_count: 0,
+            is_favorite: false,
         }
     }
 
@@ -166,13 +167,15 @@ mod tests {
 
     #[test]
     fn test_move_up_down() {
-        let mut state = TreeState::default();
-        state.visible_nodes = vec![
-            create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
-            create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
-            create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
-        ];
-        state.highlighted_index = 1;
+        let mut state = TreeState {
+            visible_nodes: vec![
+                create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
+                create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
+                create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
+            ],
+            highlighted_index: 1,
+            ..Default::default()
+        };
 
         state.move_up();
         assert_eq!(state.highlighted_index, 0);
@@ -192,13 +195,15 @@ mod tests {
 
     #[test]
     fn test_move_to_top_bottom() {
-        let mut state = TreeState::default();
-        state.visible_nodes = vec![
-            create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
-            create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
-            create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
-        ];
-        state.highlighted_index = 1;
+        let mut state = TreeState {
+            visible_nodes: vec![
+                create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
+                create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
+                create_visible_node(TreeNodeId::Group(Uuid::new_v4())),
+            ],
+            highlighted_index: 1,
+            ..Default::default()
+        };
 
         state.move_to_top();
         assert_eq!(state.highlighted_index, 0);

@@ -141,24 +141,32 @@ mod tests {
         // "abandon" (word 0) vs "about" (word 127) - different 11-bit values
         // The checksum (last 4 bits) will no longer match SHA256(entire entropy)
         let invalid_last_word = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon";
-        assert!(!validate_mnemonic(invalid_last_word).unwrap(),
-            "Mnemonic with corrupted last word (wrong checksum) should be invalid");
+        assert!(
+            !validate_mnemonic(invalid_last_word).unwrap(),
+            "Mnemonic with corrupted last word (wrong checksum) should be invalid"
+        );
 
         // Test 2: Change a middle word to invalidate both entropy and checksum
         // Word 5 changed from "abandon" (0) to "ability" (7)
         // This corrupts the entropy bits, making the checksum invalid
         let invalid_middle = "abandon abandon abandon abandon abandon ability abandon abandon abandon abandon abandon about";
-        assert!(!validate_mnemonic(invalid_middle).unwrap(),
-            "Mnemonic with corrupted middle word should be invalid");
+        assert!(
+            !validate_mnemonic(invalid_middle).unwrap(),
+            "Mnemonic with corrupted middle word should be invalid"
+        );
 
         // Test 3: Use wrong word count (only 11 words instead of 12)
         let wrong_count = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon";
-        assert!(!validate_mnemonic(wrong_count).unwrap(),
-            "Mnemonic with wrong word count should be invalid");
+        assert!(
+            !validate_mnemonic(wrong_count).unwrap(),
+            "Mnemonic with wrong word count should be invalid"
+        );
 
         // Test 4: Words in wrong order (scrambled)
         let scrambled = "about abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon";
-        assert!(!validate_mnemonic(scrambled).unwrap(),
-            "Mnemonic with scrambled word order should be invalid");
+        assert!(
+            !validate_mnemonic(scrambled).unwrap(),
+            "Mnemonic with scrambled word order should be invalid"
+        );
     }
 }

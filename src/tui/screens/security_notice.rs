@@ -60,57 +60,44 @@ impl Render for SecurityNoticeScreen {
 
         let notice_lines = vec![
             Line::from(""),
-            Line::from(
-                "┌─────────────────────────────────────────────────────────────┐"
-            ).style(Style::default().fg(Color::Yellow)),
-            Line::from(
-                "│                                                             │"
-            ).style(Style::default().fg(Color::Yellow)),
-            Line::from(
-                "│   ⚠️  YOUR MASTER PASSWORD CANNOT BE RECOVERED!            │"
-            ).style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
-            Line::from(
-                "│                                                             │"
-            ).style(Style::default().fg(Color::Yellow)),
-            Line::from(
-                "│   If you forget your master password, you will lose        │"
-            ).style(Style::default().fg(Color::Yellow)),
-            Line::from(
-                "│   access to ALL your passwords permanently.                │"
-            ).style(Style::default().fg(Color::Yellow)),
-            Line::from(
-                "│                                                             │"
-            ).style(Style::default().fg(Color::Yellow)),
-            Line::from(
-                "│   We STRONGLY recommend setting up a PassKey               │"
-            ).style(Style::default().fg(Color::Yellow)),
-            Line::from(
-                "│   (24-word recovery phrase) as a backup.                   │"
-            ).style(Style::default().fg(Color::Yellow)),
-            Line::from(
-                "│                                                             │"
-            ).style(Style::default().fg(Color::Yellow)),
-            Line::from(
-                "└─────────────────────────────────────────────────────────────┘"
-            ).style(Style::default().fg(Color::Yellow)),
+            Line::from("┌─────────────────────────────────────────────────────────────┐")
+                .style(Style::default().fg(Color::Yellow)),
+            Line::from("│                                                             │")
+                .style(Style::default().fg(Color::Yellow)),
+            Line::from("│   ⚠️  YOUR MASTER PASSWORD CANNOT BE RECOVERED!            │")
+                .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Line::from("│                                                             │")
+                .style(Style::default().fg(Color::Yellow)),
+            Line::from("│   If you forget your master password, you will lose        │")
+                .style(Style::default().fg(Color::Yellow)),
+            Line::from("│   access to ALL your passwords permanently.                │")
+                .style(Style::default().fg(Color::Yellow)),
+            Line::from("│                                                             │")
+                .style(Style::default().fg(Color::Yellow)),
+            Line::from("│   We STRONGLY recommend setting up a PassKey               │")
+                .style(Style::default().fg(Color::Yellow)),
+            Line::from("│   (24-word recovery phrase) as a backup.                   │")
+                .style(Style::default().fg(Color::Yellow)),
+            Line::from("│                                                             │")
+                .style(Style::default().fg(Color::Yellow)),
+            Line::from("└─────────────────────────────────────────────────────────────┘")
+                .style(Style::default().fg(Color::Yellow)),
             Line::from(""),
             Line::from(""),
             Line::from({
                 if self.acknowledged {
-                    "[✓] I understand the risk and want to continue"
-                        .to_string()
+                    "[✓] I understand the risk and want to continue".to_string()
                 } else {
-                    "[ ] I understand the risk and want to continue"
-                        .to_string()
+                    "[ ] I understand the risk and want to continue".to_string()
                 }
-            }).style(Style::default().fg(Color::Cyan)),
+            })
+            .style(Style::default().fg(Color::Cyan)),
             Line::from(""),
             Line::from("Press SPACE to acknowledge, then ENTER to continue")
                 .style(Style::default().fg(Color::DarkGray)),
         ];
 
-        let paragraph = Paragraph::new(notice_lines)
-            .alignment(Alignment::Center);
+        let paragraph = Paragraph::new(notice_lines).alignment(Alignment::Center);
 
         paragraph.render(inner, buf);
     }

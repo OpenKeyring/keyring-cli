@@ -18,7 +18,10 @@ use ratatui::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConfirmAction {
     /// Delete password (move to trash)
-    DeletePassword { password_id: String, password_name: String },
+    DeletePassword {
+        password_id: String,
+        password_name: String,
+    },
     /// Permanently delete
     PermanentDelete(String),
     /// Empty trash
@@ -75,7 +78,10 @@ impl ConfirmDialog {
             confirm_label: "Delete".to_string(),
             cancel_label: "Cancel".to_string(),
             focused_on_confirm: false,
-            action: ConfirmAction::DeletePassword { password_id: password_id.to_string(), password_name: password_name.to_string() },
+            action: ConfirmAction::DeletePassword {
+                password_id: password_id.to_string(),
+                password_name: password_name.to_string(),
+            },
             visible: true,
         }
     }
@@ -222,10 +228,7 @@ impl Render for ConfirmDialog {
         // Render buttons
         let button_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage(50),
-                Constraint::Percentage(50),
-            ])
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(chunks[3]);
 
         // Cancel button (left)
@@ -237,11 +240,8 @@ impl Render for ConfirmDialog {
                 .add_modifier(Modifier::REVERSED)
         };
         let cancel_text = format!("[ {} ]", self.cancel_label);
-        let cancel_btn = Paragraph::new(Line::from(Span::styled(
-            cancel_text,
-            cancel_style,
-        )))
-        .alignment(Alignment::Center);
+        let cancel_btn = Paragraph::new(Line::from(Span::styled(cancel_text, cancel_style)))
+            .alignment(Alignment::Center);
         cancel_btn.render(button_chunks[0], buf);
 
         // Confirm button (right)
@@ -253,11 +253,8 @@ impl Render for ConfirmDialog {
             Style::default().fg(Color::DarkGray)
         };
         let confirm_text = format!("[ {} ]", self.confirm_label);
-        let confirm_btn = Paragraph::new(Line::from(Span::styled(
-            confirm_text,
-            confirm_style,
-        )))
-        .alignment(Alignment::Center);
+        let confirm_btn = Paragraph::new(Line::from(Span::styled(confirm_text, confirm_style)))
+            .alignment(Alignment::Center);
         confirm_btn.render(button_chunks[1], buf);
     }
 }
@@ -278,20 +275,20 @@ impl Interactive for ConfirmDialog {
             KeyCode::Enter => {
                 if self.focused_on_confirm {
                     // User confirmed - return the action to execute
-                    HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(self.action.clone()))
+                    HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(
+                        self.action.clone(),
+                    ))
                 } else {
                     // User cancelled - close dialog without action
                     HandleResult::Action(crate::tui::traits::Action::CloseScreen)
                 }
             }
             // Escape: Cancel
-            KeyCode::Esc => {
-                HandleResult::Action(crate::tui::traits::Action::CloseScreen)
-            }
+            KeyCode::Esc => HandleResult::Action(crate::tui::traits::Action::CloseScreen),
             // y/Y: Confirm
-            KeyCode::Char('y') | KeyCode::Char('Y') => {
-                HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(self.action.clone()))
-            }
+            KeyCode::Char('y') | KeyCode::Char('Y') => HandleResult::Action(
+                crate::tui::traits::Action::ConfirmDialog(self.action.clone()),
+            ),
             // n/N: Cancel
             KeyCode::Char('n') | KeyCode::Char('N') => {
                 HandleResult::Action(crate::tui::traits::Action::CloseScreen)
@@ -335,7 +332,9 @@ mod tests {
         let dialog = ConfirmDialog::delete_confirmation("My Password", "id-123");
         assert!(dialog.is_visible());
         assert_eq!(dialog.title, "⚠️  Confirm Delete");
-        assert!(matches!(dialog.action, ConfirmAction::DeletePassword { password_id, .. } if password_id == "id-123"));
+        assert!(
+            matches!(dialog.action, ConfirmAction::DeletePassword { password_id, .. } if password_id == "id-123")
+        );
     }
 
     #[test]
@@ -394,7 +393,10 @@ mod tests {
 
         let key = KeyEvent::new(KeyCode::Esc, crossterm::event::KeyModifiers::empty());
         let result = dialog.handle_key(key);
-        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::CloseScreen)));
+        assert!(matches!(
+            result,
+            HandleResult::Action(crate::tui::traits::Action::CloseScreen)
+        ));
     }
 
     #[test]
@@ -406,7 +408,10 @@ mod tests {
         let key = KeyEvent::new(KeyCode::Enter, crossterm::event::KeyModifiers::empty());
         let result = dialog.handle_key(key);
         // When confirmed (focused on confirm button), returns the action
-        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(_))));
+        assert!(matches!(
+            result,
+            HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(_))
+        ));
     }
 
     #[test]
@@ -417,7 +422,10 @@ mod tests {
         let key = KeyEvent::new(KeyCode::Char('y'), crossterm::event::KeyModifiers::empty());
         let result = dialog.handle_key(key);
         // Y key confirms, returns the action
-        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(_))));
+        assert!(matches!(
+            result,
+            HandleResult::Action(crate::tui::traits::Action::ConfirmDialog(_))
+        ));
     }
 
     #[test]
@@ -428,6 +436,9 @@ mod tests {
         let key = KeyEvent::new(KeyCode::Char('n'), crossterm::event::KeyModifiers::empty());
         let result = dialog.handle_key(key);
         // N key cancels, closes screen
-        assert!(matches!(result, HandleResult::Action(crate::tui::traits::Action::CloseScreen)));
+        assert!(matches!(
+            result,
+            HandleResult::Action(crate::tui::traits::Action::CloseScreen)
+        ));
     }
 }

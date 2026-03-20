@@ -235,7 +235,7 @@ async fn test_sync_roundtrip_with_encrypted_data() {
     ];
 
     for (name, password) in &test_data {
-        let (encrypted, nonce) = crypto.encrypt(*password).unwrap();
+        let (encrypted, nonce) = crypto.encrypt(password).unwrap();
         let record = StoredRecord {
             id: Uuid::new_v4(),
             record_type: RecordType::Password,

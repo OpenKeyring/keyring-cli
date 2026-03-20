@@ -9,7 +9,7 @@ mod types;
 #[cfg(test)]
 mod tests;
 
-pub use types::{EditedPasswordFields, EditFormField};
+pub use types::{EditFormField, EditedPasswordFields};
 
 use crate::tui::services::TuiCryptoService;
 use crate::tui::traits::{
@@ -71,6 +71,7 @@ impl EditPasswordScreen {
     }
 
     /// Create a new edit screen from existing password data
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         id: Uuid,
         name: &str,
@@ -117,7 +118,9 @@ impl EditPasswordScreen {
 
     /// Get the current password (either new or original)
     pub fn get_current_password(&self) -> &str {
-        self.new_password.as_deref().unwrap_or(&self.original_password)
+        self.new_password
+            .as_deref()
+            .unwrap_or(&self.original_password)
     }
 
     /// Check if password was changed

@@ -405,7 +405,7 @@ mod tests {
         let json = serde_json::to_string(&output).unwrap();
         let deserialized: SshCheckConnectionOutput = serde_json::from_str(&json).unwrap();
 
-        assert_eq!(deserialized.connected, true);
+        assert!(deserialized.connected);
         assert_eq!(deserialized.latency_ms, 42);
         assert!(deserialized.error.is_none());
     }

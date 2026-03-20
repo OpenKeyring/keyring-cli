@@ -9,7 +9,11 @@ use crate::tui::traits::{Action, HandleResult, ScreenType};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 
 /// Handle key event with state mutation
-pub fn handle_key_with_state(screen: &mut MainScreen, key: KeyEvent, state: &mut AppState) -> HandleResult {
+pub fn handle_key_with_state(
+    screen: &mut MainScreen,
+    key: KeyEvent,
+    state: &mut AppState,
+) -> HandleResult {
     // Only handle press events
     if key.kind == KeyEventKind::Release {
         return HandleResult::Ignored;
@@ -52,12 +56,16 @@ pub fn handle_key_with_state(screen: &mut MainScreen, key: KeyEvent, state: &mut
             if let Some(password_id) = state.selection.selected_password {
                 let id_str = password_id.to_string();
                 // Get password name for confirmation dialog
-                let password_name = state.get_password_by_str(&id_str)
+                let password_name = state
+                    .get_password_by_str(&id_str)
                     .map(|p| p.name.clone())
                     .unwrap_or_else(|| "Unknown".to_string());
                 // Show confirmation dialog
                 return HandleResult::Action(Action::OpenScreen(ScreenType::ConfirmDialog(
-                    ConfirmAction::DeletePassword { password_id: id_str, password_name }
+                    ConfirmAction::DeletePassword {
+                        password_id: id_str,
+                        password_name,
+                    },
                 )));
             } else {
                 return HandleResult::Action(Action::ShowToast("No password selected".to_string()));
@@ -118,7 +126,9 @@ pub fn handle_key_with_state(screen: &mut MainScreen, key: KeyEvent, state: &mut
         let result = screen.search_bar.handle_key(key);
         if matches!(result, HandleResult::NeedsRender) {
             // Update filter with search query and reapply
-            state.filter.set_search_query(screen.search_bar.query().to_string());
+            state
+                .filter
+                .set_search_query(screen.search_bar.query().to_string());
             state.apply_filter();
         }
         return result;
@@ -126,19 +136,17 @@ pub fn handle_key_with_state(screen: &mut MainScreen, key: KeyEvent, state: &mut
 
     // Route to focused panel
     match state.focused_panel {
-        FocusedPanel::Tree => {
-            screen.tree_panel.handle_key_with_state(key, state)
-        }
+        FocusedPanel::Tree => screen.tree_panel.handle_key_with_state(key, state),
         FocusedPanel::Filter => {
-            let result = screen.filter_panel.handle_key_with_state(key, &mut state.filter);
+            let result = screen
+                .filter_panel
+                .handle_key_with_state(key, &mut state.filter);
             // If filter changed, update tree panel
             if matches!(result, HandleResult::Consumed) {
                 state.apply_filter();
             }
             result
         }
-        FocusedPanel::Detail => {
-            screen.detail_panel.handle_key_with_state(key, state, None)
-        }
+        FocusedPanel::Detail => screen.detail_panel.handle_key_with_state(key, state, None),
     }
 }

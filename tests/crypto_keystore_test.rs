@@ -87,8 +87,8 @@ fn test_passkey_initialization_flow() {
     );
 
     // Verify the wrapped Passkey can be read and decrypted
-    let wrapped_content =
-        std::fs::read_to_string(&wrapped_passkey_path).expect("Failed to read wrapped Passkey file");
+    let wrapped_content = std::fs::read_to_string(&wrapped_passkey_path)
+        .expect("Failed to read wrapped Passkey file");
 
     // The content should be base64-encoded JSON
     assert!(
@@ -277,10 +277,7 @@ fn test_passkey_seed_wrapping_and_storage() {
         wrapped_data.get("nonce").is_some(),
         "Should have nonce field"
     );
-    assert!(
-        wrapped_data.get("salt").is_some(),
-        "Should have salt field"
-    );
+    assert!(wrapped_data.get("salt").is_some(), "Should have salt field");
 
     // The wrapped seed should be base64-encoded (not plaintext)
     let wrapped_seed = wrapped_data["wrapped_seed"].as_str().unwrap();

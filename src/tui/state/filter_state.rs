@@ -69,7 +69,7 @@ impl FilterState {
                 }
                 FilterType::Expired => {
                     // Entry is expired if expires_at is set and in the past
-                    if entry.expires_at.map_or(true, |e| e > chrono::Utc::now()) {
+                    if entry.expires_at.is_none_or(|e| e > chrono::Utc::now()) {
                         return false;
                     }
                 }
@@ -121,16 +121,22 @@ impl FilterState {
                 let query_lower = query.to_lowercase();
                 // Search in name, username, url, notes, tags
                 entry.name.to_lowercase().contains(&query_lower)
-                    || entry.username.as_ref().map_or(false, |u| {
-                        u.to_lowercase().contains(&query_lower)
-                    })
-                    || entry.url.as_ref().map_or(false, |u| {
-                        u.to_lowercase().contains(&query_lower)
-                    })
-                    || entry.notes.as_ref().map_or(false, |n| {
-                        n.to_lowercase().contains(&query_lower)
-                    })
-                    || entry.tags.iter().any(|t| t.to_lowercase().contains(&query_lower))
+                    || entry
+                        .username
+                        .as_ref()
+                        .is_some_and(|u| u.to_lowercase().contains(&query_lower))
+                    || entry
+                        .url
+                        .as_ref()
+                        .is_some_and(|u| u.to_lowercase().contains(&query_lower))
+                    || entry
+                        .notes
+                        .as_ref()
+                        .is_some_and(|n| n.to_lowercase().contains(&query_lower))
+                    || entry
+                        .tags
+                        .iter()
+                        .any(|t| t.to_lowercase().contains(&query_lower))
             }
             _ => true, // No search query = match all
         }
@@ -152,8 +158,7 @@ mod tests {
     use super::*;
 
     fn create_test_entry() -> PasswordRecord {
-        PasswordRecord::new("test-1", "Test Entry", "password123")
-            .with_favorite(true)
+        PasswordRecord::new("test-1", "Test Entry", "password123").with_favorite(true)
     }
 
     #[test]

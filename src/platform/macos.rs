@@ -177,7 +177,7 @@ mod tests {
 
         // Align to page boundary
         let addr = data.as_mut_ptr();
-        let aligned_addr = if addr as usize % page != 0 {
+        let aligned_addr = if !(addr as usize).is_multiple_of(page) {
             ((addr as usize / page + 1) * page) as *mut u8
         } else {
             addr

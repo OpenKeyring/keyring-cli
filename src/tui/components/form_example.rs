@@ -2,17 +2,15 @@
 //!
 //! 演示如何使用新实现的表单组件创建复合表单。
 
-use crate::tui::components::{TextInput, TextArea, Select, SelectItem};
+use crate::tui::components::{Select, SelectItem, TextArea, TextInput};
 use crate::tui::error::TuiResult;
-use crate::tui::traits::{
-    Component, ComponentId, HandleResult, Interactive, Render,
-};
+use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render};
 use crossterm::event::{KeyEvent, MouseEvent};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, Borders, Paragraph},
     prelude::Widget,
+    widgets::{Block, Borders, Paragraph},
 };
 
 /// 示例表单组件
@@ -106,8 +104,7 @@ impl Render for SampleForm {
             "按 Tab 进入表单"
         };
 
-        let help = Paragraph::new(help_text)
-            .block(Block::default().borders(Borders::NONE));
+        let help = Paragraph::new(help_text).block(Block::default().borders(Borders::NONE));
         help.render(chunks[3], buf);
     }
 }
@@ -126,11 +123,9 @@ impl Interactive for SampleForm {
         }
     }
 
-    fn handle_mouse(&mut self, event: MouseEvent) -> HandleResult {
-        // 处理鼠标事件
-        match event {
-            _ => HandleResult::Ignored,
-        }
+    fn handle_mouse(&mut self, _event: MouseEvent) -> HandleResult {
+        // Handle mouse events
+        HandleResult::Ignored
     }
 }
 

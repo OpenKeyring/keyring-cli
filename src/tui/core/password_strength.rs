@@ -2,9 +2,7 @@
 //!
 //! 根据参考文档实现完整的密码强度计算逻辑。
 
-use crate::tui::traits::{
-    PasswordStrength, PasswordStrengthCalculator, StrengthLevel,
-};
+use crate::tui::traits::{PasswordStrength, PasswordStrengthCalculator, StrengthLevel};
 
 // ============================================================================
 // 密码强度详情（扩展 Trait 层定义）
@@ -54,7 +52,10 @@ impl PasswordStrengthDetails {
     /// 是否为强密码
     #[must_use]
     pub fn is_strong(&self) -> bool {
-        matches!(self.level, StrengthLevel::Strong | StrengthLevel::VeryStrong)
+        matches!(
+            self.level,
+            StrengthLevel::Strong | StrengthLevel::VeryStrong
+        )
     }
 
     /// 添加建议

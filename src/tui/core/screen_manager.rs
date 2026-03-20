@@ -3,7 +3,7 @@
 //! 占位符模块，完整实现将在 Task C.3 中完成。
 
 use crate::tui::error::{TuiError, TuiResult};
-use crate::tui::traits::{ScreenManager, Screen, ScreenType};
+use crate::tui::traits::{Screen, ScreenManager, ScreenType};
 use std::collections::VecDeque;
 
 /// 默认屏幕管理器

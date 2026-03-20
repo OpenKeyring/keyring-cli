@@ -2,8 +2,8 @@
 //!
 //! Contains all drawing/rendering methods for the tag configuration widget.
 
-use super::TagConfigWidget;
 use super::types::TagFocus;
+use super::TagConfigWidget;
 use crate::tui::tags::config::{EnvTag, RiskTag};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},

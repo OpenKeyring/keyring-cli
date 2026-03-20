@@ -29,9 +29,18 @@ pub fn render_frame(screen: &mut MainScreen, frame: &mut Frame, area: Rect, stat
 
     // Render panels
     let has_active_filters = state.filter.has_active_filters();
-    screen.tree_panel.render_frame_with_context(frame, layout.tree_area, &state.tree, has_active_filters);
-    screen.filter_panel.render_frame(frame, layout.filter_area, &state.filter);
-    screen.detail_panel.render_frame(frame, layout.detail_area, state);
+    screen.tree_panel.render_frame_with_context(
+        frame,
+        layout.tree_area,
+        &state.tree,
+        has_active_filters,
+    );
+    screen
+        .filter_panel
+        .render_frame(frame, layout.filter_area, &state.filter);
+    screen
+        .detail_panel
+        .render_frame(frame, layout.detail_area, state);
     render_status_panel(frame, layout.status_area);
     render_status_bar(frame, layout.status_bar_area, state);
 
@@ -99,7 +108,11 @@ fn render_size_warning(frame: &mut Frame, area: Rect) {
             Style::default().fg(Color::White),
         )),
         Line::from(Span::styled(
-            format!("Required: {}x{}", MainScreen::MIN_WIDTH, MainScreen::MIN_HEIGHT),
+            format!(
+                "Required: {}x{}",
+                MainScreen::MIN_WIDTH,
+                MainScreen::MIN_HEIGHT
+            ),
             Style::default().fg(Color::Gray),
         )),
         Line::from(""),
@@ -169,18 +182,10 @@ fn render_notifications(frame: &mut Frame, area: Rect, state: &AppState) {
     if let Some(notification) = state.notifications.back() {
         // Determine style based on notification level
         let style = match notification.level {
-            NotificationLevel::Info => Style::default()
-                .fg(Color::Blue)
-                .bg(Color::Reset),
-            NotificationLevel::Success => Style::default()
-                .fg(Color::Green)
-                .bg(Color::Reset),
-            NotificationLevel::Warning => Style::default()
-                .fg(Color::Yellow)
-                .bg(Color::Reset),
-            NotificationLevel::Error => Style::default()
-                .fg(Color::Red)
-                .bg(Color::Reset),
+            NotificationLevel::Info => Style::default().fg(Color::Blue).bg(Color::Reset),
+            NotificationLevel::Success => Style::default().fg(Color::Green).bg(Color::Reset),
+            NotificationLevel::Warning => Style::default().fg(Color::Yellow).bg(Color::Reset),
+            NotificationLevel::Error => Style::default().fg(Color::Red).bg(Color::Reset),
         };
 
         // Add icon prefix based on level

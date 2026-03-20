@@ -198,11 +198,8 @@ impl ConflictResolutionScreen {
             })
             .collect();
 
-        let list = List::new(conflict_items).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Conflicts "),
-        );
+        let list = List::new(conflict_items)
+            .block(Block::default().borders(Borders::ALL).title(" Conflicts "));
 
         let mut list_state = self.list_state.clone();
         frame.render_stateful_widget(list, chunks[1], &mut list_state);

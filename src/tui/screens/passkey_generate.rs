@@ -296,8 +296,8 @@ impl Default for PasskeyGenerateScreen {
 
 impl crate::tui::traits::Interactive for PasskeyGenerateScreen {
     fn handle_key(&mut self, key: crossterm::event::KeyEvent) -> crate::tui::traits::HandleResult {
-        use crossterm::event::KeyCode;
         use crate::tui::traits::HandleResult;
+        use crossterm::event::KeyCode;
 
         match key.code {
             KeyCode::Char(' ') => {

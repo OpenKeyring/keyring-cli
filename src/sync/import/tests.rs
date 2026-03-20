@@ -213,8 +213,7 @@ fn test_import_from_file_invalid_json() {
 fn test_sync_record_to_db_success() {
     let importer = JsonSyncImporter;
 
-    let sync_record =
-        create_test_sync_record("550e8400-e29b-41d4-a716-446655440000", 1, "AA==");
+    let sync_record = create_test_sync_record("550e8400-e29b-41d4-a716-446655440000", 1, "AA==");
 
     let result = importer.sync_record_to_db(sync_record);
 
@@ -288,8 +287,7 @@ fn test_sync_record_to_db_invalid_uuid() {
 fn test_sync_record_to_db_preserves_tags() {
     let importer = JsonSyncImporter;
 
-    let sync_record =
-        create_test_sync_record("550e8400-e29b-41d4-a716-446655440004", 1, "AA==");
+    let sync_record = create_test_sync_record("550e8400-e29b-41d4-a716-446655440004", 1, "AA==");
 
     let result = importer.sync_record_to_db(sync_record).unwrap();
 

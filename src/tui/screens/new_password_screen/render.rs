@@ -17,7 +17,11 @@ impl Render for NewPasswordScreen {
             .title("  New Password  ")
             .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::Cyan))
-            .title_style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD));
+            .title_style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            );
 
         let inner = block.inner(area);
         block.render(area, buf);
@@ -49,7 +53,9 @@ impl Render for NewPasswordScreen {
             };
 
             let label_style = if is_focused {
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             };
@@ -66,14 +72,30 @@ impl Render for NewPasswordScreen {
                     let type_label = self.password_type.label();
                     let display = format!("[{}]  ", type_label);
                     buf.set_string(inner.x + 2, y, &label, label_style);
-                    buf.set_string(inner.x + 2, y + 1, &display,
-                        Style::default().fg(if is_focused { Color::Yellow } else { Color::White }));
+                    buf.set_string(
+                        inner.x + 2,
+                        y + 1,
+                        &display,
+                        Style::default().fg(if is_focused {
+                            Color::Yellow
+                        } else {
+                            Color::White
+                        }),
+                    );
                 }
                 FormField::PasswordLength => {
                     let display = format!("[{}]  ", self.password_length);
                     buf.set_string(inner.x + 2, y, &label, label_style);
-                    buf.set_string(inner.x + 2, y + 1, &display,
-                        Style::default().fg(if is_focused { Color::Yellow } else { Color::White }));
+                    buf.set_string(
+                        inner.x + 2,
+                        y + 1,
+                        &display,
+                        Style::default().fg(if is_focused {
+                            Color::Yellow
+                        } else {
+                            Color::White
+                        }),
+                    );
                 }
                 FormField::Password => {
                     let display = if self.password_visible {
@@ -87,12 +109,19 @@ impl Render for NewPasswordScreen {
                         .wrap(ratatui::widgets::Wrap { trim: false });
 
                     buf.set_string(inner.x + 2, y, &label, label_style);
-                    input.render(Rect::new(inner.x + 2, y + 1, inner.x + inner.width - 2, y + 2), buf);
+                    input.render(
+                        Rect::new(inner.x + 2, y + 1, inner.x + inner.width - 2, y + 2),
+                        buf,
+                    );
 
                     // Show regenerate hint
                     let hint = "[r] Regenerate  [Space] Show/Hide";
-                    buf.set_string(inner.x + 20, y + 1, hint,
-                        Style::default().fg(Color::DarkGray));
+                    buf.set_string(
+                        inner.x + 20,
+                        y + 1,
+                        hint,
+                        Style::default().fg(Color::DarkGray),
+                    );
                 }
                 FormField::Url => {
                     self.render_text_field(buf, inner, y, &label, &self.url, label_style);
@@ -108,40 +137,69 @@ impl Render for NewPasswordScreen {
                         .style(label_style)
                         .block(Block::default().borders(Borders::NONE))
                         .wrap(ratatui::widgets::Wrap { trim: false });
-                    input.render(Rect::new(inner.x + 2, y + 1, inner.x + inner.width - 2, y + 3), buf);
+                    input.render(
+                        Rect::new(inner.x + 2, y + 1, inner.x + inner.width - 2, y + 3),
+                        buf,
+                    );
                 }
                 FormField::Tags => {
                     self.render_text_field(buf, inner, y, &label, &self.tags, label_style);
                     let hint = "(comma separated)";
-                    buf.set_string(inner.x + 20, y + 1, hint, Style::default().fg(Color::DarkGray));
+                    buf.set_string(
+                        inner.x + 20,
+                        y + 1,
+                        hint,
+                        Style::default().fg(Color::DarkGray),
+                    );
                 }
                 FormField::Group => {
                     let display = format!("[{}]", self.group);
                     buf.set_string(inner.x + 2, y, &label, label_style);
-                    buf.set_string(inner.x + 2, y + 1, &display,
-                        Style::default().fg(if is_focused { Color::Yellow } else { Color::White }));
+                    buf.set_string(
+                        inner.x + 2,
+                        y + 1,
+                        &display,
+                        Style::default().fg(if is_focused {
+                            Color::Yellow
+                        } else {
+                            Color::White
+                        }),
+                    );
                 }
             }
 
             // Show error if any
             if let Some(err) = error {
-                buf.set_string(inner.x + 2, y + row_height - 1, err,
-                    Style::default().fg(Color::Red));
+                buf.set_string(
+                    inner.x + 2,
+                    y + row_height - 1,
+                    err,
+                    Style::default().fg(Color::Red),
+                );
             }
         }
 
         // Help text at bottom
         let help_y = inner.y + inner.height - 2;
         let help = "[Tab] Next  [Esc] Cancel  [Enter] Save";
-        buf.set_string(inner.x + 2, help_y, help, Style::default().fg(Color::DarkGray));
+        buf.set_string(
+            inner.x + 2,
+            help_y,
+            help,
+            Style::default().fg(Color::DarkGray),
+        );
 
         // Show validation errors at bottom
         if !self.errors.is_empty() {
             let error_y = inner.y + inner.height - 4;
             for (i, (field, err)) in self.errors.iter().enumerate() {
                 let msg = format!("{}: {}", field.label(), err);
-                buf.set_string(inner.x + 2, error_y + i as u16, msg,
-                    Style::default().fg(Color::Red));
+                buf.set_string(
+                    inner.x + 2,
+                    error_y + i as u16,
+                    msg,
+                    Style::default().fg(Color::Red),
+                );
             }
         }
     }
@@ -169,7 +227,10 @@ impl NewPasswordScreen {
             .wrap(ratatui::widgets::Wrap { trim: false });
 
         buf.set_string(inner.x + 2, y, label, style);
-        input.render(Rect::new(inner.x + 2, y + 1, inner.x + inner.width - 2, y + 2), buf);
+        input.render(
+            Rect::new(inner.x + 2, y + 1, inner.x + inner.width - 2, y + 2),
+            buf,
+        );
     }
 }
 

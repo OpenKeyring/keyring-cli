@@ -13,8 +13,7 @@ pub use types::{FormField, NewPasswordRecord};
 
 use crate::tui::services::TuiCryptoService;
 use crate::tui::traits::{
-    Action, AppEvent, Component, ComponentId, CryptoService, HandleResult, PasswordPolicy,
-    PasswordType,
+    AppEvent, Component, ComponentId, CryptoService, HandleResult, PasswordPolicy, PasswordType,
 };
 use std::collections::HashMap;
 

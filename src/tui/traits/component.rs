@@ -3,10 +3,10 @@
 //! 定义 TUI 框架的核心组件接口，包括 Component、Container、Render、Interactive 等。
 
 use crate::tui::error::TuiResult;
-use crate::tui::traits::{ComponentId, AppEvent, HandleResult};
+use crate::tui::traits::{AppEvent, ComponentId, HandleResult};
 use crossterm::event::{KeyEvent, MouseEvent};
-use ratatui::layout::Rect;
 use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
 use std::io;
 
 // ============================================================================

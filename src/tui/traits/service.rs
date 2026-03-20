@@ -193,7 +193,9 @@ impl DefaultIdGenerator {
 
 impl IdGenerator for DefaultIdGenerator {
     fn generate(&self) -> ComponentId {
-        let id = self.counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst) as usize;
+        let id = self
+            .counter
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst) as usize;
         ComponentId::new(id)
     }
 

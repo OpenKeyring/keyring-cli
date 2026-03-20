@@ -283,11 +283,7 @@ impl HelpScreen {
         }
 
         let help = Paragraph::new(Text::from(help_lines))
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title("Shortcuts"),
-            )
+            .block(Block::default().borders(Borders::ALL).title("Shortcuts"))
             .scroll((self.scroll_position as u16, 0));
 
         frame.render_widget(help, chunks[1]);

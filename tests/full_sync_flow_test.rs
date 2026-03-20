@@ -73,11 +73,9 @@ fn test_full_sync_flow_with_local_storage() {
         "test-record"
     );
     assert!(
-        read_sync_record["metadata"]["tags"]
+        !read_sync_record["metadata"]["tags"]
             .as_array()
-            .unwrap()
-            .len()
-            > 0
+            .unwrap().is_empty()
     );
 
     // Step 6: Verify multiple sync files can be created
@@ -301,7 +299,7 @@ fn test_sync_conflict_detection() {
 
     // Verify we can extract conflict-relevant information
     let timestamp = read_record["updated_at"].as_str().unwrap();
-    assert!(timestamp.len() > 0);
+    assert!(!timestamp.is_empty());
 
     let nonce = read_record["nonce"].as_str().unwrap();
     assert!(base64::engine::general_purpose::STANDARD

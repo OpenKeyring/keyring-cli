@@ -2,7 +2,7 @@
 //!
 //! Contains rendering logic for the tree panel.
 
-use crate::tui::state::{NodeType, TreeState, TreeNodeId};
+use crate::tui::state::{NodeType, TreeNodeId, TreeState};
 use ratatui::{
     layout::Rect,
     prelude::Widget,
@@ -32,12 +32,7 @@ pub struct RenderContext {
 }
 
 /// Render to frame (preferred method)
-pub fn render_frame(
-    frame: &mut Frame,
-    area: Rect,
-    state: &TreeState,
-    ctx: &RenderContext,
-) {
+pub fn render_frame(frame: &mut Frame, area: Rect, state: &TreeState, ctx: &RenderContext) {
     render_frame_with_context(frame, area, state, ctx, false)
 }
 
@@ -175,11 +170,16 @@ fn format_node_line(
         Style::default().fg(Color::White)
     };
 
-    let mut spans = Vec::with_capacity(5);
+    let mut spans = Vec::with_capacity(6);
     spans.push(Span::styled(*indent, style));
     spans.push(Span::styled(icon, style));
     spans.push(Span::styled(" ", style));
     spans.push(Span::styled(node.label.clone(), style));
+
+    // Show favorite icon for password nodes
+    if node.is_favorite && matches!(node.node_type, NodeType::Password) {
+        spans.push(Span::styled(" ★", Style::default().fg(Color::Yellow)));
+    }
 
     if node.child_count > 0 && matches!(node.node_type, NodeType::Folder) {
         spans.push(Span::styled(format!(" ({})", node.child_count), style));

@@ -5,7 +5,9 @@
 use crate::tui::components::ConfirmAction;
 use crate::tui::models::password::PasswordRecord;
 use crate::tui::state::AppState;
-use crate::tui::traits::{Action, Component, ComponentId, HandleResult, Interactive, Render, ScreenType};
+use crate::tui::traits::{
+    Action, Component, ComponentId, HandleResult, Interactive, Render, ScreenType,
+};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
@@ -60,11 +62,7 @@ impl TrashScreen {
     }
 
     /// Handle key events with state
-    pub fn handle_key_with_state(
-        &mut self,
-        key: KeyEvent,
-        state: &mut AppState,
-    ) -> HandleResult {
+    pub fn handle_key_with_state(&mut self, key: KeyEvent, state: &mut AppState) -> HandleResult {
         if key.kind == KeyEventKind::Release {
             return HandleResult::Ignored;
         }
@@ -99,18 +97,18 @@ impl TrashScreen {
             KeyCode::Char('D') => {
                 // Permanent delete - needs confirmation
                 if let Some(password) = self.selected().cloned() {
-                    return HandleResult::Action(Action::OpenScreen(
-                        ScreenType::ConfirmDialog(ConfirmAction::PermanentDelete(password.id.clone())),
-                    ));
+                    return HandleResult::Action(Action::OpenScreen(ScreenType::ConfirmDialog(
+                        ConfirmAction::PermanentDelete(password.id.clone()),
+                    )));
                 }
                 HandleResult::Ignored
             }
             KeyCode::Char('a') => {
                 // Empty all - needs confirmation
                 if !self.deleted_passwords.is_empty() {
-                    return HandleResult::Action(Action::OpenScreen(
-                        ScreenType::ConfirmDialog(ConfirmAction::EmptyTrash),
-                    ));
+                    return HandleResult::Action(Action::OpenScreen(ScreenType::ConfirmDialog(
+                        ConfirmAction::EmptyTrash,
+                    )));
                 }
                 HandleResult::Ignored
             }
@@ -145,9 +143,7 @@ impl TrashScreen {
         // Title
         let title = Paragraph::new(Line::from(Span::styled(
             "🗑️ Trash",
-            Style::default()
-                .fg(Color::Red)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         )))
         .alignment(Alignment::Center)
         .block(
@@ -186,9 +182,7 @@ impl TrashScreen {
             Span::raw(" Restore  "),
             Span::styled(
                 "[D]",
-                Style::default()
-                    .fg(Color::Red)
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
             ),
             Span::raw(" Delete  "),
             Span::styled(
@@ -226,10 +220,7 @@ impl TrashScreen {
 
         // Header
         lines.push(Line::from(vec![
-            Span::styled(
-                format!("{:30}", "Name"),
-                Style::default().fg(Color::Gray),
-            ),
+            Span::styled(format!("{:30}", "Name"), Style::default().fg(Color::Gray)),
             Span::styled(
                 format!("{:25}", "Username"),
                 Style::default().fg(Color::Gray),

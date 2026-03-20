@@ -151,9 +151,7 @@ impl Render for MainScreen {
 
         // This is a simplified render for Buffer interface
         // Use render_frame for Frame-based rendering
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .title("Main Screen");
+        let block = Block::default().borders(Borders::ALL).title("Main Screen");
         block.render(area, buf);
     }
 }

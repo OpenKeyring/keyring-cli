@@ -192,11 +192,8 @@ impl ProviderSelectScreen {
             })
             .collect();
 
-        let list = List::new(items).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Available "),
-        );
+        let list =
+            List::new(items).block(Block::default().borders(Borders::ALL).title(" Available "));
 
         frame.render_widget(list, chunks[1]);
 

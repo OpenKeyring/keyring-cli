@@ -63,17 +63,29 @@ fn render_password_field(screen: &MasterPasswordScreen, frame: &mut Frame, area:
             ),
             Span::styled(
                 if password_display.is_empty() {
-                    if show_first { "Type here..." } else { "" }
+                    if show_first {
+                        "Type here..."
+                    } else {
+                        ""
+                    }
                 } else {
                     password_display.as_str()
                 },
-                Style::default().fg(if show_first { Color::White } else { Color::Gray }),
+                Style::default().fg(if show_first {
+                    Color::White
+                } else {
+                    Color::Gray
+                }),
             ),
         ]),
         Line::from(vec![
             Span::raw("  "),
             Span::styled(
-                format!("{} Strength: {}", screen.strength().icon(), screen.strength().display()),
+                format!(
+                    "{} Strength: {}",
+                    screen.strength().icon(),
+                    screen.strength().display()
+                ),
                 Style::default()
                     .fg(screen.strength().color())
                     .add_modifier(Modifier::BOLD),
@@ -110,15 +122,27 @@ fn render_confirm_field(screen: &MasterPasswordScreen, frame: &mut Frame, area: 
     let confirm_field = Paragraph::new(vec![Line::from(vec![
         Span::styled(
             "Confirm Password: ",
-            Style::default().fg(if !show_first { Color::Cyan } else { Color::Gray }),
+            Style::default().fg(if !show_first {
+                Color::Cyan
+            } else {
+                Color::Gray
+            }),
         ),
         Span::styled(
             if confirm_display.is_empty() {
-                if !show_first { "Type here..." } else { "" }
+                if !show_first {
+                    "Type here..."
+                } else {
+                    ""
+                }
             } else {
                 confirm_display.as_str()
             },
-            Style::default().fg(if !show_first { Color::White } else { Color::Gray }),
+            Style::default().fg(if !show_first {
+                Color::White
+            } else {
+                Color::Gray
+            }),
         ),
         Span::raw(if !confirm_input.is_empty() && screen.passwords_match() {
             " ✓"
@@ -135,7 +159,11 @@ fn render_confirm_field(screen: &MasterPasswordScreen, frame: &mut Frame, area: 
             } else {
                 ""
             },
-            Style::default().fg(if screen.passwords_match() { Color::Green } else { Color::Red }),
+            Style::default().fg(if screen.passwords_match() {
+                Color::Green
+            } else {
+                Color::Red
+            }),
         ),
     ])])
     .block(

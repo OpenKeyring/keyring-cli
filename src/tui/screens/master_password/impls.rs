@@ -2,8 +2,8 @@
 //!
 //! Contains implementations of Interactive, Default, WizardStepValidator, and WizardStepScreen traits.
 
-use super::MasterPasswordScreen;
 use super::render::render;
+use super::MasterPasswordScreen;
 use crate::tui::screens::wizard::WizardState;
 use crate::tui::traits::{HandleResult, Interactive, WizardStepScreen, WizardStepValidator};
 use crossterm::event::KeyCode;

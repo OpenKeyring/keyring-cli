@@ -4,8 +4,8 @@
 //! clipboard timeout, trash retention, and password policy defaults.
 
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
 use std::io;
+use std::path::{Path, PathBuf};
 
 /// Main TUI configuration structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -273,6 +273,9 @@ mod tests {
         let json = serde_json::to_string(&config).unwrap();
         let parsed: TuiConfig = serde_json::from_str(&json).unwrap();
 
-        assert_eq!(parsed.clipboard_timeout_seconds, config.clipboard_timeout_seconds);
+        assert_eq!(
+            parsed.clipboard_timeout_seconds,
+            config.clipboard_timeout_seconds
+        );
     }
 }

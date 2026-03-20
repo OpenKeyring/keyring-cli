@@ -350,7 +350,7 @@ MIIEpAIBAAKCAQEA2X8dZkKhGkV2cOJ7uVLdHZ2xNnDu0I3KXKdK5hZp9m8f2w8
         assert!(result.is_ok());
         let statuses = result.unwrap();
         // New repo should have no changes
-        assert!(statuses.is_empty() || statuses.len() == 0);
+        assert!(statuses.is_empty() || statuses.is_empty());
     }
 }
 

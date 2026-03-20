@@ -14,10 +14,10 @@
 //! - `integration_tests` - Cross-component integration tests
 
 // ============ Phase 1.2 新测试 ============
+mod component_trait_tests;
 mod error_tests;
 mod event_tests;
 mod secure_tests;
-mod component_trait_tests;
 
 // ============ 现有测试 ============
 mod app_snapshot_tests;

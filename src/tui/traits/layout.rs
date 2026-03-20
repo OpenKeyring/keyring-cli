@@ -2,9 +2,9 @@
 //!
 //! 定义组件布局计算相关的接口，包括布局约束、布局结果和布局算法。
 
-use std::collections::HashMap;
-use ratatui::layout::Rect;
 use crate::tui::traits::ComponentId;
+use ratatui::layout::Rect;
+use std::collections::HashMap;
 
 /// 布局约束
 ///
@@ -81,10 +81,9 @@ impl LayoutConstraints {
     /// 检查尺寸是否满足约束
     #[must_use]
     pub fn satisfies(&self, width: u16, height: u16) -> bool {
-        let width_ok = width >= self.min_width
-            && self.max_width.is_none_or(|max| width <= max);
-        let height_ok = height >= self.min_height
-            && self.max_height.is_none_or(|max| height <= max);
+        let width_ok = width >= self.min_width && self.max_width.is_none_or(|max| width <= max);
+        let height_ok =
+            height >= self.min_height && self.max_height.is_none_or(|max| height <= max);
         width_ok && height_ok
     }
 
@@ -225,7 +224,10 @@ pub trait Layout: Send + Sync {
     /// 返回组件能正常工作的最小尺寸。
     #[must_use]
     fn min_size(&self) -> (u16, u16) {
-        (self.get_constraints().min_width, self.get_constraints().min_height)
+        (
+            self.get_constraints().min_width,
+            self.get_constraints().min_height,
+        )
     }
 }
 
@@ -233,7 +235,10 @@ pub trait Layout: Send + Sync {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LayoutError {
     /// 可用空间不足以容纳最小尺寸
-    InsufficientSpace { required: (u16, u16), available: (u16, u16) },
+    InsufficientSpace {
+        required: (u16, u16),
+        available: (u16, u16),
+    },
     /// 无效的布局约束
     InvalidConstraints(String),
     /// 组件不存在
@@ -245,7 +250,10 @@ pub enum LayoutError {
 impl std::fmt::Display for LayoutError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::InsufficientSpace { required, available } => write!(
+            Self::InsufficientSpace {
+                required,
+                available,
+            } => write!(
                 f,
                 "空间不足: 需要 {}x{}, 可用 {}x{}",
                 required.0, required.1, available.0, available.1
@@ -366,11 +374,13 @@ impl LayoutBuilder {
                 for (id, constraints) in &self.children {
                     let width = if let Some(weight) = constraints.flex_weight {
                         // 按权重分配
-                        let total_weight: u32 = self.children
+                        let total_weight: u32 = self
+                            .children
                             .iter()
                             .filter_map(|(_, c)| c.flex_weight)
                             .sum();
-                        let share = (available_width * weight as u16 / total_weight as u16).max(constraints.min_width);
+                        let share = (available_width * weight as u16 / total_weight as u16)
+                            .max(constraints.min_width);
                         constraints.max_width.map_or(share, |max| share.min(max))
                     } else if constraints.fill_available {
                         // 平均分配
@@ -384,7 +394,9 @@ impl LayoutBuilder {
                     let height = if constraints.fill_available {
                         available.height
                     } else {
-                        constraints.max_height.unwrap_or(constraints.min_height.min(available.height))
+                        constraints
+                            .max_height
+                            .unwrap_or(constraints.min_height.min(available.height))
                     };
 
                     let area = Rect {
@@ -405,11 +417,13 @@ impl LayoutBuilder {
 
                 for (id, constraints) in &self.children {
                     let height = if let Some(weight) = constraints.flex_weight {
-                        let total_weight: u32 = self.children
+                        let total_weight: u32 = self
+                            .children
                             .iter()
                             .filter_map(|(_, c)| c.flex_weight)
                             .sum();
-                        let share = (available_height * weight as u16 / total_weight as u16).max(constraints.min_height);
+                        let share = (available_height * weight as u16 / total_weight as u16)
+                            .max(constraints.min_height);
                         constraints.max_height.map_or(share, |max| share.min(max))
                     } else if constraints.fill_available {
                         let avg = available_height / count as u16;
@@ -421,7 +435,9 @@ impl LayoutBuilder {
                     let width = if constraints.fill_available {
                         available.width
                     } else {
-                        constraints.max_width.unwrap_or(constraints.min_width.min(available.width))
+                        constraints
+                            .max_width
+                            .unwrap_or(constraints.min_width.min(available.width))
                     };
 
                     let area = Rect {
@@ -501,10 +517,31 @@ mod tests {
             .child(ComponentId::new(2), LayoutConstraints::fixed(15, 20))
             .gap(2);
 
-        let result = builder.build(Rect { x: 0, y: 0, width: 50, height: 20 });
+        let result = builder.build(Rect {
+            x: 0,
+            y: 0,
+            width: 50,
+            height: 20,
+        });
 
-        assert_eq!(result.get(&ComponentId::new(1)), Some(&Rect { x: 0, y: 0, width: 10, height: 20 }));
-        assert_eq!(result.get(&ComponentId::new(2)), Some(&Rect { x: 12, y: 0, width: 15, height: 20 }));
+        assert_eq!(
+            result.get(&ComponentId::new(1)),
+            Some(&Rect {
+                x: 0,
+                y: 0,
+                width: 10,
+                height: 20
+            })
+        );
+        assert_eq!(
+            result.get(&ComponentId::new(2)),
+            Some(&Rect {
+                x: 12,
+                y: 0,
+                width: 15,
+                height: 20
+            })
+        );
     }
 
     #[test]
@@ -515,9 +552,30 @@ mod tests {
             .child(ComponentId::new(2), LayoutConstraints::fixed(20, 15))
             .gap(2);
 
-        let result = builder.build(Rect { x: 0, y: 0, width: 20, height: 50 });
+        let result = builder.build(Rect {
+            x: 0,
+            y: 0,
+            width: 20,
+            height: 50,
+        });
 
-        assert_eq!(result.get(&ComponentId::new(1)), Some(&Rect { x: 0, y: 0, width: 20, height: 10 }));
-        assert_eq!(result.get(&ComponentId::new(2)), Some(&Rect { x: 0, y: 12, width: 20, height: 15 }));
+        assert_eq!(
+            result.get(&ComponentId::new(1)),
+            Some(&Rect {
+                x: 0,
+                y: 0,
+                width: 20,
+                height: 10
+            })
+        );
+        assert_eq!(
+            result.get(&ComponentId::new(2)),
+            Some(&Rect {
+                x: 0,
+                y: 12,
+                width: 20,
+                height: 15
+            })
+        );
     }
 }

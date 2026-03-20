@@ -2,8 +2,16 @@
 //!
 //! Unit tests for the tag configuration widget.
 
-use super::{TagConfigWidget, TagFocus};
-use crate::tui::tags::config::{EnvTag, RiskTag, TagConfig};
+#[allow(unused_imports)]
+use super::TagConfigWidget;
+#[allow(unused_imports)]
+use super::TagFocus;
+#[allow(unused_imports)]
+use crate::tui::tags::config::EnvTag;
+#[allow(unused_imports)]
+use crate::tui::tags::config::RiskTag;
+#[allow(unused_imports)]
+use crate::tui::tags::config::TagConfig;
 
 #[test]
 fn test_widget_default() {

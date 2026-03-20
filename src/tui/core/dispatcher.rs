@@ -2,11 +2,11 @@
 //!
 //! 提供完整的事件分发功能，包括全局快捷键、事件过滤和组件事件路由。
 
+use crate::tui::core::{DefaultFocusManager, DefaultNotificationManager, DefaultScreenManager};
 use crate::tui::error::TuiResult;
-use crate::tui::core::{DefaultFocusManager, DefaultScreenManager, DefaultNotificationManager};
 use crate::tui::traits::{
-    AppEvent, HandleResult, Action, EventDispatcher, EventFilter,
-    FocusManager, ScreenManager, NotificationManagerExt,
+    Action, AppEvent, EventDispatcher, EventFilter, FocusManager, HandleResult,
+    NotificationManagerExt, ScreenManager,
 };
 use crossterm::event::{KeyEvent, KeyModifiers};
 use std::collections::HashMap;
@@ -148,25 +148,18 @@ impl DefaultEventDispatcher {
     /// 注册默认全局快捷键
     fn register_default_keybindings(&mut self) {
         use crossterm::event::KeyCode;
-        
 
         // Ctrl+Q: 退出
-        self.global_keybindings.insert(
-            (KeyCode::Char('q'), KeyModifiers::CONTROL),
-            Action::Quit,
-        );
+        self.global_keybindings
+            .insert((KeyCode::Char('q'), KeyModifiers::CONTROL), Action::Quit);
 
         // Ctrl+R: 刷新
-        self.global_keybindings.insert(
-            (KeyCode::Char('r'), KeyModifiers::CONTROL),
-            Action::Refresh,
-        );
+        self.global_keybindings
+            .insert((KeyCode::Char('r'), KeyModifiers::CONTROL), Action::Refresh);
 
         // ESC: 关闭屏幕
-        self.global_keybindings.insert(
-            (KeyCode::Esc, KeyModifiers::empty()),
-            Action::CloseScreen,
-        );
+        self.global_keybindings
+            .insert((KeyCode::Esc, KeyModifiers::empty()), Action::CloseScreen);
     }
 
     /// 处理键盘事件
@@ -218,8 +211,12 @@ impl DefaultEventDispatcher {
             Action::ConfirmDialog(action) => {
                 // Handle confirmed action
                 match action {
-                    crate::tui::components::ConfirmAction::DeletePassword { password_id: _, password_name } => {
-                        self.notification_manager.info(&format!("已删除: {}", password_name));
+                    crate::tui::components::ConfirmAction::DeletePassword {
+                        password_id: _,
+                        password_name,
+                    } => {
+                        self.notification_manager
+                            .info(&format!("已删除: {}", password_name));
                     }
                     crate::tui::components::ConfirmAction::PermanentDelete(_) => {
                         self.notification_manager.info("已永久删除");
@@ -329,7 +326,8 @@ impl EventDispatcher for DefaultEventDispatcher {
     }
 
     fn register_global_keybinding(&mut self, key: KeyEvent, action: Action) {
-        self.global_keybindings.insert((key.code, key.modifiers), action);
+        self.global_keybindings
+            .insert((key.code, key.modifiers), action);
     }
 
     fn handle_global_keybinding(&self, key: KeyEvent) -> Option<Action> {

@@ -12,8 +12,7 @@ mod tests {
     #[tokio::test]
     async fn test_health_checker_module_exists() {
         let _records: Vec<StoredRecord> = vec![];
-        // Health module structure exists
-        assert!(true);
+        // Health module structure exists - test passes if module compiles
     }
 
     #[tokio::test]

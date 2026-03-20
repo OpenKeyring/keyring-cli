@@ -74,9 +74,8 @@ pub fn run_tui() -> Result<()> {
         });
     if !crate::onboarding::is_initialized(&keystore_path) {
         // User not initialized - show wizard for first-time setup
-        app.wizard_state = Some(
-            crate::tui::screens::wizard::WizardState::new().with_keystore_path(keystore_path),
-        );
+        app.wizard_state =
+            Some(crate::tui::screens::wizard::WizardState::new().with_keystore_path(keystore_path));
         app.current_screen = Screen::Wizard;
     } else {
         // User already initialized - show unlock screen to enter master password
@@ -111,22 +110,24 @@ pub fn run_tui() -> Result<()> {
                         app.handle_unlock_key_event(key);
                     } else if app.current_screen == Screen::Trash {
                         // Route trash screen events
-                        let result =
-                            app.trash_screen.handle_key_with_state(key, &mut app.app_state);
+                        let result = app
+                            .trash_screen
+                            .handle_key_with_state(key, &mut app.app_state);
                         match result {
                             HandleResult::Action(Action::CloseScreen) => {
                                 app.navigate_to(Screen::Main);
                             }
-                            HandleResult::Action(Action::OpenScreen(screen_type)) => {
-                                if let ScreenType::ConfirmDialog(action) = screen_type {
-                                    app.show_confirm_dialog(action);
-                                }
+                            HandleResult::Action(Action::OpenScreen(ScreenType::ConfirmDialog(action))) => {
+                                app.show_confirm_dialog(action);
                             }
                             _ => {}
                         }
                     } else if app.current_screen == Screen::Main {
                         // Route main screen events to MainScreen handler
-                        match app.main_screen.handle_key_with_state(key, &mut app.app_state) {
+                        match app
+                            .main_screen
+                            .handle_key_with_state(key, &mut app.app_state)
+                        {
                             HandleResult::Consumed => {}
                             HandleResult::Ignored => {
                                 // Fallback: handle global shortcuts
@@ -217,10 +218,8 @@ fn handle_main_screen_action(app: &mut super::TuiApp, action: Action) {
             }
             _ => {
                 // For other screens, show a placeholder message
-                app.output_lines.push(format!(
-                    "Screen {:?} not yet implemented",
-                    screen_type
-                ));
+                app.output_lines
+                    .push(format!("Screen {:?} not yet implemented", screen_type));
             }
         },
         Action::ShowToast(message) => {
@@ -244,6 +243,8 @@ fn handle_main_screen_action(app: &mut super::TuiApp, action: Action) {
 }
 
 /// Handle confirmed actions from dialogs
+/// Note: MutexGuard across await is safe here because we're in block_in_place
+#[allow(clippy::await_holding_lock)]
 fn handle_confirm_dialog_action(app: &mut super::TuiApp, action: ConfirmAction) {
     match action {
         ConfirmAction::DeletePassword {
@@ -305,8 +306,10 @@ fn handle_confirm_dialog_action(app: &mut super::TuiApp, action: ConfirmAction) 
                 app.output_lines
                     .push(format!("Permanently deleted \"{}\"", password_name));
             } else {
-                app.output_lines
-                    .push(format!("Failed to permanently delete \"{}\"", password_name));
+                app.output_lines.push(format!(
+                    "Failed to permanently delete \"{}\"",
+                    password_name
+                ));
             }
         }
         ConfirmAction::EmptyTrash => {

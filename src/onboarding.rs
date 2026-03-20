@@ -4,6 +4,11 @@ use crate::crypto::keystore::KeyStore;
 use crate::error::Result;
 use std::path::Path;
 
+#[cfg(feature = "test-env")]
+use crate::cli::config::OpenKeyringConfig;
+#[cfg(feature = "test-env")]
+use std::fs;
+
 pub fn is_initialized(keystore_path: &Path) -> bool {
     keystore_path.exists()
 }

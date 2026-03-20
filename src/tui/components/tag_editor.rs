@@ -76,11 +76,9 @@ impl TagEditor {
             self.suggestions = self
                 .all_tags
                 .iter()
-                .filter(|t| {
-                    t.to_lowercase().contains(&input_lower) && !self.tags.contains(t)
-                })
-                .cloned()
-                .take(5) // Limit suggestions
+                .filter(|t| t.to_lowercase().contains(&input_lower) && !self.tags.contains(t))
+                .take(5)
+                .cloned() // Limit suggestions
                 .collect();
             self.selected_suggestion = if self.suggestions.is_empty() {
                 None
@@ -132,16 +130,17 @@ impl TagEditor {
             }
             KeyCode::Up => {
                 if self.selected_suggestion.is_some() {
-                    self.selected_suggestion = self.selected_suggestion.map(|i| i.saturating_sub(1));
+                    self.selected_suggestion =
+                        self.selected_suggestion.map(|i| i.saturating_sub(1));
                     return HandleResult::Consumed;
                 }
                 HandleResult::Ignored
             }
             KeyCode::Down => {
                 if !self.suggestions.is_empty() {
-                    self.selected_suggestion = self.selected_suggestion.map(|i| {
-                        (i + 1).min(self.suggestions.len() - 1)
-                    });
+                    self.selected_suggestion = self
+                        .selected_suggestion
+                        .map(|i| (i + 1).min(self.suggestions.len() - 1));
                     return HandleResult::Consumed;
                 }
                 HandleResult::Ignored

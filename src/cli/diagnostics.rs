@@ -303,8 +303,15 @@ pub fn print_diagnostic_report(status: &SystemStatus) {
                 _ => "".to_string(),
             },
         };
-        let path_display = item.path.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "N/A".to_string());
-        println!("      {} {}: {}{}", icon, item.name, path_display, status_text);
+        let path_display = item
+            .path
+            .as_ref()
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|| "N/A".to_string());
+        println!(
+            "      {} {}: {}{}",
+            icon, item.name, path_display, status_text
+        );
         if !extra.is_empty() && item.status != StatusCategory::OK {
             println!("{}", extra);
         }
@@ -320,8 +327,15 @@ pub fn print_diagnostic_report(status: &SystemStatus) {
             StatusCategory::Missing => " (missing)",
             StatusCategory::Error => " (error)",
         };
-        let path_display = item.path.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "N/A".to_string());
-        println!("      {} {}: {}{}", icon, item.name, path_display, status_text);
+        let path_display = item
+            .path
+            .as_ref()
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|| "N/A".to_string());
+        println!(
+            "      {} {}: {}{}",
+            icon, item.name, path_display, status_text
+        );
     }
 
     // Print Data section
@@ -334,8 +348,15 @@ pub fn print_diagnostic_report(status: &SystemStatus) {
             StatusCategory::Missing => " (missing)",
             StatusCategory::Error => " (error)",
         };
-        let path_display = item.path.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "N/A".to_string());
-        println!("      {} {}: {}{}", icon, item.name, path_display, status_text);
+        let path_display = item
+            .path
+            .as_ref()
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|| "N/A".to_string());
+        println!(
+            "      {} {}: {}{}",
+            icon, item.name, path_display, status_text
+        );
     }
 
     println!();
@@ -560,7 +581,9 @@ mod tests {
         assert!(!status.is_healthy());
 
         // Verify keystore status
-        let keystore_item = status.key_items.iter()
+        let keystore_item = status
+            .key_items
+            .iter()
             .find(|item| item.name == "Keystore file")
             .expect("Keystore file should be in key_items");
         assert_eq!(keystore_item.status, StatusCategory::Missing);
@@ -595,7 +618,9 @@ mod tests {
         assert!(!status.is_healthy());
 
         // Verify database status
-        let db_item = status.data_items.iter()
+        let db_item = status
+            .data_items
+            .iter()
             .find(|item| item.name == "Database file")
             .expect("Database file should be in data_items");
         assert_eq!(db_item.status, StatusCategory::Missing);
@@ -630,7 +655,9 @@ mod tests {
         assert!(!status.is_healthy());
 
         // Verify config file status is Missing
-        let config_item = status.config_items.iter()
+        let config_item = status
+            .config_items
+            .iter()
             .find(|item| item.name == "Config file")
             .expect("Config file should be in config_items");
         assert_eq!(config_item.status, StatusCategory::Missing);

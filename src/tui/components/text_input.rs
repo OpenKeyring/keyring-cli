@@ -3,9 +3,7 @@
 //! 可聚焦的文本输入框，支持基本编辑操作。
 
 use crate::tui::error::TuiResult;
-use crate::tui::traits::{
-    Component, ComponentId, HandleResult, Interactive, Render,
-};
+use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
@@ -179,18 +177,16 @@ impl Render for TextInput {
 
         // 确定样式
         let style = if self.focused {
-            Style::default()
-                .fg(Color::White)
-                .bg(Color::DarkGray)
+            Style::default().fg(Color::White).bg(Color::DarkGray)
         } else {
-            Style::default()
-                .fg(Color::Gray)
-                .bg(Color::Black)
+            Style::default().fg(Color::Gray).bg(Color::Black)
         };
 
-        let placeholder_style = Style::default()
-            .fg(Color::DarkGray)
-            .bg(if self.focused { Color::DarkGray } else { Color::Black });
+        let placeholder_style = Style::default().fg(Color::DarkGray).bg(if self.focused {
+            Color::DarkGray
+        } else {
+            Color::Black
+        });
 
         // 渲染背景
         for x in 0..area.width {
@@ -316,7 +312,7 @@ impl Default for TextInput {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tui::traits::{Component, Render, Interactive};
+    use crate::tui::traits::{Component, Interactive, Render};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use ratatui::{buffer::Buffer, layout::Rect};
 
@@ -385,10 +381,7 @@ mod tests {
         input.render(area, &mut buf);
 
         // 验证缓冲区包含 "hello"
-        let content: String = buf.content().iter()
-            .map(|c| c.symbol())
-            .take(5)
-            .collect();
+        let content: String = buf.content().iter().map(|c| c.symbol()).take(5).collect();
         assert_eq!(content, "hello");
     }
 

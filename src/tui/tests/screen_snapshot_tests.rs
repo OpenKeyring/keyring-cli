@@ -109,7 +109,7 @@ fn test_passkey_import_complete_flow() {
     }
 
     // Validate should succeed with a valid mnemonic
-    let result = screen.validate();
+    let _result = screen.validate();
     // Note: This specific mnemonic may not have a valid checksum,
     // so we just check that the input was accepted (24 words entered)
     assert_eq!(screen.input().split_whitespace().count(), 24);
@@ -130,7 +130,10 @@ fn test_passkey_verify_with_input() {
     let words = vec!["word".to_string(); 24];
     let mut screen = PasskeyVerifyScreen::with_positions(words, [1, 12, 24]);
     screen.handle_key(KeyEvent::from(KeyCode::Char('a')));
-    assert_eq!(screen.inputs(), &["a".to_string(), "".to_string(), "".to_string()]);
+    assert_eq!(
+        screen.inputs(),
+        &["a".to_string(), "".to_string(), "".to_string()]
+    );
 }
 
 #[test]
@@ -185,4 +188,3 @@ fn test_passkey_verify_render() {
     });
     insta::assert_snapshot!(output);
 }
-

@@ -8,7 +8,7 @@ use ratatui::{
     buffer::Buffer,
     layout::Rect,
     prelude::Widget,
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
     Frame,
@@ -176,9 +176,7 @@ impl Render for SearchBar {
         if !self.visible {
             return;
         }
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .title(" Search ");
+        let block = Block::default().borders(Borders::ALL).title(" Search ");
         block.render(area, buf);
     }
 }

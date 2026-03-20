@@ -45,12 +45,20 @@ fn test_layout_proportions() {
     let content_width = 100;
     let left_width = layout.left_column.width as f32;
     let left_ratio = left_width / content_width as f32;
-    assert!(left_ratio > 0.30 && left_ratio < 0.40, "Left column ratio: {}", left_ratio);
+    assert!(
+        left_ratio > 0.30 && left_ratio < 0.40,
+        "Left column ratio: {}",
+        left_ratio
+    );
 
     // Right column should be ~65% of content width
     let right_width = layout.right_column.width as f32;
     let right_ratio = right_width / content_width as f32;
-    assert!(right_ratio > 0.60 && right_ratio < 0.70, "Right column ratio: {}", right_ratio);
+    assert!(
+        right_ratio > 0.60 && right_ratio < 0.70,
+        "Right column ratio: {}",
+        right_ratio
+    );
 }
 
 #[test]
@@ -141,7 +149,10 @@ fn test_global_help_shortcut() {
         &mut state,
     );
 
-    assert!(matches!(result, HandleResult::Action(Action::OpenScreen(ScreenType::Help))));
+    assert!(matches!(
+        result,
+        HandleResult::Action(Action::OpenScreen(ScreenType::Help))
+    ));
 }
 
 #[test]
@@ -155,7 +166,10 @@ fn test_global_trash_shortcut() {
         &mut state,
     );
 
-    assert!(matches!(result, HandleResult::Action(Action::OpenScreen(ScreenType::Trash))));
+    assert!(matches!(
+        result,
+        HandleResult::Action(Action::OpenScreen(ScreenType::Trash))
+    ));
 }
 
 #[test]
@@ -310,7 +324,11 @@ fn test_notification_queue_limit() {
     assert_eq!(state.notifications.len(), 5);
 
     // The oldest messages should have been removed
-    let messages: Vec<_> = state.notifications.iter().map(|n| n.message.as_str()).collect();
+    let messages: Vec<_> = state
+        .notifications
+        .iter()
+        .map(|n| n.message.as_str())
+        .collect();
     assert!(!messages.contains(&"Message 0"));
     assert!(!messages.contains(&"Message 4"));
     assert!(messages.contains(&"Message 5"));
@@ -336,7 +354,10 @@ fn test_notification_auto_dismiss() {
     // Error notifications don't auto-dismiss (duration = 0)
     state.add_notification("Error test", NotificationLevel::Error);
     let error_notification = state.notifications.back().unwrap();
-    assert_eq!(error_notification.effective_duration(), Duration::from_secs(0));
+    assert_eq!(
+        error_notification.effective_duration(),
+        Duration::from_secs(0)
+    );
 }
 
 #[test]
@@ -370,18 +391,21 @@ fn test_empty_tree_with_no_filters() {
     let tree_state = &state.tree;
 
     // Tree state should be empty with no data in cache
-    assert!(tree_state.visible_nodes.is_empty(), "Empty cache should produce empty visible nodes");
+    assert!(
+        tree_state.visible_nodes.is_empty(),
+        "Empty cache should produce empty visible nodes"
+    );
 
     // Now add some data and verify it appears
-    let test_password = PasswordRecord::new(
-        Uuid::new_v4().to_string(),
-        "Test Password",
-        "secret123"
-    );
+    let test_password =
+        PasswordRecord::new(Uuid::new_v4().to_string(), "Test Password", "secret123");
     state.refresh_password_cache(vec![test_password]);
 
     // Tree state should now have visible nodes
-    assert!(!state.tree.visible_nodes.is_empty(), "Cache with data should produce visible nodes");
+    assert!(
+        !state.tree.visible_nodes.is_empty(),
+        "Cache with data should produce visible nodes"
+    );
 }
 
 #[test]
@@ -393,15 +417,24 @@ fn test_filter_state_active_detection() {
 
     // Toggle "All" - still considered no real filter
     filter_state.toggle(FilterType::All);
-    assert!(!filter_state.has_active_filters(), "All filter alone should not count as active");
+    assert!(
+        !filter_state.has_active_filters(),
+        "All filter alone should not count as active"
+    );
 
     // Toggle "Favorite" - now we have an active filter
     filter_state.toggle(FilterType::Favorite);
-    assert!(filter_state.has_active_filters(), "Favorite filter should be considered active");
+    assert!(
+        filter_state.has_active_filters(),
+        "Favorite filter should be considered active"
+    );
 
     // Clear and check
     filter_state.clear();
-    assert!(!filter_state.has_active_filters(), "After clear, no active filters");
+    assert!(
+        !filter_state.has_active_filters(),
+        "After clear, no active filters"
+    );
 }
 
 #[test]

@@ -1,6 +1,6 @@
 //! Unit tests for EditPasswordScreen
 
-use super::{EditedPasswordFields, EditFormField, EditPasswordScreen};
+use super::{EditFormField, EditPasswordScreen};
 use crate::tui::traits::{HandleResult, Interactive};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use uuid::Uuid;
@@ -28,16 +28,7 @@ fn test_edit_password_screen_creation() {
 #[test]
 fn test_password_regeneration() {
     let id = Uuid::new_v4();
-    let mut screen = EditPasswordScreen::new(
-        id,
-        "Test",
-        None,
-        "original",
-        None,
-        None,
-        &[],
-        None,
-    );
+    let mut screen = EditPasswordScreen::new(id, "Test", None, "original", None, None, &[], None);
 
     assert!(screen.new_password.is_none());
     screen.generate_password();
@@ -48,16 +39,8 @@ fn test_password_regeneration() {
 #[test]
 fn test_get_current_password() {
     let id = Uuid::new_v4();
-    let mut screen = EditPasswordScreen::new(
-        id,
-        "Test",
-        None,
-        "original_password",
-        None,
-        None,
-        &[],
-        None,
-    );
+    let mut screen =
+        EditPasswordScreen::new(id, "Test", None, "original_password", None, None, &[], None);
 
     // Initially returns original
     assert_eq!(screen.get_current_password(), "original_password");
@@ -92,16 +75,8 @@ fn test_get_edited_fields() {
 #[test]
 fn test_toggle_password_visibility() {
     let id = Uuid::new_v4();
-    let mut screen = EditPasswordScreen::new(
-        id,
-        "Test",
-        None,
-        "password123",
-        None,
-        None,
-        &[],
-        None,
-    );
+    let mut screen =
+        EditPasswordScreen::new(id, "Test", None, "password123", None, None, &[], None);
 
     assert!(!screen.password_visible);
 

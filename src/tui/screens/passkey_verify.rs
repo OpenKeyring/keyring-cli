@@ -231,4 +231,3 @@ impl Component for PasskeyVerifyScreen {
         true
     }
 }
-

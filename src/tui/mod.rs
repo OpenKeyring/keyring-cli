@@ -16,18 +16,18 @@
 //! - [`widgets`] - UI 组件
 
 // ============ Phase 1.2 新模块 ============
+pub mod core;
 pub mod error;
 pub mod panic_hook;
 pub mod traits;
-pub mod core;
 
 // ============ TUI MVP State Module ============
 pub mod state;
 
 // ============ Phase 1.3 数据层模块 ============
+pub mod config;
 pub mod models;
 pub mod services;
-pub mod config;
 
 // ============ Mock 数据层 (Phase 0) ============
 pub mod mock;
@@ -58,4 +58,4 @@ pub use app::{run_tui, Screen, SyncStatus, TuiApp, TuiError as LegacyTuiError};
 pub use handler::{AppAction, TuiEventHandler};
 
 // Phase 1.2 错误类型导出
-pub use error::{ErrorSeverity, ErrorKind, RecoveryStrategy, TuiError, TuiResult};
+pub use error::{ErrorKind, ErrorSeverity, RecoveryStrategy, TuiError, TuiResult};

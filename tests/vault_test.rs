@@ -27,7 +27,7 @@ fn test_add_record() {
         .conn
         .query_row(
             "SELECT COUNT(*) FROM records WHERE id = ?1",
-            &[&record.id.to_string()],
+            [&record.id.to_string()],
             |row: &rusqlite::Row| row.get(0),
         )
         .unwrap();
@@ -38,7 +38,7 @@ fn test_add_record() {
         .conn
         .query_row(
             "SELECT COUNT(*) FROM record_tags WHERE record_id = ?1",
-            &[&record.id.to_string()],
+            [&record.id.to_string()],
             |row: &rusqlite::Row| row.get(0),
         )
         .unwrap();
@@ -129,7 +129,7 @@ fn test_add_record_with_duplicate_tags() {
         .conn
         .query_row(
             "SELECT COUNT(*) FROM record_tags WHERE record_id = ?1",
-            &[&record.id.to_string()],
+            [&record.id.to_string()],
             |row: &rusqlite::Row| row.get(0),
         )
         .unwrap();
@@ -261,7 +261,7 @@ fn test_update_record() {
         .conn
         .query_row(
             "SELECT version FROM records WHERE id = ?1",
-            &[&record.id.to_string()],
+            [&record.id.to_string()],
             |row| row.get(0),
         )
         .unwrap();
@@ -282,7 +282,7 @@ fn test_update_record() {
         .conn
         .query_row(
             "SELECT version FROM records WHERE id = ?1",
-            &[&record.id.to_string()],
+            [&record.id.to_string()],
             |row| row.get(0),
         )
         .unwrap();

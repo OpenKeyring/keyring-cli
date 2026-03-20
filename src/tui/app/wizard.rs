@@ -285,7 +285,7 @@ impl TuiApp {
             WizardStep::PasskeyVerify => {
                 if let Some(screen) = &self.passkey_verify_screen {
                     if screen.verify() {
-                        return true;
+                        true
                     } else {
                         // Show error on the screen
                         if let Some(screen) = &mut self.passkey_verify_screen {

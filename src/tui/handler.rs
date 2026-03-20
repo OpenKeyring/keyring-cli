@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn test_default_trait() {
-        let handler = TuiEventHandler::default();
+        let handler = TuiEventHandler;
         let event = KeyEvent::new(KeyCode::F(2), KeyModifiers::empty());
 
         let action = handler.handle_key_event(event);

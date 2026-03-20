@@ -4,15 +4,13 @@
 
 use crate::tui::error::TuiResult;
 use crate::tui::models::tree::TreeNode;
-use crate::tui::traits::{
-    Component, ComponentId, HandleResult, Interactive, Render,
-};
+use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
     style::{Color, Modifier, Style},
-    text::{Span, Line},
+    text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
@@ -174,7 +172,12 @@ impl<T: Clone> TreeComponent<T> {
     }
 
     /// 递归查找路径
-    fn find_path_recursive(&self, node: &TreeNode<T>, target_id: &str, path: &mut Vec<String>) -> bool {
+    fn find_path_recursive(
+        &self,
+        node: &TreeNode<T>,
+        target_id: &str,
+        path: &mut Vec<String>,
+    ) -> bool {
         path.push(node.id.clone());
 
         if node.id == target_id {
@@ -183,10 +186,10 @@ impl<T: Clone> TreeComponent<T> {
 
         // 如果目标节点在当前节点的子树中，继续递归
         for child in &node.children {
-            if self.node_has_descendant(child, target_id) || child.id == target_id {
-                if self.find_path_recursive(child, target_id, path) {
-                    return true;
-                }
+            if (self.node_has_descendant(child, target_id) || child.id == target_id)
+                && self.find_path_recursive(child, target_id, path)
+            {
+                return true;
             }
         }
 
@@ -290,9 +293,7 @@ impl<T: Clone> Render for TreeComponent<T> {
         }
 
         // 创建边框块
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .title("Tree View");
+        let block = Block::default().borders(Borders::ALL).title("Tree View");
 
         // 渲染边框
         block.render(area, buf);
@@ -343,12 +344,12 @@ impl<T: Clone> Render for TreeComponent<T> {
             let indent = "  ".repeat(node.level as usize); // 缩进表示层级
             let icon = if node.is_folder() {
                 if node.expanded {
-                    "-"  // Use simple character for expanded folders
+                    "-" // Use simple character for expanded folders
                 } else {
-                    "+"  // Use simple character for collapsed folders
+                    "+" // Use simple character for collapsed folders
                 }
             } else {
-                "•"  // Use bullet for leaf nodes
+                "•" // Use bullet for leaf nodes
             };
 
             let node_text = format!("{}{} {}", indent, icon, node.name());
@@ -490,15 +491,24 @@ mod tests {
         assert_eq!(component.selected_index, 0);
 
         // 模拟 'j' 键 - 移动到下一项
-        component.handle_key(KeyEvent::new(KeyCode::Char('j'), crossterm::event::KeyModifiers::empty()));
+        component.handle_key(KeyEvent::new(
+            KeyCode::Char('j'),
+            crossterm::event::KeyModifiers::empty(),
+        ));
         assert_eq!(component.selected_index, 1);
 
         // 再次模拟 'j' 键 - 移动到下一项
-        component.handle_key(KeyEvent::new(KeyCode::Char('j'), crossterm::event::KeyModifiers::empty()));
+        component.handle_key(KeyEvent::new(
+            KeyCode::Char('j'),
+            crossterm::event::KeyModifiers::empty(),
+        ));
         assert_eq!(component.selected_index, 2);
 
         // 模拟 'k' 键 - 移动到上一项
-        component.handle_key(KeyEvent::new(KeyCode::Char('k'), crossterm::event::KeyModifiers::empty()));
+        component.handle_key(KeyEvent::new(
+            KeyCode::Char('k'),
+            crossterm::event::KeyModifiers::empty(),
+        ));
         assert_eq!(component.selected_index, 1);
     }
 
@@ -514,7 +524,10 @@ mod tests {
         assert_eq!(component.root().children.len(), 1);
 
         // 选中根节点然后尝试展开 ('l')
-        component.handle_key(KeyEvent::new(KeyCode::Char('l'), crossterm::event::KeyModifiers::empty()));
+        component.handle_key(KeyEvent::new(
+            KeyCode::Char('l'),
+            crossterm::event::KeyModifiers::empty(),
+        ));
 
         // 检查是否正确展开了节点
         if let Some(root_node) = component.root().find("root") {

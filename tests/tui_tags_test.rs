@@ -19,10 +19,22 @@ fn test_env_tag_display_name() {
 
 #[test]
 fn test_env_tag_description() {
-    assert_eq!(EnvTag::Dev.description(), "Local development environment, session-level authorization");
-    assert_eq!(EnvTag::Test.description(), "Test environment, session-level authorization");
-    assert_eq!(EnvTag::Staging.description(), "Staging environment, session-level authorization");
-    assert_eq!(EnvTag::Prod.description(), "Production environment, confirmation required each time ⚠️");
+    assert_eq!(
+        EnvTag::Dev.description(),
+        "Local development environment, session-level authorization"
+    );
+    assert_eq!(
+        EnvTag::Test.description(),
+        "Test environment, session-level authorization"
+    );
+    assert_eq!(
+        EnvTag::Staging.description(),
+        "Staging environment, session-level authorization"
+    );
+    assert_eq!(
+        EnvTag::Prod.description(),
+        "Production environment, confirmation required each time ⚠️"
+    );
 }
 
 #[test]
@@ -41,9 +53,18 @@ fn test_risk_tag_display_name() {
 
 #[test]
 fn test_risk_tag_description() {
-    assert_eq!(RiskTag::Low.description(), "Read-only operations, session-level authorization");
-    assert_eq!(RiskTag::Medium.description(), "Read-write operations, confirmation required");
-    assert_eq!(RiskTag::High.description(), "Dangerous operations, confirmation each time ⚠️");
+    assert_eq!(
+        RiskTag::Low.description(),
+        "Read-only operations, session-level authorization"
+    );
+    assert_eq!(
+        RiskTag::Medium.description(),
+        "Read-write operations, confirmation required"
+    );
+    assert_eq!(
+        RiskTag::High.description(),
+        "Dangerous operations, confirmation each time ⚠️"
+    );
 }
 
 #[test]
@@ -68,7 +89,10 @@ fn test_validate_tag_config_prod_with_low_risk() {
     match result {
         Err(TagError::Contradiction { field, message }) => {
             assert_eq!(field, "env:prod + risk:low");
-            assert_eq!(message, "Production environment should not be marked as low risk");
+            assert_eq!(
+                message,
+                "Production environment should not be marked as low risk"
+            );
         }
         _ => panic!("Expected Contradiction error"),
     }
@@ -86,7 +110,10 @@ fn test_validate_tag_config_dev_with_high_risk() {
     match result {
         Err(TagError::Contradiction { field, message }) => {
             assert_eq!(field, "env:dev + risk:high");
-            assert_eq!(message, "Development environment should not be marked as high risk");
+            assert_eq!(
+                message,
+                "Development environment should not be marked as high risk"
+            );
         }
         _ => panic!("Expected Contradiction error"),
     }

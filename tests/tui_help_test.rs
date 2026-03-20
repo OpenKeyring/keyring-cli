@@ -73,7 +73,7 @@ fn test_sync_section_content() {
     assert_eq!(sync.title, "Sync");
 
     // Should have sync-related shortcuts
-    assert!(sync.shortcuts.len() >= 1);
+    assert!(!sync.shortcuts.is_empty());
 }
 
 #[test]

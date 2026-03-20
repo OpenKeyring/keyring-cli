@@ -8,9 +8,7 @@ mod types;
 
 // Re-export public types
 pub use state::WizardState;
-pub use types::{
-    ClipboardTimeout, PasswordPolicyConfig, PasswordType, TrashRetention, WizardStep,
-};
+pub use types::{ClipboardTimeout, PasswordPolicyConfig, PasswordType, TrashRetention, WizardStep};
 
 #[cfg(test)]
 mod tests;

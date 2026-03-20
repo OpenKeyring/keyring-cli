@@ -5,7 +5,7 @@
 
 #![cfg(feature = "test-env")]
 
-use crate::tui::{Screen, TuiApp, testing::TestSnapshotEnv};
+use crate::tui::{testing::TestSnapshotEnv, Screen, TuiApp};
 use serial_test::serial;
 
 #[test]

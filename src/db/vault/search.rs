@@ -69,16 +69,8 @@ pub fn search_records(conn: &Connection, query: &str) -> Result<Vec<StoredRecord
 
     let mut records = Vec::new();
     for record in record_iter {
-        let (
-            uuid,
-            record_type_str,
-            encrypted_data,
-            nonce,
-            created_ts,
-            updated_ts,
-            version,
-            tags,
-        ) = record?;
+        let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
+            record?;
 
         records.push(StoredRecord {
             id: uuid,

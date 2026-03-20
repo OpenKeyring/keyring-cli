@@ -68,16 +68,8 @@ pub fn list_records(conn: &Connection) -> Result<Vec<StoredRecord>> {
 
     let mut records = Vec::new();
     for record in record_iter {
-        let (
-            uuid,
-            record_type_str,
-            encrypted_data,
-            nonce,
-            created_ts,
-            updated_ts,
-            version,
-            tags,
-        ) = record?;
+        let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
+            record?;
 
         records.push(StoredRecord {
             id: uuid,
@@ -99,33 +91,25 @@ pub fn list_records(conn: &Connection) -> Result<Vec<StoredRecord>> {
 /// Get a specific record by ID with tags
 pub fn get_record(conn: &Connection, id: &str) -> Result<StoredRecord> {
     // Validate UUID format first
-    let uuid =
-        Uuid::parse_str(id).map_err(|e| anyhow::anyhow!("Invalid UUID format: {}", e))?;
+    let uuid = Uuid::parse_str(id).map_err(|e| anyhow::anyhow!("Invalid UUID format: {}", e))?;
 
-    let (
-        _id_str,
-        record_type_str,
-        encrypted_data,
-        nonce_bytes,
-        created_ts,
-        updated_ts,
-        version,
-    ) = conn.query_row(
-        "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at, version
+    let (_id_str, record_type_str, encrypted_data, nonce_bytes, created_ts, updated_ts, version) =
+        conn.query_row(
+            "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at, version
      FROM records WHERE id = ?1 AND deleted = 0",
-        [id],
-        |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, Vec<u8>>(2)?,
-                row.get::<_, Vec<u8>>(3)?,
-                row.get::<_, i64>(4)?,
-                row.get::<_, i64>(5)?,
-                row.get::<_, i64>(6)?,
-            ))
-        },
-    )?;
+            [id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Vec<u8>>(2)?,
+                    row.get::<_, Vec<u8>>(3)?,
+                    row.get::<_, i64>(4)?,
+                    row.get::<_, i64>(5)?,
+                    row.get::<_, i64>(6)?,
+                ))
+            },
+        )?;
 
     let nonce = decode_nonce(&nonce_bytes)?;
 

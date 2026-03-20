@@ -191,9 +191,7 @@ impl From<HandlerError> for KeyringError {
                 context: format!("SSH execution failed: {}", msg),
             },
             HandlerError::DatabaseError(e) => e,
-            HandlerError::Internal(msg) => KeyringError::Internal {
-                context: msg,
-            },
+            HandlerError::Internal(msg) => KeyringError::Internal { context: msg },
             HandlerError::InvalidDecision { .. } | HandlerError::PendingConfirmation { .. } => {
                 KeyringError::Mcp {
                     context: err.to_string(),
@@ -283,7 +281,8 @@ pub async fn handle_ssh_exec(
         "ssh_exec".to_string(),
         session_id.to_string(),
         signing_key,
-    ).map_err(|e| HandlerError::Internal(format!("Failed to create token: {}", e)))?;
+    )
+    .map_err(|e| HandlerError::Internal(format!("Failed to create token: {}", e)))?;
 
     // 6. Return pending confirmation
     let prompt = format!(
@@ -292,7 +291,9 @@ pub async fn handle_ssh_exec(
     );
 
     Err(HandlerError::PendingConfirmation {
-        confirmation_id: token.encode().map_err(|e| HandlerError::Internal(format!("Failed to encode token: {}", e)))?,
+        confirmation_id: token
+            .encode()
+            .map_err(|e| HandlerError::Internal(format!("Failed to encode token: {}", e)))?,
         prompt,
         policy: format!("{:?}", decision),
     })

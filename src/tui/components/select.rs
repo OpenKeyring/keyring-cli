@@ -4,17 +4,17 @@
 
 use crate::tui::error::TuiResult;
 use crate::tui::traits::{
-    Component, ComponentId, HandleResult, Interactive, Render, ValidationTrigger,
-    ValidationResult, FieldValidation
+    Component, ComponentId, FieldValidation, HandleResult, Interactive, Render, ValidationResult,
+    ValidationTrigger,
 };
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
+    prelude::Widget,
     style::{Color, Modifier, Style},
     text::Line,
     widgets::{Block, Borders, List, ListItem, Paragraph},
-    prelude::Widget,
 };
 
 /// 选择项
@@ -234,9 +234,7 @@ impl Render for Select {
                 .bg(Color::DarkGray)
                 .add_modifier(Modifier::BOLD)
         } else {
-            Style::default()
-                .fg(Color::Gray)
-                .bg(Color::Black)
+            Style::default().fg(Color::Gray).bg(Color::Black)
         };
 
         let block = Block::default()
@@ -250,12 +248,11 @@ impl Render for Select {
 
         // 渲染选中的文本
         let selected_text = self.selected_text();
-        let paragraph = Paragraph::new(selected_text)
-            .style(if self.focused {
-                Style::default().fg(Color::White).bg(Color::DarkGray)
-            } else {
-                Style::default().fg(Color::White).bg(Color::Black)
-            });
+        let paragraph = Paragraph::new(selected_text).style(if self.focused {
+            Style::default().fg(Color::White).bg(Color::DarkGray)
+        } else {
+            Style::default().fg(Color::White).bg(Color::Black)
+        });
         paragraph.render(inner_area, buf);
 
         // 如果展开且有焦点，渲染选项列表
@@ -270,7 +267,8 @@ impl Render for Select {
             };
 
             // 准备列表项
-            let items: Vec<ListItem> = self.items
+            let items: Vec<ListItem> = self
+                .items
                 .iter()
                 .enumerate()
                 .map(|(i, item)| {
@@ -293,7 +291,11 @@ impl Render for Select {
 
             let list = List::new(items)
                 .block(Block::default().borders(Borders::ALL).title("选项"))
-                .highlight_style(Style::default().bg(Color::Blue).add_modifier(Modifier::BOLD));
+                .highlight_style(
+                    Style::default()
+                        .bg(Color::Blue)
+                        .add_modifier(Modifier::BOLD),
+                );
 
             list.render(list_area, buf);
         }
@@ -309,8 +311,8 @@ impl Render for Select {
                     height: 1,
                 };
 
-                let error_paragraph = Paragraph::new(error_line)
-                    .style(Style::default().fg(Color::Red));
+                let error_paragraph =
+                    Paragraph::new(error_line).style(Style::default().fg(Color::Red));
                 error_paragraph.render(error_area, buf);
             }
         }
@@ -411,7 +413,7 @@ impl Default for Select {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tui::traits::{ValidationTrigger, BuiltinValidator};
+    use crate::tui::traits::{BuiltinValidator, ValidationTrigger};
 
     #[test]
     fn test_select_creation() {
@@ -476,7 +478,7 @@ mod tests {
 
     #[test]
     fn test_select_with_disabled_item() {
-        let mut items = vec![
+        let items = vec![
             SelectItem::new("选项1", "value1"),
             SelectItem::new("选项2", "value2").with_disabled(true),
             SelectItem::new("选项3", "value3"),
@@ -500,7 +502,10 @@ mod tests {
         let mut select = Select::new(items);
 
         assert!(!select.expanded);
-        select.handle_key(KeyEvent::new(KeyCode::Enter, crossterm::event::KeyModifiers::empty()));
+        select.handle_key(KeyEvent::new(
+            KeyCode::Enter,
+            crossterm::event::KeyModifiers::empty(),
+        ));
         assert!(select.expanded);
     }
 
@@ -514,8 +519,7 @@ mod tests {
             .with_validator(BuiltinValidator::Required)
             .with_trigger(ValidationTrigger::OnBlur);
 
-        let mut select = Select::new(items)
-            .with_validation(validation);
+        let mut select = Select::new(items).with_validation(validation);
 
         // Set selection first
         select.set_selected_by_index(0);

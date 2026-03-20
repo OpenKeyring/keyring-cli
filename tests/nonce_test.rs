@@ -58,7 +58,7 @@ fn test_validate_with_corrupted_nonce() {
 
     // Create a sync record with corrupted nonce (wrong length)
     let mut sync_record = create_sync_record_with_nonce(nonce);
-    sync_record.nonce = STANDARD.encode(&[1u8, 2, 3]); // Only 3 bytes instead of 12
+    sync_record.nonce = STANDARD.encode([1u8, 2, 3]); // Only 3 bytes instead of 12
 
     // Validate should return an error
     let result = validator.validate(&local_record, &sync_record);

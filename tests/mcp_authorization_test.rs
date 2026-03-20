@@ -8,7 +8,8 @@ fn test_token_encoding_decoding() {
         "ssh_exec".to_string(),
         "session-123".to_string(),
         b"test_secret_key",
-    ).unwrap();
+    )
+    .unwrap();
 
     // Test encoding
     let encoded = token.encode().unwrap();
@@ -31,7 +32,8 @@ fn test_token_signature_generation() {
         "api_get".to_string(),
         "session-456".to_string(),
         b"test_secret_key",
-    ).unwrap();
+    )
+    .unwrap();
 
     // Signature should be non-empty
     assert!(!token.signature.is_empty());
@@ -45,7 +47,8 @@ fn test_token_verification_with_valid_session() {
         "ssh_exec".to_string(),
         "session-789".to_string(),
         b"test_secret_key",
-    ).unwrap();
+    )
+    .unwrap();
 
     // Should verify successfully with correct session and key
     let result = token.verify_with_session(b"test_secret_key", "session-789");
@@ -59,7 +62,8 @@ fn test_token_verification_with_wrong_session() {
         "ssh_exec".to_string(),
         "session-789".to_string(),
         b"test_secret_key",
-    ).unwrap();
+    )
+    .unwrap();
 
     // Should fail with different session ID
     let result = token.verify_with_session(b"test_secret_key", "different-session");
@@ -79,7 +83,8 @@ fn test_token_verification_with_wrong_key() {
         "ssh_exec".to_string(),
         "session-789".to_string(),
         b"test_secret_key",
-    ).unwrap();
+    )
+    .unwrap();
 
     // Should fail with different signing key
     let result = token.verify_with_session(b"wrong_secret_key", "session-789");
@@ -99,7 +104,8 @@ fn test_token_signature_only_verification() {
         "api_get".to_string(),
         "session-abc".to_string(),
         b"test_secret_key",
-    ).unwrap();
+    )
+    .unwrap();
 
     // Should verify signature with correct key
     let result = token.verify(b"test_secret_key");
@@ -117,14 +123,16 @@ fn test_token_nonce_uniqueness() {
         "ssh_exec".to_string(),
         "session-123".to_string(),
         b"test_secret_key",
-    ).unwrap();
+    )
+    .unwrap();
 
     let token2 = ConfirmationToken::new(
         "test_credential".to_string(),
         "ssh_exec".to_string(),
         "session-123".to_string(),
         b"test_secret_key",
-    ).unwrap();
+    )
+    .unwrap();
 
     // Nonces should be different
     assert_ne!(token1.nonce, token2.nonce);
@@ -145,7 +153,8 @@ fn test_token_timestamp() {
         "ssh_exec".to_string(),
         "session-123".to_string(),
         b"test_secret_key",
-    ).unwrap();
+    )
+    .unwrap();
 
     let after = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

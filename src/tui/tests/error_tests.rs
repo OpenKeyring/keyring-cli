@@ -44,8 +44,7 @@ fn test_tui_error_new() {
 
 #[test]
 fn test_tui_error_with_message() {
-    let error = TuiError::new(ErrorKind::DatabaseNotFound)
-        .with_message("自定义消息");
+    let error = TuiError::new(ErrorKind::DatabaseNotFound).with_message("自定义消息");
     assert_eq!(error.display_message(), "自定义消息");
 }
 
@@ -183,10 +182,7 @@ fn test_terminal_too_small_message() {
         required: (80, 24),
         actual: (40, 10),
     });
-    assert_eq!(
-        error.display_message(),
-        "终端太小: 需要 80x24, 当前 40x10"
-    );
+    assert_eq!(error.display_message(), "终端太小: 需要 80x24, 当前 40x10");
 }
 
 // ============================================================================
@@ -196,16 +192,12 @@ fn test_terminal_too_small_message() {
 #[test]
 fn test_tui_error_display() {
     let error = TuiError::new(ErrorKind::DatabaseNotFound);
-    assert_eq!(
-        format!("{}", error),
-        "数据库不存在，请先运行初始化向导"
-    );
+    assert_eq!(format!("{}", error), "数据库不存在，请先运行初始化向导");
 }
 
 #[test]
 fn test_tui_error_display_with_custom_message() {
-    let error = TuiError::new(ErrorKind::DatabaseNotFound)
-        .with_message("无法找到数据库文件");
+    let error = TuiError::new(ErrorKind::DatabaseNotFound).with_message("无法找到数据库文件");
     assert_eq!(format!("{}", error), "无法找到数据库文件");
 }
 

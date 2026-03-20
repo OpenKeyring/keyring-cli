@@ -279,10 +279,18 @@ impl Default for ClipboardState {
 /// 剪贴板服务 trait
 pub trait ClipboardService: Send + Sync {
     /// 复制内容（使用 SecureString）
-    fn copy_secure(&mut self, content: SecureString, content_type: ClipboardContentType) -> std::io::Result<()>;
+    fn copy_secure(
+        &mut self,
+        content: SecureString,
+        content_type: ClipboardContentType,
+    ) -> std::io::Result<()>;
 
     /// 复制明文（自动包装为 SecureString）
-    fn copy_str(&mut self, content: &str, content_type: ClipboardContentType) -> std::io::Result<()>;
+    fn copy_str(
+        &mut self,
+        content: &str,
+        content_type: ClipboardContentType,
+    ) -> std::io::Result<()>;
 
     /// 从剪贴板读取
     fn paste(&self) -> std::io::Result<Option<SecureClipboardContent>>;

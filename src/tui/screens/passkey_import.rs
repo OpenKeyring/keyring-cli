@@ -174,11 +174,7 @@ impl PasskeyImportScreen {
                     .add_modifier(Modifier::ITALIC),
             )),
         ])
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Input "),
-        )
+        .block(Block::default().borders(Borders::ALL).title(" Input "))
         .wrap(Wrap { trim: true });
 
         frame.render_widget(input_paragraph, chunks[3]);
@@ -192,7 +188,10 @@ impl PasskeyImportScreen {
         } else if self.validated {
             Paragraph::new(Line::from(vec![
                 Span::styled("✓ ", Style::default().fg(Color::Green)),
-                Span::styled("Passkey validated successfully", Style::default().fg(Color::Green)),
+                Span::styled(
+                    "Passkey validated successfully",
+                    Style::default().fg(Color::Green),
+                ),
             ]))
         } else {
             Paragraph::new(Line::from(""))
@@ -238,8 +237,8 @@ impl Default for PasskeyImportScreen {
 
 impl crate::tui::traits::Interactive for PasskeyImportScreen {
     fn handle_key(&mut self, key: crossterm::event::KeyEvent) -> crate::tui::traits::HandleResult {
-        use crossterm::event::KeyCode;
         use crate::tui::traits::HandleResult;
+        use crossterm::event::KeyCode;
 
         match key.code {
             KeyCode::Char(c) => {
@@ -338,6 +337,9 @@ mod tests {
 
         let result = screen.validate();
         assert!(result.is_err());
-        assert!(screen.validation_error().unwrap().contains("12 or 24 words"));
+        assert!(screen
+            .validation_error()
+            .unwrap()
+            .contains("12 or 24 words"));
     }
 }

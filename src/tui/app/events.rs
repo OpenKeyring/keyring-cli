@@ -44,6 +44,8 @@ impl TuiApp {
                         }
 
                         // Save to database
+                        // Note: MutexGuard across await is safe here because we're in block_in_place
+                        #[allow(clippy::await_holding_lock)]
                         let saved = if let Some(db_service) = self.app_state.db_service() {
                             let db = db_service.clone();
                             let password_clone = password.clone();
@@ -63,14 +65,16 @@ impl TuiApp {
                         if saved {
                             // Add to cache after successful database save
                             self.app_state.add_password_to_cache(password);
-                            self.add_output(format!("✓ Password '{}' created and saved", record.name));
+                            self.add_output(format!(
+                                "✓ Password '{}' created and saved",
+                                record.name
+                            ));
                         } else {
                             self.add_output(format!("✗ Failed to save password '{}'", record.name));
                         }
                     }
                     // Reset screen for next use
-                    self.new_password_screen =
-                        crate::tui::screens::NewPasswordScreen::new();
+                    self.new_password_screen = crate::tui::screens::NewPasswordScreen::new();
                     self.return_to_main();
                 }
                 HandleResult::NeedsRender => {
@@ -90,9 +94,7 @@ impl TuiApp {
                     let fields = self.edit_password_screen.get_edited_fields();
 
                     // Build updated PasswordRecord
-                    let existing = self
-                        .app_state
-                        .get_password_by_str(&fields.id.to_string());
+                    let existing = self.app_state.get_password_by_str(&fields.id.to_string());
                     let updated_record = crate::tui::models::password::PasswordRecord {
                         id: fields.id.to_string(),
                         name: fields.name.clone(),
@@ -113,6 +115,8 @@ impl TuiApp {
                     };
 
                     // Save to database first
+                    // Note: MutexGuard across await is safe here because we're in block_in_place
+                    #[allow(clippy::await_holding_lock)]
                     let saved = if let Some(db_service) = self.app_state.db_service() {
                         let db = db_service.clone();
                         let record_clone = updated_record.clone();
@@ -500,13 +504,15 @@ impl TuiApp {
         // In a full implementation, this would open a confirmation dialog screen
         match &action {
             ConfirmAction::PermanentDelete(id) => {
-                self.output_lines.push(format!("Confirm permanent delete: {}", id));
+                self.output_lines
+                    .push(format!("Confirm permanent delete: {}", id));
             }
             ConfirmAction::EmptyTrash => {
                 self.output_lines.push("Confirm empty trash".to_string());
             }
             ConfirmAction::DeletePassword { password_name, .. } => {
-                self.output_lines.push(format!("Confirm delete: {}", password_name));
+                self.output_lines
+                    .push(format!("Confirm delete: {}", password_name));
             }
             ConfirmAction::Generic => {
                 self.output_lines.push("Confirm action?".to_string());
@@ -518,7 +524,8 @@ impl TuiApp {
             ConfirmAction::PermanentDelete(id) => {
                 // Permanently delete from cache
                 self.app_state.remove_password_from_cache(&id);
-                self.output_lines.push("Password permanently deleted".to_string());
+                self.output_lines
+                    .push("Password permanently deleted".to_string());
             }
             ConfirmAction::EmptyTrash => {
                 // Remove all deleted passwords from cache

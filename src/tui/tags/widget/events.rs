@@ -2,8 +2,8 @@
 //!
 //! Contains all keyboard event handling methods for the tag configuration widget.
 
-use super::TagConfigWidget;
 use super::types::TagFocus;
+use super::TagConfigWidget;
 
 impl TagConfigWidget {
     /// Handle key up event

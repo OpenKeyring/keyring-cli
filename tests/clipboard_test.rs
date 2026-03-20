@@ -150,7 +150,7 @@ fn test_auto_clear_after_timeout_strict() {
 fn test_auto_clear_after_timeout() {
     let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let config = ClipboardConfig {
-        timeout_seconds: 2,  // Short timeout for testing
+        timeout_seconds: 2, // Short timeout for testing
         clear_after_copy: true,
         max_content_length: 256,
     };
@@ -199,8 +199,8 @@ fn test_auto_clear_after_timeout() {
 fn test_no_auto_clear_when_disabled() {
     let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let config = ClipboardConfig {
-        timeout_seconds: 1,  // Short timeout
-        clear_after_copy: false,  // Auto-clear disabled
+        timeout_seconds: 1,      // Short timeout
+        clear_after_copy: false, // Auto-clear disabled
         max_content_length: 256,
     };
 
@@ -216,9 +216,15 @@ fn test_no_auto_clear_when_disabled() {
     let mut check_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let result = check_clipboard.get_content();
 
-    assert!(result.is_ok(), "Clipboard should still have content when clear_after_copy is false");
-    assert_eq!(result.unwrap(), "no_clear_test",
-               "Content should persist when clear_after_copy is disabled");
+    assert!(
+        result.is_ok(),
+        "Clipboard should still have content when clear_after_copy is false"
+    );
+    assert_eq!(
+        result.unwrap(),
+        "no_clear_test",
+        "Content should persist when clear_after_copy is disabled"
+    );
 
     // Clean up manually
     let _ = check_clipboard.clear();

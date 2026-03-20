@@ -128,6 +128,8 @@ impl TuiApp {
     }
 
     /// Load all passwords from vault into cache
+    /// Note: MutexGuard across await is safe here because we're in block_in_place
+    #[allow(clippy::await_holding_lock)]
     pub(crate) fn load_passwords_from_vault(&mut self) {
         // Use block_in_place to run async code in sync context
         let passwords = tokio::task::block_in_place(|| {

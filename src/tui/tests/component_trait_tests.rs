@@ -2,12 +2,12 @@
 //!
 //! 测试 Component、Container、Render、Interactive 等组件相关 trait。
 
-use crate::tui::traits::{Component, Render, Interactive, ComponentId};
 use crate::tui::error::TuiResult;
-use crate::tui::traits::{AppEvent, HandleResult, Action};
-use crossterm::event::{KeyEvent, MouseEvent, KeyCode, KeyModifiers, MouseButton, MouseEventKind};
-use ratatui::layout::Rect;
+use crate::tui::traits::{Action, AppEvent, HandleResult};
+use crate::tui::traits::{Component, ComponentId, Interactive, Render};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
 
 // ============================================================================
 // 测试组件实现
@@ -351,7 +351,10 @@ fn test_component_custom_on_event() {
         id: ComponentId::new(1),
     };
 
-    assert!(matches!(comp.on_event(&AppEvent::Quit), HandleResult::Action(Action::Quit)));
+    assert!(matches!(
+        comp.on_event(&AppEvent::Quit),
+        HandleResult::Action(Action::Quit)
+    ));
     assert_eq!(comp.on_event(&AppEvent::Refresh), HandleResult::NeedsRender);
     assert_eq!(comp.on_event(&AppEvent::Tick), HandleResult::Ignored);
 }

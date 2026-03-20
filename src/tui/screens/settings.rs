@@ -361,11 +361,8 @@ impl SettingsScreen {
             settings_lines.push(Line::from(""));
         }
 
-        let settings = Paragraph::new(Text::from(settings_lines)).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Settings "),
-        );
+        let settings = Paragraph::new(Text::from(settings_lines))
+            .block(Block::default().borders(Borders::ALL).title(" Settings "));
 
         frame.render_widget(settings, chunks[1]);
 

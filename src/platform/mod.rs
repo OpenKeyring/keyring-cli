@@ -126,9 +126,8 @@ mod tests {
     #[test]
     fn test_ssh_detection() {
         // This test might be skipped in CI environments without SSH
-        let ssh_path = which_ssh();
-        if ssh_path.is_some() {
-            assert!(Path::new(ssh_path.as_ref().unwrap()).exists());
+        if let Some(ssh_path) = which_ssh() {
+            assert!(Path::new(&ssh_path).exists());
         }
     }
 

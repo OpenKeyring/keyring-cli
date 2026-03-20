@@ -1,10 +1,10 @@
 //! Application global state management
 
-use super::{FilterState, TreeState, SelectionState};
-use crate::tui::traits::{Notification, NotificationLevel, NotificationId};
-use crate::tui::models::password::PasswordRecord;
-use crate::tui::services::{TuiDatabaseService, TuiClipboardService, TuiCryptoService};
+use super::{FilterState, SelectionState, TreeState};
 use crate::tui::config::TuiConfig;
+use crate::tui::models::password::PasswordRecord;
+use crate::tui::services::{TuiClipboardService, TuiCryptoService, TuiDatabaseService};
+use crate::tui::traits::{Notification, NotificationId, NotificationLevel};
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -173,18 +173,22 @@ impl AppState {
 
     /// Apply current filter and update visible nodes
     pub fn apply_filter(&mut self) {
-        use crate::tui::state::tree_state::{VisibleNode, TreeNodeId, NodeType};
+        use crate::tui::state::tree_state::{NodeType, TreeNodeId, VisibleNode};
 
         // Build visible nodes from password cache
-        let nodes: Vec<VisibleNode> = self.password_list
+        let nodes: Vec<VisibleNode> = self
+            .password_list
             .iter()
             .filter(|p| {
                 // Apply search filter if set
                 if let Some(ref query) = self.filter.search_query {
                     if !query.is_empty() {
                         let query_lower = query.to_lowercase();
-                        return p.name.to_lowercase().contains(&query_lower) ||
-                               p.username.as_ref().map(|u| u.to_lowercase().contains(&query_lower)).unwrap_or(false);
+                        return p.name.to_lowercase().contains(&query_lower)
+                            || p.username
+                                .as_ref()
+                                .map(|u| u.to_lowercase().contains(&query_lower))
+                                .unwrap_or(false);
                     }
                 }
                 true
@@ -195,6 +199,7 @@ impl AppState {
                 node_type: NodeType::Password,
                 label: p.name.clone(),
                 child_count: 0,
+                is_favorite: p.is_favorite,
             })
             .collect();
 
@@ -264,7 +269,8 @@ impl AppState {
         if let Some(existing) = self.password_cache.get_mut(&password.id) {
             *existing = password.clone();
         } else {
-            self.password_cache.insert(password.id.clone(), password.clone());
+            self.password_cache
+                .insert(password.id.clone(), password.clone());
         }
 
         // Update in list
@@ -282,7 +288,8 @@ impl AppState {
 
     /// Add a password to cache (after successful db create)
     pub fn add_password_to_cache(&mut self, password: PasswordRecord) {
-        self.password_cache.insert(password.id.clone(), password.clone());
+        self.password_cache
+            .insert(password.id.clone(), password.clone());
         self.password_list.push(password);
         self.apply_filter();
     }
@@ -308,7 +315,8 @@ impl AppState {
     /// Empty trash - permanently delete all passwords marked as deleted
     /// Returns the number of passwords deleted
     pub fn empty_trash(&mut self) -> usize {
-        let deleted_ids: Vec<String> = self.password_list
+        let deleted_ids: Vec<String> = self
+            .password_list
             .iter()
             .filter(|p| p.is_deleted)
             .map(|p| p.id.clone())

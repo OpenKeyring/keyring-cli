@@ -208,7 +208,10 @@ fn handle_status_command() -> Result<()> {
 
     eprintln!();
     eprintln!("Configuration:");
-    eprintln!("  Max concurrent requests: {}", config.max_concurrent_requests);
+    eprintln!(
+        "  Max concurrent requests: {}",
+        config.max_concurrent_requests
+    );
     eprintln!(
         "  SSH response size limit: {} MB",
         config.max_response_size_ssh / (1024 * 1024)
@@ -222,7 +225,10 @@ fn handle_status_command() -> Result<()> {
         config.session_cache.ttl_seconds,
         config.session_cache.ttl_seconds / 60
     );
-    eprintln!("  Session cache max entries: {}", config.session_cache.max_entries);
+    eprintln!(
+        "  Session cache max entries: {}",
+        config.session_cache.max_entries
+    );
 
     Ok(())
 }

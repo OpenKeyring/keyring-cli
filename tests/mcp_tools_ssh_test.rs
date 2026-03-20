@@ -251,7 +251,7 @@ fn test_ssh_upload_file_output() {
     let json = serde_json::to_string(&output).unwrap();
     let deserialized: SshUploadFileOutput = serde_json::from_str(&json).unwrap();
 
-    assert_eq!(deserialized.success, true);
+    assert!(deserialized.success);
     assert_eq!(deserialized.bytes_uploaded, 52_428_800);
     assert_eq!(deserialized.duration_ms, 5000);
 }
@@ -267,7 +267,7 @@ fn test_ssh_upload_file_failed() {
     let json = serde_json::to_string(&output).unwrap();
     let deserialized: SshUploadFileOutput = serde_json::from_str(&json).unwrap();
 
-    assert_eq!(deserialized.success, false);
+    assert!(!deserialized.success);
     assert_eq!(deserialized.bytes_uploaded, 0);
 }
 
@@ -299,7 +299,7 @@ fn test_ssh_download_file_output() {
     let json = serde_json::to_string(&output).unwrap();
     let deserialized: SshDownloadFileOutput = serde_json::from_str(&json).unwrap();
 
-    assert_eq!(deserialized.success, true);
+    assert!(deserialized.success);
     assert_eq!(deserialized.bytes_downloaded, 262_144_000);
     assert_eq!(deserialized.duration_ms, 15000);
 }
@@ -327,7 +327,7 @@ fn test_ssh_check_connection_success() {
     let json = serde_json::to_string(&output).unwrap();
     let deserialized: SshCheckConnectionOutput = serde_json::from_str(&json).unwrap();
 
-    assert_eq!(deserialized.connected, true);
+    assert!(deserialized.connected);
     assert_eq!(deserialized.latency_ms, 23);
     assert!(deserialized.error.is_none());
 }
@@ -343,7 +343,7 @@ fn test_ssh_check_connection_failure() {
     let json = serde_json::to_string(&output).unwrap();
     let deserialized: SshCheckConnectionOutput = serde_json::from_str(&json).unwrap();
 
-    assert_eq!(deserialized.connected, false);
+    assert!(!deserialized.connected);
     assert_eq!(deserialized.latency_ms, 0);
     assert_eq!(deserialized.error, Some("Connection timed out".to_string()));
 }

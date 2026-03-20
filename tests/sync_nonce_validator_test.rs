@@ -9,7 +9,7 @@ fn test_nonce_validator_creation() {
 
 #[test]
 fn test_nonce_validator_default() {
-    let validator = NonceValidator::default();
+    let validator = NonceValidator;
     let _ = validator;
 }
 

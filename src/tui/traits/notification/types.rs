@@ -202,7 +202,8 @@ impl Notification {
     /// Get effective display duration
     #[must_use]
     pub fn effective_duration(&self) -> Duration {
-        self.duration.unwrap_or_else(|| self.level.default_duration())
+        self.duration
+            .unwrap_or_else(|| self.level.default_duration())
     }
 
     /// Check if expired

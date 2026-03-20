@@ -3,7 +3,7 @@
 //! 提供在同步 TUI 事件循环中管理异步任务的功能。
 
 use crate::tui::error::{ErrorKind, TuiError, TuiResult};
-use crate::tui::traits::{TaskManager, TaskId, TaskStatus, TaskResult, TaskCallback};
+use crate::tui::traits::{TaskCallback, TaskId, TaskManager, TaskResult, TaskStatus};
 use std::any::Any;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -62,8 +62,12 @@ impl TokioTaskManager {
         let (tx, rx) = tokio_mpsc::channel(100);
 
         // 创建多线程 tokio runtime
-        let runtime = tokio::runtime::Runtime::new()
-            .map_err(|e| TuiError::new(ErrorKind::IoError(format!("Failed to create tokio runtime: {}", e))))?;
+        let runtime = tokio::runtime::Runtime::new().map_err(|e| {
+            TuiError::new(ErrorKind::IoError(format!(
+                "Failed to create tokio runtime: {}",
+                e
+            )))
+        })?;
 
         Ok(Self {
             inner: Arc::new(StdMutex::new(TokioTaskManagerInner {
@@ -79,7 +83,10 @@ impl TokioTaskManager {
 
     /// 获取下一个任务 ID
     fn next_id(&self) -> TaskId {
-        TaskId(self.next_task_id.fetch_add(1, core::sync::atomic::Ordering::SeqCst))
+        TaskId(
+            self.next_task_id
+                .fetch_add(1, core::sync::atomic::Ordering::SeqCst),
+        )
     }
 }
 
@@ -95,12 +102,7 @@ unsafe impl Send for TokioTaskManager {}
 unsafe impl Sync for TokioTaskManager {}
 
 impl TaskManager for TokioTaskManager {
-    fn submit<F>(
-        &mut self,
-        name: &str,
-        task: F,
-        callback: Option<TaskCallback>,
-    ) -> TaskId
+    fn submit<F>(&mut self, name: &str, task: F, callback: Option<TaskCallback>) -> TaskId
     where
         F: std::future::Future<Output = TuiResult<Box<dyn Any + Send>>> + Send + 'static,
     {
@@ -153,7 +155,12 @@ impl TaskManager for TokioTaskManager {
     }
 
     fn status(&self, id: TaskId) -> Option<TaskStatus> {
-        self.inner.lock().ok()?.tasks.get(&id).map(|info| info.status.clone())
+        self.inner
+            .lock()
+            .ok()?
+            .tasks
+            .get(&id)
+            .map(|info| info.status.clone())
     }
 
     fn poll_completed(&mut self) -> Vec<(TaskId, TaskResult)> {
@@ -169,11 +176,10 @@ impl TaskManager for TokioTaskManager {
                 };
 
                 // 检查是否有回调
-                let has_callback = guard.tasks.get_mut(&id)
-                    .and_then(|info| {
-                        info.status = status_update;
-                        info.callback.take()
-                    });
+                let has_callback = guard.tasks.get_mut(&id).and_then(|info| {
+                    info.status = status_update;
+                    info.callback.take()
+                });
 
                 // 如果有回调，执行回调但不返回结果
                 if let Some(callback) = has_callback {
@@ -192,10 +198,13 @@ impl TaskManager for TokioTaskManager {
     }
 
     fn active_count(&self) -> usize {
-        self.inner.lock()
+        self.inner
+            .lock()
             .ok()
             .map(|guard| {
-                guard.tasks.values()
+                guard
+                    .tasks
+                    .values()
                     .filter(|info| !info.status.is_finished())
                     .count()
             })
@@ -210,6 +219,14 @@ impl TaskManager for TokioTaskManager {
             std::thread::sleep(std::time::Duration::from_millis(10));
         }
         Ok(())
+    }
+}
+
+// TaskResult 辅助方法
+impl TaskResult {
+    /// 检查是否失败
+    pub fn is_failed(&self) -> bool {
+        matches!(self, Self::Failed(_))
     }
 }
 
@@ -309,13 +326,11 @@ mod tests {
         let callback_called = Arc::new(Mutex::new(false));
         let callback_called_clone = callback_called.clone();
 
-        let callback = Box::new(move |result| {
-            match result {
-                TaskResult::Success(_) => {
-                    *callback_called_clone.lock().unwrap() = true;
-                }
-                TaskResult::Failed(_) => {}
+        let callback = Box::new(move |result| match result {
+            TaskResult::Success(_) => {
+                *callback_called_clone.lock().unwrap() = true;
             }
+            TaskResult::Failed(_) => {}
         });
 
         manager.submit("callback_test", simple_task(99), Some(callback));
@@ -399,13 +414,5 @@ mod tests {
         let status = TaskStatus::Completed;
         assert!(status.is_finished());
         assert!(status.is_success());
-    }
-}
-
-// TaskResult 辅助方法
-impl TaskResult {
-    /// 检查是否失败
-    pub fn is_failed(&self) -> bool {
-        matches!(self, Self::Failed(_))
     }
 }
