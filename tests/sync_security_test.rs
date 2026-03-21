@@ -26,6 +26,7 @@ fn test_metadata_no_sensitive_keys() {
         created_at: Utc::now(),
         version: 1,
         updated_at: Utc::now(),
+        deleted: false,
     };
 
     // Export to sync record
@@ -63,6 +64,7 @@ fn test_encrypted_data_is_base64() {
         created_at: Utc::now(),
         version: 1,
         updated_at: Utc::now(),
+        deleted: false,
     };
 
     let sync_record = exporter.export_record(&test_record).unwrap();
@@ -87,6 +89,7 @@ fn test_nonce_is_base64() {
         created_at: Utc::now(),
         version: 1,
         updated_at: Utc::now(),
+        deleted: false,
     };
 
     let sync_record = exporter.export_record(&test_record).unwrap();
@@ -118,6 +121,7 @@ fn test_full_sync_record_no_sensitive_data() {
         created_at: Utc::now(),
         version: 1,
         updated_at: Utc::now(),
+        deleted: false,
     };
 
     let sync_record = exporter.export_record(&test_record).unwrap();
@@ -185,6 +189,7 @@ fn test_zero_knowledge_metadata_only() {
         created_at: Utc::now(),
         version: 1,
         updated_at: Utc::now(),
+        deleted: false,
     };
 
     let sync_record = exporter.export_record(&test_record).unwrap();

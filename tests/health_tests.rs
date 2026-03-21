@@ -42,6 +42,7 @@ mod tests {
             created_at: Utc::now(),
             updated_at: Utc::now(),
             version: 1,
+            deleted: false,
         };
 
         // Run health check - should detect weak password
@@ -103,6 +104,7 @@ mod tests {
             created_at: Utc::now(),
             updated_at: Utc::now(),
             version: 1,
+            deleted: false,
         }
     }
 }

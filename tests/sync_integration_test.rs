@@ -70,6 +70,7 @@ async fn test_full_sync_flow_with_passkey() {
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 1,
+        deleted: false,
     };
 
     // Add record to vault
@@ -245,6 +246,7 @@ async fn test_sync_roundtrip_with_encrypted_data() {
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
             version: 1,
+            deleted: false,
         };
         vault.add_record(&record).unwrap();
     }

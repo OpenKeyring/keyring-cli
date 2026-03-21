@@ -48,6 +48,8 @@ pub struct StoredRecord {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     /// Version number for conflict detection (incremented on each update)
     pub version: u64,
+    /// Whether this record has been soft-deleted (moved to trash)
+    pub deleted: bool,
 }
 
 /// Decrypted record model
@@ -63,6 +65,8 @@ pub struct DecryptedRecord {
     pub tags: Vec<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    /// Whether this record has been soft-deleted (moved to trash)
+    pub deleted: bool,
 }
 
 /// Tag model
@@ -182,6 +186,7 @@ mod tests {
             created_at: now,
             updated_at: now,
             version: 1,
+            deleted: false,
         };
 
         assert_eq!(record.id, id);
@@ -200,6 +205,7 @@ mod tests {
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
             version: 5,
+            deleted: false,
         };
 
         // Test serialization/deserialization
@@ -228,6 +234,7 @@ mod tests {
             tags: vec!["work".to_string()],
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
+            deleted: false,
         };
 
         assert_eq!(record.password.get(), "secret-password");
@@ -248,6 +255,7 @@ mod tests {
             tags: vec![],
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
+            deleted: false,
         };
 
         assert!(record.username.is_none());

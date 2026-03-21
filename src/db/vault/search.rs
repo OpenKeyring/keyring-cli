@@ -83,6 +83,7 @@ pub fn search_records(conn: &Connection, query: &str) -> Result<Vec<StoredRecord
             updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
                 .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
             version,
+            deleted: false,
         });
     }
 

@@ -171,6 +171,7 @@ pub fn get_pending_records(conn: &Connection) -> Result<Vec<StoredRecord>> {
             updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
                 .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
             version,
+            deleted: false,
         });
     }
 

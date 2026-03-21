@@ -60,6 +60,7 @@ impl SyncImporter for JsonSyncImporter {
             created_at: sync_record.created_at,
             updated_at: sync_record.updated_at,
             version: sync_record.version,
+            deleted: false,
         })
     }
 }

@@ -69,6 +69,26 @@ impl Vault {
         record::delete_record(&mut self.conn, id)
     }
 
+    /// Restore a soft-deleted record
+    pub fn restore_record(&mut self, id: &str) -> Result<()> {
+        record::restore_record(&mut self.conn, id)
+    }
+
+    /// Permanently delete a record from the database
+    pub fn permanently_delete_record(&mut self, id: &str) -> Result<()> {
+        record::permanently_delete_record(&mut self.conn, id)
+    }
+
+    /// List all soft-deleted records
+    pub fn list_deleted_records(&self) -> Result<Vec<StoredRecord>> {
+        record::list_deleted_records(&self.conn)
+    }
+
+    /// Empty trash: permanently delete all soft-deleted records
+    pub fn empty_trash(&mut self) -> Result<usize> {
+        record::empty_trash(&mut self.conn)
+    }
+
     // ==================== Metadata Operations ====================
 
     /// Set a metadata key-value pair

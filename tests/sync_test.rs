@@ -27,6 +27,7 @@ fn sync_export_import_roundtrip() {
         created_at: Utc::now(),
         updated_at: Utc::now(),
         version: 1,
+        deleted: false,
     };
 
     // 添加记录到 vault

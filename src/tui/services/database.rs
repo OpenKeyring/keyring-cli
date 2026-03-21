@@ -60,7 +60,7 @@ impl TuiDatabaseService {
 
     /// 将 DecryptedRecord 转换为 PasswordRecord
     fn decrypted_to_password(record: &DecryptedRecord) -> PasswordRecord {
-        PasswordRecord::new(
+        let mut pw = PasswordRecord::new(
             record.id.to_string(),
             record.name.clone(),
             record.password.get().clone(),
@@ -68,7 +68,14 @@ impl TuiDatabaseService {
         .with_username(record.username.clone().unwrap_or_default())
         .with_url(record.url.clone().unwrap_or_default())
         .with_notes(record.notes.clone().unwrap_or_default())
-        .with_tags(record.tags.clone())
+        .with_tags(record.tags.clone());
+
+        if record.deleted {
+            pw.is_deleted = true;
+            pw.deleted_at = Some(record.updated_at);
+        }
+
+        pw
     }
 
     /// 检查服务是否已初始化（有 DEK）
@@ -100,13 +107,17 @@ impl DatabaseService for TuiDatabaseService {
     }
 
     /// 删除密码记录（移入回收站或永久删除）
-    async fn delete_password(&self, id: &str, _to_trash: bool) -> TuiResult<()> {
+    async fn delete_password(&self, id: &str, to_trash: bool) -> TuiResult<()> {
         let mut vault = self.vault.lock()
             .map_err(|_| TuiError::new(ErrorKind::InvalidState("State lock failed".into())))?;
 
-        vault.delete_record(id)
-            .map_err(|e| TuiError::new(ErrorKind::IoError(e.to_string())))?;
-
+        if to_trash {
+            vault.delete_record(id)
+                .map_err(|e| TuiError::new(ErrorKind::IoError(e.to_string())))?;
+        } else {
+            vault.permanently_delete_record(id)
+                .map_err(|e| TuiError::new(ErrorKind::IoError(e.to_string())))?;
+        }
         Ok(())
     }
 
@@ -156,13 +167,16 @@ impl DatabaseService for TuiDatabaseService {
 
     /// 获取回收站中的项目
     async fn get_trash_items(&self) -> TuiResult<Vec<()>> {
-        // 当前 trait 返回 Vec<()>，暂时返回空
+        // For MVP, trash items are loaded via list_deleted_passwords() extension method
         Ok(Vec::new())
     }
 
     /// 从回收站恢复
-    async fn restore_password(&self, _id: &str) -> TuiResult<()> {
-        // 需要实现软删除恢复逻辑
+    async fn restore_password(&self, id: &str) -> TuiResult<()> {
+        let mut vault = self.vault.lock()
+            .map_err(|_| TuiError::new(ErrorKind::InvalidState("State lock failed".into())))?;
+        vault.restore_record(id)
+            .map_err(|e| TuiError::new(ErrorKind::IoError(e.to_string())))?;
         Ok(())
     }
 
@@ -170,17 +184,17 @@ impl DatabaseService for TuiDatabaseService {
     async fn permanently_delete(&self, id: &str) -> TuiResult<()> {
         let mut vault = self.vault.lock()
             .map_err(|_| TuiError::new(ErrorKind::InvalidState("State lock failed".into())))?;
-
-        vault.delete_record(id)
+        vault.permanently_delete_record(id)
             .map_err(|e| TuiError::new(ErrorKind::IoError(e.to_string())))?;
-
         Ok(())
     }
 
     /// 清空回收站
     async fn empty_trash(&self) -> TuiResult<usize> {
-        // 当前没有软删除表，返回 0
-        Ok(0)
+        let mut vault = self.vault.lock()
+            .map_err(|_| TuiError::new(ErrorKind::InvalidState("State lock failed".into())))?;
+        vault.empty_trash()
+            .map_err(|e| TuiError::new(ErrorKind::IoError(e.to_string())))
     }
 }
 
@@ -205,6 +219,55 @@ impl TuiDatabaseService {
             if record.record_type == RecordType::Password {
                 if let Ok(decrypted) = vault.get_record_decrypted(&record.id.to_string(), dek) {
                     passwords.push(Self::decrypted_to_password(&decrypted));
+                }
+            }
+        }
+
+        Ok(passwords)
+    }
+
+    /// Get all deleted (trashed) password records
+    pub async fn list_deleted_passwords(&self) -> TuiResult<Vec<PasswordRecord>> {
+        let dek = self.dek.as_ref()
+            .ok_or_else(|| TuiError::new(ErrorKind::InvalidKey))?;
+
+        let vault = self.vault.lock()
+            .map_err(|_| TuiError::new(ErrorKind::InvalidState("State lock failed".into())))?;
+
+        let records = vault.list_deleted_records()
+            .map_err(|e| TuiError::new(ErrorKind::IoError(e.to_string())))?;
+
+        let mut passwords = Vec::new();
+        for record in records {
+            if record.record_type == RecordType::Password {
+                // Decrypt the record using the stored record data directly
+                // (get_record_decrypted filters by deleted=0, so we decrypt manually)
+                let dek_array: [u8; 32] = *dek;
+                if let Ok(decrypted_bytes) = crate::crypto::aes256gcm::decrypt(
+                    &record.encrypted_data,
+                    &record.nonce,
+                    &dek_array,
+                ) {
+                    if let Ok(json_str) = String::from_utf8(decrypted_bytes) {
+                        if let Ok(payload) = serde_json::from_str::<serde_json::Value>(&json_str) {
+                            let decrypted = DecryptedRecord {
+                                id: record.id,
+                                record_type: record.record_type,
+                                name: payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                username: payload.get("username").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                password: crate::types::SensitiveString::new(
+                                    payload.get("password").and_then(|v| v.as_str()).unwrap_or("").to_string()
+                                ),
+                                url: payload.get("url").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                notes: payload.get("notes").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                tags: record.tags.clone(),
+                                created_at: record.created_at,
+                                updated_at: record.updated_at,
+                                deleted: true,
+                            };
+                            passwords.push(Self::decrypted_to_password(&decrypted));
+                        }
+                    }
                 }
             }
         }
@@ -253,6 +316,7 @@ impl TuiDatabaseService {
             created_at: password.created_at,
             updated_at: password.modified_at,
             version: 1,
+            deleted: false,
         };
 
         // Store in vault
@@ -310,6 +374,7 @@ impl TuiDatabaseService {
             created_at: existing.created_at, // Preserve original created_at
             updated_at: chrono::Utc::now(),
             version: existing.version, // Version will be incremented by vault.update_record
+            deleted: false,
         };
 
         // Update in vault
@@ -392,6 +457,7 @@ mod tests {
             tags: vec!["work".to_string()],
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
+            deleted: false,
         };
 
         let password = TuiDatabaseService::decrypted_to_password(&record);

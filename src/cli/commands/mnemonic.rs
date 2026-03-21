@@ -96,6 +96,7 @@ async fn generate_mnemonic(word_count: u8, name: Option<String>) -> Result<()> {
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
             version: 1, // New records start at version 1
+            deleted: false,
         };
 
         // Get database path and save

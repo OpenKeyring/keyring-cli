@@ -100,5 +100,6 @@ pub fn get_record_decrypted(conn: &Connection, id: &str, dek: &[u8]) -> Result<D
         tags: stored.tags,
         created_at: stored.created_at,
         updated_at: stored.updated_at,
+        deleted: stored.deleted,
     })
 }

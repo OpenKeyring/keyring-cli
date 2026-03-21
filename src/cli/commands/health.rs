@@ -109,6 +109,7 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
                 let v: i64 = row.get(7)?;
                 v as u64
             },
+            deleted: false, // WHERE deleted=0 already filters
         })
     })?;
 

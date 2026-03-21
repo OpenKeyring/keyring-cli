@@ -46,6 +46,7 @@ fn test_update_username_field() {
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 0,
+        deleted: false,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();
@@ -111,6 +112,7 @@ fn test_update_url_field() {
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 0,
+        deleted: false,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();
@@ -179,6 +181,7 @@ fn test_update_notes_field() {
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 0,
+        deleted: false,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();
@@ -247,6 +250,7 @@ fn test_update_tags_replace() {
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 0,
+        deleted: false,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();
@@ -381,6 +385,7 @@ fn test_update_password_with_encryption() {
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 0,
+        deleted: false,
     };
 
     let mut vault = Vault::open(&db_path, "").unwrap();

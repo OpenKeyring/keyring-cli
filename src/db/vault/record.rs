@@ -82,6 +82,7 @@ pub fn list_records(conn: &Connection) -> Result<Vec<StoredRecord>> {
             updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
                 .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
             version,
+            deleted: false, // WHERE deleted=0 already filters
         });
     }
 
@@ -124,6 +125,7 @@ pub fn get_record(conn: &Connection, id: &str) -> Result<StoredRecord> {
         updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
             .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
         version: version as u64,
+        deleted: false, // WHERE deleted=0 already filters
     };
 
     // Load tags
@@ -317,4 +319,162 @@ pub fn delete_record(conn: &mut Connection, id: &str) -> Result<()> {
     super::sync::set_sync_state(conn, id, None, SyncStatus::Pending)?;
 
     Ok(())
+}
+
+/// Restore a soft-deleted record
+///
+/// Marks the record as active (deleted=0) and updates the timestamp.
+///
+/// # Arguments
+/// * `conn` - Database connection
+/// * `id` - The UUID of the record to restore
+///
+/// # Returns
+/// * `Ok(())` if the record was successfully restored
+/// * `Err(...)` if the record doesn't exist or is not deleted
+pub(crate) fn restore_record(conn: &mut Connection, id: &str) -> Result<()> {
+    let now = chrono::Utc::now().timestamp();
+    let rows = conn.execute(
+        "UPDATE records SET deleted = 0, updated_at = ?1 WHERE id = ?2 AND deleted = 1",
+        rusqlite::params![now, id],
+    )?;
+    if rows == 0 {
+        anyhow::bail!("Record not found or not deleted: {}", id);
+    }
+
+    // Mark record as pending sync (for restore propagation)
+    super::sync::set_sync_state(conn, id, None, SyncStatus::Pending)?;
+
+    Ok(())
+}
+
+/// Permanently delete a record from the database
+///
+/// Removes the record and all associated data (tags, sync state) from the database.
+/// This operation is irreversible.
+///
+/// # Arguments
+/// * `conn` - Database connection
+/// * `id` - The UUID of the record to permanently delete
+pub(crate) fn permanently_delete_record(conn: &mut Connection, id: &str) -> Result<()> {
+    let tx = conn.transaction()?;
+    // Delete tag associations first
+    tx.execute("DELETE FROM record_tags WHERE record_id = ?1", [id])?;
+    // Delete sync state
+    tx.execute("DELETE FROM sync_state WHERE record_id = ?1", [id])?;
+    // Delete the record
+    let rows = tx.execute("DELETE FROM records WHERE id = ?1", [id])?;
+    tx.commit()?;
+    if rows == 0 {
+        anyhow::bail!("Record not found: {}", id);
+    }
+    Ok(())
+}
+
+/// List all soft-deleted records
+///
+/// Returns all records marked as deleted (deleted=1), with tags loaded.
+/// Uses the same pattern as `list_records()` but filters for deleted records.
+pub(crate) fn list_deleted_records(conn: &Connection) -> Result<Vec<StoredRecord>> {
+    let mut stmt = conn.prepare(
+        "SELECT r.id, r.record_type, r.encrypted_data, r.nonce,
+                r.created_at, r.updated_at, r.version,
+                GROUP_CONCAT(t.name, ',') as tags
+         FROM records r
+         LEFT JOIN record_tags rt ON r.id = rt.record_id
+         LEFT JOIN tags t ON rt.tag_id = t.id
+         WHERE r.deleted = 1
+         GROUP BY r.id
+         ORDER BY r.updated_at DESC",
+    )?;
+
+    let record_iter = stmt.query_map([], |row| {
+        let id_str: String = row.get(0)?;
+        let record_type_str: String = row.get(1)?;
+        let encrypted_data: Vec<u8> = row.get(2)?;
+        let nonce_bytes: Vec<u8> = row.get(3)?;
+        let created_ts: i64 = row.get(4)?;
+        let updated_ts: i64 = row.get(5)?;
+        let version: i64 = row.get(6)?;
+        let tags_csv: Option<String> = row.get(7)?;
+
+        let uuid = Uuid::parse_str(&id_str)
+            .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+
+        let tags = tags_csv
+            .map(|csv| {
+                csv.split(',')
+                    .filter(|s| !s.is_empty())
+                    .map(String::from)
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let nonce = decode_nonce(&nonce_bytes).map_err(|_| {
+            rusqlite::Error::ToSqlConversionFailure(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Invalid nonce length",
+            )))
+        })?;
+
+        Ok((
+            uuid,
+            record_type_str,
+            encrypted_data,
+            nonce,
+            created_ts,
+            updated_ts,
+            version as u64,
+            tags,
+        ))
+    })?;
+
+    let mut records = Vec::new();
+    for record in record_iter {
+        let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
+            record?;
+
+        records.push(StoredRecord {
+            id: uuid,
+            record_type: RecordType::from(record_type_str),
+            encrypted_data,
+            nonce,
+            tags,
+            created_at: chrono::DateTime::from_timestamp(created_ts, 0)
+                .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
+            updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
+                .ok_or_else(|| anyhow::anyhow!("Invalid updated_at timestamp"))?,
+            version,
+            deleted: true,
+        });
+    }
+
+    Ok(records)
+}
+
+/// Empty trash: permanently delete all soft-deleted records
+///
+/// Removes all records marked as deleted, along with their tag associations
+/// and sync state. Returns the number of records deleted.
+pub(crate) fn empty_trash(conn: &mut Connection) -> Result<usize> {
+    // Get IDs of deleted records for cleanup
+    let ids: Vec<String> = conn
+        .prepare("SELECT id FROM records WHERE deleted = 1")?
+        .query_map([], |row| row.get(0))?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    if ids.is_empty() {
+        return Ok(0);
+    }
+
+    let tx = conn.transaction()?;
+    for id in &ids {
+        tx.execute("DELETE FROM record_tags WHERE record_id = ?1", [id])?;
+        tx.execute("DELETE FROM sync_state WHERE record_id = ?1", [id])?;
+    }
+    let count = tx.execute("DELETE FROM records WHERE deleted = 1", [])?;
+    tx.commit()?;
+
+    Ok(count)
 }

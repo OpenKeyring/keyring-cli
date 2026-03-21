@@ -37,6 +37,7 @@ fn test_search_filters_by_type() {
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 0,
+        deleted: false,
     };
     vault.add_record(&password_record).unwrap();
 
@@ -50,6 +51,7 @@ fn test_search_filters_by_type() {
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 0,
+        deleted: false,
     };
     vault.add_record(&ssh_record).unwrap();
 
@@ -97,6 +99,7 @@ fn test_search_filters_by_tags() {
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 0,
+        deleted: false,
     };
     vault.add_record(&work_record).unwrap();
 
@@ -110,6 +113,7 @@ fn test_search_filters_by_tags() {
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 0,
+        deleted: false,
     };
     vault.add_record(&personal_record).unwrap();
 
@@ -154,6 +158,7 @@ fn test_search_respects_limit() {
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
             version: 0,
+            deleted: false,
         };
         vault.add_record(&record).unwrap();
     }

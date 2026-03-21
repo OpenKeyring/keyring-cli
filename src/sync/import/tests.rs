@@ -554,6 +554,7 @@ fn test_import_export_roundtrip() {
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 3,
+        deleted: false,
     };
     let sync_record = exporter.export_record(&stored_record).unwrap();
 
