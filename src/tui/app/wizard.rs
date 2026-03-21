@@ -3,113 +3,17 @@
 //! Contains all methods related to the onboarding wizard flow.
 
 use super::TuiApp;
-use crate::error::{KeyringError, Result};
-use crate::onboarding::initialize_keystore;
 use crate::tui::screens::wizard::WizardStep;
 use crate::tui::traits::{Action as TraitAction, HandleResult, Interactive, WizardStepValidator};
 
 impl TuiApp {
-    /// Check if onboarding is needed, and if so, start the wizard
-    pub async fn check_onboarding(&mut self, keystore_path: &std::path::Path) -> Result<bool> {
-        if !crate::onboarding::is_initialized(keystore_path) {
-            // Show wizard
-            self.wizard_state = Some(
-                crate::tui::screens::wizard::WizardState::new()
-                    .with_keystore_path(keystore_path.to_path_buf()),
-            );
-            self.current_screen = super::types::Screen::Wizard;
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
-
-    /// Complete the wizard and initialize the keystore
-    pub async fn complete_wizard(&mut self) -> Result<()> {
-        if let Some(state) = &self.wizard_state {
-            if !state.is_complete() {
-                return Err(KeyringError::InvalidInput {
-                    context: "Wizard not complete".to_string(),
-                });
-            }
-
-            let Some(keystore_path) = state.require_keystore_path() else {
-                return Err(KeyringError::InvalidInput {
-                    context: "Keystore path not set".to_string(),
-                });
-            };
-            let Some(password) = state.require_master_password() else {
-                return Err(KeyringError::InvalidInput {
-                    context: "Master password not set".to_string(),
-                });
-            };
-
-            // Initialize keystore
-            let _keystore = initialize_keystore(keystore_path, password).map_err(|e| {
-                KeyringError::Internal {
-                    context: e.to_string(),
-                }
-            })?;
-
-            // TODO: Store Passkey seed wrapped with master password
-
-            // Apply wizard configuration to TuiConfig
-            let clipboard_seconds = state.clipboard_timeout.seconds();
-            let trash_days = state.trash_retention.days();
-
-            self.app_state.config.clipboard_timeout_seconds = clipboard_seconds;
-            self.app_state.config.trash_retention_days = trash_days;
-
-            // Apply password policy from wizard
-            self.app_state.config.default_password_policy =
-                crate::tui::config::PasswordPolicyConfig {
-                    length: state.password_policy.default_length,
-                    min_digits: state.password_policy.min_digits,
-                    min_special: state.password_policy.min_special,
-                    min_lowercase: 1, // Default
-                    min_uppercase: 1, // Default
-                    password_type: match state.password_policy.default_type {
-                        crate::tui::screens::wizard::PasswordType::Random => {
-                            crate::tui::config::PasswordTypeConfig::Random
-                        }
-                        crate::tui::screens::wizard::PasswordType::Memorable => {
-                            crate::tui::config::PasswordTypeConfig::Memorable
-                        }
-                        crate::tui::screens::wizard::PasswordType::Pin => {
-                            crate::tui::config::PasswordTypeConfig::Pin
-                        }
-                    },
-                };
-
-            // Save configuration to disk
-            if let Err(e) = self.save_config() {
-                eprintln!("Warning: Failed to save TUI config: {}", e);
-            }
-
-            // Clear wizard state
-            self.wizard_state = None;
-            self.passkey_verify_screen = None;
-            self.current_screen = super::types::Screen::Main;
-
-            self.app_state.add_notification(
-                "Initialization complete",
-                crate::tui::traits::NotificationLevel::Success,
-            );
-            Ok(())
-        } else {
-            Err(KeyringError::InvalidInput {
-                context: "No wizard state".to_string(),
-            })
-        }
-    }
-
     /// Handle wizard screen interactions using delegation pattern
     pub fn handle_wizard_key_event(&mut self, event: crossterm::event::KeyEvent) {
         use crossterm::event::KeyCode;
 
         // ========== Global Navigation Keys ==========
 
-        // Esc: Go back or exit
+        // Esc: Go back or quit (on first step)
         if event.code == KeyCode::Esc {
             let should_go_back = self
                 .wizard_state
@@ -122,14 +26,27 @@ impl TuiApp {
                     state.back();
                 }
             } else {
-                self.wizard_state = None;
-                self.current_screen = super::types::Screen::Main;
+                // Can't go back (first step) — quit the application
+                self.quit();
             }
             return;
         }
 
-        // Enter: Try to proceed to next step
+        // Enter: Finalize on Complete step, otherwise try to proceed
         if event.code == KeyCode::Enter {
+            // Check if wizard is on the Complete step
+            let is_complete = self
+                .wizard_state
+                .as_ref()
+                .map(|s| s.step == WizardStep::Complete)
+                .unwrap_or(false);
+
+            if is_complete {
+                // Finalize: create keystore, open vault, inject services
+                self.finalize_wizard();
+                return;
+            }
+
             let can_proceed = self.try_proceed_current_step();
             if can_proceed {
                 // Sync data before proceeding
@@ -315,5 +232,158 @@ impl TuiApp {
                     Some(crate::tui::screens::PasskeyVerifyScreen::new(words));
             }
         }
+    }
+
+    /// Finalize the wizard: create keystore, open vault, inject services.
+    ///
+    /// Returns `true` on success, `false` on failure (error notification shown,
+    /// wizard state preserved so the user can retry).
+    pub(crate) fn finalize_wizard(&mut self) -> bool {
+        use crate::cli::config::ConfigManager;
+        use crate::crypto::CryptoManager;
+        use std::sync::{Arc, Mutex};
+
+        // Extract all needed values from wizard state upfront to avoid borrow conflicts.
+        let (keystore_path, password, clipboard_seconds, trash_days, policy_length,
+             policy_min_digits, policy_min_special, policy_type) = {
+            let Some(state) = &self.wizard_state else {
+                return false;
+            };
+            if !state.is_complete() {
+                return false;
+            }
+            let Some(keystore_path) = state.require_keystore_path().cloned() else {
+                self.app_state.add_notification(
+                    "Keystore path not set",
+                    crate::tui::traits::NotificationLevel::Error,
+                );
+                return false;
+            };
+            let Some(password) = state.require_master_password().map(|s| s.to_string()) else {
+                self.app_state.add_notification(
+                    "Master password not set",
+                    crate::tui::traits::NotificationLevel::Error,
+                );
+                return false;
+            };
+
+            let clipboard_seconds = state.clipboard_timeout.seconds();
+            let trash_days = state.trash_retention.days();
+            let policy_length = state.password_policy.default_length;
+            let policy_min_digits = state.password_policy.min_digits;
+            let policy_min_special = state.password_policy.min_special;
+            let policy_type = state.password_policy.default_type;
+
+            (keystore_path, password, clipboard_seconds, trash_days,
+             policy_length, policy_min_digits, policy_min_special, policy_type)
+        };
+        // wizard_state borrow is now dropped; self is free for &mut calls.
+
+        // 1. Initialize keystore
+        let keystore = match crate::onboarding::initialize_keystore(&keystore_path, &password) {
+            Ok(ks) => ks,
+            Err(e) => {
+                self.app_state.add_notification(
+                    &format!("Failed to create keystore: {}", e),
+                    crate::tui::traits::NotificationLevel::Error,
+                );
+                return false;
+            }
+        };
+
+        // 2. Get DEK
+        let dek_bytes = keystore.get_dek();
+        let mut dek_array = [0u8; 32];
+        dek_array.copy_from_slice(dek_bytes);
+
+        // 3. Initialize CryptoManager
+        let mut crypto = CryptoManager::new();
+        crypto.initialize_with_key(dek_array);
+
+        // 4. Open vault (get DB path from config)
+        let db_path = ConfigManager::new()
+            .ok()
+            .and_then(|cm| cm.get_database_config().ok())
+            .map(|c| std::path::PathBuf::from(c.path))
+            .unwrap_or_else(|| {
+                dirs::data_dir()
+                    .unwrap_or_else(|| std::path::PathBuf::from("."))
+                    .join("open-keyring")
+                    .join("passwords.db")
+            });
+
+        // Ensure parent directory exists
+        if let Some(parent) = db_path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+
+        let vault = match crate::db::Vault::open(&db_path, &password) {
+            Ok(v) => v,
+            Err(e) => {
+                self.app_state.add_notification(
+                    &format!("Failed to open database: {}", e),
+                    crate::tui::traits::NotificationLevel::Error,
+                );
+                return false;
+            }
+        };
+
+        // 5. Inject services
+        let vault_arc = Arc::new(Mutex::new(vault));
+        let crypto_arc = Arc::new(Mutex::new(crypto));
+
+        let db_service = crate::tui::services::TuiDatabaseService::with_vault(vault_arc)
+            .with_dek(dek_array);
+        self.app_state
+            .set_db_service(Arc::new(Mutex::new(db_service)));
+
+        let clipboard = crate::tui::services::TuiClipboardService::new();
+        self.app_state.set_clipboard_service(clipboard);
+
+        let crypto_service =
+            crate::tui::services::TuiCryptoService::with_crypto_manager(crypto_arc);
+        self.app_state.set_crypto_service(crypto_service);
+
+        // 6. Apply wizard config
+        self.app_state.config.clipboard_timeout_seconds = clipboard_seconds;
+        self.app_state.config.trash_retention_days = trash_days;
+        self.app_state.config.default_password_policy =
+            crate::tui::config::PasswordPolicyConfig {
+                length: policy_length,
+                min_digits: policy_min_digits,
+                min_special: policy_min_special,
+                min_lowercase: 1,
+                min_uppercase: 1,
+                password_type: match policy_type {
+                    crate::tui::screens::wizard::PasswordType::Random => {
+                        crate::tui::config::PasswordTypeConfig::Random
+                    }
+                    crate::tui::screens::wizard::PasswordType::Memorable => {
+                        crate::tui::config::PasswordTypeConfig::Memorable
+                    }
+                    crate::tui::screens::wizard::PasswordType::Pin => {
+                        crate::tui::config::PasswordTypeConfig::Pin
+                    }
+                },
+            };
+
+        if let Err(e) = self.save_config() {
+            eprintln!("Warning: Failed to save config: {}", e);
+        }
+
+        // 7. Load passwords into cache (empty for fresh setup, but consistent with unlock flow)
+        self.load_passwords_from_vault();
+
+        // 8. Clear wizard state and transition
+        self.wizard_state = None;
+        self.passkey_verify_screen = None;
+        self.current_screen = super::types::Screen::Main;
+
+        self.app_state.add_notification(
+            "Setup complete! Press [n] to create your first password.",
+            crate::tui::traits::NotificationLevel::Success,
+        );
+
+        true
     }
 }
