@@ -55,12 +55,18 @@ impl crate::tui::traits::Interactive for NewPasswordScreen {
                     self.password_visible = !self.password_visible;
                     return HandleResult::NeedsRender;
                 }
+                // Non-password fields: insert space as text
+                self.handle_char_input(' ');
+                return HandleResult::NeedsRender;
             }
             KeyCode::Char('r') => {
                 if self.focused_field == FormField::Password.index() {
                     self.generate_password();
                     return HandleResult::NeedsRender;
                 }
+                // Non-password fields: insert 'r' as text
+                self.handle_char_input('r');
+                return HandleResult::NeedsRender;
             }
             KeyCode::Left => {
                 self.handle_left_key();

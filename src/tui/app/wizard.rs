@@ -180,6 +180,12 @@ impl TuiApp {
             WizardStep::PasskeyGenerate => {
                 self.passkey_generate_screen.sync_to_state(state);
             }
+            WizardStep::PasskeyVerify => {
+                if let Some(screen) = &self.passkey_verify_screen {
+                    state.verify_positions = Some(screen.positions());
+                    state.verify_answers = Some(screen.inputs().clone());
+                }
+            }
             _ => {}
         }
     }
@@ -216,6 +222,7 @@ impl TuiApp {
                 self.passkey_import_screen.validate_step()
             }
             WizardStep::PasskeyGenerate => self.passkey_generate_screen.validate_step(),
+            WizardStep::SecurityNotice => self.security_notice_screen.is_acknowledged(),
             _ => state.can_proceed(),
         }
     }
@@ -226,11 +233,32 @@ impl TuiApp {
             return;
         };
 
-        if state.step == WizardStep::PasskeyVerify {
-            if let Some(words) = state.passkey_words.clone() {
-                self.passkey_verify_screen =
-                    Some(crate::tui::screens::PasskeyVerifyScreen::new(words));
+        match state.step {
+            WizardStep::PasskeyGenerate => {
+                // Generate passkey words synchronously
+                if !self.passkey_generate_screen.is_generated() {
+                    match crate::crypto::passkey::Passkey::generate(
+                        self.passkey_generate_screen.word_count(),
+                    ) {
+                        Ok(passkey) => {
+                            self.passkey_generate_screen.set_words(passkey.to_words());
+                        }
+                        Err(e) => {
+                            self.app_state.add_notification(
+                                &format!("Failed to generate passkey: {}", e),
+                                crate::tui::traits::NotificationLevel::Error,
+                            );
+                        }
+                    }
+                }
             }
+            WizardStep::PasskeyVerify => {
+                if let Some(words) = state.passkey_words.clone() {
+                    self.passkey_verify_screen =
+                        Some(crate::tui::screens::PasskeyVerifyScreen::new(words));
+                }
+            }
+            _ => {}
         }
     }
 

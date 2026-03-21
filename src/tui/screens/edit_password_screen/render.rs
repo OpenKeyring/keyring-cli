@@ -67,7 +67,7 @@ impl Render for EditPasswordScreen {
             // Render field content
             match field {
                 EditFormField::Username => {
-                    self.render_text_field(buf, inner, y, &self.username, label_style);
+                    self.render_text_field(buf, inner, y, &self.username, label_style, is_focused);
                 }
                 EditFormField::PasswordType => {
                     let type_label = self.password_type.label();
@@ -129,15 +129,15 @@ impl Render for EditPasswordScreen {
                     );
                 }
                 EditFormField::Url => {
-                    self.render_text_field(buf, inner, y, &self.url, label_style);
+                    self.render_text_field(buf, inner, y, &self.url, label_style, is_focused);
                 }
                 EditFormField::Notes => {
-                    let notes_display = if self.notes.is_empty() {
-                        Span::raw("")
+                    let notes_display = if is_focused {
+                        format!("{}\u{2588}", self.notes)
                     } else {
-                        Span::raw(&self.notes)
+                        self.notes.clone()
                     };
-                    let input = Paragraph::new(notes_display)
+                    let input = Paragraph::new(Span::raw(notes_display))
                         .style(label_style)
                         .block(Block::default().borders(Borders::NONE));
                     input.render(
@@ -146,24 +146,11 @@ impl Render for EditPasswordScreen {
                     );
                 }
                 EditFormField::Tags => {
-                    let content = if self.tags.is_empty() {
-                        Span::raw("")
-                    } else {
-                        Span::raw(&self.tags)
-                    };
-                    let input = Paragraph::new(content)
-                        .style(label_style)
-                        .block(Block::default().borders(Borders::NONE));
-                    input.render(
-                        Rect::new(inner.x + 2, y + 1, inner.x + inner.width - 2, y + 2),
-                        buf,
-                    );
-
-                    let hint = "(comma separated)";
+                    self.render_text_field(buf, inner, y, &self.tags, label_style, is_focused);
                     buf.set_string(
                         inner.x + 20,
                         y + 1,
-                        hint,
+                        "(comma separated)",
                         Style::default().fg(Color::DarkGray),
                     );
                 }
@@ -197,13 +184,13 @@ impl Render for EditPasswordScreen {
 
 impl EditPasswordScreen {
     /// Render a text field
-    fn render_text_field(&self, buf: &mut Buffer, inner: Rect, y: u16, value: &str, style: Style) {
-        let content = if value.is_empty() {
-            Span::raw("")
+    fn render_text_field(&self, buf: &mut Buffer, inner: Rect, y: u16, value: &str, style: Style, is_focused: bool) {
+        let display = if is_focused {
+            format!("{}\u{2588}", value) // block cursor █
         } else {
-            Span::raw(value)
+            value.to_string()
         };
-        let input = Paragraph::new(content)
+        let input = Paragraph::new(Span::raw(display))
             .style(style)
             .block(Block::default().borders(Borders::NONE));
         input.render(

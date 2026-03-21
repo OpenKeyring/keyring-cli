@@ -63,10 +63,10 @@ impl Render for NewPasswordScreen {
             // Render based on field type
             match field {
                 FormField::Name => {
-                    self.render_text_field(buf, inner, y, &label, &self.name, label_style);
+                    self.render_text_field(buf, inner, y, &label, &self.name, label_style, is_focused);
                 }
                 FormField::Username => {
-                    self.render_text_field(buf, inner, y, &label, &self.username, label_style);
+                    self.render_text_field(buf, inner, y, &label, &self.username, label_style, is_focused);
                 }
                 FormField::PasswordType => {
                     let type_label = self.password_type.label();
@@ -124,16 +124,16 @@ impl Render for NewPasswordScreen {
                     );
                 }
                 FormField::Url => {
-                    self.render_text_field(buf, inner, y, &label, &self.url, label_style);
+                    self.render_text_field(buf, inner, y, &label, &self.url, label_style, is_focused);
                 }
                 FormField::Notes => {
                     buf.set_string(inner.x + 2, y, &label, label_style);
-                    let notes_display = if self.notes.is_empty() {
-                        Span::raw("")
+                    let notes_display = if is_focused {
+                        format!("{}\u{2588}", self.notes)
                     } else {
-                        Span::raw(&self.notes)
+                        self.notes.clone()
                     };
-                    let input = Paragraph::new(notes_display)
+                    let input = Paragraph::new(Span::raw(notes_display))
                         .style(label_style)
                         .block(Block::default().borders(Borders::NONE))
                         .wrap(ratatui::widgets::Wrap { trim: false });
@@ -143,7 +143,7 @@ impl Render for NewPasswordScreen {
                     );
                 }
                 FormField::Tags => {
-                    self.render_text_field(buf, inner, y, &label, &self.tags, label_style);
+                    self.render_text_field(buf, inner, y, &label, &self.tags, label_style, is_focused);
                     let hint = "(comma separated)";
                     buf.set_string(
                         inner.x + 20,
@@ -215,12 +215,14 @@ impl NewPasswordScreen {
         label: &str,
         value: &str,
         style: Style,
+        is_focused: bool,
     ) {
-        let content = if value.is_empty() {
-            Span::raw("")
+        let display = if is_focused {
+            format!("{}\u{2588}", value) // block cursor █
         } else {
-            Span::raw(value)
+            value.to_string()
         };
+        let content = Span::raw(display);
         let input = Paragraph::new(content)
             .style(style)
             .block(Block::default().borders(Borders::NONE))
