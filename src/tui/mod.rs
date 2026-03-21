@@ -8,7 +8,6 @@
 //! - [`error`] - Phase 1.2 错误类型定义
 //! - [`traits`] - Trait 层定义，包含所有核心接口
 //! - [`core`] - 核心实现层，提供默认实现
-//! - [`commands`] - CLI 命令处理
 //! - [`handler`] - 事件处理器
 //! - [`keybindings`] - 键盘快捷键管理
 //! - [`screens`] - 各种屏幕界面
@@ -37,7 +36,6 @@ pub mod components;
 
 // ============ 现有模块 ============
 mod app;
-pub mod commands;
 pub mod handler;
 pub mod keybindings;
 pub mod screens;
