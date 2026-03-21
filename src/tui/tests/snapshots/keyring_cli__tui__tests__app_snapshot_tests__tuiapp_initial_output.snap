@@ -1,9 +1,0 @@
----
-source: src/tui/tests/app_snapshot_tests.rs
-expression: "&normalized"
----
-[
-    "OpenKeyring TUI v0.1.0",
-    "Type /help for available commands",
-    "",
-]
