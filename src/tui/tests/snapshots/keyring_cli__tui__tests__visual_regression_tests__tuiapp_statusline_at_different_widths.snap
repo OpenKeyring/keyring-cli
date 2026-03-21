@@ -10,8 +10,8 @@ Step 1: narrow_statusline
 
 Step 2: full_statusline
 ──────────────────────
-🔓  0 rec | Unsynced | v0.1.0 | Ctrl+N new | Ctrl+Q quit
+unlocked 0 rec | Unsynced | v0.1.0 | Ctrl+N new | Ctrl+Q quit
 
 Step 3: wide_statusline
 ──────────────────────
-🔓  0 rec | Unsynced | v0.1.0 | Ctrl+N new | Ctrl+L list | Ctrl+Q quit
+unlocked 0 rec | Unsynced | v0.1.0 | Ctrl+N new | Ctrl+L list | Ctrl+Q quit

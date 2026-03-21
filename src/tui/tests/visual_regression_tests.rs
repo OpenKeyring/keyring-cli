@@ -27,114 +27,6 @@ fn test_tuiapp_initial_render_narrow() {
 }
 
 #[test]
-fn test_tuiapp_render_with_output() {
-    let mut app = TuiApp::new();
-    app.process_command("/help");
-
-    let output = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_tuiapp_render_with_input_buffer() {
-    let mut app = TuiApp::new();
-    for c in "/show mypassword".chars() {
-        app.handle_char(c);
-    }
-
-    let output = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_tuiapp_render_input_sequence() {
-    let mut app = TuiApp::new();
-    let mut seq = SnapshotSequence::new("input_render_sequence");
-
-    // Initial render
-    let initial = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-    seq.step("initial", initial);
-
-    // Type some input
-    for c in "/help".chars() {
-        app.handle_char(c);
-    }
-
-    let with_input = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-    seq.step("with_input", with_input);
-
-    // Submit command
-    app.handle_char('\n');
-
-    let after_submit = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-    seq.step("after_submit", after_submit);
-
-    insta::assert_snapshot!(seq.to_string());
-}
-
-#[test]
-fn test_tuiapp_render_command_execution_sequence() {
-    let mut app = TuiApp::new();
-    let mut seq = SnapshotSequence::new("command_execution_render");
-
-    // Initial state
-    let initial = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-    seq.step("initial", initial);
-
-    // Type /help
-    for c in "/help".chars() {
-        app.handle_char(c);
-    }
-
-    let typed_help = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-    seq.step("typed_help", typed_help);
-
-    // Submit
-    app.handle_char('\n');
-
-    let submitted_help = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-    seq.step("submitted_help", submitted_help);
-
-    // Type /config
-    for c in "/config".chars() {
-        app.handle_char(c);
-    }
-
-    let typed_config = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-    seq.step("typed_config", typed_config);
-
-    // Submit
-    app.handle_char('\n');
-
-    let submitted_config = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-    seq.step("submitted_config", submitted_config);
-
-    insta::assert_snapshot!(seq.to_string());
-}
-
-#[test]
 fn test_tuiapp_render_screen_navigation() {
     let mut app = TuiApp::new();
     let mut seq = SnapshotSequence::new("screen_navigation_render");
@@ -170,47 +62,6 @@ fn test_tuiapp_render_screen_navigation() {
 }
 
 #[test]
-fn test_tuiapp_multiple_outputs_render() {
-    let mut app = TuiApp::new();
-    app.process_command("/help");
-    app.process_command("/config");
-    app.process_command("/list");
-
-    let output = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_tuiapp_long_command_render() {
-    let mut app = TuiApp::new();
-    let long_command = "/show this-is-a-very-long-record-name-that-might-wrap";
-    for c in long_command.chars() {
-        app.handle_char(c);
-    }
-
-    let output = render_snapshot(80, 24, |frame| {
-        app.render(frame);
-    });
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_tuiapp_very_narrow_render() {
-    let mut app = TuiApp::new();
-    app.process_command("/help");
-
-    let output = render_snapshot(30, 24, |frame| {
-        app.render(frame);
-    });
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
 fn test_tuiapp_very_wide_render() {
     let mut app = TuiApp::new();
 
@@ -226,18 +77,6 @@ fn test_tuiapp_short_terminal_render() {
     let mut app = TuiApp::new();
 
     let output = render_snapshot(80, 10, |frame| {
-        app.render(frame);
-    });
-
-    insta::assert_snapshot!(output);
-}
-
-#[test]
-fn test_tuiapp_tall_terminal_render() {
-    let mut app = TuiApp::new();
-    app.process_command("/help");
-
-    let output = render_snapshot(80, 40, |frame| {
         app.render(frame);
     });
 

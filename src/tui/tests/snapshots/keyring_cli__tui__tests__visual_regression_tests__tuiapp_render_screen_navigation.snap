@@ -60,30 +60,30 @@ Step 2: settings_screen
 
 Step 3: help_screen
 ──────────────────
-┌ OpenKeyring TUI ─────────────────────────────────────────────────────────────┐
-│OpenKeyring TUI v0.1.0                                                        │
-│Type /help for available commands                                             │
-│                                                                              │
-│Navigated to: Settings                                                        │
-│Navigated to: Help                                                            │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌──────────────────────────────────────────────────────────────────────────────┐
-│> Type a command...                                                           │
-└──────────────────────────────────────────────────────────────────────────────┘
-┌──────────────────────────────────────────────────────────────────────────────┐
+
+                               Keyboard Shortcuts
+
+                 Use ↑↓ or Page Up/Down to scroll, Esc to return
+
+ ┌Shortcuts───────────────────────────────────────────────────────────────────┐
+ │Global:                                                                     │
+ │                                                                            │
+ │  Ctrl+Q / Esc         - Quit / Exit                                        │
+ │  ? / F1               - Show this help                                     │
+ │  :                    - Enter command mode                                 │
+ │  Shift+T              - Open trash screen                                  │
+ │                                                                            │
+ │Navigation:                                                                 │
+ │                                                                            │
+ │  ↑ / k                - Move up                                            │
+ │  ↓ / j                - Move down                                          │
+ │  Page Up / Ctrl+B     - Page up                                            │
+ │  Page Down / Ctrl+F   - Page down                                          │
+ │  Home / g             - Go to top                                          │
+ │  End / G              - Go to bottom                                       │
+ │                                                                            │
+ └────────────────────────────────────────────────────────────────────────────┘
+
 
 Step 4: back_to_main
 ───────────────────

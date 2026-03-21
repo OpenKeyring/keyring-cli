@@ -5,9 +5,8 @@
 use super::types::{TuiError, TuiResult};
 use super::Screen;
 use crate::error::{KeyringError, Result};
-use crate::tui::components::ConfirmAction;
-use crate::tui::traits::{Action, DatabaseService, HandleResult, ScreenType};
-use crossterm::event::{self, KeyEventKind};
+use crate::tui::traits::{Action, HandleResult, Interactive, ScreenType};
+use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io::{self, Stdout};
 use std::time::Duration;
@@ -72,10 +71,14 @@ pub fn run_tui() -> Result<()> {
                 .join("open-keyring")
                 .join("keystore.json")
         });
-    if !crate::onboarding::is_initialized(&keystore_path) {
+
+    let needs_setup = !crate::onboarding::is_initialized(&keystore_path);
+    if needs_setup {
         // User not initialized - show wizard for first-time setup
-        app.wizard_state =
-            Some(crate::tui::screens::wizard::WizardState::new().with_keystore_path(keystore_path));
+        app.wizard_state = Some(
+            crate::tui::screens::wizard::WizardState::new()
+                .with_keystore_path(keystore_path.clone()),
+        );
         app.current_screen = Screen::Wizard;
     } else {
         // User already initialized - show unlock screen to enter master password
@@ -100,62 +103,80 @@ pub fn run_tui() -> Result<()> {
             {
                 // Filter to only handle Press events to avoid duplicate key handling on Windows
                 event::Event::Key(key) if key.kind == KeyEventKind::Press => {
-                    use crossterm::event::KeyCode;
-
-                    // Route wizard events
-                    if app.current_screen == Screen::Wizard {
-                        app.handle_wizard_key_event(key);
-                    } else if app.current_screen == Screen::Unlock {
-                        // Route unlock screen events
-                        app.handle_unlock_key_event(key);
-                    } else if app.current_screen == Screen::Trash {
-                        // Route trash screen events
-                        let result = app
-                            .trash_screen
-                            .handle_key_with_state(key, &mut app.app_state);
-                        match result {
-                            HandleResult::Action(Action::CloseScreen) => {
-                                app.navigate_to(Screen::Main);
-                            }
-                            HandleResult::Action(Action::OpenScreen(ScreenType::ConfirmDialog(action))) => {
-                                app.show_confirm_dialog(action);
-                            }
-                            _ => {}
-                        }
-                    } else if app.current_screen == Screen::Main {
-                        // Route main screen events to MainScreen handler
-                        match app
-                            .main_screen
-                            .handle_key_with_state(key, &mut app.app_state)
-                        {
-                            HandleResult::Consumed => {}
-                            HandleResult::Ignored => {
-                                // Fallback: handle global shortcuts
-                                if key.code == KeyCode::Char('q') {
-                                    app.quit();
-                                }
-                            }
-                            HandleResult::Action(action) => {
-                                handle_main_screen_action(&mut app, action);
-                            }
-                            HandleResult::NeedsRender => {}
-                        }
+                    // Confirm dialog takes priority over all screens
+                    if app.confirm_dialog.is_some() {
+                        handle_confirm_dialog_key(&mut app, key);
                     } else {
-                        // Check for keyboard shortcuts first (Ctrl keys)
-                        if key.modifiers.contains(event::KeyModifiers::CONTROL) {
-                            app.handle_key_event(key);
-                        } else {
-                            // Regular input handling
-                            match key.code {
-                                KeyCode::Char(c) => app.handle_char(c),
-                                KeyCode::Backspace | KeyCode::Delete => app.handle_backspace(),
-                                KeyCode::Enter => app.handle_char('\n'),
-                                KeyCode::Esc
-                                    if key.modifiers.contains(event::KeyModifiers::CONTROL) =>
-                                {
-                                    app.quit();
+                        // Route to current screen
+                        match app.current_screen {
+                            Screen::Wizard => {
+                                app.handle_wizard_key_event(key);
+                            }
+                            Screen::Unlock => {
+                                app.handle_unlock_key_event(key);
+                            }
+                            Screen::Main => {
+                                let result = app
+                                    .main_screen
+                                    .handle_key_with_state(key, &mut app.app_state);
+                                match result {
+                                    HandleResult::Action(action) => {
+                                        app.handle_main_screen_action(action);
+                                    }
+                                    HandleResult::Ignored => {
+                                        if key.code == KeyCode::Char('q') {
+                                            app.quit();
+                                        }
+                                    }
+                                    _ => {}
                                 }
-                                _ => {}
+                            }
+                            Screen::NewPassword => {
+                                let result = app.new_password_screen.handle_key(key);
+                                app.handle_new_password_result(result);
+                            }
+                            Screen::EditPassword => {
+                                let result = app.edit_password_screen.handle_key(key);
+                                app.handle_edit_password_result(result);
+                            }
+                            Screen::Trash => {
+                                let result = app
+                                    .trash_screen
+                                    .handle_key_with_state(key, &mut app.app_state);
+                                match result {
+                                    HandleResult::Action(Action::CloseScreen) => {
+                                        app.navigate_to(Screen::Main);
+                                    }
+                                    HandleResult::Action(Action::OpenScreen(
+                                        ScreenType::ConfirmDialog(action),
+                                    )) => {
+                                        app.show_confirm_dialog(action);
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            Screen::Settings => {
+                                if key.code == KeyCode::Esc {
+                                    app.navigate_to(Screen::Main);
+                                } else {
+                                    handle_settings_key(&mut app, key);
+                                }
+                            }
+                            Screen::Help => {
+                                if key.code == KeyCode::Esc || key.code == KeyCode::Char('q') {
+                                    app.navigate_to(Screen::Main);
+                                }
+                            }
+                            Screen::Sync => {
+                                if key.code == KeyCode::Esc {
+                                    app.navigate_to(Screen::Main);
+                                }
+                            }
+                            _ => {
+                                // Any other screen: Esc returns to Main
+                                if key.code == KeyCode::Esc {
+                                    app.navigate_to(Screen::Main);
+                                }
                             }
                         }
                     }
@@ -171,199 +192,34 @@ pub fn run_tui() -> Result<()> {
     restore_terminal(terminal)
         .map_err(|e| KeyringError::IoError(format!("Failed to restore terminal: {}", e)))?;
 
+    // If wizard was needed but not completed, show message
+    if needs_setup && !crate::onboarding::is_initialized(&keystore_path) {
+        println!("Setup not completed. Run 'ok' again to restart the setup wizard.");
+    }
+
     Ok(())
 }
 
-/// Handle actions from the main screen
-fn handle_main_screen_action(app: &mut super::TuiApp, action: Action) {
-    match action {
-        Action::Quit => {
-            app.quit();
-        }
-        Action::OpenScreen(screen_type) => match screen_type {
-            ScreenType::Help => {
-                app.show_help();
+/// Handle key events when confirm dialog is active
+fn handle_confirm_dialog_key(app: &mut super::TuiApp, key: crossterm::event::KeyEvent) {
+    if let Some(dialog) = &mut app.confirm_dialog {
+        let result = dialog.handle_key(key);
+        match result {
+            HandleResult::Action(Action::ConfirmDialog(action)) => {
+                app.confirm_dialog = None;
+                app.handle_confirmed_action(action);
             }
-            ScreenType::Settings => {
-                app.navigate_to(Screen::Settings);
+            HandleResult::Action(Action::CloseScreen) => {
+                app.confirm_dialog = None;
             }
-            ScreenType::NewPassword => {
-                app.navigate_to(Screen::NewPassword);
-            }
-            ScreenType::EditPassword(id_str) => {
-                // Get password data from cache
-                if let Some(record) = app.app_state.get_password_by_str(&id_str).cloned() {
-                    // Create EditPasswordScreen with existing data
-                    // Convert String ID to Uuid
-                    if let Ok(uuid) = uuid::Uuid::parse_str(&record.id) {
-                        app.edit_password_screen = crate::tui::screens::EditPasswordScreen::new(
-                            uuid,
-                            &record.name,
-                            record.username.as_deref(),
-                            &record.password,
-                            record.url.as_deref(),
-                            record.notes.as_deref(),
-                            &record.tags,
-                            record.group_id.as_deref(),
-                        );
-                        app.navigate_to(Screen::EditPassword);
-                    } else {
-                        app.output_lines
-                            .push(format!("Invalid UUID in record: {}", record.id));
-                    }
-                } else {
-                    app.output_lines
-                        .push(format!("Password not found: {}", id_str));
-                }
-            }
-            _ => {
-                // For other screens, show a placeholder message
-                app.output_lines
-                    .push(format!("Screen {:?} not yet implemented", screen_type));
-            }
-        },
-        Action::ShowToast(message) => {
-            app.output_lines.push(message);
+            _ => {}
         }
-        Action::CloseScreen => {
-            // Return to main screen
-            app.navigate_to(Screen::Main);
-        }
-        Action::CopyToClipboard(content) => {
-            app.output_lines.push(format!("Copied: {}", content));
-        }
-        Action::Refresh => {
-            app.output_lines.push("Refreshed".to_string());
-        }
-        Action::ConfirmDialog(action) => {
-            handle_confirm_dialog_action(app, action);
-        }
-        Action::None => {}
     }
 }
 
-/// Handle confirmed actions from dialogs
-/// Note: MutexGuard across await is safe here because we're in block_in_place
-#[allow(clippy::await_holding_lock)]
-fn handle_confirm_dialog_action(app: &mut super::TuiApp, action: ConfirmAction) {
-    match action {
-        ConfirmAction::DeletePassword {
-            password_id,
-            password_name,
-        } => {
-            // Delete from database first
-            let deleted = if let Some(db_service) = app.app_state.db_service() {
-                let db = db_service.clone();
-                let id = password_id.clone();
-                tokio::task::block_in_place(|| {
-                    tokio::runtime::Handle::current().block_on(async {
-                        if let Ok(service) = db.lock() {
-                            service.delete_password(&id, true).await.is_ok()
-                        } else {
-                            false
-                        }
-                    })
-                })
-            } else {
-                false
-            };
-
-            if deleted {
-                app.app_state.remove_password_from_cache(&password_id);
-                app.output_lines
-                    .push(format!("Deleted \"{}\"", password_name));
-            } else {
-                app.output_lines
-                    .push(format!("Failed to delete \"{}\"", password_name));
-            }
-        }
-        ConfirmAction::PermanentDelete(id) => {
-            let password_name = app
-                .app_state
-                .get_password_by_str(&id)
-                .map(|p| p.name.clone())
-                .unwrap_or_else(|| id.clone());
-
-            // Permanently delete from database first
-            let deleted = if let Some(db_service) = app.app_state.db_service() {
-                let db = db_service.clone();
-                let id_clone = id.clone();
-                tokio::task::block_in_place(|| {
-                    tokio::runtime::Handle::current().block_on(async {
-                        if let Ok(service) = db.lock() {
-                            service.permanently_delete(&id_clone).await.is_ok()
-                        } else {
-                            false
-                        }
-                    })
-                })
-            } else {
-                false
-            };
-
-            if deleted {
-                app.app_state.permanent_delete_password(&id);
-                app.output_lines
-                    .push(format!("Permanently deleted \"{}\"", password_name));
-            } else {
-                app.output_lines.push(format!(
-                    "Failed to permanently delete \"{}\"",
-                    password_name
-                ));
-            }
-        }
-        ConfirmAction::EmptyTrash => {
-            // Get all deleted password IDs before emptying
-            let deleted_ids: Vec<String> = app
-                .app_state
-                .all_passwords()
-                .iter()
-                .filter(|p| p.is_deleted)
-                .map(|p| p.id.clone())
-                .collect();
-
-            let mut success_count = 0;
-            let mut fail_count = 0;
-
-            // Permanently delete each from database
-            if let Some(db_service) = app.app_state.db_service() {
-                let db = db_service.clone();
-                for id in deleted_ids {
-                    let db_clone = db.clone();
-                    let result = tokio::task::block_in_place(|| {
-                        tokio::runtime::Handle::current().block_on(async {
-                            if let Ok(service) = db_clone.lock() {
-                                service.permanently_delete(&id).await.is_ok()
-                            } else {
-                                false
-                            }
-                        })
-                    });
-                    if result {
-                        success_count += 1;
-                    } else {
-                        fail_count += 1;
-                    }
-                }
-            }
-
-            // Empty trash in cache
-            app.app_state.empty_trash();
-
-            if fail_count > 0 {
-                app.output_lines.push(format!(
-                    "Emptied trash ({} deleted, {} failed)",
-                    success_count, fail_count
-                ));
-            } else {
-                app.output_lines.push(format!(
-                    "Emptied trash ({} passwords permanently deleted)",
-                    success_count
-                ));
-            }
-        }
-        ConfirmAction::Generic => {
-            app.output_lines.push("Action confirmed".to_string());
-        }
-    }
+/// Handle key events for the settings screen
+fn handle_settings_key(app: &mut super::TuiApp, key: crossterm::event::KeyEvent) {
+    // Settings screen basic navigation - delegate to screen if it has a handler
+    // For MVP, settings is view-only; Esc handled by caller
+    let _ = (app, key);
 }

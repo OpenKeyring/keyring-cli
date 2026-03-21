@@ -8,7 +8,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Paragraph, Wrap},
+    widgets::{Block, Borders, Paragraph},
     Frame,
 };
 
@@ -17,82 +17,56 @@ impl TuiApp {
     pub fn render(&mut self, frame: &mut Frame) {
         let size = frame.area();
 
-        // Handle wizard screens differently
-        if self.current_screen == super::types::Screen::Wizard {
-            if let Some(state) = &self.wizard_state {
-                self.render_wizard(frame, size, state);
-                return;
+        // Render the current screen
+        match self.current_screen {
+            super::types::Screen::Wizard => {
+                if let Some(state) = &self.wizard_state {
+                    self.render_wizard(frame, size, state);
+                }
+            }
+            super::types::Screen::Unlock => {
+                self.unlock_screen.render(frame, size);
+            }
+            super::types::Screen::Main => {
+                self.main_screen.render_frame(frame, size, &self.app_state);
+            }
+            super::types::Screen::NewPassword => {
+                use crate::tui::traits::Render;
+                self.new_password_screen.render(size, frame.buffer_mut());
+            }
+            super::types::Screen::EditPassword => {
+                use crate::tui::traits::Render;
+                self.edit_password_screen.render(size, frame.buffer_mut());
+            }
+            super::types::Screen::Trash => {
+                self.trash_screen.render_frame(frame, size, &self.app_state);
+            }
+            super::types::Screen::Settings => {
+                self.settings_screen.render(frame, size);
+            }
+            super::types::Screen::Help => {
+                self.help_screen.render(frame, size);
+            }
+            super::types::Screen::Sync => {
+                if let Some(screen) = &self.sync_screen {
+                    screen.render(frame, size);
+                }
+            }
+            _ => {
+                // Fallback for unhandled screens
+                let msg = Paragraph::new("Screen not implemented")
+                    .alignment(Alignment::Center)
+                    .block(Block::default().borders(Borders::ALL));
+                frame.render_widget(msg, size);
             }
         }
 
-        // Handle sync screen
-        if self.current_screen == super::types::Screen::Sync {
-            if let Some(screen) = &self.sync_screen {
-                screen.render(frame, size);
-                return;
-            }
-        }
-
-        // Handle unlock screen
-        if self.current_screen == super::types::Screen::Unlock {
-            self.unlock_screen.render(frame, size);
-            return;
-        }
-
-        // Handle new password screen
-        if self.current_screen == super::types::Screen::NewPassword {
+        // Render confirm dialog overlay on top of current screen
+        if let Some(dialog) = &self.confirm_dialog {
             use crate::tui::traits::Render;
-            self.new_password_screen.render(size, frame.buffer_mut());
-            return;
+            let dialog_area = centered_rect(50, 40, size);
+            dialog.render(dialog_area, frame.buffer_mut());
         }
-
-        // Handle edit password screen
-        if self.current_screen == super::types::Screen::EditPassword {
-            use crate::tui::traits::Render;
-            self.edit_password_screen.render(size, frame.buffer_mut());
-            return;
-        }
-
-        // Handle trash screen
-        if self.current_screen == super::types::Screen::Trash {
-            self.trash_screen.render_frame(frame, size, &self.app_state);
-            return;
-        }
-
-        // Handle settings screen
-        if self.current_screen == super::types::Screen::Settings {
-            self.settings_screen.render(frame, size);
-            return;
-        }
-
-        // Handle main screen with dual-column layout
-        if self.current_screen == super::types::Screen::Main {
-            self.main_screen.render_frame(frame, size, &self.app_state);
-            return;
-        }
-
-        // Fallback: Split screen into output area, input area, and statusline
-        // (for any other screens not yet migrated)
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(
-                [
-                    Constraint::Min(1),    // Output area (flexible)
-                    Constraint::Length(3), // Input area
-                    Constraint::Length(1), // Statusline
-                ]
-                .as_ref(),
-            )
-            .split(size);
-
-        // Render output area
-        self.render_output(frame, chunks[0]);
-
-        // Render input area
-        self.render_input(frame, chunks[1]);
-
-        // Render statusline
-        self.render_statusline_widget(frame, chunks[2]);
     }
 
     /// Render the wizard screen
@@ -139,7 +113,7 @@ impl TuiApp {
                 // Simple hint screen - render as paragraph
                 let paragraph = Paragraph::new(vec![
                     Line::from(""),
-                    Line::from("💡 Password Hint"),
+                    Line::from("Password Hint"),
                     Line::from(""),
                     Line::from("Your PassKey has been imported successfully."),
                     Line::from(""),
@@ -165,7 +139,7 @@ impl TuiApp {
                 // Optional import screen - for now just show message
                 let paragraph = Paragraph::new(vec![
                     Line::from(""),
-                    Line::from("📥 Import Existing Passwords"),
+                    Line::from("Import Existing Passwords"),
                     Line::from(""),
                     Line::from("This step is optional."),
                     Line::from(""),
@@ -179,15 +153,12 @@ impl TuiApp {
                 // Show completion message with quick start guide
                 let paragraph = Paragraph::new(vec![
                     Line::from(""),
-                    Line::from(vec![
-                        Span::styled("🎉 ", Style::default()),
-                        Span::styled(
-                            "Setup Complete!",
-                            Style::default()
-                                .fg(Color::Green)
-                                .add_modifier(Modifier::BOLD),
-                        ),
-                    ]),
+                    Line::from(vec![Span::styled(
+                        "Setup Complete!",
+                        Style::default()
+                            .fg(Color::Green)
+                            .add_modifier(Modifier::BOLD),
+                    )]),
                     Line::from(""),
                     Line::from(Span::styled(
                         "Quick Start Guide:",
@@ -251,7 +222,7 @@ impl TuiApp {
         let width_usize = width as usize;
 
         // Left: lock status + record count
-        let lock_icon = if self.locked { "🔒" } else { "🔓" };
+        let lock_icon = if self.locked { "locked" } else { "unlocked" };
         let left_part = format!("{} {} rec", lock_icon, self.record_count);
         spans.push(Span::styled(left_part, Style::default().fg(Color::Yellow)));
         spans.push(Span::raw(" | "));
@@ -307,55 +278,25 @@ impl TuiApp {
 
         frame.render_widget(paragraph, area);
     }
+}
 
-    /// Render the output area
-    fn render_output(&self, frame: &mut Frame, area: Rect) {
-        let text: Text = self
-            .output_lines
-            .iter()
-            .map(|line| Line::from(line.as_str()))
-            .collect();
+/// Create a centered rectangle within the given area
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
 
-        let paragraph = Paragraph::new(text)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::DarkGray))
-                    .title(" OpenKeyring TUI "),
-            )
-            .wrap(Wrap { trim: true });
-
-        frame.render_widget(paragraph, area);
-    }
-
-    /// Render the input area
-    fn render_input(&self, frame: &mut Frame, area: Rect) {
-        let input_text = if self.input_buffer.is_empty() {
-            vec![Line::from(vec![
-                Span::styled("> ", Style::default().fg(Color::Gray)),
-                Span::styled(
-                    "Type a command...",
-                    Style::default()
-                        .fg(Color::DarkGray)
-                        .add_modifier(Modifier::ITALIC),
-                ),
-            ])]
-        } else {
-            vec![Line::from(vec![
-                Span::styled("> ", Style::default().fg(Color::Gray)),
-                Span::raw(&self.input_buffer),
-            ])]
-        };
-
-        let paragraph = Paragraph::new(Text::from(input_text)).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Blue)),
-        );
-
-        frame.render_widget(paragraph, area);
-
-        // Set cursor position (area.x + 1 for left border, + 2 for "> " prefix, then cursor offset)
-        frame.set_cursor_position((area.x + 3 + self.input_buffer.len() as u16, area.y + 1));
-    }
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(popup_layout[1])[1]
 }
