@@ -91,9 +91,10 @@ impl TuiApp {
             self.passkey_verify_screen = None;
             self.current_screen = super::types::Screen::Main;
 
-            self.add_output("✓ Initialization complete".to_string());
-            self.add_output(format!("  Clipboard timeout: {}s", clipboard_seconds));
-            self.add_output(format!("  Trash retention: {} days", trash_days));
+            self.app_state.add_notification(
+                "Initialization complete",
+                crate::tui::traits::NotificationLevel::Success,
+            );
             Ok(())
         } else {
             Err(KeyringError::InvalidInput {
@@ -137,17 +138,6 @@ impl TuiApp {
                     state.next();
                 }
                 self.initialize_next_step_screen();
-
-                if self
-                    .wizard_state
-                    .as_ref()
-                    .map(|s| s.is_complete())
-                    .unwrap_or(false)
-                {
-                    self.output_lines.push(
-                        "Wizard complete! Type /wizard-complete to finish.".to_string(),
-                    );
-                }
             }
             return;
         }
@@ -219,7 +209,10 @@ impl TuiApp {
                     self.current_screen = super::types::Screen::Main;
                 }
                 TraitAction::ShowToast(msg) => {
-                    self.output_lines.push(msg);
+                    self.app_state.add_notification(
+                        &msg,
+                        crate::tui::traits::NotificationLevel::Info,
+                    );
                 }
                 _ => {}
             }

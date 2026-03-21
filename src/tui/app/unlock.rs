@@ -123,8 +123,10 @@ impl TuiApp {
         // Success - transition to main screen
         self.unlock_screen.set_success();
         self.current_screen = super::types::Screen::Main;
-        self.output_lines
-            .push("✓ Vault unlocked successfully".to_string());
+        self.app_state.add_notification(
+            "Vault unlocked successfully",
+            crate::tui::traits::NotificationLevel::Success,
+        );
     }
 
     /// Load all passwords from vault into cache
