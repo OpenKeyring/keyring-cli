@@ -157,5 +157,18 @@ impl TuiApp {
         });
 
         self.app_state.refresh_password_cache(passwords);
+
+        // Load groups from vault
+        let groups = if let Some(db_service) = self.app_state.db_service() {
+            let db = db_service.clone();
+            db.lock().ok().and_then(|service| service.list_groups().ok())
+        } else {
+            None
+        };
+        if let Some(groups) = groups {
+            self.app_state.load_groups(groups);
+        }
+
+        self.app_state.apply_filter();
     }
 }

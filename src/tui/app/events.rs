@@ -195,10 +195,7 @@ impl TuiApp {
                 self.show_confirm_dialog(action);
             }
             TraitAction::ShowToast(message) => {
-                self.app_state.add_notification(
-                    &message,
-                    crate::tui::traits::NotificationLevel::Info,
-                );
+                self.handle_toast_signal(message);
             }
             TraitAction::None => {}
         }
@@ -359,9 +356,161 @@ impl TuiApp {
             }
             ConfirmAction::Generic => {}
             ConfirmAction::DeleteGroup { group_id, group_name } => {
-                // TODO: Wire in Task 16 - delete group from DB
-                let _ = (group_id, group_name);
+                let db = self.app_state.db_service().cloned();
+                if let Some(db) = db {
+                    let result = db.lock().ok().map(|service| {
+                        service.delete_group(&group_id)
+                    });
+                    match result {
+                        Some(Ok(())) => {
+                            self.app_state.remove_group(&group_id);
+                            self.app_state.apply_filter();
+                            self.app_state.add_notification(
+                                &format!("Group '{}' deleted", group_name),
+                                crate::tui::traits::NotificationLevel::Success,
+                            );
+                        }
+                        Some(Err(e)) => {
+                            self.app_state.add_notification(
+                                &format!("Failed to delete group: {}", e),
+                                crate::tui::traits::NotificationLevel::Error,
+                            );
+                        }
+                        None => {
+                            self.app_state.add_notification(
+                                "Database locked",
+                                crate::tui::traits::NotificationLevel::Error,
+                            );
+                        }
+                    }
+                }
             }
+        }
+    }
+
+    /// Handle toast signals from tree panel and other components.
+    ///
+    /// Signals prefixed with `__` are intercepted and dispatched to database
+    /// operations. All other messages are shown as normal info notifications.
+    pub(crate) fn handle_toast_signal(&mut self, message: String) {
+        use crate::tui::traits::NotificationLevel;
+
+        if let Some(name) = message.strip_prefix("__create_group:") {
+            let name = name.to_string();
+            let db = self.app_state.db_service().cloned();
+            if let Some(db) = db {
+                let result = db.lock().ok().map(|service| service.create_group(&name));
+                match result {
+                    Some(Ok(group)) => {
+                        let gname = group.name.clone();
+                        self.app_state.add_group(group);
+                        self.app_state.apply_filter();
+                        self.app_state.add_notification(
+                            &format!("Group '{}' created", gname),
+                            NotificationLevel::Success,
+                        );
+                    }
+                    Some(Err(e)) => {
+                        self.app_state.add_notification(
+                            &format!("Failed to create group: {}", e),
+                            NotificationLevel::Error,
+                        );
+                    }
+                    None => {
+                        self.app_state.add_notification(
+                            "Database locked",
+                            NotificationLevel::Error,
+                        );
+                    }
+                }
+            }
+        } else if let Some(rest) = message.strip_prefix("__rename_group:") {
+            if let Some((id, new_name)) = rest.split_once(':') {
+                let id = id.to_string();
+                let new_name = new_name.to_string();
+                let db = self.app_state.db_service().cloned();
+                if let Some(db) = db {
+                    let result = db.lock().ok().map(|service| service.rename_group(&id, &new_name));
+                    match result {
+                        Some(Ok(())) => {
+                            self.app_state.rename_group_in_cache(&id, &new_name);
+                            self.app_state.apply_filter();
+                            self.app_state.add_notification(
+                                "Group renamed",
+                                NotificationLevel::Success,
+                            );
+                        }
+                        Some(Err(e)) => {
+                            self.app_state.add_notification(
+                                &format!("Failed to rename: {}", e),
+                                NotificationLevel::Error,
+                            );
+                        }
+                        None => {
+                            self.app_state.add_notification(
+                                "Database locked",
+                                NotificationLevel::Error,
+                            );
+                        }
+                    }
+                }
+            }
+        } else if let Some(rest) = message.strip_prefix("__move_password:") {
+            if let Some((pw_id, group_id)) = rest.split_once(':') {
+                let pw_id = pw_id.to_string();
+                let group_id = group_id.to_string();
+                let gid_opt = if group_id.is_empty() { None } else { Some(group_id.as_str()) };
+                let db = self.app_state.db_service().cloned();
+                if let Some(db) = db {
+                    let result = db.lock().ok().map(|service| {
+                        service.move_password_to_group(&pw_id, gid_opt)
+                    });
+                    match result {
+                        Some(Ok(())) => {
+                            let gid_string = if group_id.is_empty() { None } else { Some(group_id) };
+                            self.app_state.update_password_group(&pw_id, gid_string);
+                            self.app_state.apply_filter();
+                            self.app_state.add_notification(
+                                "Password moved",
+                                NotificationLevel::Success,
+                            );
+                        }
+                        Some(Err(e)) => {
+                            self.app_state.add_notification(
+                                &format!("Failed to move: {}", e),
+                                NotificationLevel::Error,
+                            );
+                        }
+                        None => {
+                            self.app_state.add_notification(
+                                "Database locked",
+                                NotificationLevel::Error,
+                            );
+                        }
+                    }
+                }
+            }
+        } else if message == "__show_group_picker" {
+            let password_id = self.app_state.tree.current_node().and_then(|node| {
+                if let crate::tui::state::tree_state::TreeNodeId::Password(pid) = node.id {
+                    Some(pid.to_string())
+                } else {
+                    None
+                }
+            });
+            if let Some(pid) = password_id {
+                let mut groups: Vec<(Option<String>, String)> = self
+                    .app_state
+                    .groups
+                    .iter()
+                    .map(|g| (Some(g.id.clone()), g.name.clone()))
+                    .collect();
+                groups.push((None, "Ungrouped".to_string()));
+                self.main_screen.group_picker.show(pid, groups);
+            }
+        } else {
+            // Normal toast notification
+            self.app_state.add_notification(&message, NotificationLevel::Info);
         }
     }
 }
