@@ -16,7 +16,7 @@ use uuid::Uuid;
 pub fn list_records(conn: &Connection) -> Result<Vec<StoredRecord>> {
     let mut stmt = conn.prepare(
         "SELECT r.id, r.record_type, r.encrypted_data, r.nonce, r.created_at, r.updated_at, r.version,
-            GROUP_CONCAT(t.name, ',') as tag_names
+            GROUP_CONCAT(t.name, ',') as tag_names, r.group_id
      FROM records r
      LEFT JOIN record_tags rt ON r.id = rt.record_id
      LEFT JOIN tags t ON rt.tag_id = t.id
@@ -34,6 +34,7 @@ pub fn list_records(conn: &Connection) -> Result<Vec<StoredRecord>> {
         let updated_ts: i64 = row.get(5)?;
         let version: i64 = row.get(6)?;
         let tags_csv: Option<String> = row.get(7)?;
+        let group_id: Option<String> = row.get(8)?;
 
         let uuid = Uuid::parse_str(&id_str)
             .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
@@ -63,12 +64,13 @@ pub fn list_records(conn: &Connection) -> Result<Vec<StoredRecord>> {
             updated_ts,
             version as u64,
             tags,
+            group_id,
         ))
     })?;
 
     let mut records = Vec::new();
     for record in record_iter {
-        let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
+        let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags, group_id) =
             record?;
 
         records.push(StoredRecord {
@@ -77,6 +79,7 @@ pub fn list_records(conn: &Connection) -> Result<Vec<StoredRecord>> {
             encrypted_data,
             nonce,
             tags,
+            group_id,
             created_at: chrono::DateTime::from_timestamp(created_ts, 0)
                 .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
             updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
@@ -94,9 +97,9 @@ pub fn get_record(conn: &Connection, id: &str) -> Result<StoredRecord> {
     // Validate UUID format first
     let uuid = Uuid::parse_str(id).map_err(|e| anyhow::anyhow!("Invalid UUID format: {}", e))?;
 
-    let (_id_str, record_type_str, encrypted_data, nonce_bytes, created_ts, updated_ts, version) =
+    let (_id_str, record_type_str, encrypted_data, nonce_bytes, created_ts, updated_ts, version, group_id) =
         conn.query_row(
-            "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at, version
+            "SELECT id, record_type, encrypted_data, nonce, created_at, updated_at, version, group_id
      FROM records WHERE id = ?1 AND deleted = 0",
             [id],
             |row| {
@@ -108,6 +111,7 @@ pub fn get_record(conn: &Connection, id: &str) -> Result<StoredRecord> {
                     row.get::<_, i64>(4)?,
                     row.get::<_, i64>(5)?,
                     row.get::<_, i64>(6)?,
+                    row.get::<_, Option<String>>(7).unwrap_or(None),
                 ))
             },
         )?;
@@ -120,6 +124,7 @@ pub fn get_record(conn: &Connection, id: &str) -> Result<StoredRecord> {
         encrypted_data,
         nonce,
         tags: vec![], // Will load below
+        group_id,
         created_at: chrono::DateTime::from_timestamp(created_ts, 0)
             .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
         updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)
@@ -379,7 +384,7 @@ pub(crate) fn list_deleted_records(conn: &Connection) -> Result<Vec<StoredRecord
     let mut stmt = conn.prepare(
         "SELECT r.id, r.record_type, r.encrypted_data, r.nonce,
                 r.created_at, r.updated_at, r.version,
-                GROUP_CONCAT(t.name, ',') as tags
+                GROUP_CONCAT(t.name, ',') as tags, r.group_id
          FROM records r
          LEFT JOIN record_tags rt ON r.id = rt.record_id
          LEFT JOIN tags t ON rt.tag_id = t.id
@@ -397,6 +402,7 @@ pub(crate) fn list_deleted_records(conn: &Connection) -> Result<Vec<StoredRecord
         let updated_ts: i64 = row.get(5)?;
         let version: i64 = row.get(6)?;
         let tags_csv: Option<String> = row.get(7)?;
+        let group_id: Option<String> = row.get(8)?;
 
         let uuid = Uuid::parse_str(&id_str)
             .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
@@ -426,12 +432,13 @@ pub(crate) fn list_deleted_records(conn: &Connection) -> Result<Vec<StoredRecord
             updated_ts,
             version as u64,
             tags,
+            group_id,
         ))
     })?;
 
     let mut records = Vec::new();
     for record in record_iter {
-        let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags) =
+        let (uuid, record_type_str, encrypted_data, nonce, created_ts, updated_ts, version, tags, group_id) =
             record?;
 
         records.push(StoredRecord {
@@ -440,6 +447,7 @@ pub(crate) fn list_deleted_records(conn: &Connection) -> Result<Vec<StoredRecord
             encrypted_data,
             nonce,
             tags,
+            group_id,
             created_at: chrono::DateTime::from_timestamp(created_ts, 0)
                 .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
             updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)

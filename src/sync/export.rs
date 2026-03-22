@@ -115,6 +115,7 @@ mod tests {
             encrypted_data,
             nonce: [0u8; 12],
             tags: vec!["tag1".to_string(), "tag2".to_string()],
+            group_id: None,
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
             version,

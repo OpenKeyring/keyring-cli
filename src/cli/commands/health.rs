@@ -97,6 +97,7 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
                     tags_str.split(',').map(|s| s.to_string()).collect()
                 }
             },
+            group_id: None,
             created_at: {
                 let ts: i64 = row.get(5)?;
                 DateTime::from_timestamp(ts, 0).unwrap_or_default()

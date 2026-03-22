@@ -19,6 +19,7 @@ fn test_add_record() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     assert!(vault.add_record(&record).is_ok());
@@ -63,6 +64,7 @@ fn test_add_record_with_tags() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
     assert!(vault.add_record(&record1).is_ok());
 
@@ -77,6 +79,7 @@ fn test_add_record_with_tags() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
     assert!(vault.add_record(&record2).is_ok());
 
@@ -123,6 +126,7 @@ fn test_add_record_with_duplicate_tags() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     // Should not fail even with duplicate tag names
@@ -159,6 +163,7 @@ fn test_get_record() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     vault.add_record(&record).unwrap();
@@ -185,6 +190,7 @@ fn test_list_records() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     let record2 = StoredRecord {
@@ -197,6 +203,7 @@ fn test_list_records() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     vault.add_record(&record1).unwrap();
@@ -222,6 +229,7 @@ fn test_list_records_with_tags() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     vault.add_record(&record1).unwrap();
@@ -261,6 +269,7 @@ fn test_update_record() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     vault.add_record(&record).unwrap();
@@ -318,6 +327,7 @@ fn test_soft_delete_record() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     vault.add_record(&record).unwrap();
@@ -408,6 +418,7 @@ fn test_find_record_by_name_success() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     vault.add_record(&record).unwrap();
@@ -457,6 +468,7 @@ fn test_get_sync_stats_with_records() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     let record2 = StoredRecord {
@@ -469,6 +481,7 @@ fn test_get_sync_stats_with_records() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     let record3 = StoredRecord {
@@ -481,6 +494,7 @@ fn test_get_sync_stats_with_records() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     vault.add_record(&record1).unwrap();
@@ -540,6 +554,7 @@ fn test_get_pending_records_with_pending() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     let record2 = StoredRecord {
@@ -552,6 +567,7 @@ fn test_get_pending_records_with_pending() {
         updated_at: chrono::Utc::now(),
         version: 1,
         deleted: false,
+        group_id: None,
     };
 
     vault.add_record(&record1).unwrap();

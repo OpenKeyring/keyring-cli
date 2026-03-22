@@ -50,6 +50,8 @@ pub struct StoredRecord {
     pub version: u64,
     /// Whether this record has been soft-deleted (moved to trash)
     pub deleted: bool,
+    /// Group ID (optional, None = ungrouped)
+    pub group_id: Option<String>,
 }
 
 /// Decrypted record model
@@ -67,6 +69,8 @@ pub struct DecryptedRecord {
     pub updated_at: chrono::DateTime<chrono::Utc>,
     /// Whether this record has been soft-deleted (moved to trash)
     pub deleted: bool,
+    /// Group ID (optional, None = ungrouped)
+    pub group_id: Option<String>,
 }
 
 /// Tag model
@@ -187,6 +191,7 @@ mod tests {
             updated_at: now,
             version: 1,
             deleted: false,
+            group_id: None,
         };
 
         assert_eq!(record.id, id);
@@ -206,6 +211,7 @@ mod tests {
             updated_at: chrono::Utc::now(),
             version: 5,
             deleted: false,
+            group_id: None,
         };
 
         // Test serialization/deserialization
@@ -235,6 +241,7 @@ mod tests {
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
             deleted: false,
+            group_id: None,
         };
 
         assert_eq!(record.password.get(), "secret-password");
@@ -256,6 +263,7 @@ mod tests {
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
             deleted: false,
+            group_id: None,
         };
 
         assert!(record.username.is_none());

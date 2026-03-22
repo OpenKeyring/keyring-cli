@@ -165,6 +165,7 @@ fn create_test_record_with_nonce(nonce: [u8; 12]) -> StoredRecord {
         encrypted_data: b"test-data".to_vec(),
         nonce,
         tags: vec!["test".to_string()],
+        group_id: None,
         created_at: Utc::now(),
         updated_at: Utc::now(),
         version: 1,

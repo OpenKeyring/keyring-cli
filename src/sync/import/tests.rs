@@ -551,6 +551,7 @@ fn test_import_export_roundtrip() {
         encrypted_data: vec![10, 20, 30, 40],
         nonce: [0u8; 12],
         tags: vec!["tag1".to_string(), "tag2".to_string()],
+        group_id: None,
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 3,

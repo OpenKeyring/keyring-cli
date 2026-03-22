@@ -75,6 +75,7 @@ pub async fn execute(args: NewArgs) -> Result<()> {
         encrypted_data,
         nonce,
         tags: args.tags.clone(),
+        group_id: None,
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         version: 1, // New records start at version 1

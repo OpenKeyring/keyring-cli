@@ -75,6 +75,8 @@ impl TuiDatabaseService {
             pw.deleted_at = Some(record.updated_at);
         }
 
+        pw.group_id = record.group_id.clone();
+
         pw
     }
 
@@ -261,6 +263,7 @@ impl TuiDatabaseService {
                                 url: payload.get("url").and_then(|v| v.as_str()).map(|s| s.to_string()),
                                 notes: payload.get("notes").and_then(|v| v.as_str()).map(|s| s.to_string()),
                                 tags: record.tags.clone(),
+                                group_id: record.group_id.clone(),
                                 created_at: record.created_at,
                                 updated_at: record.updated_at,
                                 deleted: true,
@@ -313,6 +316,7 @@ impl TuiDatabaseService {
             encrypted_data,
             nonce,
             tags: password.tags.clone(),
+            group_id: None,
             created_at: password.created_at,
             updated_at: password.modified_at,
             version: 1,
@@ -371,6 +375,7 @@ impl TuiDatabaseService {
             encrypted_data,
             nonce,
             tags: password.tags.clone(),
+            group_id: None,
             created_at: existing.created_at, // Preserve original created_at
             updated_at: chrono::Utc::now(),
             version: existing.version, // Version will be incremented by vault.update_record
@@ -455,6 +460,7 @@ mod tests {
             url: Some("https://example.com".to_string()),
             notes: Some("Test notes".to_string()),
             tags: vec!["work".to_string()],
+            group_id: None,
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
             deleted: false,

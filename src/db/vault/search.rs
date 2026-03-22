@@ -78,6 +78,7 @@ pub fn search_records(conn: &Connection, query: &str) -> Result<Vec<StoredRecord
             encrypted_data,
             nonce,
             tags,
+            group_id: None,
             created_at: chrono::DateTime::from_timestamp(created_ts, 0)
                 .ok_or_else(|| anyhow::anyhow!("Invalid created_at timestamp"))?,
             updated_at: chrono::DateTime::from_timestamp(updated_ts, 0)

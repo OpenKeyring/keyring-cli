@@ -24,6 +24,7 @@ fn sync_export_import_roundtrip() {
         encrypted_data: b"encrypted-data".to_vec(),
         nonce: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         tags: vec!["test".to_string()],
+        group_id: None,
         created_at: Utc::now(),
         updated_at: Utc::now(),
         version: 1,

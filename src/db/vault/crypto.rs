@@ -98,6 +98,7 @@ pub fn get_record_decrypted(conn: &Connection, id: &str, dek: &[u8]) -> Result<D
         url: payload.url,
         notes: payload.notes,
         tags: stored.tags,
+        group_id: stored.group_id.clone(),
         created_at: stored.created_at,
         updated_at: stored.updated_at,
         deleted: stored.deleted,

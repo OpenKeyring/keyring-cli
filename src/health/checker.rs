@@ -140,6 +140,7 @@ mod tests {
             encrypted_data,
             nonce,
             tags: vec![],
+            group_id: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
             version: 1,

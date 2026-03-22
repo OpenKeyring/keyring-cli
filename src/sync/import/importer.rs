@@ -57,6 +57,7 @@ impl SyncImporter for JsonSyncImporter {
             encrypted_data,
             nonce,
             tags: sync_record.metadata.tags,
+            group_id: None,
             created_at: sync_record.created_at,
             updated_at: sync_record.updated_at,
             version: sync_record.version,
