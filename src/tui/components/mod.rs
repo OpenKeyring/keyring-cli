@@ -6,6 +6,7 @@ mod confirm_dialog;
 mod detail_panel;
 mod filter_panel;
 mod form_example;
+mod group_picker;
 mod search_bar;
 mod select;
 mod status_bar;
@@ -16,6 +17,7 @@ mod tree;
 mod tree_panel;
 
 pub use confirm_dialog::{ConfirmAction, ConfirmDialog};
+pub use group_picker::GroupPicker;
 pub use detail_panel::DetailPanel;
 pub use filter_panel::{FilterItem, FilterPanel};
 pub use search_bar::SearchBar;
