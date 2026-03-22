@@ -95,7 +95,9 @@ fn test_handle_key_with_state_copy_password() {
     state.refresh_password_cache(vec![test_password]);
     state.detail_mode = DetailMode::PasswordDetail(id);
 
-    let key = KeyEvent::new(KeyCode::Char('c'), KeyModifiers::SHIFT);
+    // Terminals emit Shift+C as the uppercase character Char('C') with no modifier bit.
+    // The SHIFT modifier is consumed to produce the uppercase character, so SHIFT is never set.
+    let key = KeyEvent::new(KeyCode::Char('C'), KeyModifiers::empty());
     let result = panel.handle_key_with_state(key, &mut state, None);
 
     assert!(matches!(result, HandleResult::Consumed));

@@ -6,7 +6,7 @@ use super::DetailPanel;
 use crate::tui::state::AppState;
 use crate::tui::traits::{HandleResult, NotificationLevel};
 use arboard::Clipboard;
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 
 /// Handle key event with state mutation
 pub fn handle_key_with_state(
@@ -23,12 +23,12 @@ pub fn handle_key_with_state(
             panel.toggle_password_visibility();
             HandleResult::Consumed
         }
+        KeyCode::Char('C') => {
+            copy_password_to_clipboard(state);
+            HandleResult::Consumed
+        }
         KeyCode::Char('c') => {
-            if key.modifiers.contains(KeyModifiers::SHIFT) {
-                copy_password_to_clipboard(state);
-            } else {
-                copy_username_to_clipboard(state);
-            }
+            copy_username_to_clipboard(state);
             HandleResult::Consumed
         }
         KeyCode::Char('o') => {
