@@ -74,11 +74,9 @@ impl DetailPanel {
         }
 
         let border_style = if self.focused {
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD)
+            Style::default().fg(Color::Rgb(100, 200, 255)).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(Color::DarkGray)
+            Style::default().fg(Color::Rgb(70, 70, 90))
         };
 
         let block = Block::default()

@@ -49,11 +49,9 @@ pub fn render_frame_with_context(
     }
 
     let border_style = if ctx.focused {
-        Style::default()
-            .fg(Color::Cyan)
-            .add_modifier(Modifier::BOLD)
+        Style::default().fg(Color::Rgb(100, 200, 255)).add_modifier(Modifier::BOLD)
     } else {
-        Style::default().fg(Color::DarkGray)
+        Style::default().fg(Color::Rgb(70, 70, 90))
     };
 
     let block = Block::default()
@@ -163,11 +161,11 @@ fn format_node_line(
 
     let style = if is_highlighted {
         Style::default()
-            .fg(Color::Yellow)
-            .bg(Color::DarkGray)
+            .fg(Color::White)
+            .bg(Color::Rgb(40, 60, 100))
             .add_modifier(Modifier::BOLD)
     } else {
-        Style::default().fg(Color::White)
+        Style::default().fg(Color::Rgb(200, 200, 215))
     };
 
     let mut spans = Vec::with_capacity(6);

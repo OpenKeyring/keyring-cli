@@ -167,11 +167,9 @@ impl FilterPanel {
 
         // Create border block
         let border_style = if self.focused {
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD)
+            Style::default().fg(Color::Rgb(100, 200, 255)).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(Color::DarkGray)
+            Style::default().fg(Color::Rgb(70, 70, 90))
         };
 
         let block = Block::default()
@@ -193,15 +191,15 @@ impl FilterPanel {
 
                 let style = if is_highlighted {
                     Style::default()
-                        .fg(Color::Yellow)
-                        .bg(Color::DarkGray)
+                        .fg(Color::White)
+                        .bg(Color::Rgb(40, 60, 100))
                         .add_modifier(Modifier::BOLD)
                 } else if is_active {
                     Style::default()
-                        .fg(Color::Green)
+                        .fg(Color::Rgb(100, 200, 255))
                         .add_modifier(Modifier::BOLD)
                 } else {
-                    Style::default().fg(Color::White)
+                    Style::default().fg(Color::Rgb(180, 180, 200))
                 };
 
                 // Format: "[x] 🗑 Trash (5)"

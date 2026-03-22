@@ -154,16 +154,16 @@ pub fn render_password(
 /// Create a field line with label, value, and hint
 fn create_field_line(label: &str, value: &str, hint: &str) -> Line<'static> {
     let mut spans = vec![
-        Span::styled(label.to_string(), Style::default().fg(Color::Gray)),
+        Span::styled(label.to_string(), Style::default().fg(Color::Rgb(120, 140, 170))),
         Span::raw(" "),
-        Span::styled(value.to_string(), Style::default().fg(Color::White)),
+        Span::styled(value.to_string(), Style::default().fg(Color::Rgb(220, 220, 240))),
     ];
 
     if !hint.is_empty() {
         spans.push(Span::raw("  "));
         spans.push(Span::styled(
             hint.to_string(),
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(Color::Rgb(100, 100, 120)),
         ));
     }
 
