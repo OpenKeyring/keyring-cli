@@ -24,6 +24,23 @@ mod tests;
 /// Maximum time between gg key presses (in milliseconds)
 pub(super) const GG_TIMEOUT_MS: u128 = 500;
 
+/// Tree panel editing mode
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TreeEditMode {
+    /// Normal mode
+    None,
+    /// Creating a new group
+    CreatingGroup,
+    /// Renaming a group
+    RenamingGroup { group_id: String },
+}
+
+impl Default for TreeEditMode {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
 /// Tree panel component
 ///
 /// Displays a hierarchical tree of groups and password entries.
@@ -37,6 +54,10 @@ pub struct TreePanel {
     pub(super) pending_g: bool,
     /// Time of last 'g' key press
     pub(super) last_g_time: Option<Instant>,
+    /// Current editing mode
+    pub(super) edit_mode: TreeEditMode,
+    /// Text buffer for inline editing
+    pub(super) edit_buffer: String,
 }
 
 impl TreePanel {
@@ -47,6 +68,8 @@ impl TreePanel {
             focused: false,
             pending_g: false,
             last_g_time: None,
+            edit_mode: TreeEditMode::None,
+            edit_buffer: String::new(),
         }
     }
 
