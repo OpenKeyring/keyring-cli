@@ -7,6 +7,7 @@ mod metadata;
 mod record;
 mod search;
 mod sync;
+pub(crate) mod group;
 
 // Re-export all public functions
 pub use crypto::{decrypt_password, get_record_decrypted};
@@ -153,6 +154,38 @@ impl Vault {
     /// Find a record by its decrypted name
     pub fn find_record_by_name(&self, name: &str) -> Result<Option<StoredRecord>> {
         search::find_record_by_name(&self.conn, name)
+    }
+
+    // ==================== Group Operations ====================
+
+    /// Create a new group
+    pub fn create_group(&mut self, name: &str) -> Result<group::StoredGroup> {
+        group::create_group(&mut self.conn, name)
+    }
+
+    /// Rename a group
+    pub fn rename_group(&self, id: &str, new_name: &str) -> Result<()> {
+        group::rename_group(&self.conn, id, new_name)
+    }
+
+    /// Delete a group
+    pub fn delete_group(&self, id: &str) -> Result<()> {
+        group::delete_group(&self.conn, id)
+    }
+
+    /// List all groups
+    pub fn list_groups(&self) -> Result<Vec<group::StoredGroup>> {
+        group::list_groups(&self.conn)
+    }
+
+    /// Move a password to a group (or None for ungrouped)
+    pub fn move_password_to_group(&self, password_id: &str, group_id: Option<&str>) -> Result<()> {
+        group::move_password_to_group(&self.conn, password_id, group_id)
+    }
+
+    /// Check if a group name exists
+    pub fn group_name_exists(&self, name: &str) -> Result<bool> {
+        group::group_name_exists(&self.conn, name)
     }
 
     // ==================== Crypto Operations ====================
