@@ -41,7 +41,7 @@ pub fn render_frame(screen: &mut MainScreen, frame: &mut Frame, area: Rect, stat
     screen
         .detail_panel
         .render_frame(frame, layout.detail_area, state);
-    render_status_panel(frame, layout.status_area);
+    render_status_panel(frame, layout.status_area, state);
     render_status_bar(frame, layout.status_bar_area, state);
 
     // Render search bar (overlay at top, before notifications)
@@ -126,47 +126,67 @@ fn render_size_warning(frame: &mut Frame, area: Rect) {
     frame.render_widget(paragraph, area);
 }
 
-/// Render status panel with placeholder content
-fn render_status_panel(frame: &mut Frame, area: Rect) {
-    let border_style = Style::default().fg(Color::DarkGray);
+/// Render status panel with real statistics
+fn render_status_panel(frame: &mut Frame, area: Rect, state: &AppState) {
+    let border_style = Style::default().fg(Color::Rgb(70, 70, 90));
 
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(" [4] Status ")
+        .title(Span::styled(
+            " Stats ",
+            Style::default().fg(Color::Rgb(120, 140, 170)),
+        ))
         .border_style(border_style);
 
     let inner = block.inner(area);
     block.render(area, frame.buffer_mut());
 
-    // Placeholder content
+    let passwords = state.all_passwords();
+    let total = passwords.iter().filter(|p| !p.is_deleted).count();
+    let favorites = passwords.iter().filter(|p| p.is_favorite && !p.is_deleted).count();
+    let trash = passwords.iter().filter(|p| p.is_deleted).count();
+
+    let stat_style = Style::default().fg(Color::Rgb(180, 180, 200));
+    let label_style = Style::default().fg(Color::Rgb(120, 140, 170));
+
     let lines = vec![
-        Line::from(Span::styled(
-            "OpenKeyring v0.1.0",
-            Style::default().fg(Color::DarkGray),
-        )),
-        Line::from(Span::styled(
-            "Stats: Coming soon",
-            Style::default().fg(Color::DarkGray),
-        )),
+        Line::from(vec![
+            Span::styled("Total: ", label_style),
+            Span::styled(total.to_string(), stat_style),
+            Span::styled("  Favorites: ", label_style),
+            Span::styled(favorites.to_string(), stat_style),
+            Span::styled("  Trash: ", label_style),
+            Span::styled(trash.to_string(), stat_style),
+        ]),
     ];
 
     let paragraph = Paragraph::new(lines);
     frame.render_widget(paragraph, inner);
 }
 
-/// Render status bar
+/// Render context-aware status bar
 fn render_status_bar(frame: &mut Frame, area: Rect, state: &AppState) {
-    let focus_text = match state.focused_panel {
-        FocusedPanel::Tree => "Tree",
-        FocusedPanel::Filter => "Filter",
-        FocusedPanel::Detail => "Detail",
+    let shortcuts = match state.focused_panel {
+        FocusedPanel::Tree => {
+            "[n] New  [e] Edit  [d] Delete  [/] Search  [Tab] Switch  [?] Help  [q] Quit"
+        }
+        FocusedPanel::Filter => {
+            "[Enter] Apply  [j/k] Navigate  [Tab] Switch  [?] Help  [q] Quit"
+        }
+        FocusedPanel::Detail => {
+            "[c] Copy User  [C] Copy Pwd  [Space] Toggle  [e] Edit  [d] Delete  [?] Help  [q] Quit"
+        }
     };
 
-    let text = format!(
-        "Focus: {} | [1-3] Switch | [j/k] Navigate | [q] Quit",
-        focus_text
-    );
-    let paragraph = Paragraph::new(text);
+    let style = Style::default()
+        .bg(Color::Rgb(25, 25, 40))
+        .fg(Color::Rgb(180, 180, 200));
+
+    // Fill background
+    let bg = ratatui::widgets::Block::default().style(style);
+    frame.render_widget(bg, area);
+
+    let paragraph = Paragraph::new(format!(" {}", shortcuts)).style(style);
     frame.render_widget(paragraph, area);
 }
 
