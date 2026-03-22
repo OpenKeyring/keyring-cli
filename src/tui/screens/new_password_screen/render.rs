@@ -207,6 +207,7 @@ impl Render for NewPasswordScreen {
 
 impl NewPasswordScreen {
     /// Render a text field with label
+    #[allow(clippy::too_many_arguments)]
     fn render_text_field(
         &self,
         buf: &mut Buffer,
