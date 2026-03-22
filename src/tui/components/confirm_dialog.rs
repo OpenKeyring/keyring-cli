@@ -28,6 +28,11 @@ pub enum ConfirmAction {
     EmptyTrash,
     /// Generic confirmation
     Generic,
+    /// Delete group
+    DeleteGroup {
+        group_id: String,
+        group_name: String,
+    },
 }
 
 /// Confirm dialog component
@@ -112,6 +117,24 @@ impl ConfirmDialog {
             cancel_label: "Cancel".to_string(),
             focused_on_confirm: false,
             action: ConfirmAction::EmptyTrash,
+            visible: true,
+        }
+    }
+
+    /// Create dialog for deleting a group
+    pub fn for_delete_group(group_name: &str, group_id: &str) -> Self {
+        Self {
+            id: ComponentId::new(0),
+            title: "Confirm Delete".to_string(),
+            message: format!("Delete group \"{}\"?", group_name),
+            details: Some("Passwords in this group will become ungrouped.".to_string()),
+            confirm_label: "Delete".to_string(),
+            cancel_label: "Cancel".to_string(),
+            focused_on_confirm: false,
+            action: ConfirmAction::DeleteGroup {
+                group_id: group_id.to_string(),
+                group_name: group_name.to_string(),
+            },
             visible: true,
         }
     }

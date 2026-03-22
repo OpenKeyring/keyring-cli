@@ -227,6 +227,9 @@ impl DefaultEventDispatcher {
                     crate::tui::components::ConfirmAction::Generic => {
                         self.notification_manager.info("操作已确认");
                     }
+                    crate::tui::components::ConfirmAction::DeleteGroup { .. } => {
+                        // TODO: Wire in Task 16 - delete group from DB
+                    }
                 }
             }
             Action::None => {}

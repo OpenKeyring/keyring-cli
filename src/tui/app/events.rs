@@ -265,6 +265,9 @@ impl TuiApp {
                 ConfirmDialog::empty_trash_confirmation(count)
             }
             ConfirmAction::Generic => ConfirmDialog::new(),
+            ConfirmAction::DeleteGroup { group_id, group_name } => {
+                ConfirmDialog::for_delete_group(group_name, group_id)
+            }
         });
     }
 
@@ -355,6 +358,10 @@ impl TuiApp {
                 );
             }
             ConfirmAction::Generic => {}
+            ConfirmAction::DeleteGroup { group_id, group_name } => {
+                // TODO: Wire in Task 16 - delete group from DB
+                let _ = (group_id, group_name);
+            }
         }
     }
 }
