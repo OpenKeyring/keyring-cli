@@ -104,6 +104,8 @@ impl TreePanel {
             state,
             &render::RenderContext {
                 focused: self.focused,
+                edit_mode: self.edit_mode.clone(),
+                edit_buffer: self.edit_buffer.clone(),
             },
             has_active_filters,
         );

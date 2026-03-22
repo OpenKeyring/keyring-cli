@@ -29,6 +29,8 @@ const INDENTS: [&str; 10] = [
 /// Render context for tree panel
 pub struct RenderContext {
     pub focused: bool,
+    pub edit_mode: super::TreeEditMode,
+    pub edit_buffer: String,
 }
 
 /// Render to frame (preferred method)
@@ -109,6 +111,7 @@ fn render_nodes(
     let max_rows = area.height as usize;
     let start_row = calculate_scroll_offset(state, max_rows);
 
+    let mut nodes_rendered: usize = 0;
     for (i, node) in state.visible_nodes.iter().skip(start_row).enumerate() {
         if i >= max_rows {
             break;
@@ -127,6 +130,38 @@ fn render_nodes(
         let line = format_node_line(node, is_highlighted, is_expanded);
         let paragraph = Paragraph::new(line);
         paragraph.render(row_area, frame.buffer_mut());
+        nodes_rendered += 1;
+    }
+
+    // Render inline edit input if in edit mode
+    if ctx.edit_mode != super::TreeEditMode::None {
+        let edit_y = match &ctx.edit_mode {
+            super::TreeEditMode::CreatingGroup => {
+                // Show input after the last visible node (or at top if empty)
+                area.y + nodes_rendered as u16
+            }
+            super::TreeEditMode::RenamingGroup { .. } => {
+                // Show input at the highlighted node position
+                area.y + (state.highlighted_index.saturating_sub(start_row)) as u16
+            }
+            super::TreeEditMode::None => area.y,
+        };
+
+        if edit_y < area.y + area.height {
+            let edit_area = Rect::new(
+                area.x + 2,
+                edit_y,
+                area.width.saturating_sub(4),
+                1,
+            );
+            let input_style = Style::default()
+                .fg(Color::White)
+                .bg(Color::Rgb(40, 40, 60));
+            let placeholder = if ctx.edit_buffer.is_empty() { "Group name..." } else { "" };
+            let text = format!("{}{}", ctx.edit_buffer, placeholder);
+            let paragraph = Paragraph::new(text).style(input_style);
+            frame.render_widget(paragraph, edit_area);
+        }
     }
 }
 
