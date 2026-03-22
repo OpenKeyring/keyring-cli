@@ -5,7 +5,7 @@
 use super::MainScreen;
 use crate::tui::components::ConfirmAction;
 use crate::tui::state::{AppState, FocusedPanel};
-use crate::tui::traits::{Action, HandleResult, ScreenType};
+use crate::tui::traits::{Action, HandleResult, Interactive, ScreenType};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 
 /// Handle key event with state mutation
@@ -17,6 +17,20 @@ pub fn handle_key_with_state(
     // Only handle press events
     if key.kind == KeyEventKind::Release {
         return HandleResult::Ignored;
+    }
+
+    // Group picker takes priority when visible
+    if screen.group_picker.is_visible() {
+        let result = screen.group_picker.handle_key(key);
+        if key.code == KeyCode::Enter {
+            let pw_id = screen.group_picker.password_id().to_string();
+            let group_id = screen.group_picker.selected_group_id().map(|s| s.to_string());
+            screen.group_picker.hide();
+            return HandleResult::Action(Action::ShowToast(
+                format!("__move_password:{}:{}", pw_id, group_id.unwrap_or_default())
+            ));
+        }
+        return result;
     }
 
     // Route to search bar if visible (takes priority over global shortcuts)

@@ -56,6 +56,9 @@ pub fn render_frame(screen: &mut MainScreen, frame: &mut Frame, area: Rect, stat
         screen.search_bar.render_frame(frame, search_area);
     }
 
+    // Render group picker overlay
+    screen.group_picker.render_frame(frame, area);
+
     // Render toast notifications on top (after all other panels)
     render_notifications(frame, area, state);
 }

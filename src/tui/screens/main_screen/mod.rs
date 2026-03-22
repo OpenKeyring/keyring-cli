@@ -4,7 +4,7 @@
 //! Left column (35%): Tree panel + Filter panel
 //! Right column (65%): Detail panel + Status area
 
-use crate::tui::components::{DetailPanel, FilterPanel, SearchBar, TreePanel};
+use crate::tui::components::{DetailPanel, FilterPanel, GroupPicker, SearchBar, TreePanel};
 use crate::tui::state::AppState;
 use crate::tui::traits::{Component, ComponentId, HandleResult, Interactive, Render};
 use crossterm::event::KeyEvent;
@@ -34,6 +34,8 @@ pub struct MainScreen {
     detail_panel: DetailPanel,
     /// Search bar component
     search_bar: SearchBar,
+    /// Group picker overlay component
+    pub group_picker: GroupPicker,
 }
 
 impl MainScreen {
@@ -46,6 +48,7 @@ impl MainScreen {
             filter_panel: FilterPanel::new(),
             detail_panel: DetailPanel::new(),
             search_bar: SearchBar::new(),
+            group_picker: GroupPicker::new(),
         }
     }
 
