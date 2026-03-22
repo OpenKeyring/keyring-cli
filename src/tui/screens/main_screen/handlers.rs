@@ -19,6 +19,19 @@ pub fn handle_key_with_state(
         return HandleResult::Ignored;
     }
 
+    // Route to search bar if visible (takes priority over global shortcuts)
+    if screen.search_bar.is_visible() {
+        let result = screen.search_bar.handle_key(key);
+        if matches!(result, HandleResult::NeedsRender) {
+            // Update filter with search query and reapply
+            state
+                .filter
+                .set_search_query(screen.search_bar.query().to_string());
+            state.apply_filter();
+        }
+        return result;
+    }
+
     // Global shortcuts (take priority over panel-specific handling)
     match key.code {
         // Quit application
@@ -119,19 +132,6 @@ pub fn handle_key_with_state(
             return HandleResult::Consumed;
         }
         _ => {}
-    }
-
-    // Route to search bar if visible (takes priority over panel handling)
-    if screen.search_bar.is_visible() {
-        let result = screen.search_bar.handle_key(key);
-        if matches!(result, HandleResult::NeedsRender) {
-            // Update filter with search query and reapply
-            state
-                .filter
-                .set_search_query(screen.search_bar.query().to_string());
-            state.apply_filter();
-        }
-        return result;
     }
 
     // Route to focused panel

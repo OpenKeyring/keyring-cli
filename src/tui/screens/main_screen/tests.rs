@@ -525,3 +525,25 @@ fn test_toggle_favorite_no_selection() {
 
     assert!(matches!(result, HandleResult::Action(Action::ShowToast(_))));
 }
+
+#[test]
+fn test_search_mode_captures_character_keys() {
+    let mut screen = MainScreen::new();
+    let mut state = AppState::default();
+
+    // Open search
+    screen.search_bar.show();
+
+    // Press 'd' - should go to search bar, NOT trigger delete
+    let key = KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE);
+    let result = screen.handle_key_with_state(key, &mut state);
+
+    // Should NOT be Action(OpenScreen(ConfirmDialog(...)))
+    assert!(
+        !matches!(result, HandleResult::Action(_)),
+        "Character 'd' should go to search bar when search is active, not trigger delete"
+    );
+
+    // Verify 'd' was typed into search
+    assert_eq!(screen.search_bar.query(), "d");
+}
