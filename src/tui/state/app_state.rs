@@ -175,26 +175,29 @@ impl AppState {
     pub fn apply_filter(&mut self) {
         use crate::tui::state::tree_state::{NodeType, TreeNodeId, VisibleNode};
 
-        // Build visible nodes from password cache
         let nodes: Vec<VisibleNode> = self
             .password_list
             .iter()
             .filter(|p| {
-                // Apply search filter if set
-                if let Some(ref query) = self.filter.search_query {
-                    if !query.is_empty() {
-                        let query_lower = query.to_lowercase();
-                        return p.name.to_lowercase().contains(&query_lower)
-                            || p.username
-                                .as_ref()
-                                .map(|u| u.to_lowercase().contains(&query_lower))
-                                .unwrap_or(false);
+                if self.filter.has_active_filters() {
+                    // Active filter: delegate entirely to FilterState::matches()
+                    // FilterState::matches() handles Trash, Favorite, Expired, Tag
+                    if !self.filter.matches(p) {
+                        return false;
+                    }
+                } else {
+                    // Default view (no active filter): hide deleted passwords
+                    if p.is_deleted {
+                        return false;
                     }
                 }
-                true
+                // AND: also apply search query
+                self.filter.matches_search(p)
             })
             .map(|p| VisibleNode {
-                id: TreeNodeId::Password(Uuid::parse_str(&p.id).unwrap_or_else(|_| Uuid::nil())),
+                id: TreeNodeId::Password(
+                    Uuid::parse_str(&p.id).unwrap_or_else(|_| Uuid::nil()),
+                ),
                 level: 1,
                 node_type: NodeType::Password,
                 label: p.name.clone(),
@@ -331,6 +334,58 @@ impl AppState {
         self.apply_filter();
 
         count
+    }
+}
+
+#[cfg(test)]
+mod filter_tests {
+    use super::*;
+    use crate::tui::state::FilterType;
+
+    // Helper: PasswordRecord fields is_deleted and is_favorite are pub, set directly.
+    fn make_password(id: &str, name: &str, deleted: bool, favorite: bool) -> PasswordRecord {
+        let mut p = PasswordRecord::new(id, name, "pw");
+        p.is_deleted = deleted;
+        p.is_favorite = favorite;
+        p
+    }
+
+    #[test]
+    fn test_apply_filter_hides_deleted_in_default_view() {
+        let mut state = AppState::new();
+        state.refresh_password_cache(vec![
+            make_password("1", "Active", false, false),
+            make_password("2", "Deleted", true, false),
+        ]);
+        // No active filters → deleted should not be visible
+        assert_eq!(state.tree.visible_nodes.len(), 1);
+        assert_eq!(state.tree.visible_nodes[0].label, "Active");
+    }
+
+    #[test]
+    fn test_apply_filter_trash_shows_only_deleted() {
+        let mut state = AppState::new();
+        state.refresh_password_cache(vec![
+            make_password("1", "Active", false, false),
+            make_password("2", "Deleted", true, false),
+        ]);
+        state.filter.toggle(FilterType::Trash);
+        state.apply_filter();
+        assert_eq!(state.tree.visible_nodes.len(), 1);
+        assert_eq!(state.tree.visible_nodes[0].label, "Deleted");
+    }
+
+    #[test]
+    fn test_apply_filter_favorite_shows_only_favorites() {
+        let mut state = AppState::new();
+        state.refresh_password_cache(vec![
+            make_password("1", "Regular", false, false),
+            make_password("2", "Fav", false, true),
+        ]);
+        state.filter.toggle(FilterType::Favorite);
+        state.apply_filter();
+        assert_eq!(state.tree.visible_nodes.len(), 1);
+        assert_eq!(state.tree.visible_nodes[0].label, "Fav");
     }
 }
 
