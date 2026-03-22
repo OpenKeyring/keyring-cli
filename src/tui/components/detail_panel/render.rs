@@ -83,7 +83,7 @@ pub fn render_password(
     lines.push(create_field_line(
         "Password:",
         &password_display,
-        "[C] copy  [Space] toggle",
+        "[C] copy",
     ));
 
     // URL
@@ -135,14 +135,16 @@ pub fn render_password(
     // Action hints at bottom
     lines.push(Line::from(""));
     lines.push(Line::from(vec![
-        Span::styled("[e] Edit", Style::default().fg(Color::DarkGray)),
-        Span::raw("  "),
-        Span::styled("[d] Delete", Style::default().fg(Color::DarkGray)),
-        Span::raw("  "),
-        Span::styled(
-            "[Space] Toggle password",
-            Style::default().fg(Color::DarkGray),
-        ),
+        Span::styled("[e]", Style::default().fg(Color::Rgb(100, 200, 255))),
+        Span::styled(" Edit  ", Style::default().fg(Color::Rgb(100, 100, 120))),
+        Span::styled("[d]", Style::default().fg(Color::Rgb(100, 200, 255))),
+        Span::styled(" Delete  ", Style::default().fg(Color::Rgb(100, 100, 120))),
+        Span::styled("[Space]", Style::default().fg(Color::Rgb(100, 200, 255))),
+        Span::styled(" Toggle  ", Style::default().fg(Color::Rgb(100, 100, 120))),
+        Span::styled("[c]", Style::default().fg(Color::Rgb(100, 200, 255))),
+        Span::styled(" Copy User  ", Style::default().fg(Color::Rgb(100, 100, 120))),
+        Span::styled("[C]", Style::default().fg(Color::Rgb(100, 200, 255))),
+        Span::styled(" Copy Pwd", Style::default().fg(Color::Rgb(100, 100, 120))),
     ]));
 
     let paragraph = Paragraph::new(lines).wrap(Wrap { trim: true });
