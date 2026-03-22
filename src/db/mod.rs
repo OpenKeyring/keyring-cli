@@ -2,6 +2,7 @@
 
 pub mod lock;
 pub mod migration;
+pub mod migrations;
 pub mod models;
 pub mod schema;
 pub mod vault;
