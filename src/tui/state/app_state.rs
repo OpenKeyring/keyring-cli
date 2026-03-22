@@ -65,6 +65,8 @@ pub struct AppState {
     password_cache: HashMap<String, PasswordRecord>,
     /// All passwords list (for list view)
     password_list: Vec<PasswordRecord>,
+    /// Groups list
+    pub groups: Vec<crate::db::vault::group::StoredGroup>,
 
     // === Phase 3: Real Services ===
     /// Data source mode (mock or vault)
@@ -91,6 +93,7 @@ impl Default for AppState {
             notification_counter: 0,
             password_cache: HashMap::new(),
             password_list: Vec::new(),
+            groups: Vec::new(),
             data_source: DataSourceMode::default(),
             db_service: None,
             clipboard_service: None,
@@ -171,40 +174,116 @@ impl AppState {
         self.detail_mode = DetailMode::ProjectInfo;
     }
 
-    /// Apply current filter and update visible nodes
+    /// Apply current filter and update visible nodes with group hierarchy
     pub fn apply_filter(&mut self) {
         use crate::tui::state::tree_state::{NodeType, TreeNodeId, VisibleNode};
 
-        let nodes: Vec<VisibleNode> = self
+        // Filter passwords first
+        let filtered: Vec<&PasswordRecord> = self
             .password_list
             .iter()
             .filter(|p| {
                 if self.filter.has_active_filters() {
-                    // Active filter: delegate entirely to FilterState::matches()
-                    // FilterState::matches() handles Trash, Favorite, Expired, Tag
                     if !self.filter.matches(p) {
                         return false;
                     }
-                } else {
-                    // Default view (no active filter): hide deleted passwords
-                    if p.is_deleted {
-                        return false;
-                    }
+                } else if p.is_deleted {
+                    return false;
                 }
-                // AND: also apply search query
                 self.filter.matches_search(p)
             })
-            .map(|p| VisibleNode {
-                id: TreeNodeId::Password(
-                    Uuid::parse_str(&p.id).unwrap_or_else(|_| Uuid::nil()),
-                ),
-                level: 1,
-                node_type: NodeType::Password,
-                label: p.name.clone(),
-                child_count: 0,
-                is_favorite: p.is_favorite,
-            })
             .collect();
+
+        // If no groups exist, show flat list (backward compatible)
+        if self.groups.is_empty() {
+            let flat_nodes: Vec<VisibleNode> = filtered
+                .iter()
+                .map(|p| VisibleNode {
+                    id: TreeNodeId::Password(
+                        Uuid::parse_str(&p.id).unwrap_or_else(|_| Uuid::nil()),
+                    ),
+                    level: 0,
+                    node_type: NodeType::Password,
+                    label: p.name.clone(),
+                    child_count: 0,
+                    is_favorite: p.is_favorite,
+                })
+                .collect();
+            self.tree.set_visible_nodes(flat_nodes);
+            return;
+        }
+
+        let mut nodes: Vec<VisibleNode> = Vec::new();
+
+        // Build group folders + their password children
+        for group in &self.groups {
+            let group_uuid = Uuid::parse_str(&group.id).unwrap_or_else(|_| Uuid::nil());
+            let children: Vec<&&PasswordRecord> = filtered
+                .iter()
+                .filter(|p| p.group_id.as_deref() == Some(group.id.as_str()))
+                .collect();
+
+            let child_count = children.len();
+
+            // Always show group node (even if empty after filter)
+            nodes.push(VisibleNode {
+                id: TreeNodeId::Group(group_uuid),
+                level: 0,
+                node_type: NodeType::Folder,
+                label: group.name.clone(),
+                child_count,
+                is_favorite: false,
+            });
+
+            // Add children if group is expanded
+            if self.tree.is_expanded(&group_uuid) {
+                for p in children {
+                    nodes.push(VisibleNode {
+                        id: TreeNodeId::Password(
+                            Uuid::parse_str(&p.id).unwrap_or_else(|_| Uuid::nil()),
+                        ),
+                        level: 1,
+                        node_type: NodeType::Password,
+                        label: p.name.clone(),
+                        child_count: 0,
+                        is_favorite: p.is_favorite,
+                    });
+                }
+            }
+        }
+
+        // Ungrouped passwords
+        let ungrouped: Vec<&&PasswordRecord> = filtered
+            .iter()
+            .filter(|p| p.group_id.is_none())
+            .collect();
+
+        if !ungrouped.is_empty() {
+            let ungrouped_uuid = Uuid::nil();
+            nodes.push(VisibleNode {
+                id: TreeNodeId::Group(ungrouped_uuid),
+                level: 0,
+                node_type: NodeType::Folder,
+                label: "Ungrouped".to_string(),
+                child_count: ungrouped.len(),
+                is_favorite: false,
+            });
+
+            if self.tree.is_expanded(&ungrouped_uuid) {
+                for p in ungrouped {
+                    nodes.push(VisibleNode {
+                        id: TreeNodeId::Password(
+                            Uuid::parse_str(&p.id).unwrap_or_else(|_| Uuid::nil()),
+                        ),
+                        level: 1,
+                        node_type: NodeType::Password,
+                        label: p.name.clone(),
+                        child_count: 0,
+                        is_favorite: p.is_favorite,
+                    });
+                }
+            }
+        }
 
         self.tree.set_visible_nodes(nodes);
     }
@@ -300,6 +379,38 @@ impl AppState {
     /// Get all passwords (for iteration)
     pub fn all_passwords(&self) -> &[PasswordRecord] {
         &self.password_list
+    }
+
+    /// Load groups from database
+    pub fn load_groups(&mut self, groups: Vec<crate::db::vault::group::StoredGroup>) {
+        self.groups = groups;
+    }
+
+    /// Add a group to cache
+    pub fn add_group(&mut self, group: crate::db::vault::group::StoredGroup) {
+        self.groups.push(group);
+    }
+
+    /// Remove a group from cache
+    pub fn remove_group(&mut self, group_id: &str) {
+        self.groups.retain(|g| g.id != group_id);
+    }
+
+    /// Rename a group in cache
+    pub fn rename_group_in_cache(&mut self, group_id: &str, new_name: &str) {
+        if let Some(g) = self.groups.iter_mut().find(|g| g.id == group_id) {
+            g.name = new_name.to_string();
+        }
+    }
+
+    /// Update a password's group_id in cache
+    pub fn update_password_group(&mut self, password_id: &str, group_id: Option<String>) {
+        if let Some(pw) = self.password_cache.get_mut(password_id) {
+            pw.group_id = group_id.clone();
+        }
+        if let Some(pw) = self.password_list.iter_mut().find(|p| p.id == password_id) {
+            pw.group_id = group_id;
+        }
     }
 
     /// Permanently delete a password from cache
@@ -532,5 +643,56 @@ mod tests {
         let count = state.empty_trash();
         assert_eq!(count, 0);
         assert_eq!(state.all_passwords().len(), 1);
+    }
+}
+
+#[cfg(test)]
+mod group_tests {
+    use super::*;
+
+    #[test]
+    fn test_apply_filter_with_groups() {
+        let mut state = AppState::default();
+
+        let group_id = "550e8400-e29b-41d4-a716-446655440000";
+        state.groups.push(crate::db::vault::group::StoredGroup {
+            id: group_id.to_string(),
+            name: "Work".to_string(),
+            parent_id: None,
+            sort_order: 0,
+            created_at: 0,
+            updated_at: 0,
+        });
+
+        let mut pw1 = PasswordRecord::new("550e8400-e29b-41d4-a716-446655440001", "GitHub", "pass");
+        pw1.group_id = Some(group_id.to_string());
+        let pw2 = PasswordRecord::new("550e8400-e29b-41d4-a716-446655440002", "Random", "pass");
+
+        state.refresh_password_cache(vec![pw1, pw2]);
+
+        // Expand the Work group
+        let group_uuid = uuid::Uuid::parse_str(group_id).unwrap();
+        state.tree.expanded_groups.insert(group_uuid);
+        state.apply_filter();
+
+        // Should have: Work folder, GitHub, Ungrouped folder
+        // (Random is ungrouped but Ungrouped is not expanded, so just the folder)
+        let labels: Vec<String> = state.tree.visible_nodes.iter().map(|n| n.label.clone()).collect();
+        assert!(labels.contains(&"Work".to_string()), "Should have Work group");
+        assert!(labels.contains(&"GitHub".to_string()), "Should have GitHub inside Work");
+        assert!(labels.contains(&"Ungrouped".to_string()), "Should have Ungrouped folder");
+    }
+
+    #[test]
+    fn test_apply_filter_flat_when_no_groups() {
+        let mut state = AppState::default();
+        state.refresh_password_cache(vec![
+            PasswordRecord::new("550e8400-e29b-41d4-a716-446655440001", "A", "pass"),
+            PasswordRecord::new("550e8400-e29b-41d4-a716-446655440002", "B", "pass"),
+        ]);
+
+        // With no groups, should show flat list at level 0
+        assert_eq!(state.tree.visible_nodes.len(), 2);
+        assert!(state.tree.visible_nodes.iter().all(|n| n.level == 0));
     }
 }
