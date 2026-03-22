@@ -64,8 +64,7 @@ impl TuiApp {
         // Render confirm dialog overlay on top of current screen
         if let Some(dialog) = &self.confirm_dialog {
             use crate::tui::traits::Render;
-            let dialog_area = centered_rect(50, 40, size);
-            dialog.render(dialog_area, frame.buffer_mut());
+            dialog.render(size, frame.buffer_mut());
         }
     }
 
