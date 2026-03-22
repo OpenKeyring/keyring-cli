@@ -388,6 +388,68 @@ impl TuiDatabaseService {
 
         Ok(())
     }
+
+    // ==================== 分组操作 ====================
+
+    /// 创建新分组
+    pub fn create_group(&self, name: &str) -> TuiResult<crate::db::vault::group::StoredGroup> {
+        let mut vault = self.vault.lock().map_err(|_| {
+            TuiError::new(ErrorKind::DatabaseLocked)
+        })?;
+        vault.create_group(name).map_err(|e| {
+            TuiError::new(ErrorKind::RecordDuplicate(format!("Failed to create group: {}", e)))
+        })
+    }
+
+    /// 重命名分组
+    pub fn rename_group(&self, id: &str, new_name: &str) -> TuiResult<()> {
+        let vault = self.vault.lock().map_err(|_| {
+            TuiError::new(ErrorKind::DatabaseLocked)
+        })?;
+        vault.rename_group(id, new_name).map_err(|e| {
+            TuiError::new(ErrorKind::RecordNotFound(format!("Failed to rename group: {}", e)))
+        })
+    }
+
+    /// 删除分组
+    pub fn delete_group(&self, id: &str) -> TuiResult<()> {
+        let vault = self.vault.lock().map_err(|_| {
+            TuiError::new(ErrorKind::DatabaseLocked)
+        })?;
+        vault.delete_group(id).map_err(|e| {
+            TuiError::new(ErrorKind::RecordNotFound(format!("Failed to delete group: {}", e)))
+        })
+    }
+
+    /// 列出所有分组
+    pub fn list_groups(&self) -> TuiResult<Vec<crate::db::vault::group::StoredGroup>> {
+        let vault = self.vault.lock().map_err(|_| {
+            TuiError::new(ErrorKind::DatabaseLocked)
+        })?;
+        vault.list_groups().map_err(|e| {
+            TuiError::new(ErrorKind::RecordNotFound(format!("Failed to list groups: {}", e)))
+        })
+    }
+
+    /// 将密码移动到分组（None = 取消分组）
+    pub fn move_password_to_group(&self, password_id: &str, group_id: Option<&str>) -> TuiResult<()> {
+        let vault = self.vault.lock().map_err(|_| {
+            TuiError::new(ErrorKind::DatabaseLocked)
+        })?;
+        vault.move_password_to_group(password_id, group_id).map_err(|e| {
+            TuiError::new(ErrorKind::RecordNotFound(format!("Failed to move password: {}", e)))
+        })
+    }
+
+    /// 检查分组名称是否已存在
+    pub fn group_name_exists(&self, name: &str) -> TuiResult<bool> {
+        let vault = self.vault.lock().map_err(|_| {
+            TuiError::new(ErrorKind::DatabaseLocked)
+        })?;
+        vault.group_name_exists(name).map_err(|e| {
+            TuiError::new(ErrorKind::RecordNotFound(format!("Failed to check group: {}", e)))
+        })
+    }
 }
 
 impl SecureClear for TuiDatabaseService {
