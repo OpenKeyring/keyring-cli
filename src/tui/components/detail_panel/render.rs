@@ -18,31 +18,31 @@ pub fn render_project_info(frame: &mut Frame, area: Rect) {
         Line::from(Span::styled(
             "OpenKeyring",
             Style::default()
-                .fg(Color::Cyan)
+                .fg(Color::Rgb(100, 200, 255))
                 .add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled(
             "Privacy-first Password Manager",
-            Style::default().fg(Color::Gray),
+            Style::default().fg(Color::Rgb(120, 140, 170)),
         )),
         Line::from(""),
         Line::from(Span::styled(
             "Version: v0.1.0",
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(Color::Rgb(100, 100, 120)),
         )),
         Line::from(Span::styled(
             "License: MIT License",
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(Color::Rgb(100, 100, 120)),
         )),
         Line::from(Span::styled(
             "Website: github.com/open-keyring",
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(Color::Rgb(100, 100, 120)),
         )),
         Line::from(""),
         Line::from(Span::styled(
             "Press [n] to create your first password",
             Style::default()
-                .fg(Color::Yellow)
+                .fg(Color::Rgb(220, 180, 50))
                 .add_modifier(Modifier::ITALIC),
         )),
     ];
@@ -64,7 +64,7 @@ pub fn render_password(
     lines.push(Line::from(Span::styled(
         password.name.clone(),
         Style::default()
-            .fg(Color::Yellow)
+            .fg(Color::Rgb(220, 180, 50))
             .add_modifier(Modifier::BOLD),
     )));
     lines.push(Line::from(""));
@@ -102,7 +102,7 @@ pub fn render_password(
         lines.push(Line::from(""));
         lines.push(Line::from(Span::styled(
             "Notes:",
-            Style::default().fg(Color::Gray),
+            Style::default().fg(Color::Rgb(120, 140, 170)),
         )));
         lines.push(Line::from(Span::raw(notes.clone())));
     }
@@ -115,20 +115,20 @@ pub fn render_password(
             password.created_at.format("%Y-%m-%d %H:%M"),
             password.modified_at.format("%Y-%m-%d %H:%M")
         ),
-        Style::default().fg(Color::DarkGray),
+        Style::default().fg(Color::Rgb(100, 100, 120)),
     )));
 
     // Status indicators
     if password.is_favorite {
         lines.push(Line::from(Span::styled(
             "⭐ Favorite",
-            Style::default().fg(Color::Yellow),
+            Style::default().fg(Color::Rgb(220, 180, 50)),
         )));
     }
     if password.is_deleted {
         lines.push(Line::from(Span::styled(
             "🗑 In Trash",
-            Style::default().fg(Color::Red),
+            Style::default().fg(Color::Rgb(220, 80, 80)),
         )));
     }
 

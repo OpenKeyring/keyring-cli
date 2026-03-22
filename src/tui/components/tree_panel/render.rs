@@ -79,12 +79,12 @@ fn render_nodes(
                 Line::from(""),
                 Line::from(Span::styled(
                     "No matching entries",
-                    Style::default().fg(Color::Yellow),
+                    Style::default().fg(Color::Rgb(100, 200, 255)),
                 )),
                 Line::from(""),
                 Line::from(Span::styled(
                     "Try adjusting your filters",
-                    Style::default().fg(Color::DarkGray),
+                    Style::default().fg(Color::Rgb(100, 100, 120)),
                 )),
             ]
         } else {
@@ -92,12 +92,12 @@ fn render_nodes(
                 Line::from(""),
                 Line::from(Span::styled(
                     "No passwords yet",
-                    Style::default().fg(Color::DarkGray),
+                    Style::default().fg(Color::Rgb(100, 100, 120)),
                 )),
                 Line::from(""),
                 Line::from(Span::styled(
                     "Press [n] to create one",
-                    Style::default().fg(Color::Cyan),
+                    Style::default().fg(Color::Rgb(100, 200, 255)),
                 )),
             ]
         };
@@ -176,7 +176,7 @@ fn format_node_line(
 
     // Show favorite icon for password nodes
     if node.is_favorite && matches!(node.node_type, NodeType::Password) {
-        spans.push(Span::styled(" ★", Style::default().fg(Color::Yellow)));
+        spans.push(Span::styled(" ★", Style::default().fg(Color::Rgb(220, 180, 50))));
     }
 
     if node.child_count > 0 && matches!(node.node_type, NodeType::Folder) {
