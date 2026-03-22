@@ -187,3 +187,22 @@ fn test_full_password_detail_flow() {
     assert!(password.created_at.timestamp_micros() > 0);
     assert!(password.modified_at.timestamp_micros() > 0);
 }
+
+#[test]
+fn test_esc_clears_detail_panel() {
+    let mut panel = DetailPanel::new();
+    let mut state = AppState::default();
+    let id = Uuid::new_v4();
+
+    // Select a password
+    state.select_password(id);
+    assert!(matches!(state.detail_mode, DetailMode::PasswordDetail(_)));
+
+    // Press Esc
+    let key = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
+    let result = panel.handle_key_with_state(key, &mut state, None);
+
+    assert!(matches!(result, HandleResult::Consumed));
+    assert!(matches!(state.detail_mode, DetailMode::ProjectInfo));
+    assert_eq!(state.focused_panel, crate::tui::state::FocusedPanel::Tree);
+}

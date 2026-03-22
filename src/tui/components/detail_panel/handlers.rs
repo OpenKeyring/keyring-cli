@@ -19,6 +19,11 @@ pub fn handle_key_with_state(
     }
 
     match key.code {
+        KeyCode::Esc => {
+            state.clear_selection();
+            state.set_focus(crate::tui::state::FocusedPanel::Tree);
+            HandleResult::Consumed
+        }
         KeyCode::Char(' ') => {
             panel.toggle_password_visibility();
             HandleResult::Consumed
