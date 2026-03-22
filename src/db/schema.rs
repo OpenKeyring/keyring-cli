@@ -20,6 +20,7 @@ pub fn initialize_database(db_path: &std::path::Path) -> Result<Connection> {
     create_sync_state_table(&conn)?;
     create_mcp_sessions_table(&conn)?;
     create_mcp_policies_table(&conn)?;
+    create_groups_table(&conn)?;
 
     Ok(conn)
 }
@@ -148,6 +149,42 @@ fn create_mcp_policies_table(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
+fn create_groups_table(conn: &Connection) -> Result<()> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS groups (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            parent_id TEXT REFERENCES groups(id) ON DELETE SET NULL,
+            sort_order INTEGER DEFAULT 0,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            UNIQUE(name, parent_id)
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_groups_parent ON groups(parent_id)",
+        [],
+    )?;
+
+    // Add group_id column to records table if not exists
+    let has_group_id: bool = conn
+        .prepare("PRAGMA table_info(records)")?
+        .query_map([], |row| row.get::<_, String>(1))?
+        .filter_map(|r| r.ok())
+        .any(|col| col == "group_id");
+
+    if !has_group_id {
+        conn.execute(
+            "ALTER TABLE records ADD COLUMN group_id TEXT REFERENCES groups(id) ON DELETE SET NULL",
+            [],
+        )?;
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -169,6 +206,7 @@ mod tests {
             "sync_state",
             "mcp_sessions",
             "mcp_policies",
+            "groups",
         ];
 
         for table in tables {
@@ -473,7 +511,7 @@ mod tests {
             .unwrap();
         let count: i64 = stmt.query_row([], |row| row.get(0)).unwrap();
 
-        assert!(count >= 7, "Should have at least 7 tables");
+        assert!(count >= 8, "Should have at least 8 tables");
     }
 
     #[test]
@@ -496,6 +534,46 @@ mod tests {
         assert!(
             sql.contains("key TEXT PRIMARY KEY"),
             "metadata.key should be the primary key"
+        );
+    }
+
+    #[test]
+    fn test_groups_table_structure() {
+        let temp_dir = TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+        let conn = initialize_database(&db_path).unwrap();
+
+        let mut stmt = conn.prepare("PRAGMA table_info(groups)").unwrap();
+        let columns: Vec<String> = stmt
+            .query_map([], |row| Ok(row.get::<_, String>(1).unwrap()))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+
+        assert!(columns.contains(&"id".to_string()));
+        assert!(columns.contains(&"name".to_string()));
+        assert!(columns.contains(&"parent_id".to_string()));
+        assert!(columns.contains(&"sort_order".to_string()));
+        assert!(columns.contains(&"created_at".to_string()));
+        assert!(columns.contains(&"updated_at".to_string()));
+    }
+
+    #[test]
+    fn test_records_table_has_group_id_column() {
+        let temp_dir = TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+        let conn = initialize_database(&db_path).unwrap();
+
+        let mut stmt = conn.prepare("PRAGMA table_info(records)").unwrap();
+        let columns: Vec<String> = stmt
+            .query_map([], |row| Ok(row.get::<_, String>(1).unwrap()))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+
+        assert!(
+            columns.contains(&"group_id".to_string()),
+            "records table should have group_id column"
         );
     }
 }
