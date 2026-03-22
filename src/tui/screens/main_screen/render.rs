@@ -182,10 +182,6 @@ fn render_status_bar(frame: &mut Frame, area: Rect, state: &AppState) {
         .bg(Color::Rgb(25, 25, 40))
         .fg(Color::Rgb(180, 180, 200));
 
-    // Fill background
-    let bg = ratatui::widgets::Block::default().style(style);
-    frame.render_widget(bg, area);
-
     let paragraph = Paragraph::new(format!(" {}", shortcuts)).style(style);
     frame.render_widget(paragraph, area);
 }
