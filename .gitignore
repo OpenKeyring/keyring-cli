@@ -127,3 +127,6 @@ sync-backups/
 cache/
 CLAUDE.md
 .serena/
+
+# Worktrees
+.worktrees/
