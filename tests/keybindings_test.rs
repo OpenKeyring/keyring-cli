@@ -1,0 +1,345 @@
+//! Keybindings module tests
+//!
+//! Test-Driven Development tests for the keybindings system.
+
+use keyring_cli::tui::keybindings::{parse_shortcut, Action, KeyBinding, KeyBindingManager};
+use serial_test::serial;
+
+#[serial]
+#[test]
+fn test_parse_ctrl_char() {
+    // Test parsing "Ctrl+N" into KeyEvent
+    // This will fail until we implement the parser
+    let result = parse_shortcut("Ctrl+N");
+    assert!(result.is_ok());
+    let event = result.unwrap();
+    assert_eq!(event.code, crossterm::event::KeyCode::Char('n'));
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::CONTROL));
+}
+
+#[serial]
+#[test]
+fn test_parse_function_key() {
+    let result = parse_shortcut("F5");
+    assert!(result.is_ok());
+    let event = result.unwrap();
+    assert_eq!(event.code, crossterm::event::KeyCode::F(5));
+}
+
+#[serial]
+#[test]
+fn test_parse_ctrl_shift_char() {
+    let result = parse_shortcut("Ctrl+Shift+N");
+    assert!(result.is_ok());
+    let event = result.unwrap();
+    assert_eq!(event.code, crossterm::event::KeyCode::Char('N'));
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::CONTROL));
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::SHIFT));
+}
+
+#[serial]
+#[test]
+fn test_parse_invalid_shortcut() {
+    let result = parse_shortcut("Invalid");
+    assert!(result.is_err());
+}
+
+#[serial]
+#[test]
+fn test_action_display() {
+    // Test that actions can be displayed for help
+    assert_eq!(format!("{}", Action::New), "New");
+    assert_eq!(format!("{}", Action::List), "List");
+    assert_eq!(format!("{}", Action::Quit), "Quit");
+}
+
+#[serial]
+#[test]
+fn test_default_keybindings() {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    let manager = KeyBindingManager::new();
+
+    // Test default bindings exist
+    let ctrl_n = KeyEvent::new(KeyCode::Char('n'), KeyModifiers::CONTROL);
+    assert_eq!(manager.get_action(&ctrl_n), Some(Action::New));
+
+    let ctrl_l = KeyEvent::new(KeyCode::Char('l'), KeyModifiers::CONTROL);
+    assert_eq!(manager.get_action(&ctrl_l), Some(Action::List));
+
+    let ctrl_q = KeyEvent::new(KeyCode::Char('q'), KeyModifiers::CONTROL);
+    assert_eq!(manager.get_action(&ctrl_q), Some(Action::Quit));
+}
+
+#[serial]
+#[test]
+fn test_keybinding_from_yaml() {
+    use serde_yaml;
+
+    let yaml = r#"
+version: "1.0"
+shortcuts:
+  new: "Ctrl+N"
+  list: "Ctrl+L"
+"#;
+
+    let binding: Result<KeyBinding, _> = serde_yaml::from_str(yaml);
+    assert!(binding.is_ok());
+}
+
+#[serial]
+#[test]
+fn test_conflict_detection() {
+    use serde_yaml;
+
+    // Two actions with same shortcut - should detect conflict
+    let yaml = r#"
+version: "1.0"
+shortcuts:
+  new: "Ctrl+N"
+  list: "Ctrl+N"
+"#;
+
+    let binding: Result<KeyBinding, _> = serde_yaml::from_str(yaml);
+    // Should parse but warn about conflict
+    assert!(binding.is_ok());
+}
+
+// Additional comprehensive tests
+
+#[serial]
+#[test]
+fn test_all_default_actions_have_bindings() {
+    let manager = KeyBindingManager::new();
+
+    // All actions should have bindings
+    let all_actions = vec![
+        Action::New,
+        Action::List,
+        Action::Search,
+        Action::Show,
+        Action::Update,
+        Action::Delete,
+        Action::Quit,
+        Action::Help,
+        Action::Clear,
+        Action::CopyPassword,
+        Action::CopyUsername,
+        Action::Config,
+    ];
+
+    for action in all_actions {
+        let key = manager.get_key(action);
+        assert!(
+            key.is_some(),
+            "Action {:?} should have a key binding",
+            action
+        );
+    }
+}
+
+#[serial]
+#[test]
+fn test_manager_get_key_for_action() {
+    use crossterm::event::{KeyCode, KeyModifiers};
+
+    // Ensure clean state by removing any existing config file
+    // that might have been created by other tests
+    if let Some(config_dir) = dirs::config_dir() {
+        let config_path = config_dir.join("open-keyring").join("keybindings.yaml");
+        let _ = std::fs::remove_file(&config_path);
+    }
+
+    let manager = KeyBindingManager::new();
+
+    // Action::New is bound to Ctrl+N (Char('n') with CONTROL modifier)
+    let new_key = manager.get_key(Action::New);
+    assert_eq!(new_key.unwrap().code, KeyCode::Char('n'));
+    assert!(new_key.unwrap().modifiers.contains(KeyModifiers::CONTROL));
+
+    // Action::Help is bound to F1 (not Ctrl+H)
+    let help_key = manager.get_key(Action::Help);
+    assert_eq!(help_key.unwrap().code, KeyCode::F(1));
+    assert_eq!(help_key.unwrap().modifiers, KeyModifiers::empty());
+}
+
+#[serial]
+#[test]
+fn test_manager_format_key() {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    let ctrl_n = KeyEvent::new(KeyCode::Char('n'), KeyModifiers::CONTROL);
+    assert_eq!(KeyBindingManager::format_key(&ctrl_n), "Ctrl+n");
+
+    let ctrl_shift_n = KeyEvent::new(
+        KeyCode::Char('N'),
+        KeyModifiers::CONTROL | KeyModifiers::SHIFT,
+    );
+    assert_eq!(KeyBindingManager::format_key(&ctrl_shift_n), "Ctrl+Shift+N");
+
+    let f5 = KeyEvent::new(KeyCode::F(5), KeyModifiers::empty());
+    assert_eq!(KeyBindingManager::format_key(&f5), "F5");
+}
+
+#[serial]
+#[test]
+fn test_parse_alt_key() {
+    let result = parse_shortcut("Alt+T");
+    assert!(result.is_ok());
+    let event = result.unwrap();
+    assert_eq!(event.code, crossterm::event::KeyCode::Char('t'));
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::ALT));
+}
+
+#[serial]
+#[test]
+fn test_parse_ctrl_alt_key() {
+    let result = parse_shortcut("Ctrl+Alt+Delete");
+    assert!(result.is_ok());
+    let event = result.unwrap();
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::CONTROL));
+    assert!(event
+        .modifiers
+        .contains(crossterm::event::KeyModifiers::ALT));
+}
+
+#[serial]
+#[test]
+fn test_parse_empty_input() {
+    let result = parse_shortcut("");
+    assert!(result.is_err());
+}
+
+#[serial]
+#[test]
+fn test_parse_whitespace_only() {
+    let result = parse_shortcut("   ");
+    assert!(result.is_err());
+}
+
+#[serial]
+#[test]
+fn test_parse_special_keys() {
+    assert_eq!(
+        parse_shortcut("Enter").unwrap().code,
+        crossterm::event::KeyCode::Enter
+    );
+    assert_eq!(
+        parse_shortcut("Tab").unwrap().code,
+        crossterm::event::KeyCode::Tab
+    );
+    assert_eq!(
+        parse_shortcut("Esc").unwrap().code,
+        crossterm::event::KeyCode::Esc
+    );
+    assert_eq!(
+        parse_shortcut("Backspace").unwrap().code,
+        crossterm::event::KeyCode::Backspace
+    );
+    assert_eq!(
+        parse_shortcut("Space").unwrap().code,
+        crossterm::event::KeyCode::Char(' ')
+    );
+}
+
+#[serial]
+#[test]
+fn test_parse_navigation_keys() {
+    assert_eq!(
+        parse_shortcut("Up").unwrap().code,
+        crossterm::event::KeyCode::Up
+    );
+    assert_eq!(
+        parse_shortcut("Down").unwrap().code,
+        crossterm::event::KeyCode::Down
+    );
+    assert_eq!(
+        parse_shortcut("Left").unwrap().code,
+        crossterm::event::KeyCode::Left
+    );
+    assert_eq!(
+        parse_shortcut("Right").unwrap().code,
+        crossterm::event::KeyCode::Right
+    );
+}
+
+#[serial]
+#[test]
+fn test_parse_function_keys_f1_to_f12() {
+    for i in 1..=12 {
+        let result = parse_shortcut(&format!("F{}", i));
+        assert!(result.is_ok(), "F{} should parse", i);
+        assert_eq!(result.unwrap().code, crossterm::event::KeyCode::F(i));
+    }
+}
+
+#[serial]
+#[test]
+fn test_parse_case_insensitive_modifiers() {
+    let ctrl_lower = parse_shortcut("ctrl+n");
+    let ctrl_upper = parse_shortcut("CTRL+N");
+    let ctrl_mixed = parse_shortcut("Ctrl+N");
+
+    assert!(ctrl_lower.is_ok());
+    assert!(ctrl_upper.is_ok());
+    assert!(ctrl_mixed.is_ok());
+
+    // All should produce the same result
+    assert_eq!(ctrl_lower.unwrap(), ctrl_upper.unwrap());
+}
+
+#[serial]
+#[test]
+fn test_action_command_names() {
+    assert_eq!(Action::New.command_name(), "/new");
+    assert_eq!(Action::List.command_name(), "/list");
+    assert_eq!(Action::Quit.command_name(), "/exit");
+    assert_eq!(Action::Help.command_name(), "/help");
+}
+
+#[serial]
+#[test]
+fn test_action_descriptions() {
+    assert!(!Action::New.description().is_empty());
+    assert!(!Action::Quit.description().is_empty());
+    assert!(!Action::Help.description().is_empty());
+}
+
+#[serial]
+#[test]
+fn test_keybinding_default_creation() {
+    let binding = KeyBinding::new();
+    assert_eq!(binding.version, "1.0");
+    assert_eq!(binding.shortcuts.get("new"), Some(&"Ctrl+N".to_string()));
+    assert_eq!(binding.shortcuts.get("quit"), Some(&"Ctrl+Q".to_string()));
+}
+
+#[serial]
+#[test]
+fn test_unknown_shortcut_returns_none() {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    let manager = KeyBindingManager::new();
+    let unknown_key = KeyEvent::new(KeyCode::Char('z'), KeyModifiers::CONTROL);
+    assert_eq!(manager.get_action(&unknown_key), None);
+}
+
+#[serial]
+#[test]
+fn test_all_bindings_coverage() {
+    let manager = KeyBindingManager::new();
+    let bindings = manager.all_bindings();
+
+    // Should have at least 12 bindings (one for each action)
+    assert!(bindings.len() >= 12);
+}

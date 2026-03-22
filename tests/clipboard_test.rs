@@ -1,15 +1,24 @@
 #[cfg(target_os = "linux")]
 use keyring_cli::clipboard::linux::LinuxClipboard;
+
+#[cfg(target_os = "macos")]
 use keyring_cli::clipboard::macos::MacOSClipboard;
-use keyring_cli::clipboard::manager::{ClipboardConfig, ClipboardManager};
+
 #[cfg(target_os = "windows")]
 use keyring_cli::clipboard::windows::WindowsClipboard;
+
+use keyring_cli::clipboard::manager::{ClipboardConfig, ClipboardManager};
 use keyring_cli::clipboard::ClipboardService;
 use std::time::Duration;
 
+// Import serial_test for test serialization
+use serial_test::serial;
+
+#[cfg(target_os = "macos")]
+#[serial]
 #[test]
 fn test_macos_clipboard() {
-    let mut clipboard = MacOSClipboard;
+    let mut clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     assert!(clipboard.is_supported());
 
     // Test setting content
@@ -21,6 +30,7 @@ fn test_macos_clipboard() {
 }
 
 #[cfg(target_os = "windows")]
+#[serial]
 #[test]
 fn test_windows_clipboard() {
     let mut clipboard = WindowsClipboard;
@@ -34,6 +44,7 @@ fn test_windows_clipboard() {
 }
 
 #[cfg(target_os = "linux")]
+#[serial]
 #[test]
 fn test_linux_clipboard() {
     // This test will pass if xclip is available
@@ -49,9 +60,11 @@ fn test_linux_clipboard() {
     assert_eq!(clipboard.timeout(), Duration::from_secs(45));
 }
 
+#[cfg(target_os = "macos")]
+#[serial]
 #[test]
 fn test_clipboard_service() {
-    let mut macos_clipboard = MacOSClipboard;
+    let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let config = ClipboardConfig {
         timeout_seconds: 60,
         clear_after_copy: true,
@@ -70,9 +83,11 @@ fn test_clipboard_service() {
     assert!(service.clear_clipboard().is_ok());
 }
 
+#[cfg(target_os = "macos")]
+#[serial]
 #[test]
 fn test_content_length_limit() {
-    let mut macos_clipboard = MacOSClipboard;
+    let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
     let config = ClipboardConfig {
         timeout_seconds: 30,
         clear_after_copy: true,
@@ -84,6 +99,135 @@ fn test_content_length_limit() {
     // Should fail with long content
     let long_password = "a".repeat(20);
     assert!(service.copy_password(&long_password).is_err());
+}
+
+#[cfg(target_os = "macos")]
+#[serial]
+#[test]
+fn test_auto_clear_after_timeout_strict() {
+    let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
+    let config = ClipboardConfig {
+        timeout_seconds: 2,
+        clear_after_copy: true,
+        max_content_length: 256,
+    };
+
+    let mut service = ClipboardService::new(macos_clipboard, config);
+
+    // PRE-CONDITION: Clear clipboard first to ensure clean state
+    let _ = service.clear_clipboard();
+
+    // Copy password to clipboard
+    assert!(service.copy_password("auto_clear_test").is_ok());
+
+    // Immediately verify content exists
+    let content = service.get_clipboard_content();
+    assert!(content.is_ok());
+    assert_eq!(content.unwrap(), "auto_clear_test");
+
+    // Wait for timeout to pass
+    std::thread::sleep(Duration::from_secs(3));
+
+    // Verify clipboard was automatically cleared
+    let mut check_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
+    let result = check_clipboard.get_content();
+
+    match &result {
+        Ok(content) => {
+            // FAIL: If content exists, auto-clear didn't work
+            panic!("Auto-clear failed! Clipboard still contains: {:?}", content);
+        }
+        Err(_e) => {
+            // SUCCESS: Empty clipboard means clear worked
+            println!("SUCCESS: Auto-clear worked, clipboard is empty");
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[serial]
+#[test]
+fn test_auto_clear_after_timeout() {
+    let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
+    let config = ClipboardConfig {
+        timeout_seconds: 2, // Short timeout for testing
+        clear_after_copy: true,
+        max_content_length: 256,
+    };
+
+    let mut service = ClipboardService::new(macos_clipboard, config);
+
+    // Copy password to clipboard
+    assert!(service.copy_password("auto_clear_test").is_ok());
+
+    // Immediately verify content exists
+    let content = service.get_clipboard_content();
+    assert!(content.is_ok());
+    assert_eq!(content.unwrap(), "auto_clear_test");
+
+    // Wait for timeout to pass (2 seconds + small buffer)
+    std::thread::sleep(Duration::from_secs(3));
+
+    // Verify clipboard was automatically cleared
+    // Create a new clipboard instance to check current state
+    let mut check_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
+    let result = check_clipboard.get_content();
+
+    // EVIDENCE: Print what we actually found
+    match &result {
+        Ok(content) => println!("After timeout, clipboard contains: {:?}", content),
+        Err(e) => println!("After timeout, clipboard error (empty?): {:?}", e),
+    }
+
+    // Clipboard should be empty or contain different content
+    match result {
+        Ok(content) => {
+            // If there's content, it should NOT be our test password
+            assert_ne!(content, "auto_clear_test",
+                       "Clipboard should have been auto-cleared after timeout, but still contains test password");
+        }
+        Err(_) => {
+            // Empty clipboard is also acceptable (depends on platform behavior)
+            println!("Clipboard is empty (clear worked)");
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[serial]
+#[test]
+fn test_no_auto_clear_when_disabled() {
+    let macos_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
+    let config = ClipboardConfig {
+        timeout_seconds: 1,      // Short timeout
+        clear_after_copy: false, // Auto-clear disabled
+        max_content_length: 256,
+    };
+
+    let mut service = ClipboardService::new(macos_clipboard, config);
+
+    // Copy password to clipboard
+    assert!(service.copy_password("no_clear_test").is_ok());
+
+    // Wait longer than timeout
+    std::thread::sleep(Duration::from_secs(2));
+
+    // Content should STILL be there (auto-clear was disabled)
+    let mut check_clipboard = MacOSClipboard::new().expect("Failed to create MacOSClipboard");
+    let result = check_clipboard.get_content();
+
+    assert!(
+        result.is_ok(),
+        "Clipboard should still have content when clear_after_copy is false"
+    );
+    assert_eq!(
+        result.unwrap(),
+        "no_clear_test",
+        "Content should persist when clear_after_copy is disabled"
+    );
+
+    // Clean up manually
+    let _ = check_clipboard.clear();
 }
 
 #[test]

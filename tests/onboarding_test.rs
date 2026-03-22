@@ -9,6 +9,6 @@ fn onboarding_initializes_keystore_file() {
     assert!(!is_initialized(&path));
     let keystore = initialize_keystore(&path, "correct-horse-battery-staple").unwrap();
     assert!(path.exists());
-    assert_eq!(keystore.dek.len(), 32);
+    assert_eq!(keystore.dek.get().len(), 32);
     assert!(is_initialized(&path));
 }

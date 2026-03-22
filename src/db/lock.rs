@@ -9,8 +9,19 @@ use std::sync::atomic::{AtomicBool, Ordering};
 ///
 /// Uses fslock-style file locking with platform-specific implementations.
 /// The lock file is created alongside the vault database.
+///
+/// # Lock Path Construction
+///
+/// When `vault_path` is a file path (e.g., `/path/to/passwords.db`):
+/// - Lock file is created as `/path/to/passwords.db.lock` (replacing extension)
+///
+/// When `vault_path` is a directory path (e.g., `/path/to/vault/`):
+/// - Lock file is created as `/path/to/vault/.lock`
+#[allow(dead_code)]
 pub struct VaultLock {
+    #[allow(dead_code)]
     lock_file: File,
+    #[allow(dead_code)]
     lock_path: std::path::PathBuf,
     _held: AtomicBool,
 }
@@ -19,7 +30,7 @@ impl VaultLock {
     /// Acquire an exclusive write lock
     ///
     /// # Arguments
-    /// * `vault_path` - Path to the vault directory
+    /// * `vault_path` - Path to the vault database file
     /// * `timeout_ms` - Maximum time to wait for lock acquisition
     ///
     /// # Returns
@@ -30,7 +41,7 @@ impl VaultLock {
     /// - **Unix/macOS**: Uses `flock` with exclusive lock
     /// - **Windows**: Uses Windows file locking
     pub fn acquire_write(vault_path: &Path, timeout_ms: u64) -> Result<Self> {
-        let lock_path = vault_path.join(".lock");
+        let lock_path = Self::lock_path_for_vault(vault_path);
         let lock_file = Self::open_lock_file(&lock_path)?;
 
         // Try to acquire lock with timeout
@@ -67,10 +78,10 @@ impl VaultLock {
     /// Multiple read locks can be held simultaneously, but write locks are exclusive.
     ///
     /// # Arguments
-    /// * `vault_path` - Path to the vault directory
+    /// * `vault_path` - Path to the vault database file
     /// * `timeout_ms` - Maximum time to wait for lock acquisition
     pub fn acquire_read(vault_path: &Path, timeout_ms: u64) -> Result<Self> {
-        let lock_path = vault_path.join(".lock");
+        let lock_path = Self::lock_path_for_vault(vault_path);
         let lock_file = Self::open_lock_file(&lock_path)?;
 
         // Try to acquire shared lock with timeout
@@ -101,6 +112,25 @@ impl VaultLock {
         })
     }
 
+    /// Determine the lock file path for a given vault path
+    ///
+    /// Handles both file paths and directory paths:
+    /// - File path (`/path/to/passwords.db`) → `/path/to/passwords.db.lock`
+    /// - Directory path (`/path/to/vault/`) → `/path/to/vault/.lock`
+    fn lock_path_for_vault(vault_path: &Path) -> std::path::PathBuf {
+        if vault_path.extension().is_some() {
+            // It's a file path (e.g., /path/to/passwords.db)
+            // Replace/add .lock extension
+            let mut lock_path = vault_path.to_path_buf();
+            lock_path.set_extension("lock");
+            lock_path
+        } else {
+            // It's a directory path (e.g., /path/to/vault/)
+            // Append .lock
+            vault_path.join(".lock")
+        }
+    }
+
     /// Release the lock
     ///
     /// The lock is also automatically released when VaultLock is dropped.
@@ -116,6 +146,7 @@ impl VaultLock {
 
         OpenOptions::new()
             .create(true)
+            .truncate(true)
             .read(true)
             .write(true)
             .open(lock_path)
@@ -137,7 +168,7 @@ impl VaultLock {
             if err.kind() == std::io::ErrorKind::WouldBlock {
                 Err(err)
             } else {
-                Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+                Err(std::io::Error::other(err))
             }
         }
     }
@@ -157,7 +188,7 @@ impl VaultLock {
             if err.kind() == std::io::ErrorKind::WouldBlock {
                 Err(err)
             } else {
-                Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+                Err(std::io::Error::other(err))
             }
         }
     }
@@ -166,11 +197,14 @@ impl VaultLock {
     #[cfg(windows)]
     fn try_flock_exclusive(file: &File) -> std::io::Result<()> {
         use std::os::windows::io::AsRawHandle;
+        use windows::Win32::Foundation::HANDLE;
         use windows::Win32::Storage::FileSystem::LockFileEx;
         use windows::Win32::Storage::FileSystem::LOCKFILE_EXCLUSIVE_LOCK;
         use windows::Win32::Storage::FileSystem::LOCKFILE_FAIL_IMMEDIATELY;
 
-        let handle = file.as_raw_handle();
+        // HANDLE in windows crate v0.58 is struct HANDLE(pub *mut c_void)
+        // as_raw_handle() returns isize, need to cast to pointer
+        let handle = HANDLE(file.as_raw_handle() as *mut _);
         unsafe {
             let mut overlapped = std::mem::zeroed();
             LockFileEx(
@@ -189,10 +223,13 @@ impl VaultLock {
     #[cfg(windows)]
     fn try_flock_shared(file: &File) -> std::io::Result<()> {
         use std::os::windows::io::AsRawHandle;
+        use windows::Win32::Foundation::HANDLE;
         use windows::Win32::Storage::FileSystem::LockFileEx;
         use windows::Win32::Storage::FileSystem::LOCKFILE_FAIL_IMMEDIATELY;
 
-        let handle = file.as_raw_handle();
+        // HANDLE in windows crate v0.58 is struct HANDLE(pub *mut c_void)
+        // as_raw_handle() returns isize, need to cast to pointer
+        let handle = HANDLE(file.as_raw_handle() as *mut _);
         unsafe {
             let mut overlapped = std::mem::zeroed();
             LockFileEx(
@@ -220,7 +257,6 @@ impl Drop for VaultLock {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_lock_path_construction() {

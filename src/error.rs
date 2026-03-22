@@ -81,6 +81,9 @@ pub enum Error {
 
     #[error("IO error: {0}")]
     IoError(String),
+
+    #[error("Token already used: {0}")]
+    TokenAlreadyUsed(String),
 }
 
 // Convert from uuid::Error for compatibility
@@ -96,6 +99,24 @@ impl From<uuid::Error> for Error {
 impl From<anyhow::Error> for Error {
     fn from(err: anyhow::Error) -> Self {
         Error::Internal {
+            context: err.to_string(),
+        }
+    }
+}
+
+// Convert from std::string::FromUtf8Error
+impl From<std::string::FromUtf8Error> for Error {
+    fn from(err: std::string::FromUtf8Error) -> Self {
+        Error::Clipboard {
+            context: format!("Invalid UTF-8 in clipboard: {}", err),
+        }
+    }
+}
+
+// Convert from mcp::key_cache::KeyCacheError
+impl From<crate::mcp::key_cache::KeyCacheError> for Error {
+    fn from(err: crate::mcp::key_cache::KeyCacheError) -> Self {
+        Error::Mcp {
             context: err.to_string(),
         }
     }

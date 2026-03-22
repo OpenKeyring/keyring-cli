@@ -1,0 +1,113 @@
+---
+source: src/tui/tests/visual_regression_tests.rs
+expression: seq.to_string()
+---
+Sequence: screen_navigation_render
+
+Step 1: main_screen
+──────────────────
+┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
+│                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
+│                          ││Version: v0.1.0                                   │
+│                          ││License: MIT License                              │
+│                          ││Website: github.com/open-keyring                  │
+│                          ││                                                  │
+│                          ││Press [n] to create your first password           │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+└──────────────────────────┘│                                                  │
+┌ [2] Filters ─────────────┐│                                                  │
+│[ ] 📋  All                │└──────────────────────────────────────────────────┘
+│[ ] 🗑 Trash               │┌ Stats ───────────────────────────────────────────┐
+│[ ] ⏰  Expired            ││Total: 0  Favorites: 0  Trash: 0                  │
+│[ ] ⭐  Favorite           ││                                                  │
+│                          ││                                                  │
+└──────────────────────────┘└──────────────────────────────────────────────────┘
+ [n] New  [e] Edit  [d] Delete  [/] Search  [Tab] Switch  [?] Help  [q] Quit
+
+Step 2: settings_screen
+──────────────────────
+
+                                    Settings
+
+              Use ↑↓ to navigate, Enter to confirm, Esc to go back
+
+ ┌ Settings ──────────────────────────────────────────────────────────────────┐
+ │Security:                                                                   │
+ │                                                                            │
+ │  Change Password                                                           │
+ │  Biometric Unlock: Off                                                     │
+ │                                                                            │
+ │Sync:                                                                       │
+ │                                                                            │
+ │  Status: Unsynced                                                          │
+ │  Provider: None                                                            │
+ │  Devices: 1 device                                                         │
+ │  Configure                                                                 │
+ │                                                                            │
+ │Sync Options:                                                               │
+ └────────────────────────────────────────────────────────────────────────────┘
+ ┌────────────────────────────────────────────────────────────────────────────┐
+ │                    Enter: Open  ↑↓: Navigate  Esc: Back                    │
+ └────────────────────────────────────────────────────────────────────────────┘
+
+
+Step 3: help_screen
+──────────────────
+
+                               Keyboard Shortcuts
+
+                 Use ↑↓ or Page Up/Down to scroll, Esc to return
+
+ ┌Shortcuts───────────────────────────────────────────────────────────────────┐
+ │Global:                                                                     │
+ │                                                                            │
+ │  Ctrl+Q / Esc         - Quit / Exit                                        │
+ │  ? / F1               - Show this help                                     │
+ │  :                    - Enter command mode                                 │
+ │  Shift+T              - Open trash screen                                  │
+ │                                                                            │
+ │Navigation:                                                                 │
+ │                                                                            │
+ │  ↑ / k                - Move up                                            │
+ │  ↓ / j                - Move down                                          │
+ │  Page Up / Ctrl+B     - Page up                                            │
+ │  Page Down / Ctrl+F   - Page down                                          │
+ │  Home / g             - Go to top                                          │
+ │  End / G              - Go to bottom                                       │
+ │                                                                            │
+ └────────────────────────────────────────────────────────────────────────────┘
+
+
+Step 4: back_to_main
+───────────────────
+┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
+│                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
+│                          ││Version: v0.1.0                                   │
+│                          ││License: MIT License                              │
+│                          ││Website: github.com/open-keyring                  │
+│                          ││                                                  │
+│                          ││Press [n] to create your first password           │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+└──────────────────────────┘│                                                  │
+┌ [2] Filters ─────────────┐│                                                  │
+│[ ] 📋  All                │└──────────────────────────────────────────────────┘
+│[ ] 🗑 Trash               │┌ Stats ───────────────────────────────────────────┐
+│[ ] ⏰  Expired            ││Total: 0  Favorites: 0  Trash: 0                  │
+│[ ] ⭐  Favorite           ││                                                  │
+│                          ││                                                  │
+└──────────────────────────┘└──────────────────────────────────────────────────┘
+ [n] New  [e] Edit  [d] Delete  [/] Search  [Tab] Switch  [?] Help  [q] Quit

@@ -2,6 +2,7 @@
 
 pub mod lock;
 pub mod migration;
+pub mod migrations;
 pub mod models;
 pub mod schema;
 pub mod vault;
@@ -14,7 +15,7 @@ use std::path::Path;
 // Re-exports for convenience
 pub use lock::VaultLock;
 pub use migration::{Migration, Migrator};
-pub use models::{RecordType, StoredRecord, SyncState, SyncStatus};
+pub use models::{RecordType, StoredRecord, SyncState, SyncStats, SyncStatus};
 pub use schema::initialize_database;
 pub use vault::Vault;
 pub use wal::{checkpoint, truncate};
@@ -58,5 +59,100 @@ impl DatabaseManager {
         self.conn.as_mut().ok_or_else(|| KeyringError::Database {
             context: "Database not open".to_string(),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_database_manager_new() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+
+        let manager = DatabaseManager::new(&db_path).unwrap();
+        assert_eq!(manager.db_path, db_path);
+        assert!(manager.conn.is_none());
+    }
+
+    #[test]
+    fn test_database_manager_open() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+
+        let mut manager = DatabaseManager::new(&db_path).unwrap();
+        assert!(manager.open().is_ok());
+
+        // Verify database file was created
+        assert!(db_path.exists());
+
+        // Verify connection is now available
+        assert!(manager.connection().is_ok());
+        assert!(manager.connection_mut().is_ok());
+    }
+
+    #[test]
+    fn test_database_manager_close() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+
+        let mut manager = DatabaseManager::new(&db_path).unwrap();
+        manager.open().unwrap();
+        assert!(manager.connection().is_ok());
+
+        manager.close().unwrap();
+        // After close, connection should not be available
+        assert!(manager.connection().is_err());
+        assert!(manager.connection_mut().is_err());
+    }
+
+    #[test]
+    fn test_database_manager_connection_without_open_fails() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+
+        let mut manager = DatabaseManager::new(&db_path).unwrap();
+        // Without calling open(), connection should fail
+        assert!(manager.connection().is_err());
+        assert!(manager.connection_mut().is_err());
+
+        let err = manager.connection().unwrap_err();
+        assert!(matches!(err, KeyringError::Database { .. }));
+    }
+
+    #[test]
+    fn test_database_manager_reopen() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+
+        let mut manager = DatabaseManager::new(&db_path).unwrap();
+
+        // First open
+        manager.open().unwrap();
+        let _conn1 = manager.connection().unwrap();
+        // Connection reference goes out of scope here
+
+        // Close and reopen
+        manager.close().unwrap();
+        manager.open().unwrap();
+
+        // Should have a valid connection again
+        assert!(manager.connection().is_ok());
+        assert!(manager.connection_mut().is_ok());
+    }
+
+    #[test]
+    fn test_database_manager_path_handling() {
+        let temp_dir = tempfile::TempDir::new().unwrap();
+
+        // Test with PathBuf
+        let path_buf = temp_dir.path().to_path_buf();
+        let manager = DatabaseManager::new(&path_buf).unwrap();
+        assert_eq!(manager.db_path, path_buf);
+
+        // Test with &str
+        let manager2 = DatabaseManager::new(temp_dir.path()).unwrap();
+        assert_eq!(manager2.db_path, temp_dir.path());
     }
 }

@@ -1,0 +1,11 @@
+---
+source: src/tui/tests/screen_snapshot_tests.rs
+expression: screen
+---
+PasskeyGenerateScreen {
+    word_count: 24,
+    words: None,
+    confirmed: false,
+    copied: false,
+    error: None,
+}

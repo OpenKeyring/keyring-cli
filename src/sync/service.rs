@@ -16,6 +16,12 @@ pub struct SyncService {
     conflict_resolver: DefaultConflictResolver,
 }
 
+impl Default for SyncService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SyncService {
     pub fn new() -> Self {
         Self {
@@ -125,7 +131,7 @@ impl SyncService {
         // Process resolved conflicts and new records
         let mut processed_ids = std::collections::HashSet::new();
 
-        // Apply resolved conflicts (use newer record)
+        // Apply resolved conflicts (use higher version record)
         for conflict in &resolved_conflicts {
             if let Some(resolution) = &conflict.resolution {
                 let record_to_use = match resolution {
@@ -133,7 +139,8 @@ impl SyncService {
                         if let (Some(local), Some(remote)) =
                             (&conflict.local_record, &conflict.remote_record)
                         {
-                            if local.updated_at >= remote.updated_at {
+                            // Use version-based comparison for conflict resolution
+                            if local.version >= remote.version {
                                 local.clone()
                             } else {
                                 remote.clone()
@@ -213,6 +220,60 @@ impl SyncService {
         }
 
         Ok(stats)
+    }
+
+    /// Detect conflicts without resolving them
+    ///
+    /// Returns a list of conflicts between local and remote records.
+    /// This can be used to display conflicts to the user for manual resolution.
+    pub fn detect_conflicts(
+        &self,
+        vault: &Vault,
+        sync_dir: &Path,
+    ) -> Result<Vec<crate::sync::conflict::Conflict>> {
+        if !sync_dir.exists() {
+            return Ok(Vec::new());
+        }
+
+        // Load all local records
+        let local_records = vault.list_records()?;
+        let local_sync_records: Vec<SyncRecord> = local_records
+            .iter()
+            .filter_map(|r| self.exporter.export_record(r).ok())
+            .collect();
+
+        // Load all remote records from directory
+        let mut remote_records = Vec::new();
+        for entry in fs::read_dir(sync_dir)
+            .map_err(|e| KeyringError::IoError(format!("Failed to read sync directory: {}", e)))?
+        {
+            let entry = entry.map_err(|e| {
+                KeyringError::IoError(format!("Failed to read directory entry: {}", e))
+            })?;
+            let path = entry.path();
+
+            // Only process JSON files
+            if path.extension().and_then(|s| s.to_str()) != Some("json") {
+                continue;
+            }
+
+            // Skip metadata file
+            if path.file_name().and_then(|s| s.to_str()) == Some("metadata.json") {
+                continue;
+            }
+
+            let json = fs::read_to_string(&path)
+                .map_err(|e| KeyringError::IoError(format!("Failed to read sync file: {}", e)))?;
+
+            if let Ok(sync_record) = self.importer.import_from_json(&json) {
+                remote_records.push(sync_record);
+            }
+        }
+
+        // Detect conflicts using version-based comparison
+        Ok(self
+            .conflict_resolver
+            .detect_conflicts(&local_sync_records, &remote_records))
     }
 
     /// Get sync status statistics

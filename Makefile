@@ -1,0 +1,32 @@
+.PHONY: help cross-linux cross-linux-arm cross-windows cross-test cross-all clean
+
+help: ## Show this help message
+	@echo "Cross-compilation make targets for keyring-cli"
+	@echo ""
+	@echo "Usage: make <target>"
+	@echo ""
+	@echo "Targets:"
+	@sed -n 's/^\([a-zA-Z_-]*:\).*##\(.*\)/\1\t\2/p' $(MAKEFILE_LIST) | column -t -s '	'
+
+cross-linux: ## Build for Linux x86_64 using cross
+	cross build --target x86_64-unknown-linux-gnu --release
+
+cross-linux-arm: ## Build for Linux ARM64 using cross
+	cross build --target aarch64-unknown-linux-gnu --release
+
+cross-windows: ## Build for Windows x86_64 (note: use Windows host or GitHub Actions)
+	@echo "Note: Windows cross-compilation from macOS has limitations."
+	@echo "For production builds, use GitHub Actions or build on Windows."
+	@echo "Attempting cross build..."
+	cross build --target x86_64-pc-windows-msvc --release || \
+		(echo "Cross build failed. Try building on Windows or use GitHub Actions."; exit 1)
+
+cross-test: ## Run tests for Linux x86_64 using cross
+	cross test --target x86_64-unknown-linux-gnu
+
+cross-all: cross-linux cross-linux-arm ## Build for all Linux target platforms (Windows: use cross-windows separately)
+	@echo "All Linux cross builds complete"
+	@echo "For Windows: run 'make cross-windows' on Windows host or use GitHub Actions"
+
+clean: ## Clean build artifacts
+	cargo clean

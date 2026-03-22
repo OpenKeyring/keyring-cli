@@ -1,0 +1,63 @@
+name: Test Coverage
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc jq
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: coverage-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run tests with coverage
+        env:
+          OK_MASTER_PASSWORD: test_password_123_for_ci_only
+        run: |
+          cargo install cargo-tarpaulin
+          cargo tarpaulin --features test-env --out Html --out Json --output-dir coverage --timeout 300 --verbose
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(jq '.coverage // 0' coverage/tarpaulin-report.json 2>/dev/null || echo "0")
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Coverage below 80% (current: $COVERAGE%)"
+            exit 1
+          else
+            echo "✅ Coverage at $COVERAGE%"
+          fi
+
+      - name: Add coverage summary
+        run: |
+          COVERAGE=$(jq '.coverage // 0' coverage/tarpaulin-report.json 2>/dev/null || echo "0")
+          echo "## Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "Current coverage: **$COVERAGE%**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Target: 80%+ for M1 v0.1 release" >> $GITHUB_STEP_SUMMARY

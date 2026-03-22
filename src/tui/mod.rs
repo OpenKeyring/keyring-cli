@@ -1,0 +1,59 @@
+//! Terminal User Interface (TUI) for OpenKeyring
+//!
+//! This module provides an interactive TUI mode that displays sensitive information
+//! in alternate screen mode to prevent terminal scrollback leakage.
+//!
+//! ## 模块结构
+//!
+//! - [`error`] - Phase 1.2 错误类型定义
+//! - [`traits`] - Trait 层定义，包含所有核心接口
+//! - [`core`] - 核心实现层，提供默认实现
+//! - [`handler`] - 事件处理器
+//! - [`keybindings`] - 键盘快捷键管理
+//! - [`screens`] - 各种屏幕界面
+
+//! - [`widgets`] - UI 组件
+
+// ============ Phase 1.2 新模块 ============
+pub mod core;
+pub mod error;
+pub mod panic_hook;
+pub mod traits;
+
+// ============ TUI MVP State Module ============
+pub mod state;
+
+// ============ Phase 1.3 数据层模块 ============
+pub mod config;
+pub mod models;
+pub mod services;
+
+// ============ Mock 数据层 (Phase 0) ============
+pub mod mock;
+
+// ============ Phase 1.4 组件模块 ============
+pub mod components;
+
+// ============ 现有模块 ============
+mod app;
+pub mod handler;
+pub mod keybindings;
+pub mod screens;
+pub mod tags;
+mod utils;
+mod widgets;
+// TODO: Re-enable after implementing Interactive trait for wizard screens
+// pub mod wizard_flow;
+
+#[cfg(test)]
+pub mod testing;
+
+#[cfg(test)]
+mod tests;
+
+// ============ 公共导出 ============
+pub use app::{run_tui, Screen, SyncStatus, TuiApp, TuiError as LegacyTuiError};
+pub use handler::{AppAction, TuiEventHandler};
+
+// Phase 1.2 错误类型导出
+pub use error::{ErrorKind, ErrorSeverity, RecoveryStrategy, TuiError, TuiResult};

@@ -11,7 +11,10 @@ pub mod windows;
 // use std::time::Duration;  // Unused
 
 // Re-exports from manager module
-pub use manager::{create_platform_clipboard, ClipboardConfig, ClipboardManager, ClipboardService};
+pub use manager::{
+    create_platform_clipboard, BoxClipboardManager, ClipboardConfig, ClipboardManager,
+    ClipboardService,
+};
 
 // Platform-specific exports
 #[cfg(target_os = "linux")]

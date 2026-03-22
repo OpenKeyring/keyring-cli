@@ -1,0 +1,10 @@
+---
+source: src/tui/tests/screen_snapshot_tests.rs
+expression: screen
+---
+PasskeyImportScreen {
+    input: "",
+    validated: false,
+    validation_error: None,
+    words: None,
+}

@@ -1,0 +1,27 @@
+---
+source: src/tui/tests/screen_snapshot_tests.rs
+expression: output
+---
+
+ ┌────────────────────────────────────────────────────────────────────────────┐
+ │                            Generate New Passkey                            │
+ └────────────────────────────────────────────────────────────────────────────┘
+
+
+    ⚠️  Please save these 24 words, this is the ONLY way to recover your data!
+
+
+ ┌ Passkey ───────────────────────────────────────────────────────────────────┐
+ │  1. abandon        2. ability        3. able           4. about            │
+ │  5. above          6. absent         7. absorb         8. abstract         │
+ │  9. absurd        10. abuse         11. access        12. accident         │
+ │ 13. account       14. accuse        15. achieve       16. acid             │
+ │ 17. acoustic      18. acquire       19. across        20. act              │
+ │ 21. action        22. actor         23. actress       24. actual           │
+ └────────────────────────────────────────────────────────────────────────────┘
+ ┌────────────────────────────────────────────────────────────────────────────┐
+ │                         ☐ I have saved the Passkey                         │
+ └────────────────────────────────────────────────────────────────────────────┘
+ ┌────────────────────────────────────────────────────────────────────────────┐
+ │             Enter: Confirm first    Space: Confirm    Esc: Back            │
+ └────────────────────────────────────────────────────────────────────────────┘

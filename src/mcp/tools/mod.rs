@@ -3,6 +3,10 @@ use crate::mcp::AuditLogger;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+pub mod api;
+pub mod git;
+pub mod ssh;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolDefinition {
     pub name: String,
@@ -36,6 +40,12 @@ pub struct McpToolRegistry {
     audit_logger: AuditLogger,
 }
 
+impl Default for McpToolRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl McpToolRegistry {
     pub fn new() -> Self {
         let mut registry = Self {
@@ -67,7 +77,8 @@ impl McpToolRegistry {
         }
 
         self.tools.insert(tool.name.clone(), tool.clone());
-        self.audit_logger
+        let _ = self
+            .audit_logger
             .log_event("tool_registered", &serde_json::to_string(&tool)?);
         Ok(())
     }
@@ -86,7 +97,7 @@ impl McpToolRegistry {
 
     fn register_builtin_tools(&mut self) {
         // Password tools
-        self.register_tool(ToolDefinition {
+        let _ = self.register_tool(ToolDefinition {
             name: "generate_password".to_string(),
             description: "Generate a secure random password".to_string(),
             input_schema: ToolInputSchema {
@@ -120,7 +131,7 @@ impl McpToolRegistry {
         });
 
         // List records tool
-        self.register_tool(ToolDefinition {
+        let _ = self.register_tool(ToolDefinition {
             name: "list_records".to_string(),
             description: "List all password records".to_string(),
             input_schema: ToolInputSchema {
@@ -152,12 +163,12 @@ impl ToolExecutor {
         client_id: &str,
     ) -> Result<serde_json::Value, KeyringError> {
         // Get tool definition
-        let _tool = self
-            .registry
-            .get_tool(tool_name)
-            .ok_or_else(|| KeyringError::ToolNotFound {
-                tool_name: tool_name.to_string(),
-            })?;
+        let _tool =
+            self.registry
+                .get_tool(tool_name)
+                .ok_or_else(|| KeyringError::ToolNotFound {
+                    tool_name: tool_name.to_string(),
+                })?;
 
         // Log tool execution
         self.registry

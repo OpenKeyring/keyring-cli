@@ -1,7 +1,46 @@
 use crate::error::{KeyringError, Result};
-use std::path::PathBuf;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::fs;
+use std::path::PathBuf;
+
+/// Get the configuration directory path
+///
+/// Platform-specific paths:
+/// - Linux/macOS: `~/.config/open-keyring`
+/// - Windows: `%APPDATA%\open-keyring`
+///
+/// If the directory does not exist, caller needs to create it using `create_dir_all()`.
+fn get_config_dir() -> PathBuf {
+    dirs::config_dir()
+        .map(|p| p.join("open-keyring"))
+        .unwrap_or_else(|| {
+            // Fallback: use HOME environment variable
+            let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+            PathBuf::from(home).join(".config").join("open-keyring")
+        })
+}
+
+/// Get the default database path
+///
+/// Platform-specific paths:
+/// - Linux/macOS: `~/.local/share/open-keyring/passwords.db`
+/// - Windows: `%LOCALAPPDATA%\open-keyring\passwords.db`
+///
+/// If the directory does not exist, caller needs to create it using `create_dir_all()`.
+fn get_default_database_path() -> String {
+    let db_dir = dirs::data_local_dir()
+        .map(|p| p.join("open-keyring"))
+        .unwrap_or_else(|| {
+            // Fallback: use HOME environment variable
+            let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+            PathBuf::from(home)
+                .join(".local")
+                .join("share")
+                .join("open-keyring")
+        });
+
+    db_dir.join("passwords.db").to_string_lossy().to_string()
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DatabaseConfig {
@@ -59,9 +98,15 @@ impl Default for ClipboardConfig {
 
 impl Default for OpenKeyringConfig {
     fn default() -> Self {
+        // Test environment: override with environment variable
+        #[cfg(feature = "test-env")]
+        let db_path = get_default_database_path_with_env();
+        #[cfg(not(feature = "test-env"))]
+        let db_path = get_default_database_path();
+
         Self {
             database: DatabaseConfig {
-                path: get_default_database_path(),
+                path: db_path,
                 encryption_enabled: true,
             },
             crypto: CryptoConfig {
@@ -98,10 +143,22 @@ pub struct ConfigManager {
 
 impl ConfigManager {
     pub fn new() -> Result<Self> {
+        // Test environment: override with environment variable
+        #[cfg(feature = "test-env")]
+        let config_dir = get_config_dir_with_env();
+        #[cfg(not(feature = "test-env"))]
         let config_dir = get_config_dir();
+
         let config_file = config_dir.join("config.yaml");
 
-        fs::create_dir_all(&config_dir)?;
+        // Create configuration directory (including all parent directories)
+        fs::create_dir_all(&config_dir).map_err(|e| {
+            KeyringError::IoError(format!(
+                "Failed to create config directory '{}': {}",
+                config_dir.display(),
+                e
+            ))
+        })?;
 
         if !config_file.exists() {
             let default_config = OpenKeyringConfig::default();
@@ -139,9 +196,14 @@ impl ConfigManager {
     }
 
     pub fn get_master_password(&self) -> Result<String> {
-        if let Ok(password) = std::env::var("OK_MASTER_PASSWORD") {
-            if !password.is_empty() {
-                return Ok(password);
+        // Check for master password in environment variable (for testing/automation)
+        // ONLY available when test-env feature is enabled
+        #[cfg(feature = "test-env")]
+        {
+            if let Ok(password) = std::env::var("OK_MASTER_PASSWORD") {
+                if !password.is_empty() {
+                    return Ok(password);
+                }
             }
         }
 
@@ -165,34 +227,37 @@ impl ConfigManager {
     fn load_config(&self) -> Result<OpenKeyringConfig> {
         let content = fs::read_to_string(&self.config_file)
             .map_err(|e| KeyringError::IoError(e.to_string()))?;
-        let config: OpenKeyringConfig = serde_yaml::from_str(&content)
-            .map_err(|e| KeyringError::ConfigurationError { context: e.to_string() })?;
+        let config: OpenKeyringConfig =
+            serde_yaml::from_str(&content).map_err(|e| KeyringError::ConfigurationError {
+                context: e.to_string(),
+            })?;
         Ok(config)
     }
 }
 
-fn get_config_dir() -> PathBuf {
+// Test environment support: allow directory override via environment variable
+#[cfg(feature = "test-env")]
+fn get_config_dir_with_env() -> PathBuf {
     if let Ok(config_dir) = std::env::var("OK_CONFIG_DIR") {
         PathBuf::from(config_dir)
     } else {
-        let home_dir = dirs::home_dir().unwrap_or_default();
-        home_dir.join(".config").join("open-keyring")
+        get_config_dir()
     }
 }
 
-fn get_default_database_path() -> String {
+#[cfg(feature = "test-env")]
+fn get_default_database_path_with_env() -> String {
     if let Ok(data_dir) = std::env::var("OK_DATA_DIR") {
         format!("{}/passwords.db", data_dir)
     } else {
-        let home_dir = dirs::home_dir().unwrap_or_default();
-        format!("{}/.local/share/open-keyring/passwords.db", home_dir.to_string_lossy())
+        get_default_database_path()
     }
 }
 
 fn save_config(path: &PathBuf, config: &OpenKeyringConfig) -> Result<()> {
-    let yaml = serde_yaml::to_string(config)
-        .map_err(|e| KeyringError::ConfigurationError { context: e.to_string() })?;
-    fs::write(path, yaml)
-        .map_err(|e| KeyringError::IoError(e.to_string()))?;
+    let yaml = serde_yaml::to_string(config).map_err(|e| KeyringError::ConfigurationError {
+        context: e.to_string(),
+    })?;
+    fs::write(path, yaml).map_err(|e| KeyringError::IoError(e.to_string()))?;
     Ok(())
 }

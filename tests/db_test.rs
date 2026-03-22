@@ -26,8 +26,11 @@ fn test_record_model() {
         encrypted_data: b"encrypted-data".to_vec(),
         nonce: [0u8; 12],
         tags: vec![],
+        group_id: None,
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
+        version: 1,
+        deleted: false,
     };
     assert_eq!(record.encrypted_data, b"encrypted-data".to_vec());
 }

@@ -18,12 +18,18 @@ pub struct AuditEvent {
 }
 
 #[derive(Debug)]
-pub struct AuditLogger {
+pub struct SimpleAuditLogger {
     log_file_path: String,
     enabled: bool,
 }
 
-impl AuditLogger {
+impl Default for SimpleAuditLogger {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl SimpleAuditLogger {
     pub fn new() -> Self {
         Self {
             log_file_path: std::env::var("OK_MCP_AUDIT_LOG")
@@ -122,6 +128,8 @@ impl AuditLogger {
 
         file.write_all(log_entry.as_bytes())
             .map_err(|e| KeyringError::IoError(e.to_string()))?;
+        file.flush()
+            .map_err(|e| KeyringError::IoError(e.to_string()))?;
 
         Ok(())
     }
@@ -149,3 +157,15 @@ impl AuditLogger {
         Ok(())
     }
 }
+
+// Re-export the async audit logger types for tests and external use
+// Note: audit subdirectory contains the async audit logger implementation
+// The module inception warning is acceptable for cleaner namespace
+#[allow(clippy::module_inception)]
+pub mod audit;
+
+// Re-export the async logger types for tests
+pub use audit::{AuditEntry as AsyncAuditEntry, AuditLogger as AsyncAuditLogger, AuditQuery};
+
+// Export the simple logger as the default for internal use
+pub use SimpleAuditLogger as AuditLogger;

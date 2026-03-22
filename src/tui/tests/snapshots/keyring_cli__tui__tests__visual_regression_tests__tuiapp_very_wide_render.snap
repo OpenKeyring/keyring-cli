@@ -1,0 +1,28 @@
+---
+source: src/tui/tests/visual_regression_tests.rs
+expression: output
+---
+┌ [1] Groups ────────────────────────────┐┌ [3] Details ───────────────────────────────────────────────────────────────┐
+│                                        ││                                                                            │
+│No passwords yet                        ││OpenKeyring                                                                 │
+│                                        ││Privacy-first Password Manager                                              │
+│Press [n] to create one                 ││                                                                            │
+│                                        ││Version: v0.1.0                                                             │
+│                                        ││License: MIT License                                                        │
+│                                        ││Website: github.com/open-keyring                                            │
+│                                        ││                                                                            │
+│                                        ││Press [n] to create your first password                                     │
+│                                        ││                                                                            │
+│                                        ││                                                                            │
+│                                        ││                                                                            │
+│                                        ││                                                                            │
+│                                        ││                                                                            │
+└────────────────────────────────────────┘│                                                                            │
+┌ [2] Filters ───────────────────────────┐│                                                                            │
+│[ ] 📋  All                              │└────────────────────────────────────────────────────────────────────────────┘
+│[ ] 🗑 Trash                             │┌ Stats ─────────────────────────────────────────────────────────────────────┐
+│[ ] ⏰  Expired                          ││Total: 0  Favorites: 0  Trash: 0                                            │
+│[ ] ⭐  Favorite                         ││                                                                            │
+│                                        ││                                                                            │
+└────────────────────────────────────────┘└────────────────────────────────────────────────────────────────────────────┘
+ [n] New  [e] Edit  [d] Delete  [/] Search  [Tab] Switch  [?] Help  [q] Quit

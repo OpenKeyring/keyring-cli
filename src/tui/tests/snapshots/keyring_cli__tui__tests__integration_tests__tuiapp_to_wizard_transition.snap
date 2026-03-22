@@ -1,0 +1,86 @@
+---
+source: src/tui/tests/integration_tests.rs
+expression: seq.to_string()
+---
+Sequence: app_to_wizard_transition
+
+Step 1: main_screen
+──────────────────
+┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
+│                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
+│                          ││Version: v0.1.0                                   │
+│                          ││License: MIT License                              │
+│                          ││Website: github.com/open-keyring                  │
+│                          ││                                                  │
+│                          ││Press [n] to create your first password           │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+└──────────────────────────┘│                                                  │
+┌ [2] Filters ─────────────┐│                                                  │
+│[ ] 📋  All                │└──────────────────────────────────────────────────┘
+│[ ] 🗑 Trash               │┌ Stats ───────────────────────────────────────────┐
+│[ ] ⏰  Expired            ││Total: 0  Favorites: 0  Trash: 0                  │
+│[ ] ⭐  Favorite           ││                                                  │
+│                          ││                                                  │
+└──────────────────────────┘└──────────────────────────────────────────────────┘
+ [n] New  [e] Edit  [d] Delete  [/] Search  [Tab] Switch  [?] Help  [q] Quit
+
+Step 2: wizard_screen
+────────────────────
+
+
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │                         OpenKeyring Setup Wizard                         │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+
+                             Welcome to OpenKeyring!
+
+
+
+  Choose setup method:
+
+  ┌ Options ─────────────────────────────────────────────────────────────────┐
+  │  ● New User (Generate New Passkey)                                       │
+  │    A 24-word Passkey will be generated                                   │
+  │                                                                          │
+  │  ○ Import Existing Passkey                                               │
+  └──────────────────────────────────────────────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │                  Enter: Next    ↑↓: Choose    Esc: Exit                  │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+
+
+Step 3: back_to_main
+───────────────────
+┌ [1] Groups ──────────────┐┌ [3] Details ─────────────────────────────────────┐
+│                          ││                                                  │
+│No passwords yet          ││OpenKeyring                                       │
+│                          ││Privacy-first Password Manager                    │
+│Press [n] to create one   ││                                                  │
+│                          ││Version: v0.1.0                                   │
+│                          ││License: MIT License                              │
+│                          ││Website: github.com/open-keyring                  │
+│                          ││                                                  │
+│                          ││Press [n] to create your first password           │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+│                          ││                                                  │
+└──────────────────────────┘│                                                  │
+┌ [2] Filters ─────────────┐│                                                  │
+│[ ] 📋  All                │└──────────────────────────────────────────────────┘
+│[ ] 🗑 Trash               │┌ Stats ───────────────────────────────────────────┐
+│[ ] ⏰  Expired            ││Total: 0  Favorites: 0  Trash: 0                  │
+│[ ] ⭐  Favorite           ││                                                  │
+│                          ││                                                  │
+└──────────────────────────┘└──────────────────────────────────────────────────┘
+ [n] New  [e] Edit  [d] Delete  [/] Search  [Tab] Switch  [?] Help  [q] Quit

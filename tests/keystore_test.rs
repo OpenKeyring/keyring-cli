@@ -8,10 +8,10 @@ fn keystore_roundtrip_unlock() {
 
     let keystore = KeyStore::initialize(&path, master).unwrap();
     assert!(path.exists());
-    assert_eq!(keystore.dek.len(), 32);
+    assert_eq!(keystore.dek.get().len(), 32);
 
     let unlocked = KeyStore::unlock(&path, master).unwrap();
-    assert_eq!(unlocked.dek.len(), 32);
+    assert_eq!(unlocked.dek.get().len(), 32);
 }
 
 #[test]

@@ -1,9 +1,9 @@
-use clap::Parser;
 use crate::cli::ConfigManager;
-use crate::db::DatabaseManager;
 use crate::crypto::CryptoManager;
-use crate::health::{HealthChecker, HealthReport};
+use crate::db::DatabaseManager;
 use crate::error::{KeyringError, Result};
+use crate::health::{HealthChecker, HealthReport};
+use clap::Parser;
 use std::collections::HashMap;
 
 #[derive(Parser, Debug)]
@@ -29,9 +29,9 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
     println!("🩺 Running password health check...");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-    let mut config = ConfigManager::new()?;
+    let config = ConfigManager::new()?;
     let db_config = config.get_database_config()?;
-    let mut db = DatabaseManager::new(&db_config)?;
+    let db = DatabaseManager::new(&db_config.path)?;
 
     // Initialize crypto manager (prompt for master password if needed)
     let mut crypto = CryptoManager::new();
@@ -43,7 +43,9 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
         let count: i64 = stmt.query_row((), |row| row.get(0))?;
         if count == 0 {
             println!("❌ Vault not initialized. Run 'ok init' first.");
-            return Err(KeyringError::VaultNotInitialized);
+            return Err(KeyringError::NotFound {
+                resource: "Vault not initialized".to_string(),
+            });
         }
     }
 
@@ -54,16 +56,21 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
     // Get all records from database
     let conn = db.connection()?;
     let mut stmt = conn.prepare(
-        "SELECT id, record_type, encrypted_data, nonce, tags, created_at, updated_at
-         FROM records WHERE deleted = 0"
+        "SELECT id, record_type, encrypted_data, nonce, tags, created_at, updated_at, version
+         FROM records WHERE deleted = 0",
     )?;
 
     let records_vec = stmt.query_map((), |row| {
         use crate::db::models::{RecordType, StoredRecord};
         use chrono::DateTime;
 
+        // Parse UUID from string
+        let id_str: String = row.get(0)?;
+        let id = uuid::Uuid::parse_str(&id_str)
+            .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+
         Ok(StoredRecord {
-            id: row.get(0)?,
+            id,
             record_type: {
                 let type_str: String = row.get(1)?;
                 match type_str.as_str() {
@@ -90,6 +97,7 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
                     tags_str.split(',').map(|s| s.to_string()).collect()
                 }
             },
+            group_id: None,
             created_at: {
                 let ts: i64 = row.get(5)?;
                 DateTime::from_timestamp(ts, 0).unwrap_or_default()
@@ -98,6 +106,11 @@ pub async fn check_health(args: HealthArgs) -> Result<()> {
                 let ts: i64 = row.get(6)?;
                 DateTime::from_timestamp(ts, 0).unwrap_or_default()
             },
+            version: {
+                let v: i64 = row.get(7)?;
+                v as u64
+            },
+            deleted: false, // WHERE deleted=0 already filters
         })
     })?;
 
@@ -157,7 +170,10 @@ fn print_health_report(report: &HealthReport, show_weak: bool, show_dupes: bool,
     }
 
     if show_leaks {
-        println!("Compromised:          {}", report.compromised_password_count);
+        println!(
+            "Compromised:          {}",
+            report.compromised_password_count
+        );
         _total_issues += report.compromised_password_count;
     }
 
@@ -172,7 +188,10 @@ fn print_health_report(report: &HealthReport, show_weak: bool, show_dupes: bool,
     let mut by_severity: HashMap<String, Vec<_>> = HashMap::new();
     for issue in &report.issues {
         let severity = format!("{:?}", issue.severity);
-        by_severity.entry(severity).or_insert_with(Vec::new).push(issue);
+        by_severity
+            .entry(severity)
+            .or_insert_with(Vec::new)
+            .push(issue);
     }
 
     // Display issues by severity
@@ -186,7 +205,12 @@ fn print_health_report(report: &HealthReport, show_weak: bool, show_dupes: bool,
                     crate::health::report::Severity::Medium => "🟡",
                     crate::health::report::Severity::Low => "🟢",
                 };
-                println!("  {} {} - {}", icon, issue.record_names.join(", "), issue.description);
+                println!(
+                    "  {} {} - {}",
+                    icon,
+                    issue.record_names.join(", "),
+                    issue.description
+                );
             }
             println!();
         }

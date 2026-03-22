@@ -2,12 +2,13 @@ use crate::cli::{onboarding, ConfigManager};
 use crate::crypto::record::decrypt_payload;
 use crate::db::Vault;
 use crate::error::{KeyringError, Result};
+use std::io::{self, Write};
 use std::path::PathBuf;
 
 /// Execute the show command
 pub async fn execute(
     name: String,
-    password: bool,
+    print: bool,
     copy: bool,
     timeout: Option<u64>,
     field: Option<String>,
@@ -26,10 +27,9 @@ pub async fn execute(
     // Open vault
     let vault = Vault::open(&db_path, "")?;
 
-    // Search for record by name (using search_records)
-    // We need to decrypt records to find the matching name
-    let records = vault.search_records(&name)?;
-    
+    // Get all records and search by name (since names are encrypted)
+    let records = vault.list_records()?;
+
     // Decrypt records to find the matching one
     let mut matched_record = None;
     for record in records {
@@ -40,23 +40,37 @@ pub async fn execute(
             }
         }
     }
-    
-    let (_record, decrypted_payload) = matched_record
-        .ok_or_else(|| KeyringError::NotFound {
-            resource: format!("Record with name '{}'", name),
-        })?;
 
-    // Handle copy to clipboard
-    if copy {
+    let (_record, decrypted_payload) = matched_record.ok_or_else(|| KeyringError::NotFound {
+        resource: format!("Record with name '{}'", name),
+    })?;
+
+    // Handle copy to clipboard (explicit --copy flag or default behavior)
+    if copy || (!print && field.is_none() && !history) {
         use crate::clipboard::{create_platform_clipboard, ClipboardConfig, ClipboardService};
         let clipboard_manager = create_platform_clipboard()?;
         let clipboard_config = ClipboardConfig::default();
         let mut clipboard = ClipboardService::new(clipboard_manager, clipboard_config);
         clipboard.copy_password(&decrypted_payload.password)?;
-        
+
         let timeout_secs = timeout.unwrap_or(30);
-        println!("📋 Password copied to clipboard (auto-clears in {} seconds)", timeout_secs);
-        
+        println!(
+            "📋 Password copied to clipboard (auto-clears in {} seconds)",
+            timeout_secs
+        );
+
+        // Show non-sensitive record info
+        println!("Name: {}", decrypted_payload.name);
+        if let Some(ref username) = decrypted_payload.username {
+            println!("Username: {}", username);
+        }
+        if let Some(ref url) = decrypted_payload.url {
+            println!("URL: {}", url);
+        }
+        if !decrypted_payload.tags.is_empty() {
+            println!("Tags: {}", decrypted_payload.tags.join(", "));
+        }
+
         return Ok(());
     }
 
@@ -66,17 +80,20 @@ pub async fn execute(
             "name" => println!("{}", decrypted_payload.name),
             "username" => println!("{}", decrypted_payload.username.as_deref().unwrap_or("")),
             "password" => {
-                if password {
+                if confirm_print_password()? {
                     println!("{}", decrypted_payload.password);
                 } else {
-                    println!("••••••••••••");
+                    println!("Password display cancelled.");
+                    return Ok(());
                 }
             }
             "url" => println!("{}", decrypted_payload.url.as_deref().unwrap_or("")),
             "notes" => println!("{}", decrypted_payload.notes.as_deref().unwrap_or("")),
-            _ => return Err(KeyringError::InvalidInput {
-                context: format!("Unknown field: {}", field_name),
-            }),
+            _ => {
+                return Err(KeyringError::InvalidInput {
+                    context: format!("Unknown field: {}", field_name),
+                })
+            }
         }
         return Ok(());
     }
@@ -87,27 +104,59 @@ pub async fn execute(
         return Ok(());
     }
 
-    // Show full record (decrypted)
-    println!("Name: {}", decrypted_payload.name);
-    if let Some(ref username) = decrypted_payload.username {
-        println!("Username: {}", username);
-    }
-    if password {
-        println!("Password: {}", decrypted_payload.password);
+    // Show full record with password (requires --print flag)
+    if print {
+        if confirm_print_password()? {
+            println!("Name: {}", decrypted_payload.name);
+            if let Some(ref username) = decrypted_payload.username {
+                println!("Username: {}", username);
+            }
+            println!("Password: {}", decrypted_payload.password);
+            if let Some(ref url) = decrypted_payload.url {
+                println!("URL: {}", url);
+            }
+            if let Some(ref notes) = decrypted_payload.notes {
+                println!("Notes: {}", notes);
+            }
+            if !decrypted_payload.tags.is_empty() {
+                println!("Tags: {}", decrypted_payload.tags.join(", "));
+            }
+        } else {
+            println!("Password display cancelled.");
+        }
     } else {
-        println!("Password: ••••••••••••");
-    }
-    if let Some(ref url) = decrypted_payload.url {
-        println!("URL: {}", url);
-    }
-    if let Some(ref notes) = decrypted_payload.notes {
-        println!("Notes: {}", notes);
-    }
-    if !decrypted_payload.tags.is_empty() {
-        println!("Tags: {}", decrypted_payload.tags.join(", "));
+        // Show record without password
+        println!("Name: {}", decrypted_payload.name);
+        if let Some(ref username) = decrypted_payload.username {
+            println!("Username: {}", username);
+        }
+        println!("Password: •••••••••••• (use --print to reveal)");
+        if let Some(ref url) = decrypted_payload.url {
+            println!("URL: {}", url);
+        }
+        if let Some(ref notes) = decrypted_payload.notes {
+            println!("Notes: {}", notes);
+        }
+        if !decrypted_payload.tags.is_empty() {
+            println!("Tags: {}", decrypted_payload.tags.join(", "));
+        }
     }
 
     Ok(())
+}
+
+/// Prompt user for confirmation before printing password
+fn confirm_print_password() -> Result<bool> {
+    println!("⚠️  WARNING: Password will be visible in terminal and command history.");
+    println!("This may be captured by screen recording, terminal logs, or shoulder surfing.");
+    print!("Continue? [y/N]: ");
+    io::stdout().flush()?;
+
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+
+    let input = input.trim().to_lowercase();
+    Ok(input == "y" || input == "yes")
 }
 
 // Legacy function for backward compatibility

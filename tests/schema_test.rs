@@ -37,7 +37,7 @@ fn test_mcp_sessions_table_schema() {
     ).unwrap();
 
     // Verify the data
-    let (id, creds, created, last_activity, ttl): (String, String, i64, i64, i64) = conn
+    let (id, creds, _created, _last_activity, ttl): (String, String, i64, i64, i64) = conn
         .query_row(
             "SELECT id, approved_credentials, created_at, last_activity, ttl_seconds
          FROM mcp_sessions WHERE id = ?1",

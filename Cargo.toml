@@ -2,6 +2,7 @@
 name = "keyring-cli"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.89"
 authors = ["OpenKeyring Team"]
 license = "MIT"
 repository = "https://github.com/open-keyring/keyring-cli"
@@ -12,31 +13,60 @@ categories = ["command-line-utilities"]
 [[bin]]
 name = "ok"
 path = "src/main.rs"
+required-features = []
+
+[[bin]]
+name = "ok-mcp-server"
+path = "src/mcp/main.rs"
+required-features = []
+
+[features]
+default = []
+test-env = []  # Only for development/testing
+
+# Test-specific feature that enables test-env
+testing = ["test-env"]
 
 [dependencies]
 # CLI
 clap = { version = "4.5", features = ["derive"] }
 
+# TUI Framework
+ratatui = "0.28"
+crossterm = "0.28"
+
+# Interactive input
+dialoguer = "0.11"
+
+# Fuzzy matching for autocomplete
+fuzzy-matcher = "0.3"
+
 # Database
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.38", features = ["bundled"] }
 
 # Cryptography
 argon2 = "0.5"
 aes-gcm = "0.10"
-rand = "0.8"
+rand = "0.9"
 sha2 = "0.10"
 sha-1 = "0.10"
-zeroize = "1.8"
+hkdf = "0.12"
+pbkdf2 = "0.12"
+zeroize = { version = "1.8", features = ["zeroize_derive"] }
+bip39 = { version = "2.0", features = ["rand"] }
+hmac = "0.12"
+hex = "0.4"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+schemars = { version = "0.8", features = ["derive"] }
 
 # Utilities
 uuid = { version = "1.8", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 anyhow = "1.0"
-thiserror = "1.0"
+thiserror = "2.0"
 rpassword = "7.3"
 log = "0.4"
 env_logger = "0.11"
@@ -45,24 +75,80 @@ base64 = "0.22"
 # Async runtime
 tokio = { version = "1.38", features = ["full"] }
 async-trait = "0.1"
+futures-util = "0.3"
+
+# SSH execution - using system ssh command (no C dependency)
+# openssh = "0.11"
+
+# Git operations - pure Rust implementation
+gix = { version = "0.78", default-features = false, features = [
+    "max-performance-safe",
+    "blocking-http-transport-reqwest",
+    "blocking-http-transport-reqwest-rust-tls"
+] }
+
+# File system watcher
+notify = "6.0"
+
+# Cloud storage abstraction
+# Note: opendal features are configured per-platform below to support Windows cross-compilation
+# (services-sftp requires openssh crate which is Unix-only)
 
 # HTTP client for HIBP API
-reqwest = { version = "0.12", features = ["json"] }
+# Use rustls-tls for pure Rust TLS implementation to eliminate OpenSSL dependency
+reqwest = { version = "0.12", default-features = false, features = [
+    "json",
+    "stream",
+    "rustls-tls",
+    "rustls-tls-native-roots",
+    "gzip"
+] }
+bytes = "1.6"
 
 # YAML configuration
 serde_yaml = "0.9"
 
 # Platform detection
 sysinfo = "0.30"
-dirs = "5.0"
+dirs = "6.0"
+
+# Cross-platform conditional compilation
+cfg-if = "1.0"
+
+# File locking
+fs2 = "0.4"
+
+# MCP server implementation
+rmcp = { version = "0.5", features = ["server", "transport-io"] }
 
 # System calls for file locking
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
+# Cloud storage with full features including SFTP (Unix-only)
+opendal = { version = "0.50", features = [
+    "services-fs",
+    "services-webdav",
+    "services-sftp",
+    "services-dropbox",
+    "services-gdrive",
+    "services-onedrive",
+    "services-aliyun-drive",
+    "services-oss",
+    "services-cos",
+    "services-obs",
+    "services-upyun",
+    "services-http",
+] }
+
 # Clipboard (platform-specific)
+# SECURITY: Do NOT use pbcopy/pbpaste subprocess - exposes password via process arguments
+# Using arboard crate for secure, direct clipboard API access
+arboard = "3"
+
 [target.'cfg(target_os = "macos")'.dependencies]
-# macOS uses pbcopy/pbpaste via std::process
+# macOS uses NSPasteboard via arboard (no subprocess)
+arboard = "3"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Linux clipboard via xclip/wl-copy
@@ -70,7 +156,28 @@ libc = "0.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 clipboard-win = "5.3"
-windows = { version = "0.58", features = ["Win32_Storage_FileSystem"] }
+windows = { version = "0.58", features = [
+    "Win32_Storage_FileSystem",
+    "Win32_System_IO",
+    "Win32_System_SystemInformation",
+    "Win32_Security_Cryptography",
+    "Win32_Foundation",
+] }
+
+# Cloud storage without SFTP (SFTP requires openssh which is Unix-only)
+opendal = { version = "0.50", features = [
+    "services-fs",
+    "services-webdav",
+    "services-dropbox",
+    "services-gdrive",
+    "services-onedrive",
+    "services-aliyun-drive",
+    "services-oss",
+    "services-cos",
+    "services-obs",
+    "services-upyun",
+    "services-http",
+] }
 
 [[bench]]
 name = "crypto-bench"
@@ -79,6 +186,9 @@ harness = false
 [dev-dependencies]
 tempfile = "3.10"
 criterion = "0.5"
+serial_test = "3.1"
+insta = "1.34"
+regex = "1.10"
 
 [profile.release]
 opt-level = 3

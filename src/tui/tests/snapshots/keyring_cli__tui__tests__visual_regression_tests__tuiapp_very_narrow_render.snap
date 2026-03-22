@@ -1,0 +1,11 @@
+---
+source: src/tui/tests/visual_regression_tests.rs
+expression: output
+---
+
+⚠ Terminal too small
+
+Current: 30x24
+Required: 80x24
+
+Please resize your terminal

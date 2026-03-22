@@ -1,8 +1,26 @@
+//! MCP Tool Executors
+//!
+//! This module contains executors for different types of MCP tools:
+//! - API executor for HTTP requests
+//! - SSH executor for remote command execution
+//! - Git executor for version control operations (using gix pure Rust implementation)
+
+pub mod api;
+pub mod git; // Git executor using gix (pure Rust)
+pub mod ssh; // SSH tool definitions (input/output structs)
+pub mod ssh_executor; // SSH executor implementation
+
 use crate::error::KeyringError;
 use crate::mcp::audit::AuditLogger;
 use crate::mcp::tools::McpToolRegistry;
 use serde_json::Value;
 use std::time::Duration;
+
+// Re-export API executor types
+pub use api::{ApiError, ApiExecutor, ApiResponse};
+pub use git::{GitCloneOutput, GitError, GitExecutor, GitPullOutput, GitPushOutput};
+pub use ssh::*; // Re-export SSH tool definitions
+pub use ssh_executor::{SshError, SshExecOutput as SshExecutorOutput, SshExecutor}; // Re-export SSH executor
 
 #[derive(Debug)]
 pub struct ExecutionResult {
@@ -14,6 +32,7 @@ pub struct ExecutionResult {
 
 pub struct AsyncToolExecutor {
     registry: McpToolRegistry,
+    #[allow(dead_code)]
     max_execution_time: Duration,
     audit_logger: AuditLogger,
 }
@@ -36,12 +55,12 @@ impl AsyncToolExecutor {
         let start_time = std::time::Instant::now();
 
         // Get tool definition
-        let _tool = self
-            .registry
-            .get_tool(tool_name)
-            .ok_or_else(|| KeyringError::ToolNotFound {
-                tool_name: tool_name.to_string(),
-            })?;
+        let _tool =
+            self.registry
+                .get_tool(tool_name)
+                .ok_or_else(|| KeyringError::ToolNotFound {
+                    tool_name: tool_name.to_string(),
+                })?;
 
         // Log tool execution
         self.audit_logger

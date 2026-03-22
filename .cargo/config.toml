@@ -1,0 +1,14 @@
+# Cargo configuration for cross compilation aliases
+
+[alias]
+# Target platform aliases for cross compilation
+linux-x64 = "build --target x86_64-unknown-linux-gnu"
+linux-arm = "build --target aarch64-unknown-linux-gnu"
+# windows-x64 = "build --target x86_64-pc-windows-msvc"  # Use CI/CD for Windows builds
+
+# Combined cross-compilation command (Linux only)
+cross-all = ["build --target x86_64-unknown-linux-gnu",
+             "build --target aarch64-unknown-linux-gnu"]
+
+# Test alias with test-env feature enabled
+test = "test --features test-env"

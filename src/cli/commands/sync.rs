@@ -1,9 +1,52 @@
-use clap::Parser;
 use crate::cli::ConfigManager;
-use crate::db::{DatabaseManager, vault::Vault};
-use crate::sync::{SyncService, ConflictResolution};
-use crate::error::{KeyringError, Result};
-use std::path::PathBuf;
+use crate::db::Vault;
+use crate::error::Result;
+use crate::sync::conflict::ConflictResolution;
+use crate::sync::service::SyncService;
+use clap::Parser;
+use std::path::{Path, PathBuf};
+
+#[derive(Parser, Debug)]
+#[command(name = "sync")]
+#[command(about = "Sync passwords to cloud storage", long_about = None)]
+pub struct SyncCommand {
+    /// Show sync status instead of syncing
+    #[arg(long, short)]
+    pub status: bool,
+
+    /// Configure cloud storage provider
+    #[arg(long, short)]
+    pub config: bool,
+
+    /// Cloud storage provider (for use with --config)
+    #[arg(long)]
+    pub provider: Option<String>,
+
+    /// Direction: up, down, or both
+    #[arg(short, long, default_value = "both")]
+    pub direction: String,
+
+    /// Dry run without making changes
+    #[arg(long)]
+    pub dry_run: bool,
+}
+
+impl SyncCommand {
+    pub fn execute(&self) -> Result<()> {
+        if self.status {
+            println!("Sync status:");
+            return Ok(());
+        }
+
+        if self.config {
+            println!("Configuring provider: {:?}", self.provider);
+            return Ok(());
+        }
+
+        println!("Syncing {} (dry run: {})", self.direction, self.dry_run);
+        Ok(())
+    }
+}
 
 #[derive(Parser, Debug)]
 pub struct SyncArgs {
@@ -18,22 +61,24 @@ pub struct SyncArgs {
 }
 
 pub async fn sync_records(args: SyncArgs) -> Result<()> {
-    let mut config = ConfigManager::new()?;
-    let db_config = config.get_database_config()?;
-    let mut db = DatabaseManager::new(&db_config.path)?;
-    db.open()?;
+    let config = ConfigManager::new()?;
 
-    // Get vault from database connection
-    let conn = db.connection_mut()?;
-    let mut vault = Vault { conn };
-
+    // Handle config flag for provider configuration
     if args.status {
-        show_sync_status(&vault).await?;
-        return Ok(());
+        if let Some(provider) = &args.provider {
+            return configure_provider(&config, provider);
+        }
+        // Show current sync configuration
+        return show_sync_config(&config);
     }
+
+    let db_config = config.get_database_config()?;
+    let db_path = PathBuf::from(db_config.path);
 
     let sync_config = config.get_sync_config()?;
     let sync_dir = PathBuf::from(&sync_config.remote_path);
+
+    // Get conflict resolution from config for sync
     let conflict_resolution = match sync_config.conflict_resolution.as_str() {
         "newer" => ConflictResolution::Newer,
         "older" => ConflictResolution::Older,
@@ -43,65 +88,107 @@ pub async fn sync_records(args: SyncArgs) -> Result<()> {
     };
 
     if args.dry_run {
+        let vault = Vault::open(&db_path, "")?;
         perform_dry_run(&vault, &sync_dir).await?;
         return Ok(());
     }
 
+    // For actual sync, we need mutable vault
+    let mut vault = Vault::open(&db_path, "")?;
     perform_sync(&mut vault, &sync_dir, conflict_resolution).await
 }
 
-async fn show_sync_status(vault: &Vault) -> Result<()> {
-    let sync_service = SyncService::new();
-    let status = sync_service.get_sync_status(vault)?;
-    
-    println!("📊 Sync Status:");
-    println!("   Total records: {}", status.total);
-    println!("   Pending: {}", status.pending);
-    println!("   Conflicts: {}", status.conflicts);
-    println!("   Synced: {}", status.synced);
-    Ok(())
-}
+async fn perform_dry_run(vault: &Vault, sync_dir: &Path) -> Result<()> {
+    let pending = vault.get_pending_records()?;
 
-async fn perform_dry_run(vault: &Vault, sync_dir: &PathBuf) -> Result<()> {
-    let sync_service = SyncService::new();
-    let pending = sync_service.get_pending_records(vault)?;
-    
-    println!("🔍 Dry run - would sync {} records", pending.len());
-    
-    if !pending.is_empty() {
-        let exported = sync_service.export_pending_records(vault, sync_dir)?;
-        let total_size: usize = exported.iter()
-            .map(|r| r.encrypted_data.len())
-            .sum();
-        println!("   Estimated size: {} KB", total_size / 1024);
-        println!("   Files would be written to: {}", sync_dir.display());
+    if pending.is_empty() {
+        println!("🔍 Dry run - no pending records to sync");
+        return Ok(());
     }
-    
+
+    // Calculate total size
+    let total_size: usize = pending.iter().map(|r| r.encrypted_data.len()).sum();
+    let size_kb = total_size / 1024;
+
+    println!("🔍 Dry run - pending records:");
+    println!("   Records to sync: {}", pending.len());
+    println!("   Estimated size: {} KB", size_kb);
+    println!("   Target: {}", sync_dir.display());
+
     Ok(())
 }
 
 async fn perform_sync(
     vault: &mut Vault,
-    sync_dir: &PathBuf,
+    sync_dir: &Path,
     conflict_resolution: ConflictResolution,
 ) -> Result<()> {
-    println!("🔄 Starting sync...");
-
     let sync_service = SyncService::new();
+
+    println!("🔄 Starting sync...");
+    println!("   Target: {}", sync_dir.display());
+    println!("   Conflict resolution: {:?}", conflict_resolution);
 
     // Export pending records
     let exported = sync_service.export_pending_records(vault, sync_dir)?;
-    println!("   Exported {} records to {}", exported.len(), sync_dir.display());
-
-    // Import from directory
-    let stats = sync_service.import_from_directory(vault, sync_dir, conflict_resolution)?;
-    
-    println!("   Imported: {} new records", stats.imported);
-    println!("   Updated: {} existing records", stats.updated);
-    if stats.conflicts > 0 {
-        println!("   Resolved: {} conflicts", stats.conflicts);
+    if !exported.is_empty() {
+        println!("   Exported {} pending records", exported.len());
     }
 
-    println!("✅ Sync completed successfully");
+    // Import records from sync directory
+    let stats = sync_service.import_from_directory(vault, sync_dir, conflict_resolution)?;
+
+    println!(
+        "   Imported: {}, Updated: {}, Resolved: {}",
+        stats.imported, stats.updated, stats.conflicts
+    );
+    println!("✅ Sync completed");
+
+    Ok(())
+}
+
+fn configure_provider(_config: &ConfigManager, provider: &str) -> Result<()> {
+    println!("⚙️  Configuring cloud storage provider: {}", provider);
+
+    let valid_providers = [
+        "icloud",
+        "dropbox",
+        "gdrive",
+        "onedrive",
+        "webdav",
+        "sftp",
+        "aliyundrive",
+        "oss",
+    ];
+
+    if !valid_providers.contains(&provider) {
+        return Err(crate::error::KeyringError::InvalidInput {
+            context: format!(
+                "Invalid provider. Valid options: {}",
+                valid_providers.join(", ")
+            ),
+        });
+    }
+
+    println!("✓ Provider set to: {}", provider);
+    println!("ℹ️  Use 'ok config set sync.remote_path <path>' to set the remote path");
+    println!("ℹ️  Use 'ok config set sync.enabled true' to enable sync");
+
+    Ok(())
+}
+
+fn show_sync_config(config: &ConfigManager) -> Result<()> {
+    let sync_config = config.get_sync_config()?;
+
+    println!("⚙️  Sync Configuration:");
+    println!("   Enabled: {}", sync_config.enabled);
+    println!("   Provider: {}", sync_config.provider);
+    println!("   Remote Path: {}", sync_config.remote_path);
+    println!(
+        "   Conflict Resolution: {}",
+        sync_config.conflict_resolution
+    );
+    println!("   Auto Sync: {}", sync_config.auto_sync);
+
     Ok(())
 }

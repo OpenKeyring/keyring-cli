@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Edit(*)",
+      "Write(*)",
+      "Read(*)",
+      "MultiEdit(*)",
+      "NotebookEdit(*)",
+      "WebSearch(*)",
+      "WebFetch(*)"
+    ],
+    "deny": [
+      "Bash(rm *)",
+      "Bash(rm\t*)",
+      "Bash(sudo *)",
+      "Bash(rmdir *)",
+      "Bash(* rm *)",
+      "Bash(* sudo *)"
+    ]
+  }
+}

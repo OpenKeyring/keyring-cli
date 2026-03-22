@@ -113,6 +113,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "Requires network access and may fail due to system configuration issues"]
     async fn test_hibp_api_connection() {
         // Test that we can connect to HIBP API
         let result = is_password_compromised("password").await;

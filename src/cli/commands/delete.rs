@@ -1,7 +1,8 @@
-use clap::Parser;
 use crate::cli::ConfigManager;
-use crate::db::DatabaseManager;
-use crate::error::{KeyringError, Result};
+use crate::db::Vault;
+use crate::error::{Error, Result};
+use clap::Parser;
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 pub struct DeleteArgs {
@@ -18,29 +19,37 @@ pub async fn delete_record(args: DeleteArgs) -> Result<()> {
         return Ok(());
     }
 
-    let mut config = ConfigManager::new()?;
-    let mut db = DatabaseManager::new(&config.get_database_config()?).await?;
+    let config = ConfigManager::new()?;
+    let db_config = config.get_database_config()?;
+    let db_path = PathBuf::from(db_config.path);
 
-    match db.find_record_by_name(&args.name).await {
-        Ok(Some(record)) => {
-            db.delete_record(&record.id).await?;
+    // Open vault
+    let mut vault = Vault::open(&db_path, "")?;
 
-            if args.sync {
-                sync_deletion(&config, &record.id).await?;
-            }
-
-            println!("✅ Record '{}' deleted successfully", args.name);
+    // Find record by name
+    let record = match vault.find_record_by_name(&args.name)? {
+        Some(r) => r,
+        None => {
+            return Err(Error::RecordNotFound {
+                name: args.name.clone(),
+            });
         }
-        Ok(None) => {
-            return Err(KeyringError::RecordNotFound(args.name));
-        }
-        Err(e) => return Err(e),
+    };
+
+    println!("🗑️  Deleting record: {}", args.name);
+
+    // Delete the record using its UUID
+    vault.delete_record(&record.id.to_string())?;
+
+    if args.sync {
+        sync_deletion(&config, &record.id.to_string()).await?;
     }
 
+    println!("✅ Record '{}' deleted successfully", args.name);
     Ok(())
 }
 
-async fn sync_deletion(_config: &ConfigManager, _record_id: &uuid::Uuid) -> Result<()> {
+async fn sync_deletion(_config: &ConfigManager, _record_id: &str) -> Result<()> {
     println!("🔄 Syncing deletion...");
     Ok(())
 }
