@@ -199,18 +199,16 @@ fn handle_edit_mode_key(
             match &panel.edit_mode {
                 TreeEditMode::CreatingGroup => {
                     panel.edit_mode = TreeEditMode::None;
-                    let buffer = panel.edit_buffer.clone();
                     panel.edit_buffer.clear();
-                    HandleResult::Action(Action::ShowToast(format!("__create_group:{}", buffer)))
+                    HandleResult::Action(Action::ShowToast(format!("__create_group:{}", name)))
                 }
                 TreeEditMode::RenamingGroup { group_id } => {
                     let gid = group_id.clone();
                     panel.edit_mode = TreeEditMode::None;
-                    let buffer = panel.edit_buffer.clone();
                     panel.edit_buffer.clear();
                     HandleResult::Action(Action::ShowToast(format!(
                         "__rename_group:{}:{}",
-                        gid, buffer
+                        gid, name
                     )))
                 }
                 _ => HandleResult::Consumed,
