@@ -5,7 +5,7 @@
 
 use crate::crypto::CryptoManager;
 use crate::tui::error::{ErrorKind, TuiError, TuiResult};
-use crate::tui::traits::{CryptoService, PasswordPolicy, PasswordStrengthCalculator, ServicePasswordStrength as PasswordStrength};
+use crate::tui::traits::{CryptoService, PasswordPolicy, PasswordStrengthCalculator, PasswordType, ServicePasswordStrength as PasswordStrength};
 use crate::tui::core::DefaultPasswordStrengthCalculator;
 use std::sync::{Arc, Mutex};
 
@@ -101,57 +101,58 @@ impl CryptoService for TuiCryptoService {
     }
 
     /// 根据策略生成密码
+    ///
+    /// 根据 PasswordPolicy.password_type 调用底层 CryptoManager 的相应方法：
+    /// - Random: 调用 generate_random_password_with_policy()
+    /// - Memorable: 调用 generate_memorable_password()
+    /// - Pin: 调用 generate_pin()
     fn generate_password(&self, policy: &PasswordPolicy) -> TuiResult<String> {
-        // 简单实现 - 实际应调用 crypto 模块
-        use rand::Rng;
-        const LOWERCASE: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
-        const UPPERCASE: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const DIGITS: &[u8] = b"0123456789";
-        const SPECIAL: &[u8] = b"!@#$%^&*()_+-=[]{}|;:,.<>?";
+        let crypto = self.crypto.lock().map_err(|_| {
+            TuiError::new(ErrorKind::InvalidState("Crypto lock failed".into()))
+        })?;
 
-        let mut rng = rand::rng();
-        let mut password = Vec::with_capacity(policy.length as usize);
-
-        // 确保每种字符类型的最低数量
-        for _ in 0..policy.min_lowercase {
-            let idx = rng.random_range(0..LOWERCASE.len());
-            password.push(LOWERCASE[idx]);
+        match policy.password_type {
+            PasswordType::Random => {
+                // Use policy constraints for Random type
+                crypto
+                    .generate_random_password_with_policy(
+                        policy.length as usize,
+                        policy.min_digits,
+                        policy.min_special,
+                        policy.min_lowercase,
+                        policy.min_uppercase,
+                    )
+                    .map_err(|e| {
+                        TuiError::new(ErrorKind::InvalidInput {
+                            field: "password".to_string(),
+                            reason: e.to_string(),
+                        })
+                    })
+            }
+            PasswordType::Memorable => {
+                // For memorable passwords, use word count based on length
+                // Approximate: 4-5 chars per word, so length/5 gives word count
+                let word_count = ((policy.length as usize) / 5).max(3).min(12);
+                crypto
+                    .generate_memorable_password(word_count)
+                    .map_err(|e| {
+                        TuiError::new(ErrorKind::InvalidInput {
+                            field: "password".to_string(),
+                            reason: e.to_string(),
+                        })
+                    })
+            }
+            PasswordType::Pin => {
+                crypto
+                    .generate_pin(policy.length as usize)
+                    .map_err(|e| {
+                        TuiError::new(ErrorKind::InvalidInput {
+                            field: "password".to_string(),
+                            reason: e.to_string(),
+                        })
+                    })
+            }
         }
-
-        for _ in 0..policy.min_uppercase {
-            let idx = rng.random_range(0..UPPERCASE.len());
-            password.push(UPPERCASE[idx]);
-        }
-
-        for _ in 0..policy.min_digits {
-            let idx = rng.random_range(0..DIGITS.len());
-            password.push(DIGITS[idx]);
-        }
-
-        for _ in 0..policy.min_special {
-            let idx = rng.random_range(0..SPECIAL.len());
-            password.push(SPECIAL[idx]);
-        }
-
-        // 填充剩余长度
-        let all_chars: Vec<u8> = LOWERCASE
-            .iter()
-            .chain(UPPERCASE.iter())
-            .chain(DIGITS.iter())
-            .chain(SPECIAL.iter())
-            .copied()
-            .collect();
-
-        while password.len() < policy.length as usize {
-            let idx = rng.random_range(0..all_chars.len());
-            password.push(all_chars[idx]);
-        }
-
-        // 随机打乱
-        use rand::seq::SliceRandom;
-        password.shuffle(&mut rng);
-
-        Ok(String::from_utf8(password).unwrap_or_default())
     }
 
     /// 检查密码强度
@@ -221,7 +222,7 @@ mod tests {
         let digit_count = password.chars().filter(|c| c.is_ascii_digit()).count();
         let special_count = password
             .chars()
-            .filter(|c| "!@#$%^&*()_+-=[]{}|;:,.<>?".contains(*c))
+            .filter(|c| "!#$*+-=?@^_~".contains(*c))
             .count();
         let lowercase_count = password.chars().filter(|c| c.is_ascii_lowercase()).count();
         let uppercase_count = password.chars().filter(|c| c.is_ascii_uppercase()).count();

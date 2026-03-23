@@ -264,6 +264,12 @@ impl ClipboardState {
     pub fn has_content(&self) -> bool {
         self.current.is_some()
     }
+
+    /// 获取配置
+    #[must_use]
+    pub const fn config(&self) -> &ClipboardConfig {
+        &self.config
+    }
 }
 
 impl Default for ClipboardState {

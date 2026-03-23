@@ -141,10 +141,21 @@ impl CryptoManager {
         self.master_key.is_some()
     }
 
-    /// Generate a random password with specified length
+    /// Generate a random password with specified length using safe charset
+    ///
+    /// Safe charset excludes ambiguous characters:
+    /// - Uppercase: A-Z (excluding I, O)
+    /// - Lowercase: a-z (excluding l, o)
+    /// - Digits: 2-9 (excluding 0, 1)
+    /// - Special: ! # $ * + - = ? @ ^ _ ~
     pub fn generate_random_password(&self, length: usize) -> Result<String, KeyringError> {
         use rand::Rng;
-        const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
+
+        // Safe charset: excludes ambiguous characters I, O, l, o, 0, 1
+        const UPPERCASE: &[u8] = b"ABCDEFGHJKLMNPQRSTUVWXYZ"; // excludes I, O
+        const LOWERCASE: &[u8] = b"abcdefghijkmnpqrstuvwxyz"; // excludes l, o
+        const DIGITS: &[u8] = b"23456789"; // excludes 0, 1
+        const SPECIAL: &[u8] = b"!#$*+-=?@^_~"; // safe special characters
 
         if length < 4 {
             return Err(KeyringError::InvalidInput {
@@ -158,14 +169,105 @@ impl CryptoManager {
         }
 
         let mut rng = rand::rng();
+        let all_chars: Vec<u8> = UPPERCASE
+            .iter()
+            .chain(LOWERCASE.iter())
+            .chain(DIGITS.iter())
+            .chain(SPECIAL.iter())
+            .copied()
+            .collect();
+
         let password: String = (0..length)
             .map(|_| {
-                let idx = rng.random_range(0..CHARSET.len());
-                CHARSET[idx] as char
+                let idx = rng.random_range(0..all_chars.len());
+                all_chars[idx] as char
             })
             .collect();
 
         Ok(password)
+    }
+
+    /// Generate a random password with policy constraints
+    ///
+    /// Ensures minimum character type requirements are met.
+    /// Uses safe charset (excludes ambiguous characters).
+    pub fn generate_random_password_with_policy(
+        &self,
+        length: usize,
+        min_digits: u8,
+        min_special: u8,
+        min_lowercase: u8,
+        min_uppercase: u8,
+    ) -> Result<String, KeyringError> {
+        use rand::seq::SliceRandom;
+        use rand::Rng;
+
+        // Safe charset: excludes ambiguous characters
+        const UPPERCASE: &[u8] = b"ABCDEFGHJKLMNPQRSTUVWXYZ"; // excludes I, O
+        const LOWERCASE: &[u8] = b"abcdefghijkmnpqrstuvwxyz"; // excludes l, o
+        const DIGITS: &[u8] = b"23456789"; // excludes 0, 1
+        const SPECIAL: &[u8] = b"!#$*+-=?@^_~"; // safe special characters
+
+        // Validate total length can accommodate minimum requirements
+        let min_required = (min_digits + min_special + min_lowercase + min_uppercase) as usize;
+        if length < min_required {
+            return Err(KeyringError::InvalidInput {
+                context: format!(
+                    "Password length {} is too short for minimum requirements ({})",
+                    length, min_required
+                ),
+            });
+        }
+        if length < 4 {
+            return Err(KeyringError::InvalidInput {
+                context: "Password length must be at least 4 characters".to_string(),
+            });
+        }
+        if length > 128 {
+            return Err(KeyringError::InvalidInput {
+                context: "Password length cannot exceed 128 characters".to_string(),
+            });
+        }
+
+        let mut rng = rand::rng();
+        let mut password = Vec::with_capacity(length);
+
+        // Add minimum required characters of each type
+        for _ in 0..min_uppercase {
+            let idx = rng.random_range(0..UPPERCASE.len());
+            password.push(UPPERCASE[idx]);
+        }
+        for _ in 0..min_lowercase {
+            let idx = rng.random_range(0..LOWERCASE.len());
+            password.push(LOWERCASE[idx]);
+        }
+        for _ in 0..min_digits {
+            let idx = rng.random_range(0..DIGITS.len());
+            password.push(DIGITS[idx]);
+        }
+        for _ in 0..min_special {
+            let idx = rng.random_range(0..SPECIAL.len());
+            password.push(SPECIAL[idx]);
+        }
+
+        // Fill remaining length with random characters from all charsets
+        let all_chars: Vec<u8> = UPPERCASE
+            .iter()
+            .chain(LOWERCASE.iter())
+            .chain(DIGITS.iter())
+            .chain(SPECIAL.iter())
+            .copied()
+            .collect();
+
+        while password.len() < length {
+            let idx = rng.random_range(0..all_chars.len());
+            password.push(all_chars[idx]);
+        }
+
+        // Shuffle to avoid predictable pattern
+        password.shuffle(&mut rng);
+
+        Ok(String::from_utf8(password).unwrap_or_default())
     }
 
     /// Generate a memorable password using word-based approach
@@ -256,9 +358,14 @@ impl CryptoManager {
         Ok(selected.join("-"))
     }
 
-    /// Generate a numeric PIN
+    /// Generate a numeric PIN using safe digits
+    ///
+    /// Safe digits: 2-9 (excludes ambiguous 0, 1)
     pub fn generate_pin(&self, length: usize) -> Result<String, KeyringError> {
         use rand::Rng;
+
+        // Safe digits: excludes ambiguous 0, 1
+        const SAFE_DIGITS: &[u8] = b"23456789";
 
         if length < 4 {
             return Err(KeyringError::InvalidInput {
@@ -273,7 +380,10 @@ impl CryptoManager {
 
         let mut rng = rand::rng();
         let pin: String = (0..length)
-            .map(|_| rng.random_range(0..10).to_string())
+            .map(|_| {
+                let idx = rng.random_range(0..SAFE_DIGITS.len());
+                SAFE_DIGITS[idx] as char
+            })
             .collect();
 
         Ok(pin)

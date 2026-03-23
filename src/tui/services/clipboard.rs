@@ -2,6 +2,7 @@
 //!
 //! 封装现有 ClipboardManager 实现，提供 TUI 层所需的剪贴板接口。
 //! 集成真实系统剪贴板（通过 arboard crate）。
+//! 支持后台线程自动清除，确保敏感数据及时清理。
 
 use crate::clipboard::{
     create_platform_clipboard, BoxClipboardManager, ClipboardManager as PlatformClipboardManager,
@@ -11,17 +12,35 @@ use crate::tui::traits::{
     SecureClipboardContent, SecureString,
 };
 use std::io;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 /// TUI 剪贴板服务
 ///
 /// 实现 ClipboardService trait，提供剪贴板操作功能。
 /// 连接真实系统剪贴板（通过 arboard）。
-#[derive(Debug)]
+/// 支持后台线程自动清除，确保敏感数据及时清理。
 pub struct TuiClipboardService {
     /// 剪贴板状态（用于 UI 显示和超时管理）
     state: ClipboardState,
     /// 系统剪贴板管理器
     system_clipboard: Option<BoxClipboardManager>,
+    /// 后台清除线程句柄
+    clear_thread: Option<JoinHandle<()>>,
+    /// 线程运行标志
+    clear_thread_running: Arc<AtomicBool>,
+}
+
+impl std::fmt::Debug for TuiClipboardService {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TuiClipboardService")
+            .field("state", &self.state)
+            .field("system_clipboard", &self.system_clipboard.is_some())
+            .field("clear_thread_active", &self.clear_thread.is_some())
+            .finish()
+    }
 }
 
 impl TuiClipboardService {
@@ -35,6 +54,8 @@ impl TuiClipboardService {
         Self {
             state: ClipboardState::new(ClipboardConfig::default()),
             system_clipboard,
+            clear_thread: None,
+            clear_thread_running: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -45,6 +66,8 @@ impl TuiClipboardService {
         Self {
             state: ClipboardState::new(config),
             system_clipboard,
+            clear_thread: None,
+            clear_thread_running: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -55,11 +78,53 @@ impl TuiClipboardService {
             .as_ref()
             .is_some_and(|cb| cb.is_supported())
     }
+
+    /// 启动后台清除线程
+    fn start_clear_thread(&mut self, timeout_seconds: u64) {
+        // 停止现有线程
+        self.stop_clear_thread();
+
+        // 创建新的运行标志
+        let running = Arc::new(AtomicBool::new(true));
+        self.clear_thread_running = running.clone();
+
+        // 启动后台清除线程
+        let handle = thread::spawn(move || {
+            thread::sleep(Duration::from_secs(timeout_seconds));
+
+            // 只有在仍然运行时才清除
+            if running.load(Ordering::SeqCst) {
+                // 创建新的剪贴板实例来清除
+                if let Ok(mut clipboard) = create_platform_clipboard() {
+                    let _ = clipboard.clear();
+                }
+            }
+        });
+
+        self.clear_thread = Some(handle);
+    }
+
+    /// 停止后台清除线程
+    fn stop_clear_thread(&mut self) {
+        // 设置停止标志
+        self.clear_thread_running.store(false, Ordering::SeqCst);
+
+        // 等待线程结束（非阻塞，因为线程可能已经完成）
+        if let Some(handle) = self.clear_thread.take() {
+            let _ = handle.join();
+        }
+    }
 }
 
 impl Default for TuiClipboardService {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Drop for TuiClipboardService {
+    fn drop(&mut self) {
+        self.stop_clear_thread();
     }
 }
 
@@ -70,16 +135,26 @@ impl ClipboardService for TuiClipboardService {
         content: SecureString,
         content_type: ClipboardContentType,
     ) -> io::Result<()> {
-        // Copy to system clipboard if available (non-fatal if it fails)
+        // 复制到系统剪贴板（如果可用，失败不影响功能）
         if let Some(ref mut clipboard) = self.system_clipboard {
             if let Some(text) = content.expose() {
-                // Try to copy to system clipboard, but don't fail if unavailable
-                // This allows the service to work in headless/test environments
+                // 尝试复制到系统剪贴板，失败不影响功能
+                // 这允许服务在 headless/测试环境中工作
                 let _ = clipboard.set_content(text);
             }
         }
 
-        // Update internal state for timeout tracking
+        // 根据内容类型获取超时时间
+        let timeout_seconds = match content_type {
+            ClipboardContentType::Password => self.state.config().sensitive_timeout_seconds,
+            ClipboardContentType::Username => self.state.config().semi_sensitive_timeout_seconds,
+            _ => self.state.config().semi_sensitive_timeout_seconds,
+        };
+
+        // 启动后台清除线程
+        self.start_clear_thread(timeout_seconds);
+
+        // 更新内部状态用于超时追踪
         self.state.copy(content, content_type);
         Ok(())
     }
@@ -92,10 +167,10 @@ impl ClipboardService for TuiClipboardService {
 
     /// 从剪贴板读取
     fn paste(&self) -> io::Result<Option<SecureClipboardContent>> {
-        // Read from system clipboard if available
-        // Note: ClipboardManager requires &mut self, but our trait uses &self
-        // For now, return None as reading is less critical for password manager
-        // In the future, consider using interior mutability if needed
+        // 读取系统剪贴板（如果可用）
+        // 注意：ClipboardManager 需要 &mut self，但我们的 trait 使用 &self
+        // 目前返回 None，因为读取对于密码管理器来说不是关键功能
+        // 未来如果需要，可以考虑使用内部可变性
         let _ = &self.system_clipboard;
         Ok(None)
     }
@@ -107,12 +182,15 @@ impl ClipboardService for TuiClipboardService {
 
     /// 清除剪贴板
     fn clear(&mut self) -> io::Result<()> {
-        // Clear system clipboard (non-fatal if it fails)
+        // 停止后台线程
+        self.stop_clear_thread();
+
+        // 清除系统剪贴板（失败不影响功能）
         if let Some(ref mut clipboard) = self.system_clipboard {
             let _ = clipboard.clear();
         }
 
-        // Clear internal state
+        // 清除内部状态
         self.state.clear_sensitive();
         Ok(())
     }
@@ -126,7 +204,7 @@ impl ClipboardService for TuiClipboardService {
     fn tick(&mut self) -> Option<u64> {
         let remaining = self.state.tick();
 
-        // Auto-clear system clipboard when timeout expires
+        // 超时时自动清除系统剪贴板（备份机制）
         if self.state.should_clear() {
             if let Some(ref mut clipboard) = self.system_clipboard {
                 let _ = clipboard.clear();
@@ -285,6 +363,24 @@ mod tests {
     #[test]
     fn test_default() {
         let service = TuiClipboardService::default();
+        assert!(!service.state().has_content());
+    }
+
+    #[test]
+    fn test_clear_stops_background_thread() {
+        let mut service = TuiClipboardService::with_config(
+            ClipboardConfig::new().with_sensitive_timeout(10)
+        );
+
+        // 复制并启动后台线程
+        service
+            .copy_str("secret_password", ClipboardContentType::Password)
+            .unwrap();
+        assert!(service.clear_thread.is_some());
+
+        // 手动清除应停止后台线程
+        service.clear().unwrap();
+        assert!(service.clear_thread.is_none());
         assert!(!service.state().has_content());
     }
 }
