@@ -44,15 +44,12 @@ pub fn render_frame(screen: &mut MainScreen, frame: &mut Frame, area: Rect, stat
     render_status_panel(frame, layout.status_area, state);
     render_status_bar(frame, layout.status_bar_area, state);
 
-    // Render search bar (overlay at top of Groups panel, before notifications)
+    // Render search bar (centered floating overlay)
     if screen.search_bar.is_visible() {
-        let tree = layout.tree_area;
-        let search_area = Rect::new(
-            tree.x,
-            tree.y,
-            tree.width,
-            3.min(tree.height),
-        );
+        let search_width = 50.min(area.width.saturating_sub(4));
+        let search_x = area.x + (area.width.saturating_sub(search_width)) / 2;
+        let search_y = area.y + area.height / 4;
+        let search_area = Rect::new(search_x, search_y, search_width, 3.min(area.height));
         screen.search_bar.render_frame(frame, search_area);
     }
 

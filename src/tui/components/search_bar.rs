@@ -82,22 +82,25 @@ impl SearchBar {
                 HandleResult::Consumed
             }
             KeyCode::Char(c) => {
-                self.query.insert(self.cursor_position, c);
+                let byte_idx = self.char_to_byte_index(self.cursor_position);
+                self.query.insert(byte_idx, c);
                 self.cursor_position += 1;
                 HandleResult::NeedsRender
             }
             KeyCode::Backspace => {
                 if self.cursor_position > 0 {
                     self.cursor_position -= 1;
-                    self.query.remove(self.cursor_position);
+                    let byte_idx = self.char_to_byte_index(self.cursor_position);
+                    self.query.remove(byte_idx);
                     HandleResult::NeedsRender
                 } else {
                     HandleResult::Ignored
                 }
             }
             KeyCode::Delete => {
-                if self.cursor_position < self.query.len() {
-                    self.query.remove(self.cursor_position);
+                if self.cursor_position < self.char_count() {
+                    let byte_idx = self.char_to_byte_index(self.cursor_position);
+                    self.query.remove(byte_idx);
                     HandleResult::NeedsRender
                 } else {
                     HandleResult::Ignored
@@ -112,7 +115,7 @@ impl SearchBar {
                 }
             }
             KeyCode::Right => {
-                if self.cursor_position < self.query.len() {
+                if self.cursor_position < self.char_count() {
                     self.cursor_position += 1;
                     HandleResult::Consumed
                 } else {
@@ -121,6 +124,20 @@ impl SearchBar {
             }
             _ => HandleResult::Ignored,
         }
+    }
+
+    /// Convert char index to byte index
+    fn char_to_byte_index(&self, char_idx: usize) -> usize {
+        self.query
+            .char_indices()
+            .nth(char_idx)
+            .map(|(i, _)| i)
+            .unwrap_or(self.query.len())
+    }
+
+    /// Get the number of chars in the query
+    fn char_count(&self) -> usize {
+        self.query.chars().count()
     }
 
     /// Render the search bar

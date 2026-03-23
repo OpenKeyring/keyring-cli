@@ -166,6 +166,14 @@ impl TuiApp {
             None
         };
         if let Some(groups) = groups {
+            // Auto-expand all groups so passwords are visible
+            for g in &groups {
+                if let Ok(uuid) = uuid::Uuid::parse_str(&g.id) {
+                    self.app_state.tree.expanded_groups.insert(uuid);
+                }
+            }
+            // Also expand the "Ungrouped" virtual folder
+            self.app_state.tree.expanded_groups.insert(uuid::Uuid::nil());
             self.app_state.load_groups(groups);
         }
 
